@@ -1,0 +1,41 @@
+---
+title: "trip test"
+author: "Andrea"
+date: "2024-02-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+Load the packages
+
+```{r}
+library(move2)
+library(dplyr)
+library(sf)
+library(lubridate)
+library(trip)
+
+```
+Convert the walrus dataset to a move2 object
+
+```{r}
+walrus_stdf <- as(trip::walrus818[1:160, ], "SpatialPointsDataFrame") # just one track
+walrus_sf <- st_as_sf(walrus_stdf)
+walrus_move <- move2::mt_as_move2(walrus_sf, time_column = "DataDT", track_id_column = "Deployment")
+```
+
+
+```{r}
+walrus_test <- trip::speedfilter(trip::walrus818[1:160, ], max.speed = 1000)
+
+```
+
+
+```{r}
+this_track <- walrus_move %>% filter (Deployment=="353")
+
+```

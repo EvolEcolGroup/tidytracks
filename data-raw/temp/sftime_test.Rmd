@@ -1,0 +1,28 @@
+---
+title: "tidytrack"
+author: "Andrea"
+date: "2024-02-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Read in the data and convert it into an sftime object
+```{r}
+library(sftime)
+library(dplyr)
+library(lubridate)
+crs_proj<- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+my_track<-read.csv("wanderer/R5187420_gps.csv")
+my_track <- my_track %>%
+  st_as_sf(coords=c("Longitude","Latitude"), crs=crs_proj) %>% 
+  mutate(time=lubridate::dmy_hms(paste(my_track$Date, my_track$Time))) %>%
+  select (-c(Date, Time))
+my_track <- st_sftime(my_track)
+```
+
+

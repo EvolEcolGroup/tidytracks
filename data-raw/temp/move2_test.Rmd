@@ -1,0 +1,63 @@
+---
+title: "move2 test"
+author: "Andrea"
+date: "2024-02-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Read in the data and convert it into an sftime object
+```{r}
+library(move2)
+library(dplyr)
+library(sf)
+library(lubridate)
+crs_proj<- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+my_track<-read.csv("wanderer/R5187420_gps.csv")
+my_track <- my_track %>%
+  st_as_sf(coords=c("Longitude","Latitude"), crs=crs_proj) %>% 
+  mutate(time=lubridate::dmy_hms(paste(my_track$Date, my_track$Time))) %>%
+  select (-c(Date, Time)) %>%
+  mutate(track_id = 1)
+my_track <- move2::mt_as_move2(my_track,
+                               track_id_column = "track_id",
+                               time_column  = "time")
+```
+
+Now plot it:
+
+```{r}
+my_track_lines  <- my_track %>% move2::mt_track_lines()
+library(ggplot2)
+ggplot() + geom_sf(data=my_track_lines, color="red")
+
+```
+```{r}
+my_track <- my_track %>% group_by(track_id)
+
+as_mt_time <- function(x) {
+  if (inherits(x, "POSIXt")) {
+    class(x) <- c("mt_time",class(x))
+    return(x)
+  } else {
+    stop("x must be a POSIXt object")
+  }
+}
+
+my_track <- my_track %>% 
+  mutate(time = as_mt_time(time))
+
+test_fun<- function(x){
+  browser()
+}
+
+dplyr::group_map(my_track, ~ test_fun(.x))
+
+my_track %>% summarise(test_res = test_fun(.))
+
+```
