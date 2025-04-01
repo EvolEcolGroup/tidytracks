@@ -2,4 +2,5 @@
 
 S3method(mt_as_move2,trip)
 export(mt_as_move2)
+export(mt_clean_speed)
 importFrom(move2,mt_as_move2)

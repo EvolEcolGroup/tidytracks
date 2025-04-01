@@ -15,7 +15,7 @@
 A move2 object
 }
 \description{
-Method to convert trip objects to move2 objects
+Convert \code{trip} objects to \code{move2} objects.
 }
 \examples{
   mt_as_move2(trip::walrus818)

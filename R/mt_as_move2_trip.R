@@ -1,5 +1,6 @@
 #' Method to convert trip objects to move2 objects
 #'
+#' Convert `trip` objects to `move2` objects.
 #' @param x A trip object
 #' @param ... Additional arguments (currently ignored)
 #' @return A move2 object
