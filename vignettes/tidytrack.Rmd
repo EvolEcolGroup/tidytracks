@@ -17,3 +17,50 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(tidytrack)
 ```
+
+We use a dataset on boobies from the `track2KBA` package. The dataset contains 
+the tracking data of 43 boobies. We will use this dataset to demonstrate the 
+functionalities of the `tidytrack` package.
+
+```{r echo=FALSE, results='hide'}
+# remove colony information from the dataset
+boobies <- track2KBA::boobies %>% select(-c(lon_colony, lat_colony))
+```
+
+Let's inspect the table
+```{r}
+summary(boobies)
+```
+
+We start by combining the `data_gmt` and `time_gmt` columns into a single `POSIXct`,
+using the `lubridate` package, and then removing the original columns. 
+```{r}
+library(dplyr)
+library(lubridate)
+boobies <- boobies %>%
+  mutate(mt_time = ymd_hms(paste(date_gmt, time_gmt))) %>%
+  select(-c(date_gmt, time_gmt))
+head(boobies)
+```
+
+Next, we convert the data into an `sf` object.
+```{r}
+library(sf)
+boobies_sf <- st_as_sf(boobies, coords = c("longitude", "latitude"),
+                       crs = "+proj=longlat +datum=WGS84")
+summary(boobies_sf)
+```
+
+We are now ready to cast the data into a `move2` object, which we will then
+use as the base of our analysis:
+```{r}
+library(move2)
+boobies_move <- mt_as_move2(boobies_sf, track_id_column = "track_id",
+                            time_column = "mt_time")
+boobies_move
+```
+
+Note that we have used the `track_id` column as the track identifier. This column
+contains the ID of the bird that was tracked. The print method summarises quickly
+the `move2` object for us. In a `move2` object, each row represents a timestamped
+event, in this case GPS locations of the birds.
