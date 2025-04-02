@@ -17,6 +17,7 @@ Imports:
   sf,
   trip
 Suggests:
+    ggplot2,
     lubridate,
     knitr,
     rmarkdown,

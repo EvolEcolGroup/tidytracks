@@ -7,7 +7,7 @@ print.move2 <- function(x, ..., n = getOption("sf_max_print", default = 10L)) {
   ), "\n", sep = "")
   cat(cli::format_message("Containing {mt_n_tracks(x)} track{?s} lasting {?on average} {format(avg_dur, digits=3)} in a"), "\n", sep = "")
   NextMethod(n = n)
-  message("To see track meta, use `mt_show_meta()`")
+  message("To see track metadata, use `mt_show_meta()`")
   invisible(x)
 }
 

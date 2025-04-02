@@ -1,10 +1,5 @@
 #' Filter the tracks based on variables from the metadata
 #'
-#' Filter tracks based on the metadata of the tracks.
-#'
-#' This function is a wrapper
-#' around `filter_track_data` from the `move2` package, which has a confusing name.
-#'
 #' @param .data A move2 object
 #' @param ... The identifiers of one or more tracks to select or selection
 #' criteria based on track metadata
