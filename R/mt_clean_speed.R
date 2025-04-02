@@ -4,10 +4,8 @@
 #' based on speed. This is a port of the `speedfilter` function from the `trip`.
 #'
 #' @param x A move2 object
-#' @param max_speed speed in kilometres (or other unit) per hour, the unit is
-#'   kilometres if the trip is in longitude latitude coordinates, or in the unit
-#'   of the projection projection (usually metres per hour) TODO we need to
-#'   sort out units in a better way.
+#' @param max_speed speed, provided as a `units` object (e.g.
+#' units::as_units(50, 'm/s').
 #' @return A logical vector indicating which points are valid
 #' @export
 
@@ -18,32 +16,44 @@ mt_clean_speed <- function (x, max_speed=NULL) {
   projected <- !sf::st_is_longlat(x)
   if (is.na(projected)) {
     projected <- FALSE
-    warning("coordinate system is NA, assuming longlat . . .")
+    # warning("coordinate system is NA, assuming longlat . . .")
   }
 
   # If no max_speed is provided, return the original object
   if (is.null(max_speed)) {
     print("no max_speed given, nothing to do here")
     return(x)
+  } else if (!inherits(max_speed, "units")) {
+    stop("max_speed must be a units object: e.g. units::as_units(50, 'm/s')")
+  } else {
+    # figure out appropriate units give the current projection
+    dist_unit <- units(sf::st_distance(x$geometry[1:2])/diff(mt_time(x)[1:2]))
+
+
+
+    # convert the speed into km/hr
+    max_speed <- units::ud_convert(max_speed,
+                                   units(max_speed),
+                                   units::as_units(1, "km/h"))
   }
 
   # Extract coordinates and timestamps
   coords <- sf::st_coordinates(x)
   time <- move2::mt_time(x)
-  id <- factor(move2::mt_track_id(x))
+  id <- factor(move2::mt_track_id(x)) # ensure this is a factor
 
-  x <- coords[, 1]
-  y <- coords[, 2]
+#  x <- coords[, 1]
+#  y <- coords[, 2]
 
   # Define parameters for filtering
   pprm <- 3  # Points per running mean (must be an odd number > 3)
   grps <- levels(id)  # Unique trip IDs
 
   # Ensure coordinate lengths match
-  if (length(x) != length(y))
-    stop("x and y vectors must be of same length")
-  if (length(x) != length(time))
-    stop("Length of times not equal to number of points")
+#  if (length(x) != length(y))
+#    stop("x and y vectors must be of same length")
+#  if (length(x) != length(time))
+#    stop("Length of times not equal to number of points")
 
   # Create a logical vector to track valid points
   okFULL <- rep(TRUE, nrow(coords))

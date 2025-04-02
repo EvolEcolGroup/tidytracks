@@ -138,5 +138,27 @@ ggplot() +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
+# Cleaning the data
 
+We can get an overview of the speeds of each step with:
+```{r}
+boobies_sub |> mt_speed() |> summary()
+```
+
+Hmm, there is something odd here, as the maximum speed is 2044 m/minute. Incidentally,
+if we just print a few speeds, we can easily check the units:
+```{r}
+boobies_sub[1:10,] |> mt_speed()
+```
+
+We can filter out the speeds that are too high using the `mt_clean_speed()` function:
+
+STOP we need to sort out units in mt_clean_speed!!!
+
+```{r}
+boobies_sub <- boobies_sub |> mt_clean_speed(max_speed = units::as_units(50,"m/s"))
+```
+
+Note on units
+units::ud_convert( units::as_units(50,"m/s"), units(units::as_units(50,"m/s")),"km/h")
 
