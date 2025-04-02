@@ -23,8 +23,10 @@ the tracking data of 43 boobies. We will use this dataset to demonstrate the
 functionalities of the `tidytrack` package.
 
 ```{r echo=FALSE, results='hide'}
+library(dplyr)
 # remove colony information from the dataset
-boobies <- track2KBA::boobies %>% select(-c(lon_colony, lat_colony))
+boobies <- track2KBA::boobies |> select(-c(lon_colony, lat_colony))
+
 ```
 
 Let's inspect the table
@@ -37,8 +39,8 @@ using the `lubridate` package, and then removing the original columns.
 ```{r}
 library(dplyr)
 library(lubridate)
-boobies <- boobies %>%
-  mutate(mt_time = ymd_hms(paste(date_gmt, time_gmt))) %>%
+boobies <- boobies |>
+  mutate(date_time = ymd_hms(paste(date_gmt, time_gmt))) |>
   select(-c(date_gmt, time_gmt))
 head(boobies)
 ```
@@ -56,11 +58,23 @@ use as the base of our analysis:
 ```{r}
 library(move2)
 boobies_move <- mt_as_move2(boobies_sf, track_id_column = "track_id",
-                            time_column = "mt_time")
+                            time_column = "date_time")
+```
+
+We can now print a summary of the `move2` object:
+```{r}
 boobies_move
 ```
 
-Note that we have used the `track_id` column as the track identifier. This column
-contains the ID of the bird that was tracked. The print method summarises quickly
-the `move2` object for us. In a `move2` object, each row represents a timestamped
-event, in this case GPS locations of the birds.
+Each row in the table is an event, in this case a time-stamped GPS location for 
+a given bird, with the column `date_time` providing the time and column `geometry`
+defining the location. `track_id` (the designated `track_id_column`) is 
+is the identifier that groups a set of events into a single track. Each track 
+can further be given information in the form of metadata (metadata refers to
+information that applies to the whole track, like the id of the bird or its sex).
+We can access this information with `mt_show_meta()`:
+```{r}
+mt_show_meta(boobies_move)
+```
+
+In this case, the metadata tibble only includes the `track_id`.

@@ -36,6 +36,6 @@ walrus_test <- trip::speedfilter(trip::walrus818[1:160, ], max.speed = 1000)
 
 
 ```{r}
-this_track <- walrus_move %>% filter (Deployment=="353")
+this_track <- walrus_move |> filter (Deployment=="353")
 
 ```

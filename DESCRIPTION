@@ -11,12 +11,16 @@ RoxygenNote: 7.3.2
 Depends:
   move2
 Imports:
+  cli,
+  dplyr,
+  methods,
   sf,
-  methods
-Suggests: 
+  trip
+Suggests:
+    lubridate,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
-    trip
+    track2KBA
 VignetteBuilder: knitr
 Config/testthat/edition: 3
