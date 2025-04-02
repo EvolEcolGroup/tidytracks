@@ -27,14 +27,14 @@ mt_clean_speed <- function (x, max_speed=NULL) {
     stop("max_speed must be a units object: e.g. units::as_units(50, 'm/s')")
   } else {
     # figure out appropriate units give the current projection
-    dist_unit <- units(sf::st_distance(x$geometry[1:2])/diff(mt_time(x)[1:2]))
-
-
-
-    # convert the speed into km/hr
+    ref_units <- units(sf::st_distance(x$geometry[1:2])/
+                         units::as_units(60,"s")) # we measure time in seconds
+    # convert the speed into the reference units of the projection
     max_speed <- units::ud_convert(max_speed,
                                    units(max_speed),
-                                   units::as_units(1, "km/h"))
+                                   ref_units)
+    # drop units for max_speed
+    max_speed <- as.numeric(max_speed)
   }
 
   # Extract coordinates and timestamps

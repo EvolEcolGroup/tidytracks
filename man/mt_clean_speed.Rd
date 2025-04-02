@@ -9,10 +9,8 @@ mt_clean_speed(x, max_speed = NULL)
 \arguments{
 \item{x}{A move2 object}
 
-\item{max_speed}{speed in kilometres (or other unit) per hour, the unit is
-kilometres if the trip is in longitude latitude coordinates, or in the unit
-of the projection projection (usually metres per hour) TODO we need to
-sort out units in a better way.}
+\item{max_speed}{speed, provided as a \code{units} object (e.g.
+units::as_units(50, 'm/s').}
 }
 \value{
 A logical vector indicating which points are valid
