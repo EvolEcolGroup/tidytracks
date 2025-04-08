@@ -2,9 +2,10 @@
 
 S3method(mt_as_move2,trip)
 S3method(print,move2)
+export(event_flag_mcconnell)
 export(filter_by_meta)
 export(mt_as_move2)
-export(mt_clean_speed)
+export(mt_clean_mcconnell)
 export(mt_order_time)
 export(mt_show_meta)
 importFrom(move2,mt_as_move2)

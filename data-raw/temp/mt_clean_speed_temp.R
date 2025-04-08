@@ -1,4 +1,4 @@
-mt_clean_speed <- function (x, max.speed=NULL, test=FALSE) {
+event_flag_mcconnell <- function (x, max.speed=NULL, test=FALSE) {
 
   # DEBUG
   projected=TRUE
@@ -175,6 +175,6 @@ mt_clean_speed <- function (x, max.speed=NULL, test=FALSE) {
 }
 # Compare this snippet from trip.R:
 #all.equal(trip::speedfilter(trip::walrus818[1:600, ], max.speed = 1000),
-#          mt_clean_speed(mt_as_move2(trip::walrus818[1:600, ]), max.speed = 1000))
+#          event_flag_mcconnell(mt_as_move2(trip::walrus818[1:600, ]), max.speed = 1000))
 
-#mt_clean_speed(test_move2[1:600,], max.speed = 1000)
+#event_flag_mcconnell(test_move2[1:600,], max.speed = 1000)

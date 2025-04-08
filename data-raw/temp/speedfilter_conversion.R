@@ -158,7 +158,7 @@ speedfilter <- function (x, max.speed=NULL, test=FALSE) {
 
 ################################################################################
 # Loop through each unique trip ID
-track_clean_speed <- function (this_track, max_speed) {
+track_flag_mcconnell <- function (this_track, max_speed) {
  
   # ind <- id == sub
   # xy <- matrix(c(x[ind], y[ind]), ncol=2) # coordinates for this trip

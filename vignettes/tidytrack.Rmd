@@ -151,11 +151,30 @@ if we just print a few speeds, we can easily check the units:
 boobies_sub[1:10,] |> mt_speed()
 ```
 
-We can filter out the speeds that are too high using the `mt_clean_speed()` function:
+We can remove locations characterised by unlikely speeds using the McConnell's
+algorithm (the same used by `trip::speedfilter()`):
 
 ```{r}
-boobies_sub <- boobies_sub |>
-  mutate(to_keep = mt_clean_speed(boobies_sub,
-                                  max_speed = units::as_units(50,"m/min")))
+boobies_sub_cleaned <- boobies_sub |>
+  mt_clean_mcconnell(max_speed = units::as_units(50,"m/min"))
 ```
 
+Note that `mt_flag_mcconnell()` is "destructive" and will remove the points
+flagged by the algorithm. There is also a function `event_flag_mcconnell()`
+which flags points without removing them; see the advanced vignette for more
+details on how to use it (TODO there is no advance vignette yet!!!).
+
+Let us now check speeds:
+
+```{r}
+boobies_sub_cleaned |> mt_speed() |> summary()
+```
+
+We can see that we have removed extreme speeds.
+
+Now we can plot the cleaned data:
+```{r}
+ggplot() +
+  geom_sf(data = mt_track_lines(boobies_sub_cleaned), aes(color = track_id)) +
+  coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
+```
