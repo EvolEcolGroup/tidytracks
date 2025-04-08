@@ -12,6 +12,11 @@
 
 event_flag_mcconnell <- function (x, max_speed=NULL) {
 
+  # Check if x is a move2 object
+  if (!inherits(x, "move2")) {
+    stop("x must be a move2 object")
+  }
+
   # Determine if the coordinate system is in longitude/latitude
   projected <- !sf::st_is_longlat(x)
   if (is.na(projected)) {
@@ -21,14 +26,14 @@ event_flag_mcconnell <- function (x, max_speed=NULL) {
 
   # If no max_speed is provided, return the original object
   if (is.null(max_speed)) {
-    print("no max_speed given, nothing to do here")
-    return(x)
+    stop("max_speed must be provided")
   } else if (!inherits(max_speed, "units")) {
     stop("max_speed must be a units object: e.g. units::as_units(50, 'm/s')")
   } else {
     # figure out appropriate units give the current projection
     ref_units <- units(sf::st_distance(x$geometry[1:2])/
                          units::as_units(60,"s")) # we measure time in seconds
+    message(ref_units)
     # convert the speed into the reference units of the projection
     max_speed <- units::ud_convert(max_speed,
                                    units(max_speed),
@@ -42,18 +47,9 @@ event_flag_mcconnell <- function (x, max_speed=NULL) {
   time <- move2::mt_time(x)
   id <- factor(move2::mt_track_id(x)) # ensure this is a factor
 
-#  x <- coords[, 1]
-#  y <- coords[, 2]
-
   # Define parameters for filtering
   pprm <- 3  # Points per running mean (must be an odd number > 3)
   grps <- levels(id)  # Unique trip IDs
-
-  # Ensure coordinate lengths match
-#  if (length(x) != length(y))
-#    stop("x and y vectors must be of same length")
-#  if (length(x) != length(time))
-#    stop("Length of times not equal to number of points")
 
   # Create a logical vector to track valid points
   okFULL <- rep(TRUE, nrow(coords))
@@ -123,7 +119,7 @@ event_flag_mcconnell <- function (x, max_speed=NULL) {
       # speeds in 4 columns (2 per type of speed) # TODO I don't fully understand this
       rmsRows <- cbind(matrix(speed1[sub1], ncol=offset, byrow=TRUE),
                        matrix(speed2[sub2], ncol=offset, byrow=TRUE))
-      # root mean square
+      # root mean square of each row
       RMS <- c(rep(0, offset),
                sqrt(rowSums(rmsRows ^ 2) / ncol(rmsRows)))
 

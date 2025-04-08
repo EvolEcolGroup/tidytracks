@@ -13,18 +13,8 @@
 #' @export
 
 mt_clean_mcconnell <- function (x, max_speed = NULL) {
-  # Check if x is a move2 object
-  if (!inherits(x, "move2")) {
-    stop("x must be a move2 object")
-  }
 
-  # Check if max_speed is provided
-  if (is.null(max_speed)) {
-    print("no max_speed given, nothing to do here")
-    return(x)
-  } else if (!inherits(max_speed, "units")) {
-    stop("max_speed must be a units object: e.g. units::as_units(50, 'm/s')")
-  }
+  # checking for appropriate x and max_speed is done by event_flag_mcconnell
 
   # Call the event_flag_mcconnell function to get the valid points
   valid_points <- event_flag_mcconnell(x, max_speed)
