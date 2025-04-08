@@ -159,6 +159,8 @@ boobies_sub_cleaned <- boobies_sub |>
   mt_clean_mcconnell(max_speed = units::as_units(50,"m/min"))
 ```
 
+STOP THIS IS NOT WORKING YET!!!!
+
 Note that `mt_flag_mcconnell()` is "destructive" and will remove the points
 flagged by the algorithm. There is also a function `event_flag_mcconnell()`
 which flags points without removing them; see the advanced vignette for more
@@ -178,3 +180,7 @@ ggplot() +
   geom_sf(data = mt_track_lines(boobies_sub_cleaned), aes(color = track_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
+
+
+# Splitting trips
+

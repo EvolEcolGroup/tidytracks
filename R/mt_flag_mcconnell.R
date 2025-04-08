@@ -105,7 +105,6 @@ event_flag_mcconnell <- function (x, max_speed=NULL) {
             unclass(tms[ok][-c(n - 1, n)])) /
            3600)
 
-      browser()
       thisIndex <- index[ok] # indices for this iteration
       npts <- length(speed1) # number of points (number of segments, really)
       if (npts < pprm)
