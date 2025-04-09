@@ -91,13 +91,13 @@ event_flag_mcconnell <- function (x, max_speed=NULL) {
 
       # TODO check what these speeds are
       # Calculate speed between consecutive points
-      speed1 <- distance_fast(x1[-nrow(x1), 1], x1[-nrow(x1), 2],
+      speed1 <- dist_fast(x1[-nrow(x1), 1], x1[-nrow(x1), 2],
                               x1[-1, 1], x1[-1, 2],
                               longlat=!projected) /
         (diff(unclass(tms[ok])) / 3600)
 
       # Calculate running mean speed
-      speed2 <- distance_fast(x1[-((nrow(x1) - 1):nrow(x1)), 1],
+      speed2 <- dist_fast(x1[-((nrow(x1) - 1):nrow(x1)), 1],
                               x1[-((nrow(x1) - 1):nrow(x1)), 2],
                               x1[-(1:2), 1], x1[-(1:2), 2],
                               longlat=!projected) /

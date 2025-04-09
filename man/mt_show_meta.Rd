@@ -4,17 +4,13 @@
 \alias{mt_show_meta}
 \title{Show the track metadata of a \code{move2} object}
 \usage{
-mt_show_meta(x, ..., n = getOption("sf_max_print", default = 10L))
+mt_show_meta(x)
 }
 \arguments{
 \item{x}{A move2 object}
-
-\item{...}{Additional arguments passed to \code{print()}}
-
-\item{n}{The number of tracks to show metadata for}
 }
 \value{
-The input \code{move2} object
+The metadata table from the input \code{move2} object
 }
 \description{
 Show the track metadata of a \code{move2} object

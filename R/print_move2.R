@@ -14,12 +14,13 @@ print.move2 <- function(x, ..., n = getOption("sf_max_print", default = 10L)) {
 #' Show the track metadata of a `move2` object
 #'
 #' @param x A move2 object
-#' @param ... Additional arguments passed to `print()`
-#' @param n The number of tracks to show metadata for
-#' @return The input `move2` object
+#' @return The metadata table from the input `move2` object
 #' @export
 
-mt_show_meta <- function(x, ..., n = getOption("sf_max_print", default = 10L)) {
+mt_show_meta <- move2::mt_track_data
+
+#' @keywords internal
+mt_show_meta_old <- function(x, ..., n = getOption("sf_max_print", default = 10L)) {
   avg_dur <- mean(do.call(c, lapply(lapply(split(move2::mt_time(x), move2::mt_track_id(x), drop = TRUE), range), diff)))
   avg_dur <- lubridate::make_difftime(as.numeric(avg_dur, units = "secs"))
   cat(cli::format_message(

@@ -1,5 +1,5 @@
 #' @keywords internal
-distance_fast <- function(x1, y1, x2, y2, longlat=TRUE) {
+dist_fast <- function(x1, y1, x2, y2, longlat=TRUE) {
   if (missing(y1)) {
     if (!is.matrix(x1))
       stop("x1 is not a matrix and multiple arguments not specified")
