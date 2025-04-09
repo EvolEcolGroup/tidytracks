@@ -4,10 +4,12 @@
 \alias{track_tot_duration}
 \title{Compute the total duration of each track}
 \usage{
-track_tot_duration(x)
+track_tot_duration(x, units = units::as_units(1, "days"))
 }
 \arguments{
 \item{x}{A \code{move2} object}
+
+\item{units}{The units to use for the duration. Default is "days".}
 }
 \value{
 A vector of total durations for each track
