@@ -161,13 +161,18 @@ how we can clean up the data using McConnell's algorithm.
 
 Finally, there are `track_` functions, which operate on the whole track, and will
 generally return a vector of length equal to the number of tracks in the object.
-For example, `track_total_duration()` returns the total duration of each track:
+For example, `track_tot_duration()` returns the total duration of each track:
 
-```{r eval=FALSE}
+```{r}
 boobies_sub %>%
   track_tot_duration()
 ```
 
+If we wanted the same estimates in hours rather than days, we would simply say:
+```{r}
+boobies_sub %>%
+  track_tot_duration(units = "hours")
+```
 
 
 # Cleaning the data
