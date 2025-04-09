@@ -5,6 +5,7 @@
 \title{Split a track into trips}
 \usage{
 split_one_track(
+  label,
   x,
   y,
   is_lonlat,
@@ -15,6 +16,8 @@ split_one_track(
 )
 }
 \arguments{
+\item{label}{the label for the track}
+
 \item{x}{the x coordinates}
 
 \item{y}{the y coordinates}

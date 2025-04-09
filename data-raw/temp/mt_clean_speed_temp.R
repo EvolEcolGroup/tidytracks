@@ -43,7 +43,7 @@ event_flag_mcconnell <- function (x, max.speed=NULL, test=FALSE) {
   for (sub in grps) {
 
     # DEBUG
-    this_track <- x |> dplyr::filter(mt_track_id(x)  == sub)
+    this_track <- x %>% dplyr::filter(mt_track_id(x)  == sub)
     message("this_track id: ", sub)
 
     ind <- id == sub

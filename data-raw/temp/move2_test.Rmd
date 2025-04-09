@@ -19,10 +19,10 @@ library(sf)
 library(lubridate)
 crs_proj<- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 my_track<-read.csv("wanderer/R5187420_gps.csv")
-my_track <- my_track |>
-  st_as_sf(coords=c("Longitude","Latitude"), crs=crs_proj) |> 
-  mutate(time=lubridate::dmy_hms(paste(my_track$Date, my_track$Time))) |>
-  select (-c(Date, Time)) |>
+my_track <- my_track %>%
+  st_as_sf(coords=c("Longitude","Latitude"), crs=crs_proj) %>% 
+  mutate(time=lubridate::dmy_hms(paste(my_track$Date, my_track$Time))) %>%
+  select (-c(Date, Time)) %>%
   mutate(track_id = 1)
 my_track <- move2::mt_as_move2(my_track,
                                track_id_column = "track_id",
@@ -32,13 +32,13 @@ my_track <- move2::mt_as_move2(my_track,
 Now plot it:
 
 ```{r}
-my_track_lines  <- my_track |> move2::mt_track_lines()
+my_track_lines  <- my_track %>% move2::mt_track_lines()
 library(ggplot2)
 ggplot() + geom_sf(data=my_track_lines, color="red")
 
 ```
 ```{r}
-my_track <- my_track |> group_by(track_id)
+my_track <- my_track %>% group_by(track_id)
 
 as_mt_time <- function(x) {
   if (inherits(x, "POSIXt")) {
@@ -49,7 +49,7 @@ as_mt_time <- function(x) {
   }
 }
 
-my_track <- my_track |> 
+my_track <- my_track %>% 
   mutate(time = as_mt_time(time))
 
 test_fun<- function(x){
@@ -58,6 +58,6 @@ test_fun<- function(x){
 
 dplyr::group_map(my_track, ~ test_fun(.x))
 
-my_track |> summarise(test_res = test_fun(.))
+my_track %>% summarise(test_res = test_fun(.))
 
 ```

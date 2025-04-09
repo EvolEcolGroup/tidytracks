@@ -13,17 +13,17 @@
 #' specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10, "km")`.
 #' @param buffer_inbound the distance from the center to define inbound trips,
 #' specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10, "km")`.
-#' @param trips_as_tracks boolean, if TRUE, the new trip labels are used to
-#' define the tracks, and the metadata table is updated accordingly. In this case,
-#' events that do not belong to a trip will be dropped. If FALSE, a trip_id
-#' column is added to the event table, with NA for events that do not belong to a trip.
+#' @param complete boolean, if TRUE, only complete trips (i.e. the ones that
+#' ended within the inbound buffer) are kept. If FALSE, all trips are kept, and
+#' events at the colony (i.e. inbetween trips) are collected into trip
+#' labelled "trip_na".
 #' @returns a move2 object with the trips split.
 #' @export
 
 mt_split_trips <- function(x, center_col = NULL,
-                          buffer_outbound = units::as_units(10000, "m"),
-                          buffer_inbound = units::as_units(10000, "m"),
-                          trips_as_tracks = FALSE) {
+                          buffer_outbound = units::as_units(1000, "m"),
+                          buffer_inbound = units::as_units(1000, "m"),
+                          complete = FALSE) {
   # Check if x is a move2 object
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")
@@ -101,7 +101,7 @@ mt_split_trips <- function(x, center_col = NULL,
     # TODO
     stop("not implemented yet!")
     #filter out NAs
-    x <- x |> dplyr::filter(!is.na(trip_id))
+    x <- x %>% dplyr::filter(!is.na(trip_id))
 
   }
 
@@ -134,9 +134,9 @@ split_one_track <- function(label,
   center_x_vec <- rep(center_x, length(x))
   center_y_vec <- rep(center_y, length(y))
   # Get distances between events and colony
-  dists <- dist_fast(x, y, center_x_vec, center_y_vec, longlat = is_lonlat)
+  dist_to_center <- dist_fast(x, y, center_x_vec, center_y_vec, longlat = is_lonlat)
   # define distances outside the outbound buffer
-  out_events <- dists > buffer_outbound
+  out_events <- dist_to_center > buffer_outbound
   # define the runs of TRUE events
 #  out_events <- c(T,T,T,F,F,T,T,T,F)
   # label trips
@@ -151,7 +151,14 @@ split_one_track <- function(label,
   # @TODO mark tracks as complete or not, or na trips
   # we need to return a list with the trip labels and the trip status
 
-  # end_of_trips <- cumsum(runs$lengths)[runs$values==TRUE]
+  # check if the last event is within the inbound buffer
+  end_of_trips <- cumsum(runs$lengths)[runs$values==TRUE]
+  in_events <- dist_to_center[end_of_trips] < buffer_inbound
+  # now create a table to mark the trips as complete or not
+  browser()
+
+
+
   # browser()
   # # check if end of trips are within the inbound buffer
   # last_dists <- dist_fast(x[end_of_trips], y[end_of_trips], center_x, center_y,

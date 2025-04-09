@@ -7,9 +7,9 @@
 mt_split_trips(
   x,
   center_col = NULL,
-  buffer_outbound = units::as_units(10000, "m"),
-  buffer_inbound = units::as_units(10000, "m"),
-  trips_as_tracks = FALSE
+  buffer_outbound = units::as_units(1000, "m"),
+  buffer_inbound = units::as_units(1000, "m"),
+  complete = FALSE
 )
 }
 \arguments{
@@ -22,15 +22,15 @@ If a single geometry object is provided, it will be used as the center for all
 tracks.}
 
 \item{buffer_outbound}{the distance from the center to define outbound trips,
-specified as a unit object, e.g \code{as_units(10000, "m")} or as_units(10, "km").}
+specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
 \item{buffer_inbound}{the distance from the center to define inbound trips,
-specified as a unit object, e.g \code{as_units(10000, "m")} or as_units(10, "km").}
+specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
-\item{trips_as_tracks}{boolean, if TRUE, the new trip labels are used to
-define the tracks, and the metadata table is updated accordingly. In this case,
-events that do not belong to a trip will be dropped. If FALSE, a trip_id
-column is added to the event table, with NA for events that do not belong to a trip.}
+\item{complete}{boolean, if TRUE, only complete trips (i.e. the ones that
+ended within the inbound buffer) are kept. If FALSE, all trips are kept, and
+events at the colony (i.e. inbetween trips) are collected into trip
+labelled "trip_na".}
 }
 \value{
 a move2 object with the trips split.

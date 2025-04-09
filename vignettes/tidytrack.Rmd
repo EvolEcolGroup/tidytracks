@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 
 # Tracking data representation in `tidytrack`
 
-`tidytrack` used `move2` objects to represent tracking data. In a `move2`
+`tidytrack` uses `move2` objects to represent tracking data. In a `move2`
 object, each row represents an event, which is a time-stamped observation,
 often associated with a location. Events are grouped into tracks. Tracks can
 be all the locations from a deployment, or a subset of locations for a trip
@@ -60,10 +60,11 @@ geometries from the `sf` package, so that they come with crs information).
 Note that `move2` objects don't have to be ordered by time. We can order the
 data by time using the `mt_order()` function:
 ```{r}
-boobies_mt <- boobies_mt |> mt_order_time()
+boobies_mt <- boobies_mt %>% mt_order_time()
 ```
 
-
+Functions that start with `mt_` are specific to `move2` objects, and they
+operate on the whole object.
 
 # Plotting the data
 
@@ -74,7 +75,7 @@ the metadata to filter the tracks. We can use the `filter_by_meta()` function
 to do so:
 
 ```{r}
-boobies_sub <- boobies_mt |>
+boobies_sub <- boobies_mt %>%
   filter_by_meta(deployment_id %in% c("69302", "69303", "69304"))
 boobies_sub
 ```
@@ -111,24 +112,82 @@ ggplot() +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
+# A grammar of movement
+
+As we saw above, `mt_` functions are specific operate on the whole object, and
+often will return a modified `move2` object.
+There are functions to clean the data using different algorithms
+(e.g. `mt_clean_mcconnell`), or to split the data into trips for central place
+foragers (e.g. `mt_split_trips`). We will see those functions in action in a later
+section. There are also a number of `mt_` functions that can be used to test
+the characteristics of an object, such as `mt_is_time_ordered_non_empty_points()`,
+which asserts whether a `move2` object is both time ordered and all events have
+coordinates.
+
+`event_` functions, on the other hand, operate on events, and return a vector
+of the same length as number of rows in the event table (and thus can be use in `mutate()`
+operations). For example, we can use `event_speed()` to calculate the speed of 
+each event. Note that, techically, the speed pertains to the segment between
+two events, but for simplicity we will refer to it as the speed of the event.
+For each track, `event_speed` returns the speed of each segment, padded with a
+final NA so that we have the same number of rows as the original track.
+
+So, we can add speed to our `boobies_sub` object with:
+```{r}
+library(dplyr)
+boobies_sub <- boobies_sub %>% mutate(speed = event_speed(.))
+```
+
+Note the use of the . placeholder in the brackets of `event_speed()` to pass
+the `move2` object to the function. This is only possible with a `magrittr` pipe
+(`%>%`), and not with the base R pipe (`|>`).
+
+We can now summarise and plot the distribution of speeds:
+```{r}
+boobies_sub %>%
+  ggplot(aes(x = speed)) +
+  geom_histogram(bins = 100)
+```
+
+Note the message about 3 rows having been dropped; those are the 3 last events
+for which there is no distance. Also, functions in `tidytrack` tend to return
+values with units, to avoid conversion problems (in this case, meters per minute).
+Functions usually have a `units` parameter that allows to change the units that
+are returned.
+
+The histogram above is somewhat concerning,
+as we seem to have a smattering of events with very high speeds. We will see later
+how we can clean up the data using McConnell's algorithm.
+
+Finally, there are `track_` functions, which operate on the whole track, and will
+generally return a vector of length equal to the number of tracks in the object.
+For example, `track_total_duration()` returns the total duration of each track:
+
+```{r eval=FALSE}
+boobies_sub %>%
+  track_tot_duration()
+```
+
+
+
 # Cleaning the data
 
 We can get an overview of the speeds of each step with:
 ```{r}
-boobies_sub |> mt_speed() |> summary()
+boobies_sub %>% mt_speed() %>% summary()
 ```
 
 Hmm, there is something odd here, as the maximum speed is 2044 m/minute. Incidentally,
 if we just print a few speeds, we can easily check the units:
 ```{r}
-boobies_sub[1:10,] |> mt_speed()
+boobies_sub[1:10,] %>% mt_speed()
 ```
 
 We can remove locations characterised by unlikely speeds using the McConnell's
 algorithm (the same used by `trip::speedfilter()`):
 
 ```{r}
-boobies_sub_cleaned <- boobies_sub |>
+boobies_sub_cleaned <- boobies_sub %>%
   mt_clean_mcconnell(max_speed = units::as_units(50,"m/min"))
 ```
 
@@ -142,7 +201,7 @@ details on how to use it (TODO there is no advance vignette yet!!!).
 Let us now check speeds:
 
 ```{r eval=FALSE}
-boobies_sub_cleaned |> mt_speed() |> summary()
+boobies_sub_cleaned %>% mt_speed() %>% summary()
 ```
 
 We can see that we have removed extreme speeds.
@@ -162,8 +221,8 @@ trips. For this we need to define the colony location, and a buffer around it.
 `mt_split_trips()` can take either a single colony point, or one nest location
 per track. 
 
-```{r}
-boobies_sub |> 
+```{r eval= FALSE}
+boobies_sub %>% 
   mt_split_trips(center_col = "colony_coord",
                  buffer_outbound = as_units(1, "km"),
                  buffer_inbound = as_units(2, "km"))

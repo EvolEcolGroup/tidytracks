@@ -1,12 +1,12 @@
 ## code to prepare `boobies_mt` dataset goes here
 set.seed(1)
 # get the data from track2KBA
-boobies <- track2KBA::boobies |>
-  dplyr::mutate(deployment_id = as.factor(track_id)) |>
+boobies <- track2KBA::boobies %>%
+  dplyr::mutate(deployment_id = as.factor(track_id)) %>%
   dplyr::select(-c(lon_colony, lat_colony, track_id))
 # sort out dates
-boobies <- boobies |>
-  dplyr::mutate(date_time = lubridate::ymd_hms(paste(date_gmt, time_gmt))) |>
+boobies <- boobies %>%
+  dplyr::mutate(date_time = lubridate::ymd_hms(paste(date_gmt, time_gmt))) %>%
   dplyr::select(-c(date_gmt, time_gmt))
 boobies_sf <- sf::st_as_sf(boobies, coords = c("longitude", "latitude"),
                        crs = "+proj=longlat +datum=WGS84")
