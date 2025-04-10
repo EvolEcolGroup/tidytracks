@@ -32,7 +32,7 @@ my_track <- move2::mt_as_move2(my_track,
 Now plot it:
 
 ```{r}
-my_track_lines  <- my_track %>% move2::mt_track_lines()
+my_track_lines  <- my_track %>% move2::track_lines()
 library(ggplot2)
 ggplot() + geom_sf(data=my_track_lines, color="red")
 

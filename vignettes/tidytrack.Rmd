@@ -105,11 +105,11 @@ ggplot() +
 ```
 
 Instead of plotting the individual locations, we might prefer to plot the
-trajectory using `mt_track_lines()`:
+trajectory using `track_lines()`:
 
 ```{r}
 ggplot() +
-  geom_sf(data = mt_track_lines(boobies_sub), aes(color = deployment_id)) +
+  geom_sf(data = track_lines(boobies_sub), aes(color = deployment_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
@@ -228,7 +228,7 @@ We can see that we have removed extreme speeds.
 Now we can plot the cleaned data:
 ```{r eval=FALSE}
 ggplot() +
-  geom_sf(data = mt_track_lines(boobies_sub_cleaned),
+  geom_sf(data = track_lines(boobies_sub_cleaned),
           aes(color = deployment_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
