@@ -175,7 +175,7 @@ boobies_sub %>%
   track_duration(units = "hours")
 ```
 
-This naming convention helps clarifying certain the scope of a given function,
+This naming convention helps clarifying the scope of a given function,
 avoiding ambiguities. For example, `event_flag_mcconnell()` will return a logical vector
 indicating whether events are valid or whether they should be filtered out
 using McConnell's algorithm, whilst `mt_clean_mcconnell()` will return a
