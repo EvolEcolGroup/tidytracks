@@ -12,8 +12,7 @@
 #' @return A clean `move2` object with events removed
 #' @export
 
-mt_clean_mcconnell <- function (x, max_speed = NULL) {
-
+mt_clean_mcconnell <- function(x, max_speed = NULL) {
   # checking for appropriate x and max_speed is done by event_flag_mcconnell
 
   # Call the event_flag_mcconnell function to get the valid points

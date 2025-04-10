@@ -83,7 +83,8 @@ boobies_sub
 We can now plot the data:
 ```{r}
 library(ggplot2)
-ggplot() + geom_sf(data = boobies_sub, aes(color = deployment_id))
+ggplot() +
+  geom_sf(data = boobies_sub, aes(color = deployment_id))
 ```
 
 We can only see two individuals in the plot. Let's explore what each individual
@@ -161,31 +162,42 @@ how we can clean up the data using McConnell's algorithm.
 
 Finally, there are `track_` functions, which operate on the whole track, and will
 generally return a vector of length equal to the number of tracks in the object.
-For example, `track_tot_duration()` returns the total duration of each track:
+For example, `track_duration()` returns the total duration of each track:
 
 ```{r}
 boobies_sub %>%
-  track_tot_duration()
+  track_duration()
 ```
 
 If we wanted the same estimates in hours rather than days, we would simply say:
 ```{r}
 boobies_sub %>%
-  track_tot_duration(units = "hours")
+  track_duration(units = "hours")
 ```
 
+This naming convention helps clarifying certain the scope of a given function,
+avoiding ambiguities. For example, `event_flag_mcconnell()` will return a logical vector
+indicating whether events are valid or whether they should be filtered out
+using McConnell's algorithm, whilst `mt_clean_mcconnell()` will return a
+`move2` object with the invalid events removed. Similarly, `event_distance()` 
+will return a vector of distances between events (a vector of the same lenght
+as the rows of the event column), while `track_distance()` will
+return the total (cumulative) distance for each track (and thus a shorter
+vector of length equal to the number of tracks in the object).
 
 # Cleaning the data
 
 We can get an overview of the speeds of each step with:
 ```{r}
-boobies_sub %>% mt_speed() %>% summary()
+boobies_sub %>%
+  mt_speed() %>%
+  summary()
 ```
 
 Hmm, there is something odd here, as the maximum speed is 2044 m/minute. Incidentally,
 if we just print a few speeds, we can easily check the units:
 ```{r}
-boobies_sub[1:10,] %>% mt_speed()
+boobies_sub[1:10, ] %>% mt_speed()
 ```
 
 We can remove locations characterised by unlikely speeds using the McConnell's
@@ -193,7 +205,7 @@ algorithm (the same used by `trip::speedfilter()`):
 
 ```{r}
 boobies_sub_cleaned <- boobies_sub %>%
-  mt_clean_mcconnell(max_speed = units::as_units(50,"m/min"))
+  mt_clean_mcconnell(max_speed = units::as_units(50, "m/min"))
 ```
 
 STOP THIS IS NOT WORKING YET!!!!
@@ -206,7 +218,9 @@ details on how to use it (TODO there is no advance vignette yet!!!).
 Let us now check speeds:
 
 ```{r eval=FALSE}
-boobies_sub_cleaned %>% mt_speed() %>% summary()
+boobies_sub_cleaned %>%
+  mt_speed() %>%
+  summary()
 ```
 
 We can see that we have removed extreme speeds.
@@ -214,7 +228,8 @@ We can see that we have removed extreme speeds.
 Now we can plot the cleaned data:
 ```{r eval=FALSE}
 ggplot() +
-  geom_sf(data = mt_track_lines(boobies_sub_cleaned), aes(color = deployment_id)) +
+  geom_sf(data = mt_track_lines(boobies_sub_cleaned),
+          aes(color = deployment_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
@@ -227,9 +242,10 @@ trips. For this we need to define the colony location, and a buffer around it.
 per track. 
 
 ```{r eval= FALSE}
-boobies_sub %>% 
-  mt_split_trips(center_col = "colony_coord",
-                 buffer_outbound = as_units(1, "km"),
-                 buffer_inbound = as_units(2, "km"))
-
+boobies_sub %>%
+  mt_split_trips(
+    center_col = "colony_coord",
+    buffer_outbound = as_units(3, "km"),
+    buffer_inbound = as_units(10, "km")
+  )
 ```

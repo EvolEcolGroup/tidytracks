@@ -10,5 +10,5 @@
 #' @export
 
 mt_order_time <- function(x) {
-  return(x[order(move2::mt_track_id(x), move2::mt_time(x)), ])
+  return(x[order(event_track_id(x), event_time(x)), ])
 }

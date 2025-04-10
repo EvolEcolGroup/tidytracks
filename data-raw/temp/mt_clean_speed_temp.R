@@ -1,7 +1,6 @@
-event_flag_mcconnell <- function (x, max.speed=NULL, test=FALSE) {
-
+event_flag_mcconnell <- function(x, max.speed = NULL, test = FALSE) {
   # DEBUG
-  projected=TRUE
+  projected <- TRUE
 
   # If no max.speed is provided, return the original object
   if (is.null(max.speed)) {
@@ -14,17 +13,17 @@ event_flag_mcconnell <- function (x, max.speed=NULL, test=FALSE) {
 
   # Extract coordinates and timestamps
   coords <- sf::st_coordinates(x)
-#  tids <- getTimeID(x) # dataframe with two columns (time, id)
-#  time <- tids[, 1]
-  time <- move2::mt_time(x)
-  id <- factor(move2::mt_track_id(x))
-#  id <- factor(tids[, 2])
-#  x <- coords[, 1]
-#  y <- coords[, 2]
+  #  tids <- getTimeID(x) # dataframe with two columns (time, id)
+  #  time <- tids[, 1]
+  time <- event_time(x)
+  id <- factor(event_track_id(x))
+  #  id <- factor(tids[, 2])
+  #  x <- coords[, 1]
+  #  y <- coords[, 2]
 
   # Define parameters for filtering
-  pprm <- 3  # Points per running mean (must be an odd number > 3)
-  grps <- levels(id)  # Unique trip IDs
+  pprm <- 3 # Points per running mean (must be an odd number > 3)
+  grps <- levels(id) # Unique trip IDs
 
   # # Ensure coordinate lengths match
   # if (length(x) != length(y))
@@ -36,26 +35,28 @@ event_flag_mcconnell <- function (x, max.speed=NULL, test=FALSE) {
   okFULL <- rep(TRUE, nrow(x))
 
   # Initialize test mode results
-  if (test)
-    res <- list(speed=numeric(0), rms=numeric(0))
+  if (test) {
+    res <- list(speed = numeric(0), rms = numeric(0))
+  }
 
   # Loop through each unique trip ID
   for (sub in grps) {
-
     # DEBUG
-    this_track <- x %>% dplyr::filter(mt_track_id(x)  == sub)
+    this_track <- x %>% dplyr::filter(mt_track_id(x) == sub)
     message("this_track id: ", sub)
 
     ind <- id == sub
-#    xy <- matrix(c(x[ind], y[ind]), ncol=2) # coordinates for this trip
+    #    xy <- matrix(c(x[ind], y[ind]), ncol=2) # coordinates for this trip
     tms <- time[ind] # time for this trip
     npts <- nrow(this_track)
 
     # Ensure running mean parameters are valid
     # this makes little sense as it is set to 3 in the beginning
-    if (pprm%%2 == 0 || pprm < 3) {
-      msg <- paste("Points per running mean should be odd and",
-                   "greater than 3, pprm=3")
+    if (pprm %% 2 == 0 || pprm < 3) {
+      msg <- paste(
+        "Points per running mean should be odd and",
+        "greater than 3, pprm=3"
+      )
       stop(msg)
     }
 
@@ -75,9 +76,9 @@ event_flag_mcconnell <- function (x, max.speed=NULL, test=FALSE) {
     iter <- 1 # unnecessary, unless we using test mode, but we might use it later to get out if too many iterations
 
     # Iteratively filter points exceeding max.speed
-    while (any(RMS > max.speed, na.rm=TRUE)) {
+    while (any(RMS > max.speed, na.rm = TRUE)) {
       n <- length(which(ok)) # points to use
-      #x1 <- xy[ok, ] # coordinates to use
+      # x1 <- xy[ok, ] # coordinates to use
       x1 <- st_geometry(this_track)[ok] # coordinates to use
 
       # # TODO check what these speeds are
@@ -116,7 +117,7 @@ event_flag_mcconnell <- function (x, max.speed=NULL, test=FALSE) {
         by_element = TRUE
       )
       # remove first two and last two elements
-      d2 <- d2[-c(1L, 2L, length(d2)-1, length(d2))]
+      d2 <- d2[-c(1L, 2L, length(d2) - 1, length(d2))]
       speed2 <- d2 /
         units::as_units(diff(mt_time(this_track)[ok], lag = 2))
 
@@ -124,21 +125,26 @@ event_flag_mcconnell <- function (x, max.speed=NULL, test=FALSE) {
 
       thisIndex <- index[ok] # indices for this iteration
       npts <- length(speed1) # number of points (number of segments, really)
-      if (npts < pprm)
+      if (npts < pprm) {
         next
+      }
 
       # Compute root means square
       # indices for speed 1 (i.e. one step at a time)
-      sub1 <- rep(1:2, npts - offset) + rep(1:(npts - offset), each=2)
+      sub1 <- rep(1:2, npts - offset) + rep(1:(npts - offset), each = 2)
       # indices for speed 2 (every other point, e.g. 1&3, 2&4, 3&5, etc.)
       sub2 <- rep(c(0, 2), npts - offset) +
-        rep(1:(npts - offset), each=2)
+        rep(1:(npts - offset), each = 2)
       # speeds in 4 columns (2 per type of speed) # TODO I don't fully understand this
-      rmsRows <- cbind(matrix(speed1[sub1], ncol=offset, byrow=TRUE),
-                       matrix(speed2[sub2], ncol=offset, byrow=TRUE))
+      rmsRows <- cbind(
+        matrix(speed1[sub1], ncol = offset, byrow = TRUE),
+        matrix(speed2[sub2], ncol = offset, byrow = TRUE)
+      )
       # root mean square
-      RMS <- c(rep(0, offset),
-               sqrt(rowSums(rmsRows ^ 2) / ncol(rmsRows)))
+      RMS <- c(
+        rep(0, offset),
+        sqrt(rowSums(rmsRows^2) / ncol(rmsRows))
+      )
 
       # Store speed results if in test mode
       if (test & iter == 1) {
@@ -156,7 +162,7 @@ event_flag_mcconnell <- function (x, max.speed=NULL, test=FALSE) {
       # flag points with highest speed within each contiguous section
       rmsFlag <- unlist(lapply(split(RMS, segs), function(x) {
         ifelse((1:length(x)) == which.max(x), TRUE, FALSE)
-      }), use.names=FALSE)
+      }), use.names = FALSE)
       rmsFlag[!bad] <- FALSE
       RMS[rmsFlag] <- -10
 
@@ -169,12 +175,13 @@ event_flag_mcconnell <- function (x, max.speed=NULL, test=FALSE) {
   }
 
   # Return test results or filtered points
-  if (test)
+  if (test) {
     return(res)
+  }
   okFULL
 }
 # Compare this snippet from trip.R:
-#all.equal(trip::speedfilter(trip::walrus818[1:600, ], max.speed = 1000),
+# all.equal(trip::speedfilter(trip::walrus818[1:600, ], max.speed = 1000),
 #          event_flag_mcconnell(mt_as_move2(trip::walrus818[1:600, ]), max.speed = 1000))
 
-#event_flag_mcconnell(test_move2[1:600,], max.speed = 1000)
+# event_flag_mcconnell(test_move2[1:600,], max.speed = 1000)

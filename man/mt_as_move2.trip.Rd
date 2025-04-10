@@ -18,5 +18,5 @@ A move2 object
 Convert \code{trip} objects to \code{move2} objects.
 }
 \examples{
-  mt_as_move2(trip::walrus818)
+mt_as_move2(trip::walrus818)
 }

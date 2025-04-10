@@ -6,8 +6,7 @@
 #' @return A move2 object
 #' @export
 #' @examples
-#'   mt_as_move2(trip::walrus818)
-
+#' mt_as_move2(trip::walrus818)
 mt_as_move2.trip <- function(x, ...) {
   if (!requireNamespace("trip", quietly = TRUE)) {
     stop(
@@ -28,6 +27,7 @@ mt_as_move2.trip <- function(x, ...) {
   x_sf <- sf::st_as_sf(x_stdf)
   # and finally as move2 object
   return(move2::mt_as_move2(x_sf,
-                            time_column = tor_names[1],
-                            track_id_column = tor_names[2]))
+    time_column = tor_names[1],
+    track_id_column = tor_names[2]
+  ))
 }
