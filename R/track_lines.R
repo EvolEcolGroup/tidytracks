@@ -1,7 +1,9 @@
 #' Return a trajectory line for each track
 #'
 #' @description
-#' Converts each track into one line
+#' Converts each track into one line. This function returns a [`sf::sf`] object
+#' with a `LINESTRING` representing the trajeectory as geometry for each track,
+#' as well as additional columns of information from the metadata table.
 #'
 #' @param x A move object
 #'
