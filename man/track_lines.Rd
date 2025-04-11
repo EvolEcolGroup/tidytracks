@@ -16,7 +16,9 @@ A \link[sf:sf]{sf::sf} object with a \code{LINESTRING} representing the track as
 metadata for each track is included as well as the products from summarize
 }
 \description{
-Converts each track into one line
+Converts each track into one line. This function returns a \code{\link[sf:sf]{sf::sf}} object
+with a \code{LINESTRING} representing the trajeectory as geometry for each track,
+as well as additional columns of information from the metadata table.
 }
 \details{
 Note that all empty points are removed before summarizing. Arguments passed with \code{...} thus only summarize for the

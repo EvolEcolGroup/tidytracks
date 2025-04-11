@@ -9,15 +9,16 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends:
-    dplyr,
     move2,
-    units,
     R (>= 3.5)
 Imports:
   cli,
+  dplyr,
+  foreach,
   geodist,
   methods,
-  sf
+  sf,
+  units
 Suggests:
     ggplot2,
     lubridate,

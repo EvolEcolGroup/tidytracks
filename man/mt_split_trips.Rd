@@ -29,7 +29,7 @@ specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10
 
 \item{complete}{boolean, if TRUE, only complete trips (i.e. the ones that
 ended within the inbound buffer) are kept. If FALSE, all trips are kept, and
-events at the colony (i.e. inbetween trips) are collected into trip
+events at the colony (i.e. in-between trips) are collected into a dummy trip
 labelled "trip_na".}
 }
 \value{
