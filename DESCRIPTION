@@ -10,15 +10,17 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends:
     move2,
-    R (>= 3.5)
+    R (>= 3.5),
+    units
 Imports:
   cli,
   dplyr,
   foreach,
   geodist,
   methods,
+  purrr,
   sf,
-  units
+  tibble
 Suggests:
     ggplot2,
     lubridate,

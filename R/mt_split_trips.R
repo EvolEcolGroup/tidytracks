@@ -87,6 +87,7 @@ mt_split_trips <- function(x, center_col = NULL,
   ids <- event_track_id(x)
   unique_ids <- unique(ids)
 
+  i <- NULL # avoid global variable warning (i is used by foreach)
   # Loop through each track and split into trips
   trip_list <- foreach::foreach(i = seq_len(nrow(mt_show_meta(x)))) %do% {
     split_one_track(unique_ids[i],
@@ -101,23 +102,18 @@ mt_split_trips <- function(x, center_col = NULL,
   }
 
   # Combine trip IDs into a single vector
-  x <- trip_ids <- unlist(purrr::map_depth(trip_list, 1, "trip_labels"))
+  x$trip_id <- unlist(purrr::map_depth(trip_list, 1, "trip_labels"))
   # now get the trip meta and update the track meta accordingly
   trip_meta <- purrr::map_depth(trip_list, 1, "trip_meta") %>% dplyr::bind_rows()
-  #@TODO
+  # join it to the metadata
+  x <- move2::mt_set_track_data(x,
+                           dplyr::full_join(mt_show_meta(x),
+                                            trip_meta,
+                                            by = "track_id"))
+  # change the track_id_column to trip_id
+  x <- move2::mt_set_track_id_column(x, "trip_id")
 
-
-  # Update metadata with trip IDs
-  metadata$trip_id <- trip_ids
-
-  if (trips_as_tracks) {
-    # TODO
-    stop("not implemented yet!")
-    # filter out NAs
-    x <- x %>% dplyr::filter(!is.na(trip_id))
-  }
-
-  return(new_move2)
+  return(x)
 }
 
 
@@ -152,13 +148,13 @@ split_one_track <- function(label,
   # label trips
   runs <- rle(out_events)
   # now we can label the trips
-  trip_labels <- rep(paste0(label, "trip_na"), length(runs$values))
+  trip_labels <- rep(paste0(label, "_trip_na"), length(runs$values))
   trip_labels[(runs$values) == TRUE] <-
     paste0(paste0(label, "_trip_"), seq_len(sum((runs$values) == TRUE)))
   trip_labels_vec <- rep(trip_labels, times = runs$lengths)
 
   # create the metadata for the labels
-  trip_meta <- tibble(
+  trip_meta <- tibble::tibble(
     track_id = rep(label, length(unique(trip_labels))),
     trip_id = unique(trip_labels),
     trip_type = ifelse(
@@ -167,7 +163,7 @@ split_one_track <- function(label,
     )
   )
   # check if last trip is incomplete
-  if (dist_to_center[nrow(trip_meta)] > buffer_inbound) {
+  if (dist_to_center[length(dist_to_center)] > buffer_inbound) {
     trip_meta$trip_type[nrow(trip_meta)] <- "incomplete"
   }
 
