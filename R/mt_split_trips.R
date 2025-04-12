@@ -24,7 +24,7 @@
 mt_split_trips <- function(x, center_col = NULL,
                            buffer_outbound = units::as_units(1000, "m"),
                            buffer_inbound = units::as_units(1000, "m"),
-                           complete = FALSE) {
+                           complete = TRUE) {
   # Check if x is a move2 object
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")
@@ -94,8 +94,8 @@ mt_split_trips <- function(x, center_col = NULL,
       coords[ids == unique_ids[i], 1],
       coords[ids == unique_ids[i], 2],
       is_lonlat = sf::st_is_longlat(x),
-      center_x = center_col[i, 1], # TODO this is wrong
-      center_y = center_col[i, 2], # @TODO @BUG this is wrong
+      center_x = center_col[i, 1],
+      center_y = center_col[i, 2],
       buffer_inbound = buffer_in_uless,
       buffer_outbound = buffer_out_uless
     )
@@ -105,22 +105,24 @@ mt_split_trips <- function(x, center_col = NULL,
   x$trip_id <- unlist(purrr::map_depth(trip_list, 1, "trip_labels"))
   # now get the trip meta and update the track meta accordingly
   trip_meta <- purrr::map_depth(trip_list, 1, "trip_meta") %>% dplyr::bind_rows()
+  # replace the track_id col name with the appropriate name for x
+  trip_meta <- trip_meta %>% dplyr::rename(
+    !!mt_track_id_column(x) := track_id
+  )
   # join it to the metadata
   x <- move2::mt_set_track_data(x,
                            dplyr::full_join(mt_show_meta(x),
                                             trip_meta,
-                                            by = "track_id"))
+                                            by = mt_track_id_column(x)))
   # change the track_id_column to trip_id
   x <- move2::mt_set_track_id_column(x, "trip_id")
+  # if complete, remove any trips that are not complete
+  if (complete) {
+    x <- x %>% filter_by_meta(trip_type == "complete")
+  }
 
   return(x)
 }
-
-
-
-
-
-
 
 #' @title Split a track into trips
 #'
@@ -158,7 +160,7 @@ split_one_track <- function(label,
     track_id = rep(label, length(unique(trip_labels))),
     trip_id = unique(trip_labels),
     trip_type = ifelse(
-      unique(trip_labels) != paste0(label, "_trip_"),
+      unique(trip_labels) != paste0(label, "_trip_na"),
       "complete", "at_center"
     )
   )

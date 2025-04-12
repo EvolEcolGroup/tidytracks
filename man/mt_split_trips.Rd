@@ -9,7 +9,7 @@ mt_split_trips(
   center_col = NULL,
   buffer_outbound = units::as_units(1000, "m"),
   buffer_inbound = units::as_units(1000, "m"),
-  complete = FALSE
+  complete = TRUE
 )
 }
 \arguments{

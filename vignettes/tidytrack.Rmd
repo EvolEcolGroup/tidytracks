@@ -203,7 +203,7 @@ boobies_sub[1:10, ] %>% mt_speed()
 We can remove locations characterised by unlikely speeds using the McConnell's
 algorithm (the same used by `trip::speedfilter()`):
 
-```{r}
+```{r eval=FALSE}
 boobies_sub_cleaned <- boobies_sub %>%
   mt_clean_mcconnell(max_speed = units::as_units(50, "m/min"))
 ```
@@ -241,11 +241,33 @@ trips. For this we need to define the colony location, and a buffer around it.
 `mt_split_trips()` can take either a single colony point, or one nest location
 per track. 
 
-```{r eval= FALSE}
-boobies_sub %>%
+```{r}
+boobies_sub <- boobies_sub %>%
   mt_split_trips(
     center_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(10, "km")
   )
+```
+
+If we now inspect the object, we can see that there is a new column, `trip_id`,
+which is also used as the new `track_id_column` in the `move2` object:
+```{r}
+boobies_sub
+```
+
+Let's look at the metadata:
+```{r}
+mt_show_meta(boobies_sub)
+```
+
+We can see that only individual 69302 ventured far enough from the colony to
+register any trips, and specifically it made 3 trips. We can now plot the
+trips with:
+```{r}
+ggplot() +
+  geom_sf(data = track_lines(boobies_sub),
+          aes(color = trip_id)) +
+  coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
+
 ```
