@@ -119,7 +119,7 @@ tt_split_trips <- function(x, center_col = NULL,
   x <- move2::mt_set_track_id_column(x, "trip_id")
   # if complete, remove any trips that are not complete
   if (complete) {
-    x <- x %>% filter_by_meta(trip_type == "complete")
+    x <- x %>% filter_by_meta(trip_type == "complete") # @TODO this raises a warning
   }
 
   return(x)
