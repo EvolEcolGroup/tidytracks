@@ -19,6 +19,7 @@ Imports:
   geodist,
   methods,
   purrr,
+  rlang,
   sf,
   tibble
 Suggests:
