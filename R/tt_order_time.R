@@ -9,6 +9,6 @@
 #' @return A `move2` object ordered by time
 #' @export
 
-mt_order_time <- function(x) {
+tt_order_time <- function(x) {
   return(x[order(event_track_id(x), event_time(x)), ])
 }

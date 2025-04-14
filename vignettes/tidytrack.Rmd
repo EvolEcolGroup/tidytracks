@@ -17,11 +17,12 @@ knitr::opts_chunk$set(
 
 # Tracking data representation in `tidytrack`
 
-`tidytrack` uses `move2` objects to represent tracking data. In a `move2`
-object, each row represents an event, which is a time-stamped observation,
+`tidytrack` uses tidy tables of tracks to represent tracking data (technically,
+these are `move2` objects). In a tidy table of tracks, each row represents an
+event, which is a time-stamped observation,
 often associated with a location. Events are grouped into tracks. Tracks can
 be all the locations from a deployment, or a subset of locations for a trip
-of a central place forager. The metadata that describes each of this track is
+of a central place forager. The metadata that describes each of these tracks is
 stored in a separate table, which is linked to the event table by a 
 `track_id_column`. In this way, we do not have to repeat information (such as the id of
 an animal, or its sex) for each event, but we can use the metadata of the track
@@ -38,7 +39,7 @@ It is a dataset on boobies containing 43 tracks with just over 178k GPS
 locations. Note that the data are based on XXX, but they were doctored to showcase
 functionality of `tidytrack`; do not use them for any real analysis!!!.
 
-We can start by printing a summary of the `move2` object:
+We can start by printing a summary of object:
 ```{r}
 boobies_mt
 ```
@@ -47,9 +48,9 @@ We can see how each row in the table is an event, in this case a time-stamped GP
 a given bird, with the column `date_time` providing the time and column `geometry`
 defining the location. `deployment_id` (the designated `track_id_column`) is 
 is the identifier that groups a set of events into a single track. 
-We can access the metadata for the tracks with `mt_show_meta()`:
+We can access the metadata for the tracks with `show_meta()`:
 ```{r}
-mt_show_meta(boobies_mt)
+show_meta(boobies_mt)
 ```
 
 We can see how we have a `deployment_id` column that links back to the events
@@ -58,12 +59,13 @@ a column of coordinates for the colony location (they are stored as `sfc_POINT`
 geometries from the `sf` package, so that they come with crs information).
 
 Note that `move2` objects don't have to be ordered by time. We can order the
-data by time using the `mt_order()` function:
+data by time using the `tt_order_time()` function:
 ```{r}
-boobies_mt <- boobies_mt %>% mt_order_time()
+boobies_mt <- boobies_mt %>% tt_order_time()
 ```
 
-Functions that start with `mt_` are specific to `move2` objects, and they
+Functions that start with `tt_` are specific to tidy tables of tracks
+(i.e. `move2` objects), and they
 operate on the whole object.
 
 # Plotting the data
@@ -115,22 +117,22 @@ ggplot() +
 
 # A grammar of movement
 
-As we saw above, `mt_` functions are specific operate on the whole object, and
-often will return a modified `move2` object.
+As we saw above, `tt_` functions are specific operate on the whole object, and
+often will return a complete table of tracks (aka a `move2` object).
 There are functions to clean the data using different algorithms
-(e.g. `mt_clean_mcconnell`), or to split the data into trips for central place
-foragers (e.g. `mt_split_trips`). We will see those functions in action in a later
-section. There are also a number of `mt_` functions that can be used to test
-the characteristics of an object, such as `mt_is_time_ordered_non_empty_points()`,
+(e.g. `tt_clean_mcconnell`), or to split the data into trips for central place
+foragers (e.g. `tt_split_trips`). We will see those functions in action in a later
+section. There are also a number of `tt_` functions that can be used to test
+the characteristics of an object, such as `tt_is_time_ordered_non_empty_points()`,
 which asserts whether a `move2` object is both time ordered and all events have
 coordinates.
 
 `event_` functions, on the other hand, operate on events, and return a vector
 of the same length as number of rows in the event table (and thus can be use in `mutate()`
 operations). For example, we can use `event_speed()` to calculate the speed of 
-each event. Note that, techically, the speed pertains to the segment between
+each event. Note that, technically, the speed pertains to the segment between
 two events, but for simplicity we will refer to it as the speed of the event.
-For each track, `event_speed` returns the speed of each segment, padded with a
+For each track, `event_speed()` returns the speed of each segment, padded with a
 final NA so that we have the same number of rows as the original track.
 
 So, we can add speed to our `boobies_sub` object with:
@@ -143,7 +145,7 @@ Note the use of the . placeholder in the brackets of `event_speed()` to pass
 the `move2` object to the function. This is only possible with a `magrittr` pipe
 (`%>%`), and not with the base R pipe (`|>`).
 
-We can now summarise and plot the distribution of speeds:
+We can now visualise the distribution of speeds:
 ```{r}
 boobies_sub %>%
   ggplot(aes(x = speed)) +
@@ -178,7 +180,7 @@ boobies_sub %>%
 This naming convention helps clarifying the scope of a given function,
 avoiding ambiguities. For example, `event_flag_mcconnell()` will return a logical vector
 indicating whether events are valid or whether they should be filtered out
-using McConnell's algorithm, whilst `mt_clean_mcconnell()` will return a
+using McConnell's algorithm, whilst `tt_clean_mcconnell()` will return a
 `move2` object with the invalid events removed. Similarly, `event_distance()` 
 will return a vector of distances between events (a vector of the same lenght
 as the rows of the event column), while `track_distance()` will
@@ -190,14 +192,14 @@ vector of length equal to the number of tracks in the object).
 We can get an overview of the speeds of each step with:
 ```{r}
 boobies_sub %>%
-  mt_speed() %>%
+  event_speed() %>%
   summary()
 ```
 
 Hmm, there is something odd here, as the maximum speed is 2044 m/minute. Incidentally,
 if we just print a few speeds, we can easily check the units:
 ```{r}
-boobies_sub[1:10, ] %>% mt_speed()
+boobies_sub[1:10, ] %>% event_speed()
 ```
 
 We can remove locations characterised by unlikely speeds using the McConnell's
@@ -205,7 +207,7 @@ algorithm (the same used by `trip::speedfilter()`):
 
 ```{r eval=FALSE}
 boobies_sub_cleaned <- boobies_sub %>%
-  mt_clean_mcconnell(max_speed = units::as_units(50, "m/min"))
+  tt_clean_mcconnell(max_speed = units::as_units(50, "m/min"))
 ```
 
 STOP THIS IS NOT WORKING YET!!!!
@@ -238,12 +240,12 @@ ggplot() +
 
 Boobies are central place foragers, and we now want to split the track into
 trips. For this we need to define the colony location, and a buffer around it.
-`mt_split_trips()` can take either a single colony point, or one nest location
+`tt_split_trips()` can take either a single colony point, or one nest location
 per track. 
 
 ```{r}
 boobies_sub <- boobies_sub %>%
-  mt_split_trips(
+  tt_split_trips(
     center_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(10, "km")
@@ -258,11 +260,12 @@ boobies_sub
 
 Let's look at the metadata:
 ```{r}
-mt_show_meta(boobies_sub)
+show_meta(boobies_sub)
 ```
 
-We can see that only individual 69302 ventured far enough from the colony to
-register any trips, and specifically it made 3 trips. We can now plot the
+We can see that only individual 69302 performed proper central place trips, and
+specifically it made 3 trips. 69303 never moved, and 69304 migrated away from
+the study area. We can now plot the
 trips with:
 ```{r}
 ggplot() +

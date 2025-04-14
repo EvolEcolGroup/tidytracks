@@ -21,7 +21,7 @@
 #' @export
 #' @importFrom foreach %do%
 
-mt_split_trips <- function(x, center_col = NULL,
+tt_split_trips <- function(x, center_col = NULL,
                            buffer_outbound = units::as_units(1000, "m"),
                            buffer_inbound = units::as_units(1000, "m"),
                            complete = TRUE) {
@@ -38,10 +38,10 @@ mt_split_trips <- function(x, center_col = NULL,
   # Check if center_col is a geometry object
   if (inherits(center_col, "character")) {
     # check if it exists in the metadata
-    if (!center_col %in% names(mt_show_meta(x))) {
+    if (!center_col %in% names(show_meta(x))) {
       stop("center_col must be a column name in the metadata table")
     }
-    center_col <- sf::st_coordinates(mt_show_meta(x)[[center_col]])
+    center_col <- sf::st_coordinates(show_meta(x)[[center_col]])
   } else if (inherits(center_col, "sf")) {
     center_col <- sf::st_coordinates(center_col)
     if (nrow(center_col) == 1) {
@@ -89,7 +89,7 @@ mt_split_trips <- function(x, center_col = NULL,
 
   i <- NULL # avoid global variable warning (i is used by foreach)
   # Loop through each track and split into trips
-  trip_list <- foreach::foreach(i = seq_len(nrow(mt_show_meta(x)))) %do% {
+  trip_list <- foreach::foreach(i = seq_len(nrow(show_meta(x)))) %do% {
     split_one_track(unique_ids[i],
       coords[ids == unique_ids[i], 1],
       coords[ids == unique_ids[i], 2],
@@ -111,7 +111,7 @@ mt_split_trips <- function(x, center_col = NULL,
   )
   # join it to the metadata
   x <- move2::mt_set_track_data(x,
-                           dplyr::full_join(mt_show_meta(x),
+                           dplyr::full_join(show_meta(x),
                                             trip_meta,
                                             by = mt_track_id_column(x)))
   # change the track_id_column to trip_id

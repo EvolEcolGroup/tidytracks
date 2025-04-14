@@ -61,7 +61,7 @@ test_that("mt_trip_split works as expected", {
   at_center <- center_dist < 100
 
   # test the trip splitting
-  test_mt_split <- mt_split_trips(test_mt,
+  test_mt_split <- tt_split_trips(test_mt,
     center_col = center_sf,
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(100, "km"),
@@ -84,11 +84,11 @@ test_that("mt_trip_split works as expected", {
   expect_true(all(test_mt_split$trip_id[at_center] %in%
     c("id_1_trip_na", "id_2_trip_na")))
   # the last trip of id_1 is incomplete
-  expect_true((mt_show_meta(test_mt_split) %>%
+  expect_true((show_meta(test_mt_split) %>%
     filter(trip_id == "id_1_trip_3"))$trip_type == "incomplete")
 
   # repeat with a differnet units
-  test_mt_split2 <- mt_split_trips(test_mt,
+  test_mt_split2 <- tt_split_trips(test_mt,
     center_col = center_sf,
     buffer_outbound = as_units(100000, "m"),
     buffer_inbound = as_units(100, "km"),
@@ -97,27 +97,27 @@ test_that("mt_trip_split works as expected", {
   expect_identical(test_mt_split, test_mt_split2)
 
   # change inbound buffer
-  test_mt_split3 <- mt_split_trips(test_mt,
+  test_mt_split3 <- tt_split_trips(test_mt,
     center_col = center_sf,
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(300, "km"),
     complete = FALSE
   )
   # the last trip of id_1 is incomplete
-  expect_true((mt_show_meta(test_mt_split3) %>%
+  expect_true((show_meta(test_mt_split3) %>%
     filter(trip_id == "id_1_trip_3"))$trip_type == "complete")
 
   # check that, if we say complete = TRUE, all trips are complete
-  test_mt_split4 <- mt_split_trips(test_mt,
+  test_mt_split4 <- tt_split_trips(test_mt,
     center_col = center_sf,
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(300, "km"),
     complete = TRUE
   )
   # all trips should be complete
-  expect_true(all((mt_show_meta(test_mt_split4)$trip_type == "complete")))
+  expect_true(all((show_meta(test_mt_split4)$trip_type == "complete")))
   # there should only be 4 lines (3 trips + 1 trip)
-  expect_equal(nrow(mt_show_meta(test_mt_split4)), 4)
+  expect_equal(nrow(show_meta(test_mt_split4)), 4)
 
 })
 
