@@ -107,8 +107,8 @@ tt_split_trips <- function(x, center_col = NULL,
   # now get the trip meta and update the track meta accordingly
   trip_meta <- purrr::map_depth(trip_list, 1, "trip_meta") %>% dplyr::bind_rows()
   # replace the track_id col name with the appropriate name for x
-  trip_meta <- trip_meta %>% dplyr::rename(
-    !!move2::mt_track_id_column(x) := track_id
+  trip_meta <- trip_meta %>% dplyr::rename_with(
+    ~ c(move2::mt_track_id_column(x)), dplyr::all_of("track_id")
   )
   # join it to the metadata
   x <- move2::mt_set_track_data(x,
