@@ -45,6 +45,33 @@ MASS_G_genetta <- kde2d(G_genetta$V1,
   lims = c(range(mask.xy$x), range(mask.xy$y))
 )
 
+
+# using just one value for h
+MASS_G_genetta <- kde2d(G_genetta$V1,
+                        G_genetta$V2,
+                        n = c(100, 100),
+                        h = c(H * 4),
+                        lims = c(range(mask.xy$x), range(mask.xy$y))
+)
+
+
+
+kde_stars <- stars::st_as_stars(matrix(.x$z, nrow = nx, ncol = ny))
+kde_stars <- stars::st_set_dimensions(kde_stars,"X1",.x$x)
+kde_stars <- stars::st_set_dimensions(kde_stars,"X2",.x$y)
+stars::st_contour(kde_stars)
+
+# cast as stars
+kde2d_to_stars <- function(.x){
+  kde_stars <- stars::st_as_stars(matrix(.x$z, nrow = nx, ncol = ny))
+  kde_stars = st_set_dimensions(kde_stars, names = c("x", "y"))
+  kde_stars <- stars::st_set_dimensions(kde_stars,"x",values = .x$x)
+  kde_stars <- stars::st_set_dimensions(kde_stars,"y",values = .x$y)
+  foo<-stars::st_contour(kde_stars)
+}
+
+
+
 # lazily get comparable plots
 MASS_G_genetta <- SpatialPixelsDataFrame(
   points = mask.xy,
@@ -129,3 +156,9 @@ plot(MASS_A_buselaphus)
 
 # a simple kde wrapper to use sf:
 # https://github.com/r-spatial/sf/issues/1201
+
+
+
+##
+m
+

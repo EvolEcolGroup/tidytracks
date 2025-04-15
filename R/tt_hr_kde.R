@@ -12,7 +12,7 @@
 #' all points in `x`, and the number of cells is set to 1000.
 #' @param levels A vector of levels for the contour lines. The default is
 #' `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
-#' @param keep_objects whehther the individual KDE objects should be kept
+#' @param keep_objects whether the individual KDE objects should be kept
 #' as a column in the output object. This is useful for debugging, but
 #' will increase the size of the object.
 #' @returns A tibble of subclass `tt_hr_tbl` of results, with columns:
