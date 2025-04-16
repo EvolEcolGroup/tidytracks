@@ -21,7 +21,8 @@ Imports:
   purrr,
   rlang,
   sf,
-  tibble
+  tibble,
+  tidyr
 Suggests:
     ggplot2,
     lubridate,

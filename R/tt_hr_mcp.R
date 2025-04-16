@@ -22,33 +22,39 @@ tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
   if (any(levels < 0 | levels > 1)) {
     stop("levels must be between 0 and 1")
   }
+  # reorder levels from big to small
+  levels <- sort(levels, decreasing = TRUE)
 
   # get the group indices
   group_index <- dplyr::group_indices(x)
   group_unique <- unique(group_index)
+  group_labels <- tidyr::unite(dplyr::group_keys(x), col="group_labels") %>%
+    dplyr::pull(1)
   # Compute the minimum convex polygon for each group and level
-  foreach::foreach(
+  xy <- sf::st_coordinates(x)
+  mcp_results <- foreach::foreach(
     group_id = group_unique,
     .combine = dplyr::bind_rows
   ) %do% {
     # Filter the data for the current group
-    x_group <- x[group_index == group_id, ]
-    # Extract coordinates
-    xy <- sf::st_coordinates(x_group)
+    xy_sub <- xy[group_index == group_id, ]
     # Create MCP for each level
-    geometry <- one_group_mcp(xy, levels,
-                              dplyr::group_keys(x)[group_id],
+    geometry <- one_group_mcp(xy_sub, levels,
                               crs = sf::st_crs(x))
     # Calculate area
 #    area <- sf::st_area(geometry)
+
     # Create a tibble with the results
     tibble::tibble(
-      group_id = group_id,
+      group_id = group_labels[group_id],
       level = levels,
 #      area = area,
       geometry = geometry
     )
   }
+
+  # now cast the results to an sf object
+  mcp_results <- sf::st_as_sf(mcp_results, crs = sf::st_crs(x))
 
   # Return the results as a tt_hr_tbl
   return(mcp_results)
@@ -60,19 +66,13 @@ tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
 #' at multiple levels for a given group. It is not intended to be called
 #' directly by the user.
 #'
-#' @param x a sf tibble of coordinates for a single group (coming via group_map
-#' it will lose the move2 class, but it is an sf)
+#' @param xy a matrix of coordinates
 #' @param levels A vector of levels for the contour lines
-#' @param group_id The ID of the group
 #' @param units The units to use for the area
-#' @returns A tibble of subclass `tt_hr_tbl` of results, with columns:
-#' - `group_id`: the ID of the group
-#' - `level`: the level of the contour line
-#' - `area`: the area of the home range in map units
-#' - `geometry`: the geometry of the home range as a list of sf polygons
+#' @returns A list of sf polygons representing the MCP at each level
 #' @keywords internal
 
-one_group_mcp <- function(x, levels, group_id, crs) {
+one_group_mcp <- function(xy, levels,crs) {
 
   mxy <- colMeans(xy)
   sqd <- (xy[,1] - mxy[1])^2 + (xy[,2] - mxy[2])^2
