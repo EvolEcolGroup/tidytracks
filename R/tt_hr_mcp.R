@@ -39,7 +39,7 @@ tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, ]
     # Create MCP for each level
-    geometry <- one_group_mcp(xy_sub, levels,
+    geometry <- mcp_one_group(xy_sub, levels,
                               crs = sf::st_crs(x))
     # Calculate area
 #    area <- sf::st_area(geometry)
@@ -68,11 +68,11 @@ tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
 #'
 #' @param xy a matrix of coordinates
 #' @param levels A vector of levels for the contour lines
-#' @param units The units to use for the area
+#' @param crs the crs of the coordinates (to use in the geometry)
 #' @returns A list of sf polygons representing the MCP at each level
 #' @keywords internal
 
-one_group_mcp <- function(xy, levels,crs) {
+mcp_one_group <- function(xy, levels,crs) {
 
   mxy <- colMeans(xy)
   sqd <- (xy[,1] - mxy[1])^2 + (xy[,2] - mxy[2])^2

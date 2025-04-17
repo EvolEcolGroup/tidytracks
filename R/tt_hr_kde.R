@@ -6,10 +6,10 @@
 #' @param x A grouped move2 object
 #' @param h The bandwidth for the kernel density estimation. It defaults
 #' to href.
-#' @param grid Either a named vector of length 5, with values xmin, ymin,
-#' xmax, ymax, and n (the number of cells in the grid);
-#' or a terra::SpatRaster object. If null, the extent is taken by combining
-#' all points in `x`, and the number of cells is set to 1000.
+#' @param grid A list of length 5, with values xmin, ymin,
+#' xmax, ymax and res (all in the units of the projection of x).
+#' If null, the extent is taken by combining
+#' all points in `x` (expanded by 10%), and the number of cells is set to 1000.
 #' @param levels A vector of levels for the contour lines. The default is
 #' `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
 #' @param keep_objects whether the individual KDE objects should be kept
@@ -23,48 +23,139 @@
 #' `keep_objects = TRUE`)
 #' @export
 
-tt_hr_kde <- function(x, h = NULL, grid = NULL, levels = c(0.5, 0.95),
+tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
                 keep_objects = FALSE) {
   # Check if x is a grouped move2 object
-  if (!inherits(x, "move2") || !inherits(x, "grouped_df")) {
+  if (!inherits(x, "move2") || !inherits(x,"grouped_df")) {
     stop("x must be a grouped move2 object")
   }
-  coords <- sf::st_coordinates(x)
 
-  # Check if h is provided
-  if (is.null(h)) {
-    h <- ade_href(coords)
+  # Check if levels are valid
+  if (any(levels < 0 | levels > 1)) {
+    stop("levels must be between 0 and 1")
   }
+  # reorder levels from big to small
+  levels <- sort(levels, decreasing = TRUE)
 
-  browser()
+  # get the group indices
+  group_index <- dplyr::group_indices(x)
+  group_unique <- unique(group_index)
+  group_labels <- tidyr::unite(dplyr::group_keys(x), col="group_labels") %>%
+    dplyr::pull(1)
+  # Compute the minimum convex polygon for each group and level
+
+
+  xy <- sf::st_coordinates(x)
+  # check h
+  if (!is.numeric(h)){
+    browser()
+    h <- match.arg(h, c("h_ref_mean", "h_ref_indiv",
+                     "h_ref_ade_mean", "h_ref_ade_indiv"))
+    h_fun <- get(h) # assign the function to h_fun
+    h <- h_fun(xy, group_index) # compute h
+  }
+  if (length(h) == 1) {
+    h <- rep(h, length(group_unique))
+  } else if (length(h) != length(group_unique)) {
+    stop("h must be a single value or a vector of the same length as the number of groups in x")
+  }
 
   # Check if grid is provided
   if (is.null(grid)) {
     # get extend of x, which is an sf object
-    grid <- sf::st_bbox(x)
-    grid <- list(xmin = min(x$x), ymin = min(x$y),
-                 xmax = max(x$x), ymax = max(x$y), n = 1000)
-  } else if (inherits(grid, "SpatRaster")) {
-    grid <- terra::ext(grid)
-    grid <- list(xmin = grid[1], ymin = grid[2],
-                 xmax = grid[3], ymax = grid[4], n = terra::ncell(grid))
+    grid_bbox <- sf::st_bbox(x)
+    # extend the grid by a fixed factor
+    # TODO compare to amt (extending by 50%),
+    # and track2kba (extending by 0.05 or h*2000, whichever is larger))
+    extend_x <- (grid_bbox$xmax-grid_bbox$xmin) * 0.25
+    extend_y <- (grid_bbox$ymax-grid_bbox$ymin) * 0.25
+
+    grid <- list(xmin = grid_bbox$xmin - extend_x,
+                 ymin = grid_bbox$ymin - extend_y,
+                 xmax = grid_bbox$xmax + extend_x,
+                 ymax = grid_bbox$ymax + extend_y)
+    # set resolution to get a 1000 cells
+    grid[["res"]] <- sqrt( (grid$xmax-grid$xmin) *
+                             (grid$ymax-grid$ymin)/1000)
   } else if (length(grid) != 5) {
-    stop("grid must be a named vector of length 5 or a SpatRaster object")
-  } else if (!all(c("xmin", "ymin", "xmax", "ymax", "n") %in% names(grid))) {
-    stop("grid must be a named vector of length 5 with names xmin, ymin, xmax, ymax, and n")
+    stop("grid must be a named vector of length 5")
+  } else if (!all(c("xmin", "ymin", "xmax", "ymax", "res") %in% names(grid))) {
+    stop("grid must be a named vector of length 5 with names xmin, ymin, xmax, ymax, and res")
   }
 
-  kde2d(x[,1],
-        x[,2],
-        n = c(100, 100),
-        h = h,
-        lims = c(range(mask.xy$x), range(mask.xy$y))
-  )
+
+  kde_results <- foreach::foreach(
+    group_id = group_unique,
+    .combine = dplyr::bind_rows
+  ) %do% {
+    # Filter the data for the current group
+    xy_sub <- xy[group_index == group_id, ]
+    # Create MCP for each level
+    geometry <- kde_one_group(xy_sub, levels,
+                              crs = sf::st_crs(x),
+                              grid = grid,
+                              h = h[group_id],
+                              keep_object = keep_objects)
+    # Calculate area
+    #    area <- sf::st_area(geometry)
+    # Create a tibble with the results
+    tibble::tibble(
+      group_id = group_labels[group_id],
+      level = levels,
+      #      area = area,
+      geometry = geometry
+    )
+  }
+
+  # now cast the results to an sf object
+  kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
+
+  return(kde_results)
 }
 
+#' Create kde isopleths at multiple levels for a given group
+#'
+#' This is the internal function that is called by `tt_hr_kde` to create the
+#' kde isopleths
+#' at multiple levels for a given group. It is not intended to be called
+#' directly by the user.
+#'
+#' @param xy a matrix of coordinates
+#' @param levels A vector of levels for the contour lines
+#' @param crs the crs of the coordinates (to use in the geometry)
+#' @param grid A list of length 5, with values xmin, ymin,
+#' xmax, ymax and res (all in the units of the projection of x).
+#' @param h The bandwidth for the kernel density estimation.
+#' @param keep_object whether the individual KDE object should be kept. If so,
+#' the function returns a list of sf polygons and the kde object.
+#' @returns A list of sf polygons representing the kde isopleths at each level
+#' @keywords internal
 
-ade_href <- function(x) {
-  h_ref <- (sqrt(0.5 * (var(x[,1]) + var(x[,2])))) * (nrow(x)^-(1 / 6))
-  return(h_ref*4) # needed to match href in adehabitatHR
+kde_one_group <- function(xy, levels, crs, grid, h, keep_object = FALSE) {
+  # Create a kde object
+  kde <- MASS::  kde2d(xy[,1],
+                       xy[,2],
+                       n = round(c((grid$xmax-grid$xmin) / grid$res,
+                             (grid$ymax-grid$ymin) / grid$res)),
+                       h = h,
+                       lims = c(grid$xmin, grid$xmax,
+                                grid$ymin, grid$ymax))
+  #
+  kde_cud <- hr_kde_cud(kde$z)
+
+  # create a list of sf polygons for each level
+  kde_polys <- lapply(levels, function(level) {
+    # get the contour lines for this level
+    contour_lines <- grDevices::contourLines(kde$x, kde$y, kde_cud, level = level)
+    # convert to sf polygons
+    sf_polys <- lapply(contour_lines, function(line) {
+      sf::st_polygon(list(cbind(line$x, line$y)))
+    })
+    # combine into a single sf multipolygon
+    sf::st_combine(sf::st_sfc(sf_polys, crs = crs))
+  })
+  browser()
+  # create a geometry set with one feature per level
+  kde_polys <- sf::st_sfc(do.call(rbind, kde_polys), crs = crs)
+  return(kde_polys)
 }
-

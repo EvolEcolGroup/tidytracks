@@ -6,7 +6,7 @@
 \usage{
 tt_hr_kde(
   x,
-  h = NULL,
+  h = "h_ref_mean",
   grid = NULL,
   levels = c(0.5, 0.95),
   keep_objects = FALSE
@@ -18,10 +18,10 @@ tt_hr_kde(
 \item{h}{The bandwidth for the kernel density estimation. It defaults
 to href.}
 
-\item{grid}{Either a named vector of length 5, with values xmin, ymin,
-xmax, ymax, and n (the number of cells in the grid);
-or a terra::SpatRaster object. If null, the extent is taken by combining
-all points in \code{x}, and the number of cells is set to 1000.}
+\item{grid}{A list of length 5, with values xmin, ymin,
+xmax, ymax and res (all in the units of the projection of x).
+If null, the extent is taken by combining
+all points in \code{x} (expanded by 10\%), and the number of cells is set to 1000.}
 
 \item{levels}{A vector of levels for the contour lines. The default is
 \code{c(0.5, 0.95)}, which corresponds to the 50\% and 95\% home ranges.}
