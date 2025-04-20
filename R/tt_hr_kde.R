@@ -24,9 +24,9 @@
 #' @export
 
 tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
-                keep_objects = FALSE) {
+                      keep_objects = FALSE) {
   # Check if x is a grouped move2 object
-  if (!inherits(x, "move2") || !inherits(x,"grouped_df")) {
+  if (!inherits(x, "move2") || !inherits(x, "grouped_df")) {
     stop("x must be a grouped move2 object")
   }
 
@@ -40,23 +40,26 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
   # get the group indices
   group_index <- dplyr::group_indices(x)
   group_unique <- unique(group_index)
-  group_labels <- tidyr::unite(dplyr::group_keys(x), col="group_labels") %>%
+  group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
   # Compute the minimum convex polygon for each group and level
 
 
   xy <- sf::st_coordinates(x)
   # check h
-  if (!is.numeric(h)){
-    h <- match.arg(h, c("h_ref_mean", "h_ref_indiv",
-                     "h_ref_ade_mean", "h_ref_ade_indiv"))
+  if (!is.numeric(h)) {
+    h <- match.arg(h, c(
+      "h_ref_mean", "h_ref_indiv",
+      "h_ref_ade_mean", "h_ref_ade_indiv"
+    ))
     h_fun <- get(h) # assign the function to h_fun
     h <- h_fun(xy, group_index) # compute h
   }
   if (length(h) == 1) {
     h <- rep(h, length(group_unique))
   } else if (length(h) != length(group_unique)) {
-    stop("h must be a single value or a vector of the same length as the number of groups in x")
+    stop("h must be a single value or a vector of the same length as ",
+         "the number of groups in x")
   }
 
   # Check if grid is provided
@@ -66,48 +69,54 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
     # extend the grid by a fixed factor
     # TODO compare to amt (extending by 50%), adehabitatHR (extending by 1)
     # and track2kba (extending by 0.05 or h*2000, whichever is larger))
-    extend_x <- (grid_bbox$xmax-grid_bbox$xmin) * 1
-    extend_y <- (grid_bbox$ymax-grid_bbox$ymin) * 1
+    extend_x <- (grid_bbox$xmax - grid_bbox$xmin) * 1
+    extend_y <- (grid_bbox$ymax - grid_bbox$ymin) * 1
 
-    grid <- list(xmin = grid_bbox$xmin - extend_x,
-                 ymin = grid_bbox$ymin - extend_y,
-                 xmax = grid_bbox$xmax + extend_x,
-                 ymax = grid_bbox$ymax + extend_y)
+    grid <- list(
+      xmin = grid_bbox$xmin - extend_x,
+      ymin = grid_bbox$ymin - extend_y,
+      xmax = grid_bbox$xmax + extend_x,
+      ymax = grid_bbox$ymax + extend_y
+    )
     # set resolution to get a 1000 cells
-    grid[["res"]] <- sqrt( (grid$xmax-grid$xmin) *
-                             (grid$ymax-grid$ymin)/1500)
+    grid[["res"]] <- sqrt((grid$xmax - grid$xmin) *
+      (grid$ymax - grid$ymin) / 1500)
     # update the max to be an exact multiple of res
-    grid[["xmax"]] <- grid$xmin + ceiling((grid$xmax-grid$xmin)/grid$res) * grid$res
-    grid[["ymax"]] <- grid$ymin + ceiling((grid$ymax-grid$ymin)/grid$res) * grid$res
-
+    grid[["xmax"]] <- grid$xmin +
+      ceiling((grid$xmax - grid$xmin) / grid$res) * grid$res
+    grid[["ymax"]] <- grid$ymin +
+      ceiling((grid$ymax - grid$ymin) / grid$res) * grid$res
   } else if (length(grid) != 5) {
     stop("grid must be a named vector of length 5")
   } else if (!all(c("xmin", "ymin", "xmax", "ymax", "res") %in% names(grid))) {
-    stop("grid must be a list of length 5 with names xmin, ymin, xmax, ymax, and res")
+    stop("grid must be a list of length 5 with names xmin, ymin, ",
+         "xmax, ymax, and res")
   }
 
   group_id <- NULL # hack to avoid it being flagged as global in checks
   kde_results <- foreach::foreach(
     group_id = group_unique,
-    .combine = rbind #dplyr::bind_rows
+    .combine = rbind # dplyr::bind_rows
   ) %do% {
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, ]
     h_val <- h[group_id]
     # Create kernel for each level
     geometry <- kde_one_group(xy_sub, levels,
-                              crs = sf::st_crs(x),
-                              grid = grid,
-                              h = h_val,
-                              keep_object = keep_objects)
+      crs = sf::st_crs(x),
+      grid = grid,
+      h = h_val,
+      keep_object = keep_objects
+    )
     # Calculate area
-   area <- sf::st_area(geometry)
+    area <- sf::st_area(geometry)
     # Create a tibble with the results
-   cbind(tibble::tibble(
+    cbind(tibble::tibble(
       group_id = group_labels[group_id],
       level = levels,
       h = h_val,
-      area = area), geometry)
+      area = area
+    ), geometry)
   }
 
   # now cast the results to an sf object
@@ -147,20 +156,26 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
 
 kde_one_group <- function(xy, levels, crs, grid, h, keep_object = FALSE) {
   # Create a kde object
-  kde <- MASS::  kde2d(xy[,1],
-                       xy[,2],
-                       n = round(c((grid$xmax-grid$xmin) / grid$res,
-                             (grid$ymax-grid$ymin) / grid$res)),
-                       h = h,
-                       lims = c(grid$xmin, grid$xmax,
-                                grid$ymin, grid$ymax))
+  kde <- MASS::kde2d(xy[, 1],
+    xy[, 2],
+    n = round(c(
+      (grid$xmax - grid$xmin) / grid$res,
+      (grid$ymax - grid$ymin) / grid$res
+    )),
+    h = h,
+    lims = c(
+      grid$xmin, grid$xmax,
+      grid$ymin, grid$ymax
+    )
+  )
   #
   kde_cud <- hr_kde_cud(kde$z)
 
   # create a list of sf polygons for each level
   kde_polys <- lapply(levels, function(level) {
     # get the contour lines for this level
-    contour_lines <- grDevices::contourLines(kde$x, kde$y, kde_cud, level = level)
+    contour_lines <- grDevices::contourLines(kde$x, kde$y, kde_cud,
+                                             level = level)
     # convert to sf polygons
     sf_polys <- lapply(contour_lines, function(line) {
       sf::st_polygon(list(cbind(line$x, line$y)))

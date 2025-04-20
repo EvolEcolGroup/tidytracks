@@ -28,10 +28,9 @@
 #' @export
 
 geom_track_path <- function(mapping = NULL, data = NULL, stat = "sf",
-                               position = "identity",
-                               na.rm = FALSE, show.legend = NA,
-                               ...) {
-
+                            position = "identity",
+                            na.rm = FALSE, show.legend = NA,
+                            ...) {
   # check that mapping is not NULL
   if (is.null(mapping)) {
     stop("mapping must be specified for this geometry")
@@ -45,7 +44,9 @@ geom_track_path <- function(mapping = NULL, data = NULL, stat = "sf",
     stop("data must be a move2 object")
   }
   data_lines <- track_lines(data)
-  ggplot2::geom_sf(mapping = mapping, data = data_lines, stat = stat,
-          position = position, na.rm = na.rm, show.legend = show.legend,
-          inherit.aes = FALSE, ...)
+  ggplot2::geom_sf(
+    mapping = mapping, data = data_lines, stat = stat,
+    position = position, na.rm = na.rm, show.legend = show.legend,
+    inherit.aes = FALSE, ...
+  )
 }

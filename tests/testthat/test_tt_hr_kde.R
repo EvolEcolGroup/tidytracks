@@ -4,7 +4,8 @@ test_that("tt_hr_mcp works with multiple tracks", {
   # error if not grouped
   expect_error(
     tt_hr_kde(boar_mt, levels = c(0.50, 0.95, 1)),
-    "x must be a grouped move2 object")
+    "x must be a grouped move2 object"
+  )
   # group by name
   boar_mt <- boar_mt %>%
     dplyr::group_by(Name)
@@ -13,7 +14,6 @@ test_that("tt_hr_mcp works with multiple tracks", {
   expect_equal(nrow(boar_kde), 8)
   # expect this is an sf object
   expect_true(inherits(boar_kde, "sf"))
-
 
   # simple plotting example to check the geometry
   #  ggplot(boar_kde) +

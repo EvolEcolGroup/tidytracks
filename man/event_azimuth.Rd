@@ -12,10 +12,11 @@ event_azimuth(x, units)
 \item{units}{Optional, the units to use for the azimuth. The default is "m".}
 }
 \value{
-a vector of azimuths of the same length as the number of events in \code{x}
+a vector of azimuths of the same length as the number of events in
+\code{x}
 }
 \description{
 This function measures the azimuth between two events. It returns a vector of
-azimuths of the same length as the number of events in \code{x}, with the
-azimuth for the last event of each track padded with an NA.
+azimuths of the same length as the number of events in \code{x}, with the azimuth
+for the last event of each track padded with an NA.
 }

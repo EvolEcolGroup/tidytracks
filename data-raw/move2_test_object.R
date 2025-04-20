@@ -2,9 +2,11 @@
 
 library(move2)
 set.seed(123)
-date_time_seq <- as.POSIXct(seq( from      = lubridate::mdy_hm("01-01-2021 00:00")
-                      ,length.out = 20,
-                      ,by = "12 hours"))
+date_time_seq <- as.POSIXct(seq(
+  from = lubridate::mdy_hm("01-01-2021 00:00"),
+  length.out = 20, ,
+  by = "12 hours"
+))
 
 mt_sim <- move2::mt_sim_brownian_motion(t = date_time_seq, sigma = 0.001)
 sf::st_crs(mt_sim) <- 4326

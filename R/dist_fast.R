@@ -12,7 +12,7 @@ dist_fast <- function(x1, y1, x2, y2, longlat = TRUE) {
     x1 <- x1[-nrow(x1), 1]
   }
   nx <- length(x1)
-  if (nx != length(y1) | nx != length(x2) | nx != length(y2)) {
+  if (nx != length(y1) || nx != length(x2) || nx != length(y2)) {
     stop("arguments must have equal lengths")
   }
   if (longlat) {

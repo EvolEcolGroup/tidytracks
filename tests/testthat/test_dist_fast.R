@@ -6,8 +6,10 @@ test_that("dist_fast is equivalent to sf::dist", {
   coords_sf <- sf::st_as_sf(coords, coords = c("x", "y"), crs = 4326)
 
   # Calculate distances using dist_fast
-  dist_fast_result <- dist_fast(coords$x[1], coords$y[1],
-                                coords$x[2], coords$y[2])
+  dist_fast_result <- dist_fast(
+    coords$x[1], coords$y[1],
+    coords$x[2], coords$y[2]
+  )
   # Convert to meters for comparison
   dist_fast_result <- as_units(dist_fast_result, "m")
 

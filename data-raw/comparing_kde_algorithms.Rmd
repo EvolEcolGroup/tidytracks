@@ -16,7 +16,7 @@ From the vignette:
 ```{r cars}
 library(adehabitatHR)
 data("puechabonsp")
-kud <- kernelUD(puechabonsp$relocs[,1], h = "href", same4all = TRUE)
+kud <- kernelUD(puechabonsp$relocs[, 1], h = "href", same4all = TRUE)
 kud
 ```
 
@@ -31,7 +31,7 @@ The third value is the number of cells in the grid.
 kud[[1]]@grid
 ```
 ```{r}
-grid_range <- apply(sp::coordinates(kud[[1]]@grid),2, range)
+grid_range <- apply(sp::coordinates(kud[[1]]@grid), 2, range)
 ```
 
 And h is
@@ -46,13 +46,13 @@ kud[[4]]@h
 # Using tidytrack
 
 ```{r}
-  boar_mt <- readRDS("../tests/testthat/testdata/wildboar_mt.rds")
-  # group by name
-  boar_mt <- boar_mt %>%
-    dplyr::group_by(Name)
-  boar_kde <- tt_hr_kde(boar_mt,
-                        h = "h_ref_ade_indiv",
-                        levels = c(0.50, 0.95))
+boar_mt <- readRDS("../tests/testthat/testdata/wildboar_mt.rds")
+# group by name
+boar_mt <- boar_mt %>%
+  dplyr::group_by(Name)
+boar_kde <- tt_hr_kde(boar_mt,
+                      h = "h_ref_ade_indiv",
+                      levels = c(0.50, 0.95))
 
 ```
 ```{r}
@@ -64,5 +64,4 @@ kud[[4]]@h
 ggplot() +
   geom_sf(data = boar_mt,
           aes(color = Name))
-
 ```

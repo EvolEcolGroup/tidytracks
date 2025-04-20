@@ -9,14 +9,15 @@ event_speed(x, units)
 \arguments{
 \item{x}{A move2 object}
 
-\item{units}{Optiona, the units to use for the speed. The default is "m/s". Other}
+\item{units}{Optiona, the units to use for the speed. The default is "m/s".
+Other}
 }
 \value{
 a vector of speeds of the same lenght as the number of events in \code{x}
 }
 \description{
 This function returns the speed of each segment between events for each
-track. In order to return a vector with the same number of rows as the
-event table, the speed of the last event is set to NA. The speed is calculated
-as the distance between events divided by the time between events.
+track. In order to return a vector with the same number of rows as the event
+table, the speed of the last event is set to NA. The speed is calculated as
+the distance between events divided by the time between events.
 }

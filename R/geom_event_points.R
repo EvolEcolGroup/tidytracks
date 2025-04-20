@@ -35,11 +35,14 @@
 #' @returns A `ggplot2` layer object.
 #' @export
 
-geom_event_points <- function(mapping = ggplot2::aes(), data = NULL, stat = "sf",
-                               position = "identity",
-                               na.rm = FALSE, show.legend = NA,
-                               inherit.aes = TRUE, ...) {
-  ggplot2::geom_sf(mapping = mapping, data = data, stat = stat,
-          position = position, na.rm = na.rm, show.legend = show.legend,
-          inherit.aes = inherit.aes, ...)
+geom_event_points <- function(mapping = ggplot2::aes(), data = NULL,
+                              stat = "sf",
+                              position = "identity",
+                              na.rm = FALSE, show.legend = NA,
+                              inherit.aes = TRUE, ...) {
+  ggplot2::geom_sf(
+    mapping = mapping, data = data, stat = stat,
+    position = position, na.rm = na.rm, show.legend = show.legend,
+    inherit.aes = inherit.aes, ...
+  )
 }

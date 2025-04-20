@@ -80,11 +80,19 @@ test_that("mt_trip_split works as expected", {
     )
   )
   # detect correctly time at colony
-  expect_true(all(test_mt_split$trip_id[at_center] %in%
-    c("id_1_trip_na", "id_2_trip_na")))
+  expect_true(
+    all(
+      test_mt_split$trip_id[at_center] %in%
+        c("id_1_trip_na", "id_2_trip_na")
+    )
+  )
   # the last trip of id_1 is incomplete
-  expect_true((show_meta(test_mt_split) %>%
-    dplyr::filter(trip_id == "id_1_trip_3"))$trip_type == "incomplete")
+  expect_true(
+    (
+      show_meta(test_mt_split) %>%
+        dplyr::filter(trip_id == "id_1_trip_3")
+    )$trip_type == "incomplete"
+  )
 
   # repeat with a differnet units
   test_mt_split2 <- tt_split_trips(test_mt,
@@ -103,8 +111,12 @@ test_that("mt_trip_split works as expected", {
     complete = FALSE
   )
   # the last trip of id_1 is incomplete
-  expect_true((show_meta(test_mt_split3) %>%
-    dplyr::filter(trip_id == "id_1_trip_3"))$trip_type == "complete")
+  expect_true(
+    (
+      show_meta(test_mt_split3) %>%
+        dplyr::filter(trip_id == "id_1_trip_3")
+    )$trip_type == "complete"
+  )
 
   # check that, if we say complete = TRUE, all trips are complete
   test_mt_split4 <- tt_split_trips(test_mt,
@@ -117,7 +129,6 @@ test_that("mt_trip_split works as expected", {
   expect_true(all((show_meta(test_mt_split4)$trip_type == "complete")))
   # there should only be 4 lines (3 trips + 1 trip)
   expect_equal(nrow(show_meta(test_mt_split4)), 4)
-
 })
 
 # @TODO write tests with center inputs as different from each others, or

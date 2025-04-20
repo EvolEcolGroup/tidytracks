@@ -14,7 +14,7 @@
 
 tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
   # Check if x is a grouped move2 object
-  if (!inherits(x, "move2") || !inherits(x,"grouped_df")) {
+  if (!inherits(x, "move2") || !inherits(x, "grouped_df")) {
     stop("x must be a grouped move2 object")
   }
 
@@ -28,7 +28,7 @@ tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
   # get the group indices
   group_index <- dplyr::group_indices(x)
   group_unique <- unique(group_index)
-  group_labels <- tidyr::unite(dplyr::group_keys(x), col="group_labels") %>%
+  group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
   # Compute the minimum convex polygon for each group and level
   xy <- sf::st_coordinates(x)
@@ -42,15 +42,16 @@ tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
     xy_sub <- xy[group_index == group_id, ]
     # Create MCP for each level
     geometry <- mcp_one_group(xy_sub, levels,
-                              crs = sf::st_crs(x))
+      crs = sf::st_crs(x)
+    )
     # Calculate area
-#    area <- sf::st_area(geometry)
+    area <- sf::st_area(geometry)
 
     # Create a tibble with the results
     tibble::tibble(
       group_id = group_labels[group_id],
       level = levels,
-#      area = area,
+      area = area,
       geometry = geometry
     )
   }
@@ -84,10 +85,9 @@ tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
 #' @returns A list of sf polygons representing the MCP at each level
 #' @keywords internal
 
-mcp_one_group <- function(xy, levels,crs) {
-
+mcp_one_group <- function(xy, levels, crs) {
   mxy <- colMeans(xy)
-  sqd <- (xy[,1] - mxy[1])^2 + (xy[,2] - mxy[2])^2
+  sqd <- (xy[, 1] - mxy[1])^2 + (xy[, 2] - mxy[2])^2
   qts <- stats::quantile(sqd, levels)
   geometry <- lapply(qts, function(i) chull_mcp(xy[sqd <= i, ]))
   geometry <- sf::st_as_sfc(geometry, crs = crs)

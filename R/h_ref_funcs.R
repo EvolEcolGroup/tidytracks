@@ -13,8 +13,8 @@ h_ref_indiv <- function(xy, group_index) {
     # get the coordinates for this group
     xy_sub <- xy[group_index == i, ]
     # compute the bandwidth for this group
-    h_ref <- (sqrt(0.5 * (stats::var(xy_sub[,1]) + stats::var(xy_sub[,2])))) * (nrow(xy_sub)^-(1 / 6))
-
+    h_ref <- (sqrt(0.5 * (stats::var(xy_sub[, 1]) +
+                            stats::var(xy_sub[, 2])))) * (nrow(xy_sub)^-(1 / 6))
   })
   return(unlist(h_ref))
 }
@@ -44,7 +44,7 @@ h_ref_mean <- function(xy, group_index) {
 
 h_ref_ade_indiv <- function(xy, group_index) {
   h_ref <- h_ref_indiv(xy, group_index)
-  return(h_ref*4)
+  return(h_ref * 4)
 }
 
 #' Compute h_ref for KDE using the adehabitatHR method, returning the mean value
@@ -62,7 +62,6 @@ h_ref_ade_mean <- function(xy, group_index) {
 }
 
 h_ref_one_group <- function(xy) {
-  h_ref <- (sqrt(0.5 * (stats::var(xy[,1]) + stats::var(xy[,2])))) * (nrow(xy)^-(1 / 6))
+  h_ref <- (sqrt(0.5 * (stats::var(xy[, 1]) + stats::var(xy[, 2])))) * (nrow(xy)^-(1 / 6))
   return(h_ref)
 }
-

@@ -1,22 +1,24 @@
 #' Split tracks into trips for central place foragers
 #'
-#' @description This function splits tracks into trips for central place foragers
-#' by identifying the trips based on a distance from the colony/nest.
+#' @description This function splits tracks into trips for central place
+#'   foragers by identifying the trips based on a distance from the colony/nest.
 #'
 #' @param x A move2 object
 #' @param center_col the column name for the center of the colony/nest of each
-#' track as found in the metadata table. Alternatively, an `sf` object of
-#' either length 1 or the same length as the number of tracks in the move2 object.
-#' If a single geometry object is provided, it will be used as the center for all
-#' tracks.
+#'   track as found in the metadata table. Alternatively, an `sf` object of
+#'   either length 1 or the same length as the number of tracks in the move2
+#'   object. If a single geometry object is provided, it will be used as the
+#'   center for all tracks.
 #' @param buffer_outbound the distance from the center to define outbound trips,
-#' specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10, "km")`.
+#'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
+#'   "km")`.
 #' @param buffer_inbound the distance from the center to define inbound trips,
-#' specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10, "km")`.
+#'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
+#'   "km")`.
 #' @param complete boolean, if TRUE, only complete trips (i.e. the ones that
-#' ended within the inbound buffer) are kept. If FALSE, all trips are kept, and
-#' events at the colony (i.e. in-between trips) are collected into a dummy trip
-#' labelled "trip_na".
+#'   ended within the inbound buffer) are kept. If FALSE, all trips are kept,
+#'   and events at the colony (i.e. in-between trips) are collected into a dummy
+#'   trip labelled "trip_na".
 #' @returns a move2 object with the trips split.
 #' @export
 #' @importFrom foreach %do%
@@ -94,7 +96,7 @@ tt_split_trips <- function(x, center_col = NULL,
     split_one_track(unique_ids[i],
       coords[ids == unique_ids[i], 1],
       coords[ids == unique_ids[i], 2],
-      is_lonlat = sf::st_is_longlat(x),
+      is_lonlat = is_longlat,
       center_x = center_col[i, 1],
       center_y = center_col[i, 2],
       buffer_inbound = buffer_in_uless,
@@ -105,7 +107,8 @@ tt_split_trips <- function(x, center_col = NULL,
   # Combine trip IDs into a single vector
   x$trip_id <- unlist(purrr::map_depth(trip_list, 1, "trip_labels"))
   # now get the trip meta and update the track meta accordingly
-  trip_meta <- purrr::map_depth(trip_list, 1, "trip_meta") %>% dplyr::bind_rows()
+  trip_meta <- purrr::map_depth(trip_list, 1, "trip_meta") %>%
+    dplyr::bind_rows()
   # replace the track_id col name with the appropriate name for x
   trip_meta <- trip_meta %>% dplyr::rename_with(
     ~ move2::mt_track_id_column(x), dplyr::all_of("track_id")
@@ -120,7 +123,7 @@ tt_split_trips <- function(x, center_col = NULL,
   # if complete, remove any trips that are not complete
   trip_type <- NULL # hack to avoid it being flagged as global in checks
   if (complete) {
-    x <- x %>% filter_by_meta(trip_type == "complete") # @TODO this raises a warning
+    x <- x %>% filter_by_meta(trip_type == "complete")
   }
 
   return(x)
@@ -141,12 +144,15 @@ tt_split_trips <- function(x, center_col = NULL,
 #' as NA)
 #' @keywords internal
 split_one_track <- function(label,
-                            x, y, is_lonlat, center_x, center_y, buffer_outbound,
+                            x, y, is_lonlat,
+                            center_x, center_y,
+                            buffer_outbound,
                             buffer_inbound) {
   center_x_vec <- rep(center_x, length(x))
   center_y_vec <- rep(center_y, length(y))
   # Get distances between events and colony
-  dist_to_center <- dist_fast(x, y, center_x_vec, center_y_vec, longlat = is_lonlat)
+  dist_to_center <- dist_fast(x, y, center_x_vec, center_y_vec,
+                              longlat = is_lonlat)
   # define distances outside the outbound buffer
   out_events <- dist_to_center > buffer_outbound
   # label trips

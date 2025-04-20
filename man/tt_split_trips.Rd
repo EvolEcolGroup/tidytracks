@@ -17,9 +17,9 @@ tt_split_trips(
 
 \item{center_col}{the column name for the center of the colony/nest of each
 track as found in the metadata table. Alternatively, an \code{sf} object of
-either length 1 or the same length as the number of tracks in the move2 object.
-If a single geometry object is provided, it will be used as the center for all
-tracks.}
+either length 1 or the same length as the number of tracks in the move2
+object. If a single geometry object is provided, it will be used as the
+center for all tracks.}
 
 \item{buffer_outbound}{the distance from the center to define outbound trips,
 specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
@@ -28,14 +28,14 @@ specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10
 specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
 \item{complete}{boolean, if TRUE, only complete trips (i.e. the ones that
-ended within the inbound buffer) are kept. If FALSE, all trips are kept, and
-events at the colony (i.e. in-between trips) are collected into a dummy trip
-labelled "trip_na".}
+ended within the inbound buffer) are kept. If FALSE, all trips are kept,
+and events at the colony (i.e. in-between trips) are collected into a dummy
+trip labelled "trip_na".}
 }
 \value{
 a move2 object with the trips split.
 }
 \description{
-This function splits tracks into trips for central place foragers
-by identifying the trips based on a distance from the colony/nest.
+This function splits tracks into trips for central place
+foragers by identifying the trips based on a distance from the colony/nest.
 }

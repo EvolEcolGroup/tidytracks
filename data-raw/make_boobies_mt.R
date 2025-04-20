@@ -29,5 +29,4 @@ center_sf <- sf::st_as_sf(
 )
 temp_meta$colony_coord <- sf::st_geometry(center_sf)
 attr(boobies_mt, "track_data") <- temp_meta # also move2::mt_set_track_data()
-# move2::set_track_data(boobies_mt, temp_meta) <- temp_meta
 usethis::use_data(boobies_mt, overwrite = TRUE)
