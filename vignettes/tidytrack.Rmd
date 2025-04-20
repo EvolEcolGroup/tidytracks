@@ -46,14 +46,14 @@ boobies_mt
 
 We can see how each row in the table is an event, in this case a time-stamped GPS location for 
 a given bird, with the column `date_time` providing the time and column `geometry`
-defining the location. `deployment_id` (the designated `track_id_column`) is 
+defining the location. `bird_id` (the designated `track_id_column`) is 
 is the identifier that groups a set of events into a single track. 
 We can access the metadata for the tracks with `show_meta()`:
 ```{r}
 show_meta(boobies_mt)
 ```
 
-We can see how we have a `deployment_id` column that links back to the events
+We can see how we have a `bird_id` column that links back to the events
 table, and then information about the sex and species of the bird, as well as
 a column of coordinates for the colony location (they are stored as `sfc_POINT`
 geometries from the `sf` package, so that they come with crs information).
@@ -78,7 +78,7 @@ to do so:
 
 ```{r}
 boobies_sub <- boobies_mt %>%
-  filter_by_meta(deployment_id %in% c("69302", "69303", "69304"))
+  filter_by_meta(bird_id %in% c("69302", "69303", "69304"))
 boobies_sub
 ```
 
@@ -86,15 +86,15 @@ We can now plot the data:
 ```{r}
 library(ggplot2)
 ggplot() +
-  geom_sf(data = boobies_sub, aes(color = deployment_id))
+  geom_event_points(data = boobies_sub, aes(color = bird_id))
 ```
 
 We can only see two individuals in the plot. Let's explore what each individual
 is doing by plotting the locations of each individual separately:
 ```{r}
 ggplot() +
-  geom_sf(data = boobies_sub, aes(color = deployment_id)) +
-  facet_wrap(~deployment_id)
+  geom_event_points(data = boobies_sub, aes(color = bird_id)) +
+  facet_wrap(~bird_id)
 ```
 We can see that '69303' moved very little (or not at all) during the period.
 
@@ -102,16 +102,16 @@ As a `move2` object is a derived `sf` tibble, we can simply use `coord_sf` to
 plot the data in a map projection:
 ```{r}
 ggplot() +
-  geom_sf(data = boobies_sub, aes(color = deployment_id)) +
+  geom_event_points(data = boobies_sub, aes(color = bird_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
 Instead of plotting the individual locations, we might prefer to plot the
-trajectory using `track_lines()`:
+trajectory as a pth:
 
 ```{r}
 ggplot() +
-  geom_sf(data = track_lines(boobies_sub), aes(color = deployment_id)) +
+  geom_track_path(data = boobies_sub, aes(color = bird_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
@@ -231,7 +231,7 @@ Now we can plot the cleaned data:
 ```{r eval=FALSE}
 ggplot() +
   geom_sf(data = track_lines(boobies_sub_cleaned),
-          aes(color = deployment_id)) +
+          aes(color = bird_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
@@ -273,4 +273,32 @@ ggplot() +
           aes(color = trip_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 
+```
+
+
+# Home Range estimates
+
+We can now estimate the home range of individuals. First, we will process
+the full dataset to split trips, and drop individuals that did not move
+or migrated (such as the ones seen in the previosu section):
+
+```{r}
+boobies_trips <- boobies_mt %>%
+  tt_split_trips(
+    center_col = "colony_coord",
+    buffer_outbound = as_units(3, "km"),
+    buffer_inbound = as_units(10, "km")
+  )
+
+```
+
+Let's get a summary of the metadata of what is left:
+```{r}
+summary(show_meta(boobies_trips))
+```
+
+We'll take the 3 birds with the most trips:
+```{r}
+boobies_trips <- boobies_trips %>%
+  filter_by_meta(bird_id %in% c("69339", "69314", "69333"))
 ```

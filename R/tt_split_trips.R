@@ -79,9 +79,9 @@ tt_split_trips <- function(x, center_col = NULL,
 
 
 
-  # TODO in the code above, if given an sf object with multiple rows, we should demand
-  # that there is a column with the same name as the track id column in the move 2
-  # obejct and make sure that we match up to avoid confusion
+  # TODO in the code above, if given an sf object with multiple rows, we should
+  # demand that there is a column with the same name as the track id column in
+  # the move2 object and make sure that we match up to avoid confusion
 
   # Get coordinates and metadata
   coords <- sf::st_coordinates(x)
@@ -118,6 +118,7 @@ tt_split_trips <- function(x, center_col = NULL,
   # change the track_id_column to trip_id
   x <- move2::mt_set_track_id_column(x, "trip_id")
   # if complete, remove any trips that are not complete
+  trip_type <- NULL # hack to avoid it being flagged as global in checks
   if (complete) {
     x <- x %>% filter_by_meta(trip_type == "complete") # @TODO this raises a warning
   }

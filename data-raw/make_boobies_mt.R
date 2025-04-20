@@ -2,7 +2,7 @@
 set.seed(1)
 # get the data from track2KBA
 boobies <- track2KBA::boobies %>%
-  dplyr::mutate(deployment_id = as.factor(track_id)) %>%
+  dplyr::mutate(bird_id = as.factor(track_id)) %>%
   dplyr::select(-c(lon_colony, lat_colony, track_id))
 # sort out dates
 boobies <- boobies %>%
@@ -13,7 +13,7 @@ boobies_sf <- sf::st_as_sf(boobies,
   crs = "+proj=longlat +datum=WGS84"
 )
 boobies_mt <- mt_as_move2(boobies_sf,
-  track_id_column = "deployment_id",
+  track_id_column = "bird_id",
   time_column = "date_time"
 )
 # fill in the metadata

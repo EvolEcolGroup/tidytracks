@@ -8,17 +8,14 @@ test_that("tt_hr_mcp works with multiple tracks", {
   # group by name
   boar_mt <- boar_mt %>%
     dplyr::group_by(Name)
-  boar_mcp <- tt_hr_kde(boar_mt, levels = c(0.50, 0.95))
+  boar_kde <- tt_hr_kde(boar_mt, levels = c(0.50, 0.95))
   # expect 8 rows
-  expect_equal(nrow(boar_mcp), 8)
+  expect_equal(nrow(boar_kde), 8)
   # expect this is an sf object
-  expect_true(inherits(boar_mcp, "sf"))
-  # now group by name and age
-  boar_mt <- boar_mt %>%
-    dplyr::group_by(Name, Age)
+  expect_true(inherits(boar_kde, "sf"))
 
 
   # simple plotting example to check the geometry
-  #  ggplot(boar_mcp) +
+  #  ggplot(boar_kde) +
   #    geom_sf(aes(fill=group_id), alpha = 0.7)
 })

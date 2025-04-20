@@ -1,7 +1,6 @@
 test_that("mt_trip_split works as expected", {
   # create a simple trajectory that goes out and comes back along the longitude
   # axis
-  library(dplyr)
   set.seed(1)
   coords_df <- data.frame(
     longitude = c(
@@ -25,8 +24,8 @@ test_that("mt_trip_split works as expected", {
       by = "1 hour", length.out = 6
     )
   )
-  coords_df$deployment_id <- paste0("id_", c(rep(1, 24), rep(2, 6)))
-  coords_df$deployment_id <- as.factor(coords_df$deployment_id)
+  coords_df$bird_id <- paste0("id_", c(rep(1, 24), rep(2, 6)))
+  coords_df$bird_id <- as.factor(coords_df$bird_id)
   coords_df$lon_colony <- 0
   coords_df$lat_colony <- 0
   coords_df <- sf::st_as_sf(coords_df,
@@ -34,7 +33,7 @@ test_that("mt_trip_split works as expected", {
     crs = "+proj=longlat +datum=WGS84"
   ) # todo use equal area proj in km
   test_mt <- move2::mt_as_move2(coords_df,
-    track_id_column = "deployment_id",
+    track_id_column = "bird_id",
     time_column = "date_time"
   )
   # ggplot(test_mt) + geom_sf(aes (color = date_time))+
@@ -69,7 +68,7 @@ test_that("mt_trip_split works as expected", {
   )
   # check that the trip ids are correct
   expect_equal(length(unique(test_mt_split$trip_id)), 6)
-  expect_equal(length(unique(test_mt_split$deployment_id)), 2)
+  expect_equal(length(unique(test_mt_split$bird_id)), 2)
   # the first trip is from 2 to 12
   expect_true(
     all(
@@ -85,7 +84,7 @@ test_that("mt_trip_split works as expected", {
     c("id_1_trip_na", "id_2_trip_na")))
   # the last trip of id_1 is incomplete
   expect_true((show_meta(test_mt_split) %>%
-    filter(trip_id == "id_1_trip_3"))$trip_type == "incomplete")
+    dplyr::filter(trip_id == "id_1_trip_3"))$trip_type == "incomplete")
 
   # repeat with a differnet units
   test_mt_split2 <- tt_split_trips(test_mt,
@@ -105,7 +104,7 @@ test_that("mt_trip_split works as expected", {
   )
   # the last trip of id_1 is incomplete
   expect_true((show_meta(test_mt_split3) %>%
-    filter(trip_id == "id_1_trip_3"))$trip_type == "complete")
+    dplyr::filter(trip_id == "id_1_trip_3"))$trip_type == "complete")
 
   # check that, if we say complete = TRUE, all trips are complete
   test_mt_split4 <- tt_split_trips(test_mt,

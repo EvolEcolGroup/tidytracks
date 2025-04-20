@@ -1,0 +1,68 @@
+---
+title: "Comparing kde options"
+author: "Andrea"
+date: "2025-04-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## AdehabitatHR
+
+From the vignette:
+
+```{r cars}
+library(adehabitatHR)
+data("puechabonsp")
+kud <- kernelUD(puechabonsp$relocs[,1], h = "href", same4all = TRUE)
+kud
+```
+
+```{r}
+image(kud)
+```
+
+In a grid topology, the offset is the first value, and the resolution is the second value.
+The third value is the number of cells in the grid.
+
+```{r}
+kud[[1]]@grid
+```
+```{r}
+grid_range <- apply(sp::coordinates(kud[[1]]@grid),2, range)
+```
+
+And h is
+```{r}
+kud[[1]]@h
+kud[[2]]@h
+kud[[3]]@h
+kud[[4]]@h
+```
+
+
+# Using tidytrack
+
+```{r}
+  boar_mt <- readRDS("../tests/testthat/testdata/wildboar_mt.rds")
+  # group by name
+  boar_mt <- boar_mt %>%
+    dplyr::group_by(Name)
+  boar_kde <- tt_hr_kde(boar_mt,
+                        h = "h_ref_ade_indiv",
+                        levels = c(0.50, 0.95))
+
+```
+```{r}
+  ggplot(boar_kde) +
+    geom_sf(aes(fill=group_id), alpha = 0.7)
+
+```
+```{r}
+ggplot() +
+  geom_sf(data = boar_mt,
+          aes(color = Name))
+
+```

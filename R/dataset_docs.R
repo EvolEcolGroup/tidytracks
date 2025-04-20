@@ -8,7 +8,7 @@
 #'
 #' @format An move2 object with 178006 rows and 3 columns
 #' \describe{
-#'   \item{deployment_id}{ids of each deployment}
+#'   \item{bird_id}{ids of each bird}
 #'   \item{date_time}{time stamp for each event}
 #'   \item{geometry}{longitudes and latitudes, as an `sf` geometry for each event}
 #' }

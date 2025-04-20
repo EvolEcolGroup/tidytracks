@@ -32,6 +32,8 @@ tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
     dplyr::pull(1)
   # Compute the minimum convex polygon for each group and level
   xy <- sf::st_coordinates(x)
+
+  group_id <- NULL # hack to avoid it being flagged as global in checks
   mcp_results <- foreach::foreach(
     group_id = group_unique,
     .combine = dplyr::bind_rows

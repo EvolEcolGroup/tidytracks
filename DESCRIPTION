@@ -18,9 +18,11 @@ Imports:
   foreach,
   geodist,
   methods,
+  MASS,
   purrr,
   rlang,
   sf,
+  stats,
   tibble,
   tidyr
 Suggests:

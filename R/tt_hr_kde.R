@@ -48,7 +48,6 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
   xy <- sf::st_coordinates(x)
   # check h
   if (!is.numeric(h)){
-    browser()
     h <- match.arg(h, c("h_ref_mean", "h_ref_indiv",
                      "h_ref_ade_mean", "h_ref_ade_indiv"))
     h_fun <- get(h) # assign the function to h_fun
@@ -65,10 +64,10 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
     # get extend of x, which is an sf object
     grid_bbox <- sf::st_bbox(x)
     # extend the grid by a fixed factor
-    # TODO compare to amt (extending by 50%),
+    # TODO compare to amt (extending by 50%), adehabitatHR (extending by 1)
     # and track2kba (extending by 0.05 or h*2000, whichever is larger))
-    extend_x <- (grid_bbox$xmax-grid_bbox$xmin) * 0.25
-    extend_y <- (grid_bbox$ymax-grid_bbox$ymin) * 0.25
+    extend_x <- (grid_bbox$xmax-grid_bbox$xmin) * 1
+    extend_y <- (grid_bbox$ymax-grid_bbox$ymin) * 1
 
     grid <- list(xmin = grid_bbox$xmin - extend_x,
                  ymin = grid_bbox$ymin - extend_y,
@@ -76,17 +75,21 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
                  ymax = grid_bbox$ymax + extend_y)
     # set resolution to get a 1000 cells
     grid[["res"]] <- sqrt( (grid$xmax-grid$xmin) *
-                             (grid$ymax-grid$ymin)/1000)
+                             (grid$ymax-grid$ymin)/1500)
+    # update the max to be an exact multiple of res
+    grid[["xmax"]] <- grid$xmin + ceiling((grid$xmax-grid$xmin)/grid$res) * grid$res
+    grid[["ymax"]] <- grid$ymin + ceiling((grid$ymax-grid$ymin)/grid$res) * grid$res
+
   } else if (length(grid) != 5) {
     stop("grid must be a named vector of length 5")
   } else if (!all(c("xmin", "ymin", "xmax", "ymax", "res") %in% names(grid))) {
-    stop("grid must be a named vector of length 5 with names xmin, ymin, xmax, ymax, and res")
+    stop("grid must be a list of length 5 with names xmin, ymin, xmax, ymax, and res")
   }
 
-
+  group_id <- NULL # hack to avoid it being flagged as global in checks
   kde_results <- foreach::foreach(
     group_id = group_unique,
-    .combine = dplyr::bind_rows
+    .combine = rbind #dplyr::bind_rows
   ) %do% {
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, ]
@@ -97,14 +100,15 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
                               h = h[group_id],
                               keep_object = keep_objects)
     # Calculate area
-    #    area <- sf::st_area(geometry)
+   area <- sf::st_area(geometry)
     # Create a tibble with the results
-    tibble::tibble(
+    cbind(tibble::tibble(
       group_id = group_labels[group_id],
       level = levels,
-      #      area = area,
-      geometry = geometry
-    )
+      h = h[group_id],
+      area = area,
+
+     ), geometry)
   }
 
   # now cast the results to an sf object
@@ -154,7 +158,6 @@ kde_one_group <- function(xy, levels, crs, grid, h, keep_object = FALSE) {
     # combine into a single sf multipolygon
     sf::st_combine(sf::st_sfc(sf_polys, crs = crs))
   })
-  browser()
   # create a geometry set with one feature per level
   kde_polys <- sf::st_sfc(do.call(rbind, kde_polys), crs = crs)
   return(kde_polys)
