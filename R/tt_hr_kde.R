@@ -93,26 +93,36 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
   ) %do% {
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, ]
-    # Create MCP for each level
+    h_val <- h[group_id]
+    # Create kernel for each level
     geometry <- kde_one_group(xy_sub, levels,
                               crs = sf::st_crs(x),
                               grid = grid,
-                              h = h[group_id],
+                              h = h_val,
                               keep_object = keep_objects)
     # Calculate area
    area <- sf::st_area(geometry)
     # Create a tibble with the results
-    cbind(tibble::tibble(
+   cbind(tibble::tibble(
       group_id = group_labels[group_id],
       level = levels,
-      h = h[group_id],
-      area = area,
-
-     ), geometry)
+      h = h_val,
+      area = area), geometry)
   }
 
   # now cast the results to an sf object
   kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
+  # add a method attribute
+  attr(kde_results, "hr_method") <- c("kde")
+
+  # if there was a single grouping variable, rename the group_id column
+  if (length(dplyr::group_vars(x)) == 1) {
+    kde_results <- kde_results %>%
+      dplyr::rename_with(
+        ~ dplyr::group_vars(x), dplyr::all_of("group_id")
+      )
+  }
+
 
   return(kde_results)
 }

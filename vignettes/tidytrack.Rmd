@@ -107,7 +107,7 @@ ggplot() +
 ```
 
 Instead of plotting the individual locations, we might prefer to plot the
-trajectory as a pth:
+trajectory as a path:
 
 ```{r}
 ggplot() +
@@ -141,7 +141,7 @@ library(dplyr)
 boobies_sub <- boobies_sub %>% mutate(speed = event_speed(.))
 ```
 
-Note the use of the . placeholder in the brackets of `event_speed()` to pass
+Note the use of the . place-holder in the brackets of `event_speed()` to pass
 the `move2` object to the function. This is only possible with a `magrittr` pipe
 (`%>%`), and not with the base R pipe (`|>`).
 
@@ -182,7 +182,7 @@ avoiding ambiguities. For example, `event_flag_mcconnell()` will return a logica
 indicating whether events are valid or whether they should be filtered out
 using McConnell's algorithm, whilst `tt_clean_mcconnell()` will return a
 `move2` object with the invalid events removed. Similarly, `event_distance()` 
-will return a vector of distances between events (a vector of the same lenght
+will return a vector of distances between events (a vector of the same length
 as the rows of the event column), while `track_distance()` will
 return the total (cumulative) distance for each track (and thus a shorter
 vector of length equal to the number of tracks in the object).
@@ -280,7 +280,7 @@ ggplot() +
 
 We can now estimate the home range of individuals. First, we will process
 the full dataset to split trips, and drop individuals that did not move
-or migrated (such as the ones seen in the previosu section):
+or migrated (such as the ones seen in the previous section):
 
 ```{r}
 boobies_trips <- boobies_mt %>%
@@ -299,6 +299,51 @@ summary(show_meta(boobies_trips))
 
 We'll take the 3 birds with the most trips:
 ```{r}
-boobies_trips <- boobies_trips %>%
+boobies_trips_sub <- boobies_trips %>%
   filter_by_meta(bird_id %in% c("69339", "69314", "69333"))
+```
+
+To estimate home ranges, we need to project the data to an equal area projection.
+We can use the `sf::st_transform()` function to do this:
+```{r}
+boobies_trips_sub <- boobies_trips_sub %>%
+  sf::st_transform(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
+```
+
+We can now estimate the home range using Kernel Density Estimation. We want to 
+estimate the home range for each bird, so we will group by `bird_id` (note that)
+```{r}
+boobies_kde <- boobies_trips_sub %>%
+  group_by(bird_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95))
+```
+
+`boobies_kde` is an `sf` object, with estimates of the area (in the units of
+the projection, in this case m^2) and a geometry column:
+```{r}
+boobies_kde
+```
+
+We could easily change the units of the area with `set_units()`:
+```{r}
+boobies_kde %>%
+  mutate(area = set_units(area, "km^2"))
+```
+
+
+We can plot the home ranges:
+```{r}
+ggplot(boobies_kde) +
+  geom_sf(aes(fill=group_id), alpha = 0.7)
+```
+
+We can simply add actual events with:
+```{r}
+ggplot() +
+  geom_sf(data = boobies_kde,
+          aes(fill=bird_id), alpha = 0.7) +
+  geom_event_points(data = boobies_trips_sub,
+                    aes(color = bird_id),
+                    size = 0.5) +
+  facet_wrap(~bird_id)
 ```
