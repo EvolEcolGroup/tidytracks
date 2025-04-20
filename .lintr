@@ -8,6 +8,9 @@ exclusions: list(
     ),
     "R/geom_track_path.R" = list( # param names to match ggplot2
       object_name_linter = Inf
+    ),
+    "R/geom_event_path.R" = list( # param names to match ggplot2
+      object_name_linter = Inf
     )
   )
 encoding: "UTF-8"
