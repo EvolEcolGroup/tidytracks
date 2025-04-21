@@ -5,7 +5,7 @@
 \title{A \code{ggplot2} geometry to plot event steps as paths}
 \usage{
 geom_event_path(
-  mapping = NULL,
+  mapping = ggplot2::aes(),
   data = NULL,
   stat = "sf",
   position = "identity",
@@ -15,10 +15,10 @@ geom_event_path(
 )
 }
 \arguments{
-\item{mapping}{Set of aesthetic mappings created by \code{\link[ggplot2:aes]{ggplot2::aes()}}. You
-must supply mapping for this geometry, there is no inheritance from the
-main \code{ggplot()} call. Variables from the events table can be used for
-mapping.}
+\item{mapping}{Set of aesthetic mappings created by \code{\link[ggplot2:aes]{ggplot2::aes()}}.
+Variables from the \emph{events} table can be used for mapping. If none is
+provided a basic aesthetics for the \code{sf} step segments (i.e. lines) will be
+used, as it is the case for \code{ggplot2::geom_sf()}.}
 
 \item{data}{The \code{move2} object to be displayed. For this geometry, there is
 no inheritance from the main \code{ggplot()} call, and data has to be specified.}
@@ -51,4 +51,9 @@ so that all variables in the event table are available for mapping the
 aesthetics. The resulting \code{sf} lines are then plotted via a wrapper around
 \verb{[ggplot2::geom_sf()]}, thus allowing for projections to be set using the
 \code{\link[ggplot2:ggsf]{ggplot2::coord_sf()}}` function. See \code{\link[ggplot2:ggsf]{ggplot2::geom_sf()}} for details.
+}
+\details{
+Units (implemented via the package \code{units}) are produced by many
+operations, but are not fully compatible with \code{ggplot2}. This function
+internally drops units before creating a \code{ggplot2} layer.
 }

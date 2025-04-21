@@ -86,23 +86,31 @@ We can now plot the data:
 ```{r}
 library(ggplot2)
 ggplot() +
-  geom_event_points(data = boobies_sub, aes(color = bird_id))
+  geom_event_point(data = boobies_sub, aes(color = bird_id))
 ```
 
 We can only see two individuals in the plot. Let's explore what each individual
 is doing by plotting the locations of each individual separately:
 ```{r}
 ggplot() +
-  geom_event_points(data = boobies_sub, aes(color = bird_id)) +
+  geom_event_point(data = boobies_sub, aes(color = bird_id)) +
   facet_wrap(~bird_id)
 ```
+
+```{r}
+ggplot() +
+  geom_event_path(data = boobies_sub) +
+  facet_wrap(~bird_id)
+```
+
+
 We can see that '69303' moved very little (or not at all) during the period.
 
 As a `move2` object is a derived `sf` tibble, we can simply use `coord_sf` to
 plot the data in a map projection:
 ```{r}
 ggplot() +
-  geom_event_points(data = boobies_sub, aes(color = bird_id)) +
+  geom_event_point(data = boobies_sub, aes(color = bird_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
@@ -198,6 +206,17 @@ if we just print a few speeds, we can easily check the units:
 ```{r}
 boobies_sub[1:10, ] %>% event_speed()
 ```
+
+```{r}
+boobies_sub <- boobies_sub %>% mutate(speed = event_speed(.))
+ggplot() +
+  geom_event_path(
+    data = boobies_sub,
+    aes(color = speed)
+  ) +
+  facet_wrap(~bird_id)
+```
+
 
 We can remove locations characterised by unlikely speeds using the McConnell's
 algorithm (the same used by `trip::speedfilter()`):
@@ -343,7 +362,7 @@ ggplot() +
     data = boobies_kde,
     aes(fill = bird_id), alpha = 0.7
   ) +
-  geom_event_points(
+  geom_event_point(
     data = boobies_trips_sub,
     size = 0.1
   ) +

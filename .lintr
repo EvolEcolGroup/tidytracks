@@ -3,7 +3,7 @@ linters: linters_with_defaults(
   )
 exclusions: list(
     "data-raw",
-    "R/geom_event_points.R" = list( # param names to match ggplot2
+    "R/geom_event_point.R" = list( # param names to match ggplot2
       object_name_linter = Inf
     ),
     "R/geom_track_path.R" = list( # param names to match ggplot2

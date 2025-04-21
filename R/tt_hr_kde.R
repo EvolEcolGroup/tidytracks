@@ -58,8 +58,10 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
   if (length(h) == 1) {
     h <- rep(h, length(group_unique))
   } else if (length(h) != length(group_unique)) {
-    stop("h must be a single value or a vector of the same length as ",
-         "the number of groups in x")
+    stop(
+      "h must be a single value or a vector of the same length as ",
+      "the number of groups in x"
+    )
   }
 
   # Check if grid is provided
@@ -89,8 +91,10 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
   } else if (length(grid) != 5) {
     stop("grid must be a named vector of length 5")
   } else if (!all(c("xmin", "ymin", "xmax", "ymax", "res") %in% names(grid))) {
-    stop("grid must be a list of length 5 with names xmin, ymin, ",
-         "xmax, ymax, and res")
+    stop(
+      "grid must be a list of length 5 with names xmin, ymin, ",
+      "xmax, ymax, and res"
+    )
   }
 
   group_id <- NULL # hack to avoid it being flagged as global in checks
@@ -175,7 +179,8 @@ kde_one_group <- function(xy, levels, crs, grid, h, keep_object = FALSE) {
   kde_polys <- lapply(levels, function(level) {
     # get the contour lines for this level
     contour_lines <- grDevices::contourLines(kde$x, kde$y, kde_cud,
-                                             level = level)
+      level = level
+    )
     # convert to sf polygons
     sf_polys <- lapply(contour_lines, function(line) {
       sf::st_polygon(list(cbind(line$x, line$y)))

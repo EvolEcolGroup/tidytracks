@@ -1,5 +1,5 @@
 test_that("mt_as_move2_trip work correctly", {
-  test_trip <- trip::walrus818[1:600, ]
+  test_trip <- trip::walrus818[1:300, ]
   test_move2 <- mt_as_move2(test_trip)
   expect_true(inherits(test_move2, "move2"))
   expect_equal(nrow(test_move2), nrow(test_trip))

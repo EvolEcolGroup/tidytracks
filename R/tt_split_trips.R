@@ -52,10 +52,12 @@ tt_split_trips <- function(x, center_col = NULL,
       # copy over for as many times as n tracks
       center_col <- matrix(rep(center_col, nrow(x)), ncol = 2)
     } else if (nrow(center_col) != nrow(x)) {
-      stop("center_col must be a geometry object of length 1 or the same length as the number of tracks in x")
+      stop("center_col must be a geometry object of length 1 or the same ",
+           "length as the number of tracks in x")
     }
   } else {
-    stop("center_col must be the name of a column in the metadata or an `sf` point object")
+    stop("center_col must be the name of a column in the metadata or ",
+         "an `sf` point object")
   }
 
   # Sort out units
@@ -114,10 +116,13 @@ tt_split_trips <- function(x, center_col = NULL,
     ~ move2::mt_track_id_column(x), dplyr::all_of("track_id")
   )
   # join it to the metadata
-  x <- move2::mt_set_track_data(x,
-                           dplyr::full_join(show_meta(x),
-                                            trip_meta,
-                                            by = move2::mt_track_id_column(x)))
+  x <- move2::mt_set_track_data(
+    x,
+    dplyr::full_join(show_meta(x),
+      trip_meta,
+      by = move2::mt_track_id_column(x)
+    )
+  )
   # change the track_id_column to trip_id
   x <- move2::mt_set_track_id_column(x, "trip_id")
   # if complete, remove any trips that are not complete
@@ -152,7 +157,8 @@ split_one_track <- function(label,
   center_y_vec <- rep(center_y, length(y))
   # Get distances between events and colony
   dist_to_center <- dist_fast(x, y, center_x_vec, center_y_vec,
-                              longlat = is_lonlat)
+    longlat = is_lonlat
+  )
   # define distances outside the outbound buffer
   out_events <- dist_to_center > buffer_outbound
   # label trips

@@ -6,11 +6,14 @@
 #'   projections to be set using the [ggplot2::coord_sf()]` function. See
 #'   [ggplot2::geom_sf()] for details. All variables from the metadata table can
 #'   be used for mapping.
+#' @details Units (implemented via the package `units`) are produced by many
+#'   operations, but are not fully compatible with `ggplot2`. This function
+#'   internally drops units before creating a `ggplot2` layer.
 #'
-#' @param mapping Set of aesthetic mappings created by [ggplot2::aes()]. You
-#'   must supply mapping for this geometry, there is no inheritance from the
-#'   main `ggplot()` call. Variables from the metadata table can be used for
-#'   mapping.
+#' @param mapping Set of aesthetic mappings created by [ggplot2::aes()].
+#'   Variables from the *metadata* table can be used for mapping. If none is
+#'   provided a basic aesthetics for the `sf` step segments (i.e. multilines)
+#'   will be used, as it is the case for `ggplot2::geom_sf()`.
 #' @param data The `move2` object to be displayed. For this geometry, there is
 #'   no inheritance from the main `ggplot()` call, and data has to be specified.
 #' @param stat The statistical transformation to use on the data for this layer.
@@ -27,14 +30,10 @@
 #' @returns A `ggplot2` layer object.
 #' @export
 
-geom_track_path <- function(mapping = NULL, data = NULL, stat = "sf",
+geom_track_path <- function(mapping = ggplot2::aes(), data = NULL, stat = "sf",
                             position = "identity",
                             na.rm = FALSE, show.legend = NA,
                             ...) {
-  # check that mapping is not NULL
-  if (is.null(mapping)) {
-    stop("mapping must be specified for this geometry")
-  }
   # check that data is not NULL
   if (is.null(data)) {
     stop("data must be specified for this geometry")
@@ -44,6 +43,8 @@ geom_track_path <- function(mapping = NULL, data = NULL, stat = "sf",
     stop("data must be a move2 object")
   }
   data_lines <- track_lines(data)
+  # drop units to make it compatible with ggplot2
+  data_lines <- tt_drop_units(data_lines)
   ggplot2::geom_sf(
     mapping = mapping, data = data_lines, stat = stat,
     position = position, na.rm = na.rm, show.legend = show.legend,
