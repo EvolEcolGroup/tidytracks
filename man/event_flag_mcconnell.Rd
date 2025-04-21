@@ -10,7 +10,7 @@ event_flag_mcconnell(x, max_speed = NULL)
 \item{x}{A move2 object}
 
 \item{max_speed}{speed, provided as a \code{units} object (e.g.
-units::as_units(50, 'm/s').}
+\code{as_units(50, 'm/s')}.}
 }
 \value{
 A logical vector indicating which points are valid

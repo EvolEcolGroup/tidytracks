@@ -8,6 +8,10 @@ boobies <- track2KBA::boobies %>%
 boobies <- boobies %>%
   dplyr::mutate(date_time = lubridate::ymd_hms(paste(date_gmt, time_gmt))) %>%
   dplyr::select(-c(date_gmt, time_gmt))
+# create a speed outlier
+boobies$longitude [boobies$bird_id == 69304 &
+                     boobies$longitude == -4.27082] <- -4.22592
+
 boobies_sf <- sf::st_as_sf(boobies,
   coords = c("longitude", "latitude"),
   crs = "+proj=longlat +datum=WGS84"

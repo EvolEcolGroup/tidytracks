@@ -5,7 +5,7 @@
 #'
 #' @param x A move2 object
 #' @param max_speed speed, provided as a `units` object (e.g.
-#' units::as_units(50, 'm/s').
+#' `as_units(50, 'm/s')`.
 #' @return A logical vector indicating which points are valid
 #' @export
 
@@ -18,10 +18,6 @@ event_flag_mcconnell <- function(x, max_speed = NULL) {
 
   # Determine if the coordinate system is in longitude/latitude
   projected <- !sf::st_is_longlat(x)
-  if (is.na(projected)) {
-    projected <- FALSE
-    # warning("coordinate system is NA, assuming longlat . . .")
-  }
 
   # If no max_speed is provided, return the original object
   if (is.null(max_speed)) {
@@ -31,11 +27,10 @@ event_flag_mcconnell <- function(x, max_speed = NULL) {
   } else {
     # figure out appropriate units give the current projection
     ref_units <- units(sf::st_distance(x$geometry[1:2]) /
-      units::as_units(60, "s")) # we measure time in seconds
-    message(ref_units)
+      units::as_units(60, "h")) # we measure time in hours
     # convert the speed into the reference units of the projection
     max_speed <- units::ud_convert(
-      max_speed,
+      unclass(max_speed),
       units(max_speed),
       ref_units
     )
@@ -97,7 +92,7 @@ event_flag_mcconnell <- function(x, max_speed = NULL) {
         x1[-1, 1], x1[-1, 2],
         longlat = !projected
       ) /
-        (diff(unclass(tms[ok])) / 3600)
+        (diff(unclass(tms[ok])) / 3600) # time in hours
 
       # Calculate running mean speed
       speed2 <- dist_fast(x1[-((nrow(x1) - 1):nrow(x1)), 1],
@@ -107,7 +102,7 @@ event_flag_mcconnell <- function(x, max_speed = NULL) {
       ) /
         ((unclass(tms[ok][-c(1, 2)]) -
           unclass(tms[ok][-c(n - 1, n)])) /
-          3600)
+          3600) # time in hours
 
       thisIndex <- index[ok] # indices for this iteration
       npts <- length(speed1) # number of points (number of segments, really)

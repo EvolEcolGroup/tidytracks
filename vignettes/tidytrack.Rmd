@@ -161,10 +161,10 @@ Note the message about 3 rows having been dropped; those are the 3 last events
 for which there is no distance. Also, functions in `tidytrack` tend to return
 values with units, to avoid conversion problems (in this case, meters per minute).
 Functions usually have a `units` parameter that allows to change the units that
-are returned.
+are returned (more details about working with units below).
 
-The histogram above is somewhat concerning,
-as we seem to have a smattering of events with very high speeds. We will see later
+The histogram above is suggests that there might be outliers in the data,
+as we seem to have a few events with very high speeds. We will see later
 how we can clean up the data using McConnell's algorithm.
 
 Finally, there are `track_*` functions, which operate on the whole track, and will
@@ -197,18 +197,27 @@ vector of length equal to the number of tracks in the object).
 We can get an overview of the speeds of each step with:
 ```{r}
 boobies_sub %>%
-  event_speed() %>%
   summary()
 ```
 
-Hmm, there is something odd here, as the maximum speed is 2044 m/minute. Incidentally,
-if we just print a few speeds, we can easily check the units:
+Some of those speeds (>2000 m/minute) seem a bit high. We can check the units (to make sure
+we have them right):
 ```{r}
-boobies_sub[1:10, ] %>% event_speed()
+units(boobies_sub$speed)
 ```
 
+
+Let's rephrase them in units that might be more familiar to us.
+
 ```{r}
-boobies_sub <- boobies_sub %>% mutate(speed = event_speed(.))
+boobies_sub %>%
+  mutate(speed = units::set_units(speed, "km/h")) %>%
+  summary()
+```
+Hmm, 122 km/h is a bit fast for a boobie; they are known to reach ~90 km/h.
+
+Let's plot the speed of each event:
+```{r}
 ggplot() +
   geom_event_path(
     data = boobies_sub,
@@ -217,41 +226,37 @@ ggplot() +
   facet_wrap(~bird_id)
 ```
 
+Note that, as we did not save the object with the new speed units, the
+original units are still in the object.
 
 We can remove locations characterised by unlikely speeds using the McConnell's
-algorithm (the same used by `trip::speedfilter()`):
+algorithm (the same used by `trip::speedfilter()`). Note that we can give the
+max_speed in any units we want, and they will be automatically converted to the
+units in the object.
 
-```{r eval=FALSE}
-boobies_sub_cleaned <- boobies_sub %>%
-  tt_clean_mcconnell(max_speed = units::as_units(50, "m/min"))
+```{r}
+boobies_sub <- boobies_sub %>%
+  tt_clean_mcconnell(max_speed = units::as_units(90, "km/h"))
 ```
 
-STOP THIS IS NOT WORKING YET!!!!
-
-Note that `mt_flag_mcconnell()` is "destructive" and will remove the points
+Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
 flagged by the algorithm. There is also a function `event_flag_mcconnell()`
 which flags points without removing them; see the advanced vignette for more
 details on how to use it (TODO there is no advance vignette yet!!!).
 
-Let us now check speeds:
+Let us now recompute the speeds (directly in km/h):
 
 ```{r eval=FALSE}
-boobies_sub_cleaned %>%
-  mt_speed() %>%
-  summary()
+boobies_sub <- boobies_sub %>%
+  mutate(speed = event_speed(., units = "km/h"))
+summary(boobies_sub)
 ```
 
-We can see that we have removed extreme speeds.
-
-Now we can plot the cleaned data:
-```{r eval=FALSE}
-ggplot() +
-  geom_sf(
-    data = track_lines(boobies_sub_cleaned),
-    aes(color = bird_id)
-  ) +
-  coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
-```
+We can see that we have removed step with an extreme speed. Note that the McConnell algorithm
+does not simply remove steps above the threshold speed, but uses the root
+mean square speed for previous/next and 2nd previous to next point, thus allowing
+for individual steps that might have a speed just above the threshold if the subsequent
+point is not too far away.
 
 
 # Splitting trips
@@ -360,6 +365,27 @@ We can simply add actual events with:
 ggplot() +
   geom_sf(
     data = boobies_kde,
+    aes(fill = bird_id), alpha = 0.7
+  ) +
+  geom_event_point(
+    data = boobies_trips_sub,
+    size = 0.1
+  ) +
+  facet_wrap(~bird_id)
+```
+
+To get a minimum convex polygon covering 90% of the data, we can simply use:
+```{r}
+boobies_mcp <- boobies_trips_sub %>%
+  group_by(bird_id) %>%
+  tt_hr_mcp(levels = c(0.90))
+```
+
+We can plot the MCPs with:
+```{r}
+ggplot() +
+  geom_sf(
+    data = boobies_mcp,
     aes(fill = bird_id), alpha = 0.7
   ) +
   geom_event_point(
