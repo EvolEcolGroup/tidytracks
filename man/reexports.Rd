@@ -4,6 +4,7 @@
 \name{reexports}
 \alias{reexports}
 \alias{mt_as_move2}
+\alias{as_units}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -12,5 +13,7 @@ below to see their documentation.
 
 \describe{
   \item{move2}{\code{\link[move2]{mt_as_move2}}}
+
+  \item{units}{\code{\link[units:units]{as_units}}}
 }}
 

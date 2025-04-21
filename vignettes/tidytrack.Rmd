@@ -1,6 +1,7 @@
 ---
 title: "tidytrack"
-output: rmarkdown::html_vignette
+output: # rmarkdown::html_vignette
+        pdf_document: default
 vignette: >
   %\VignetteIndexEntry{tidytrack}
   %\VignetteEngine{knitr::rmarkdown}
@@ -14,67 +15,382 @@ knitr::opts_chunk$set(
 )
 ```
 
+# Tracking data representation in `tidytrack`
+
+`tidytrack` uses tidy tables of tracks to represent tracking data (technically,
+these are `move2` objects). In a tidy table of tracks, each row represents an
+event, which is a time-stamped observation,
+often associated with a location. Events are grouped into tracks. Tracks can
+be all the locations from a deployment, or a subset of locations for a trip
+of a central place forager. The metadata that describes each of these tracks is
+stored in a separate table, which is linked to the event table by a 
+`track_id_column`. In this way, we do not have to repeat information (such as the id of
+an animal, or its sex) for each event, but we can use the metadata of the track
+to characterise all events within that track. Let us inspect a sample dataset
+that we will use throughout this vignette. The dataset is included in the
+package, and can be loaded with the following command:
+
 ```{r setup}
 library(tidytrack)
+data(boobies_mt)
 ```
 
-We use a dataset on boobies from the `track2KBA` package. The dataset contains 
-the tracking data of 43 boobies. We will use this dataset to demonstrate the 
-functionalities of the `tidytrack` package.
+It is a dataset on boobies containing 43 tracks with just over 178k GPS
+locations. Note that the data are based on XXX, but they were doctored to showcase
+functionality of `tidytrack`; do not use them for any real analysis!!!.
 
-```{r echo=FALSE, results='hide'}
-library(dplyr)
-# remove colony information from the dataset
-boobies <- track2KBA::boobies |> select(-c(lon_colony, lat_colony))
-
-```
-
-Let's inspect the table
+We can start by printing a summary of object:
 ```{r}
-summary(boobies)
+boobies_mt
 ```
 
-We start by combining the `data_gmt` and `time_gmt` columns into a single `POSIXct`,
-using the `lubridate` package, and then removing the original columns. 
-```{r}
-library(dplyr)
-library(lubridate)
-boobies <- boobies |>
-  mutate(date_time = ymd_hms(paste(date_gmt, time_gmt))) |>
-  select(-c(date_gmt, time_gmt))
-head(boobies)
-```
-
-Next, we convert the data into an `sf` object.
-```{r}
-library(sf)
-boobies_sf <- st_as_sf(boobies, coords = c("longitude", "latitude"),
-                       crs = "+proj=longlat +datum=WGS84")
-summary(boobies_sf)
-```
-
-We are now ready to cast the data into a `move2` object, which we will then
-use as the base of our analysis:
-```{r}
-library(move2)
-boobies_move <- mt_as_move2(boobies_sf, track_id_column = "track_id",
-                            time_column = "date_time")
-```
-
-We can now print a summary of the `move2` object:
-```{r}
-boobies_move
-```
-
-Each row in the table is an event, in this case a time-stamped GPS location for 
+We can see how each row in the table is an event, in this case a time-stamped GPS location for 
 a given bird, with the column `date_time` providing the time and column `geometry`
-defining the location. `track_id` (the designated `track_id_column`) is 
-is the identifier that groups a set of events into a single track. Each track 
-can further be given information in the form of metadata (metadata refers to
-information that applies to the whole track, like the id of the bird or its sex).
-We can access this information with `mt_show_meta()`:
+defining the location. `bird_id` (the designated `track_id_column`) is 
+is the identifier that groups a set of events into a single track. 
+We can access the metadata for the tracks with `show_meta()`:
 ```{r}
-mt_show_meta(boobies_move)
+head(show_meta(boobies_mt))
 ```
 
-In this case, the metadata tibble only includes the `track_id`.
+We can see how we have a `bird_id` column that links back to the events
+table, and then information about the sex and species of the bird, as well as
+a column of coordinates for the colony location (they are stored as `sfc_POINT`
+geometries from the `sf` package, so that they come with crs information).
+
+Note that `move2` objects don't have to be ordered by time. We can order the
+data by time using the `tt_order_time()` function:
+```{r}
+boobies_mt <- boobies_mt %>% tt_order_time()
+```
+
+Functions that start with `tt_` are specific to tidy tables of tracks
+(i.e. `move2` objects), and they
+operate on the whole object.
+
+# Plotting the data
+
+We can plot the data using the `ggplot2` package. Let us filter out the tracks
+for individuals 69302, 69303, and 69304. We could filter directly the `move2`
+object as if it was a normal tibble. However, we can also use information from
+the metadata to filter the tracks. We can use the `filter_by_meta()` function
+to do so:
+
+```{r}
+boobies_sub <- boobies_mt %>%
+  filter_by_meta(bird_id %in% c("69302", "69303", "69304"))
+boobies_sub
+```
+
+We can now plot the data:
+```{r}
+library(ggplot2)
+ggplot() +
+  geom_event_point(data = boobies_sub, aes(color = bird_id))
+```
+
+We can only see two individuals in the plot. Let's explore what each individual
+is doing by plotting the locations of each individual separately:
+```{r}
+ggplot() +
+  geom_event_point(data = boobies_sub, aes(color = bird_id)) +
+  facet_wrap(~bird_id)
+```
+
+```{r}
+ggplot() +
+  geom_event_path(data = boobies_sub) +
+  facet_wrap(~bird_id)
+```
+
+
+We can see that '69303' moved very little (or not at all) during the period.
+
+As a `move2` object is a derived `sf` tibble, we can simply use `coord_sf` to
+plot the data in a map projection:
+```{r}
+ggplot() +
+  geom_event_point(data = boobies_sub, aes(color = bird_id)) +
+  coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
+```
+
+Instead of plotting the individual locations, we might prefer to plot the
+trajectory as a path:
+
+```{r}
+ggplot() +
+  geom_track_path(data = boobies_sub, aes(color = bird_id)) +
+  coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
+```
+
+# A grammar of movement
+
+As we saw above, `tt_*` functions are specific operate on the whole object, and
+often will return a complete table of tracks (aka a `move2` object).
+There are functions to clean the data using different algorithms
+(e.g. `tt_clean_mcconnell`), or to split the data into trips for central place
+foragers (e.g. `tt_split_trips`). We will see those functions in action in a later
+section.
+
+`event_*` functions, on the other hand, operate on events, and return a vector
+of the same length as number of rows in the event table (and thus can be use in `mutate()`
+operations). For example, we can use `event_speed()` to calculate the speed of 
+each event. Note that, technically, the speed pertains to the segment between
+two events, but for simplicity we will refer to it as the speed of the event.
+For each track, `event_speed()` returns the speed of each segment, padded with a
+final NA so that we have the same number of rows as the original track.
+
+So, we can add speed to our `boobies_sub` object with:
+```{r}
+library(dplyr)
+boobies_sub <- boobies_sub %>% mutate(speed = event_speed(.))
+```
+
+Note the use of the . place-holder in the brackets of `event_speed()` to pass
+the `move2` object to the function. This is only possible with a `magrittr` pipe
+(`%>%`), and not with the base R pipe (`|>`).
+
+We can now visualise the distribution of speeds:
+```{r}
+boobies_sub %>%
+  ggplot(aes(x = speed)) +
+  geom_histogram(bins = 100)
+```
+
+Note the message about 3 rows having been dropped; those are the 3 last events
+for which there is no distance. Also, functions in `tidytrack` tend to return
+values with units, to avoid conversion problems (in this case, meters per minute).
+Functions usually have a `units` parameter that allows to change the units that
+are returned (more details about working with units below).
+
+The histogram above is suggests that there might be outliers in the data,
+as we seem to have a few events with very high speeds. We will see later
+how we can clean up the data using McConnell's algorithm.
+
+Finally, there are `track_*` functions, which operate on the whole track, and will
+generally return a vector of length equal to the number of tracks in the object.
+For example, `track_duration()` returns the total duration of each track:
+
+```{r}
+boobies_sub %>%
+  track_duration()
+```
+
+If we wanted the same estimates in hours rather than days, we would simply say:
+```{r}
+boobies_sub %>%
+  track_duration(units = "hours")
+```
+
+This naming convention helps clarifying the scope of a given function,
+avoiding ambiguities. For example, `event_flag_mcconnell()` will return a logical vector
+indicating whether events are valid or whether they should be filtered out
+using McConnell's algorithm, whilst `tt_clean_mcconnell()` will return a
+`move2` object with the invalid events removed. Similarly, `event_distance()` 
+will return a vector of distances between events (a vector of the same length
+as the rows of the event column), while `track_distance()` will
+return the total (cumulative) distance for each track (and thus a shorter
+vector of length equal to the number of tracks in the object).
+
+# Cleaning the data
+
+We can get an overview of the speeds of each step with:
+```{r}
+boobies_sub %>%
+  summary()
+```
+
+Some of those speeds (>2000 m/minute) seem a bit high. We can check the units (to make sure
+we have them right):
+```{r}
+units(boobies_sub$speed)
+```
+
+
+Let's rephrase them in units that might be more familiar to us.
+
+```{r}
+boobies_sub %>%
+  mutate(speed = units::set_units(speed, "km/h")) %>%
+  summary()
+```
+Hmm, 122 km/h is a bit fast for a boobie; they are known to reach ~90 km/h.
+
+Let's plot the speed of each event:
+```{r}
+ggplot() +
+  geom_event_path(
+    data = boobies_sub,
+    aes(color = speed)
+  ) +
+  facet_wrap(~bird_id)
+```
+
+Note that, as we did not save the object with the new speed units, the
+original units are still in the object.
+
+We can remove locations characterised by unlikely speeds using the McConnell's
+algorithm (the same used by `trip::speedfilter()`). Note that we can give the
+max_speed in any units we want, and they will be automatically converted to the
+units in the object.
+
+```{r}
+boobies_sub <- boobies_sub %>%
+  tt_clean_mcconnell(max_speed = units::as_units(90, "km/h"))
+```
+
+Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
+flagged by the algorithm. There is also a function `event_flag_mcconnell()`
+which flags points without removing them; see the advanced vignette for more
+details on how to use it (TODO there is no advance vignette yet!!!).
+
+Let us now recompute the speeds (directly in km/h):
+
+```{r eval=FALSE}
+boobies_sub <- boobies_sub %>%
+  mutate(speed = event_speed(., units = "km/h"))
+summary(boobies_sub)
+```
+
+We can see that we have removed step with an extreme speed. Note that the McConnell algorithm
+does not simply remove steps above the threshold speed, but uses the root
+mean square speed for previous/next and 2nd previous to next point, thus allowing
+for individual steps that might have a speed just above the threshold if the subsequent
+point is not too far away.
+
+
+# Splitting trips
+
+Boobies are central place foragers, and we now want to split the track into
+trips. For this we need to define the colony location, and a buffer around it.
+`tt_split_trips()` can take either a single colony point, or one nest location
+per track. 
+
+```{r}
+boobies_sub <- boobies_sub %>%
+  tt_split_trips(
+    center_col = "colony_coord",
+    buffer_outbound = as_units(3, "km"),
+    buffer_inbound = as_units(10, "km")
+  )
+```
+
+If we now inspect the object, we can see that there is a new column, `trip_id`,
+which is also used as the new `track_id_column` in the `move2` object:
+```{r}
+boobies_sub
+```
+
+Let's look at the metadata:
+```{r}
+show_meta(boobies_sub)
+```
+
+We can see that only individual 69302 performed proper central place trips, and
+specifically it made 3 trips. 69303 never moved, and 69304 migrated away from
+the study area. We can now plot the
+trips with:
+```{r}
+ggplot() +
+  geom_sf(
+    data = track_lines(boobies_sub),
+    aes(color = trip_id)
+  ) +
+  coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
+```
+
+
+# Home Range estimates
+
+We can now estimate the home range of individuals. First, we will process
+the full dataset to split trips, and drop individuals that did not move
+or migrated (such as the ones seen in the previous section):
+
+```{r}
+boobies_trips <- boobies_mt %>%
+  tt_split_trips(
+    center_col = "colony_coord",
+    buffer_outbound = as_units(3, "km"),
+    buffer_inbound = as_units(10, "km")
+  )
+```
+
+Let's get a summary of the metadata of what is left:
+```{r}
+summary(show_meta(boobies_trips))
+```
+
+We'll take the 3 birds with the most trips:
+```{r}
+boobies_trips_sub <- boobies_trips %>%
+  filter_by_meta(bird_id %in% c("69339", "69314", "69333"))
+```
+
+To estimate home ranges, we need to project the data to an equal area projection.
+We can use the `sf::st_transform()` function to do this:
+```{r}
+boobies_trips_sub <- boobies_trips_sub %>%
+  sf::st_transform(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
+```
+
+We can now estimate the home range using Kernel Density Estimation. We want to 
+estimate the home range for each bird, so we will group by `bird_id` (note that)
+```{r}
+boobies_kde <- boobies_trips_sub %>%
+  group_by(bird_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95))
+```
+
+`boobies_kde` is an `sf` object, with estimates of the area (in the units of
+the projection, in this case m^2) and a geometry column:
+```{r}
+boobies_kde
+```
+
+We could easily change the units of the area with `set_units()`:
+```{r}
+boobies_kde %>%
+  mutate(area = set_units(area, "km^2"))
+```
+
+
+We can plot the home ranges:
+```{r}
+ggplot(boobies_kde) +
+  geom_sf(aes(fill = bird_id), alpha = 0.7)
+```
+
+We can simply add actual events with:
+```{r}
+ggplot() +
+  geom_sf(
+    data = boobies_kde,
+    aes(fill = bird_id), alpha = 0.7
+  ) +
+  geom_event_point(
+    data = boobies_trips_sub,
+    size = 0.1
+  ) +
+  facet_wrap(~bird_id)
+```
+
+To get a minimum convex polygon covering 90% of the data, we can simply use:
+```{r}
+boobies_mcp <- boobies_trips_sub %>%
+  group_by(bird_id) %>%
+  tt_hr_mcp(levels = c(0.90))
+```
+
+We can plot the MCPs with:
+```{r}
+ggplot() +
+  geom_sf(
+    data = boobies_mcp,
+    aes(fill = bird_id), alpha = 0.7
+  ) +
+  geom_event_point(
+    data = boobies_trips_sub,
+    size = 0.1
+  ) +
+  facet_wrap(~bird_id)
+```

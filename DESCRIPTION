@@ -1,26 +1,39 @@
 Package: tidytrack
 Title: Functions to Analyse Tracking Data
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
+    person("Andrea", "Manica", , "am315@cam.ac.uk", role = c("aut", "cre"))
 Description: Tidy functions to analyse tracking data, based on the move2 objects.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends:
-  move2
+    move2,
+    R (>= 3.5),
+    units
 Imports:
   cli,
   dplyr,
+  foreach,
+  geodist,
   methods,
+  MASS,
+  purrr,
+  rlang,
   sf,
-  trip
+  stats,
+  tibble,
+  tidyr
 Suggests:
+    ggplot2,
     lubridate,
+    lwgeom,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
+    trip,
     track2KBA
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+LazyData: true
