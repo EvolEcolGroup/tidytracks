@@ -4,10 +4,16 @@
 \alias{track_summary_stats}
 \title{Compute summary statistics for each track}
 \usage{
-track_summary_stats(x, units_duration = units::as_units(1, "days"))
+track_summary_stats(
+  x,
+  center_col = NULL,
+  units_duration = units::as_units(1, "days")
+)
 }
 \arguments{
 \item{x}{A \code{move2} object}
+
+\item{center_col}{A geometry object or a column name in the metadata table.}
 
 \item{units_duration}{The units to use for the duration. Default is "days".}
 }

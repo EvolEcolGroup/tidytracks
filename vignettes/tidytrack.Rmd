@@ -305,8 +305,7 @@ We can get a summary of our tracks with:
 
 ```{r}
 boobies_sub %>%
-  track_summary_stats()
-
+  track_summary_stats(center_col = "colony_coord")
 ```
 
 Note that `track_summary_stats()` will return a tibble with one row per track,

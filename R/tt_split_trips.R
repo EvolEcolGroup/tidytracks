@@ -51,7 +51,7 @@ tt_split_trips <- function(x, center_col = NULL,
       # we have a single origin
       # copy over for as many times as n tracks
       center_col <- matrix(rep(center_col, nrow(x)), ncol = 2)
-    } else if (nrow(center_col) != nrow(x)) {
+    } else if (nrow(center_col) != nrow(show_meta(x))) {
       stop("center_col must be a geometry object of length 1 or the same ",
            "length as the number of tracks in x")
     }
