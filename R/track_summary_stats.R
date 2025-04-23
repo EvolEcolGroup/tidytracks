@@ -19,25 +19,25 @@ track_summary_stats <- function(x, units_duration = units::as_units(1, "days")) 
   }
 
   tot_duration <- track_duration(x, units = units_duration)
-  # get distance units
-  dist_units <- units(sf::st_distance(x$geometry[1:2]) /
-                       units::as_units(60, "h")) # we measure time in hours
-  # get coordinates
-  coords <- sf::st_coordinates(x)
-  is_longlat <- sf::st_is_longlat(x)
-
   # TODO write a cum_distance function that works on coords
-
-
-
-  sum_stats <- tibble(duration = tot_duration,
-                      #cum_distance = event_distance(x),
-                      #max_dist_from_start = event_distance(x, from = coords[1, ]),
-                      max_latitude = max(coords[, 2], na.rm = TRUE),
-                      min_latitude = min(coords[, 2], na.rm = TRUE),
-                      max_longitude = max(coords[, 1], na.rm = TRUE),
-                      min_longitude = min(coords[, 1], na.rm = TRUE)
-  )
+  cum_distance <- x %>%
+    dplyr::mutate(distance = move2::mt_distance(x)) %>%
+    dplyr::group_by(event_track_id(x)) %>%
+    dplyr::summarise(cum_distance = sum(distance, na.rm = TRUE)) %>%
+    dplyr::pull(cum_distance)
+  bboxes <- x %>%
+    dplyr::group_by(event_track_id(x)) %>%
+    group_map(~ sf::st_bbox(.x$geometry))
+  bboxes <- tibble::as_tibble(do.call(rbind, bboxes)) %>%
+    dplyr::mutate(max_latitude = ymax,
+                  min_latitude = ymin,
+                  max_longitude = xmax,
+                  min_longitude = xmin) %>%
+    dplyr::select(-xmax, -xmin, -ymax, -ymin)
+  sum_stats <- dplyr::bind_cols(
+    tibble::tibble(tot_duration = tot_duration,
+                   cum_distance = cum_distance),
+    bboxes)
 
   return(sum_stats)
 }

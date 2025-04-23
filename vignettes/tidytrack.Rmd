@@ -299,6 +299,19 @@ ggplot() +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
+# Summarising tracks
+
+We can get a summary of our tracks with:
+
+```{r}
+boobies_sub %>%
+  track_summary_stats()
+
+```
+
+Note that `track_summary_stats()` will return a tibble with one row per track,
+rather than the usual vector of lenght equal to the number of tracks that is
+produced by most `track_*` functions.
 
 # Home Range estimates
 
