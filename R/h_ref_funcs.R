@@ -1,7 +1,7 @@
 #' Compute h_ref for KDE, one value per group
 #'
-#' @description This uses the standard formula for the reference bandwidth
-#' for KDE
+#' @description This computes the reference bandwidth for the a bivariate normal
+#' kernel.
 #' @param xy A matrix of coordinates
 #' @param group_index A vector of group indices
 #' @returns A vector of bandwidths, one for each group
@@ -21,8 +21,8 @@ h_ref_indiv <- function(xy, group_index) {
 
 #' Compute h_ref for KDE, returning the mean value
 #'
-#' @description This uses the standard formula for the reference bandwidth
-#' for KDE
+#' @description This computes the reference bandwidth for the a bivariate normal
+#' kernel.
 #' @param xy A matrix of coordinates
 #' @param group_index A vector of group indices
 #' @returns A single value, the mean of the bandwidths for each group

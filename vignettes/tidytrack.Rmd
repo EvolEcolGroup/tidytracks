@@ -325,6 +325,17 @@ We'll take the 3 birds with the most trips:
 boobies_trips_sub <- boobies_trips %>%
   filter_by_meta(bird_id %in% c("69339", "69314", "69333"))
 ```
+We can now plot the trips:
+```{r}
+ggplot() +
+  geom_sf(
+    data = track_lines(boobies_trips_sub),
+    aes(color = trip_id)
+  ) +
+  coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m") +
+  facet_wrap(~bird_id) + theme(legend.position="none")
+```
+
 
 To estimate home ranges, we need to project the data to an equal area projection.
 We can use the `sf::st_transform()` function to do this:
@@ -334,11 +345,15 @@ boobies_trips_sub <- boobies_trips_sub %>%
 ```
 
 We can now estimate the home range using Kernel Density Estimation. We want to 
-estimate the home range for each bird, so we will group by `bird_id` (note that)
+estimate the home range for each bird, so we will group by `bird_id`. We will use
+the same formula used by adehabitatHR to estimate the reference bandwidth (which is 4 *
+the standard h_ref), and use the mean value of the reference bandwidth for each individual
+(`h_ref_ade_mean`):
+
 ```{r}
 boobies_kde <- boobies_trips_sub %>%
   group_by(bird_id) %>%
-  tt_hr_kde(levels = c(0.5, 0.95))
+  tt_hr_kde(levels = c(0.5, 0.95), h = "h_ref_ade_mean")
 ```
 
 `boobies_kde` is an `sf` object, with estimates of the area (in the units of

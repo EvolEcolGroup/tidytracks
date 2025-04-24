@@ -15,7 +15,7 @@ h_ref_mean(xy, group_index)
 A single value, the mean of the bandwidths for each group
 }
 \description{
-This uses the standard formula for the reference bandwidth
-for KDE
+This computes the reference bandwidth for the a bivariate normal
+kernel.
 }
 \keyword{internal}

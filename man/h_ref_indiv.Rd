@@ -15,7 +15,7 @@ h_ref_indiv(xy, group_index)
 A vector of bandwidths, one for each group
 }
 \description{
-This uses the standard formula for the reference bandwidth
-for KDE
+This computes the reference bandwidth for the a bivariate normal
+kernel.
 }
 \keyword{internal}
