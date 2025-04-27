@@ -15,20 +15,22 @@ tt_hr_kde(
 \arguments{
 \item{x}{A grouped move2 object}
 
-\item{h}{The bandwidth for the kernel density estimation. It defaults
-to href.}
+\item{h}{The bandwidth for the kernel density estimation. Either a number, or
+"h_ref_indiv" for using the reference bandwidth for each individual, or
+"h_ref_mean" for using the mean bandwidth for all individuals (the
+default).}
 
-\item{grid}{A list of length 5, with values xmin, ymin,
-xmax, ymax and res (all in the units of the projection of x).
-If null, the extent is taken by combining
-all points in \code{x} (expanded by 10\%), and the number of cells is set to 1000.}
+\item{grid}{A list of length 5, with values xmin, ymin, xmax, ymax and res
+(all in the units of the projection of x). If null, the extent is taken by
+combining all points in \code{x} (expanded by 10\%), and the number of cells is
+set to 1000.}
 
 \item{levels}{A vector of levels for the contour lines. The default is
 \code{c(0.5, 0.95)}, which corresponds to the 50\% and 95\% home ranges.}
 
-\item{keep_objects}{whether the individual KDE objects should be kept
-as a column in the output object. This is useful for debugging, but
-will increase the size of the object.}
+\item{keep_objects}{whether the individual KDE objects should be kept as a
+column in the output object. This is useful for debugging, but will
+increase the size of the object.}
 }
 \value{
 A tibble of subclass \code{tt_hr_tbl} of results, with columns:

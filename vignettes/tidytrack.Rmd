@@ -357,15 +357,12 @@ boobies_trips_sub <- boobies_trips_sub %>%
 ```
 
 We can now estimate the home range using Kernel Density Estimation. We want to 
-estimate the home range for each bird, so we will group by `bird_id`. We will use
-the same formula used by adehabitatHR to estimate the reference bandwidth (which is 4 *
-the standard h_ref), and use the mean value of the reference bandwidth for each individual
-(`h_ref_ade_mean`):
+estimate the home range for each bird, so we will group by `bird_id`:
 
 ```{r}
 boobies_kde <- boobies_trips_sub %>%
   group_by(bird_id) %>%
-  tt_hr_kde(levels = c(0.5, 0.95), h = "h_ref_ade_mean")
+  tt_hr_kde(levels = c(0.5, 0.95))
 ```
 
 `boobies_kde` is an `sf` object, with estimates of the area (in the units of

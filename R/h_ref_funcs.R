@@ -32,37 +32,3 @@ h_ref_mean <- function(xy, group_index) {
   h_ref <- h_ref_indiv(xy, group_index)
   return(mean(h_ref))
 }
-
-#' Compute h_ref for KDE using the adehabitatHR method, one value per group
-#'
-#' @description This uses the adehabitatHR method for computing the reference
-#' bandwidth, which multiplies the standard formula by 4
-#' @param xy A matrix of coordinates
-#' @param group_index A vector of group indices
-#' @returns A vector of bandwidths, one for each group
-#' @keywords internal
-
-h_ref_ade_indiv <- function(xy, group_index) {
-  h_ref <- h_ref_indiv(xy, group_index)
-  return(h_ref * 4)
-}
-
-#' Compute h_ref for KDE using the adehabitatHR method, returning the mean value
-#'
-#' @description This uses the adehabitatHR method for computing the reference
-#' bandwidth, which multiplies the standard formula by 4
-#' @param xy A matrix of coordinates
-#' @param group_index A vector of group indices
-#' @returns A single value, the mean of the bandwidths for each group
-#' @keywords internal
-
-h_ref_ade_mean <- function(xy, group_index) {
-  h_ref <- h_ref_ade_indiv(xy, group_index)
-  return(mean(h_ref))
-}
-
-h_ref_one_group <- function(xy) {
-  h_ref <- (sqrt(0.5 * (stats::var(xy[, 1]) + stats::var(xy[, 2])))) *
-    (nrow(xy)^-(1 / 6))
-  return(h_ref)
-}

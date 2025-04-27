@@ -4,23 +4,25 @@
 #' estimation (KDE).
 #'
 #' @param x A grouped move2 object
-#' @param h The bandwidth for the kernel density estimation. It defaults
-#' to href.
-#' @param grid A list of length 5, with values xmin, ymin,
-#' xmax, ymax and res (all in the units of the projection of x).
-#' If null, the extent is taken by combining
-#' all points in `x` (expanded by 10%), and the number of cells is set to 1000.
+#' @param h The bandwidth for the kernel density estimation. Either a number, or
+#'   "h_ref_indiv" for using the reference bandwidth for each individual, or
+#'   "h_ref_mean" for using the mean bandwidth for all individuals (the
+#'   default).
+#' @param grid A list of length 5, with values xmin, ymin, xmax, ymax and res
+#'   (all in the units of the projection of x). If null, the extent is taken by
+#'   combining all points in `x` (expanded by 10%), and the number of cells is
+#'   set to 1000.
 #' @param levels A vector of levels for the contour lines. The default is
-#' `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
-#' @param keep_objects whether the individual KDE objects should be kept
-#' as a column in the output object. This is useful for debugging, but
-#' will increase the size of the object.
+#'   `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
+#' @param keep_objects whether the individual KDE objects should be kept as a
+#'   column in the output object. This is useful for debugging, but will
+#'   increase the size of the object.
 #' @returns A tibble of subclass `tt_hr_tbl` of results, with columns:
 #' - `group_id`: the ids from the groping of `x`
 #' - `.level_XX`: the sf polygons for level XX; the number of this type of
-#' column depends on the length of `levels`
+#'   column depends on the length of `levels`
 #' - `kde`: the KDE object used to create the polygons (if
-#' `keep_objects = TRUE`)
+#'   `keep_objects = TRUE`)
 #' @export
 
 tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
@@ -49,9 +51,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
   # check h
   if (!is.numeric(h)) {
     h <- match.arg(h, c(
-      "h_ref_mean", "h_ref_indiv",
-      "h_ref_ade_mean", "h_ref_ade_indiv"
-    ))
+      "h_ref_mean", "h_ref_indiv"))
     h_fun <- get(h) # assign the function to h_fun
     h <- h_fun(xy, group_index) # compute h
   }
@@ -166,7 +166,9 @@ kde_one_group <- function(xy, levels, crs, grid, h, keep_object = FALSE) {
       (grid$xmax - grid$xmin) / grid$res,
       (grid$ymax - grid$ymin) / grid$res
     )),
-    h = h,
+    # note that MASS needs h multiplied by 4 to be comparable with other kde
+    # approaches (e.g. adehabitatHR or KernSmooth)
+    h = h * 4,
     lims = c(
       grid$xmin, grid$xmax,
       grid$ymin, grid$ymax
