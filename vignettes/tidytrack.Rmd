@@ -214,7 +214,7 @@ boobies_sub %>%
   mutate(speed = units::set_units(speed, "km/h")) %>%
   summary()
 ```
-Hmm, 122 km/h is a bit fast for a boobie; they are known to reach ~90 km/h.
+Hmm, 146 km/h is a bit fast for a boobie; they are known to reach ~90 km/h.
 
 Let's plot the speed of each event:
 ```{r}
@@ -231,7 +231,7 @@ original units are still in the object.
 
 We can remove locations characterised by unlikely speeds using the McConnell's
 algorithm (the same used by `trip::speedfilter()`). Note that we can give the
-max_speed in any units we want, and they will be automatically converted to the
+`max_speed` in any units we want, and they will be automatically converted to the
 units in the object.
 
 ```{r}
@@ -246,7 +246,7 @@ details on how to use it (TODO there is no advance vignette yet!!!).
 
 Let us now recompute the speeds (directly in km/h):
 
-```{r eval=FALSE}
+```{r}
 boobies_sub <- boobies_sub %>%
   mutate(speed = event_speed(., units = "km/h"))
 summary(boobies_sub)
@@ -299,6 +299,18 @@ ggplot() +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
+# Summarising tracks
+
+We can get a summary of our tracks with:
+
+```{r}
+boobies_sub %>%
+  track_summary_stats(center_col = "colony_coord")
+```
+
+Note that `track_summary_stats()` will return a tibble with one row per track,
+rather than the usual vector of lenght equal to the number of tracks that is
+produced by most `track_*` functions.
 
 # Home Range estimates
 
