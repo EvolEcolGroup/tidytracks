@@ -4,13 +4,22 @@
 \alias{tt_clean_mcconnell}
 \title{Clean a \code{move2} object using McConnell's algorithm}
 \usage{
-tt_clean_mcconnell(x, max_speed = NULL)
+tt_clean_mcconnell(
+  x,
+  max_speed = NULL,
+  flag_action = c("remove", "interpolate", "null")
+)
 }
 \arguments{
 \item{x}{A move2 object}
 
 \item{max_speed}{speed, provided as a \code{units} object (e.g.
 units::as_units(50, 'm/s').}
+
+\item{flag_action}{One of "remove", "null", or "interpolate", to either
+remove the points flagged by the algorithm, keep the time stamp but set
+location to NULL, or replace the location with a linearly interpolated
+location from the events that were not filtered out.}
 }
 \value{
 A clean \code{move2} object with events removed
