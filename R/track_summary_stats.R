@@ -3,8 +3,10 @@
 #' This function provides a set of summary statistics for each track. It is
 #' unusual in returning a tibble of multiple variables rather than a single
 #' vector. The summary statistics include the duration of the track, the
-#' cumulative distance, the maximum distance from the start (or from a
-#' prescribed central place), the maximum and minimum latitude and longitude.
+#' cumulative distance, the maximum and minimum latitude and longitude of
+#' the total track, and, if a central place location is provided, the maximum
+#' distance that location,  and the latitude at the most distant point from
+#' the central place location
 #'
 #' @param x A `move2` object
 #' @param center_col A geometry object or a column name in the metadata table.
@@ -47,11 +49,11 @@ track_summary_stats <- function(x,  center_col = NULL,
 
   tot_duration <- track_duration(x, units = units_duration)
   # TODO write a cum_distance function that works on coords
-  cum_distance <- x %>%
+  tot_distance <- x %>%
     dplyr::mutate(distance = move2::mt_distance(x)) %>%
     dplyr::group_by(event_track_id(x)) %>%
-    dplyr::summarise(cum_distance = sum(distance, na.rm = TRUE)) %>%
-    dplyr::pull(cum_distance)
+    dplyr::summarise(tot_distance = sum(distance, na.rm = TRUE)) %>%
+    dplyr::pull(tot_distance)
   bboxes <- x %>%
     dplyr::group_by(event_track_id(x)) %>%
     group_map(~ sf::st_bbox(.x$geometry))
@@ -63,11 +65,13 @@ track_summary_stats <- function(x,  center_col = NULL,
     dplyr::select(-xmax, -xmin, -ymax, -ymin)
   sum_stats <- dplyr::bind_cols(
     tibble::tibble(tot_duration = tot_duration,
-                   cum_distance = cum_distance),
+                   tot_distance = tot_distance),
     bboxes)
   if (!is.null(center_col)){
     #get maximum distance between the center and the events for each track
-    max_distance_center <- foreach::foreach(i = seq_len(nrow(show_meta(x)))) %do% {
+    center_sums <-
+      foreach::foreach(i = seq_len(nrow(show_meta(x))),
+                       .combine=rbind) %do% {
       # get the track id
       track_id <- show_meta(x)[[move2::mt_track_id_column(x)]][i]
       # get the events for this track
@@ -76,10 +80,16 @@ track_summary_stats <- function(x,  center_col = NULL,
       center <- center_col[i, ]
       # calculate the distance between the center and the events
       dists <- sf::st_distance(events$geometry, center)
+      max_dist <- max(dists, na.rm = TRUE)
+      # get lat at max dist
+      lat_at_max_dist <- sf::st_coordinates(
+        events$geometry[which(dists==max_dist)])[,"Y"]
+
       # return the maximum distance
-      return(max(dists, na.rm = TRUE))
-    }
-    sum_stats$max_distance_center <- as_units(unlist(max_distance_center), units(sum_stats$cum_distance))
+      return(c(unclass(max_dist), lat_at_max_dist))
+                       }
+    sum_stats$max_dist_center <- as_units(center_sums[,1], units(sum_stats$tot_distance))
+    sum_stats$lat_at_max_dist_center <- center_sums[,2]
   }
 
   return(sum_stats)

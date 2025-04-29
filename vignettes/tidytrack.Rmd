@@ -340,8 +340,8 @@ boobies_trips_sub <- boobies_trips %>%
 We can now plot the trips:
 ```{r}
 ggplot() +
-  geom_sf(
-    data = track_lines(boobies_trips_sub),
+  geom_track_path(
+    data = boobies_trips_sub,
     aes(color = trip_id)
   ) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m") +

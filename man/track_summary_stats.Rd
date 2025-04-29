@@ -24,6 +24,8 @@ A tibble of summary statistics, with one row per track.
 This function provides a set of summary statistics for each track. It is
 unusual in returning a tibble of multiple variables rather than a single
 vector. The summary statistics include the duration of the track, the
-cumulative distance, the maximum distance from the start (or from a
-prescribed central place), the maximum and minimum latitude and longitude.
+cumulative distance, the maximum and minimum latitude and longitude of
+the total track, and, if a central place location is provided, the maximum
+distance that location,  and the latitude at the most distant point from
+the central place location
 }
