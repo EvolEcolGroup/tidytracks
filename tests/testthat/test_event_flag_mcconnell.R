@@ -28,6 +28,7 @@ test_that("tt_clean_mcconnel correctly handles filtered data",{
   walrus_clean_rm <- tt_clean_mcconnell(walrus_mt,
                                         max_speed = as_units(1000, "m/h"),
                                         flag_action = "remove")
-  # number of rows in rm is equal to all rows minus the null
-  nrow(walrus_clean_null)- sum(is.na(sf::st_coordinates(walrus_clean_null))[,1])
+  # removing the null points should give us the same as removing them directly
+  expect_true(identical(walrus_clean_null[!sf::st_is_empty(walrus_clean_null),],
+                        walrus_clean_rm))
 })

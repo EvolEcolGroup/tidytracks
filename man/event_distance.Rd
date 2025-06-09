@@ -2,7 +2,7 @@
 % Please edit documentation in R/event_dist.R
 \name{event_distance}
 \alias{event_distance}
-\title{Measure the distance between two events}
+\title{Measure the distance between pairs of consecutive events within each track}
 \usage{
 event_distance(x, units)
 }
@@ -16,9 +16,10 @@ a vector of distances of the same length as the number of events in
 \code{x}
 }
 \description{
-This function measures the distance between two events. It returns a vector
-of distances of the same length as the number of events in \code{x}, with the
-distance for the last event of each track padded with an NA. For unprojected
-longitudes and latitudes, the distance is computed as the geodesic distance,
-which for projected coordinates, the Euclidean distance is used.
+This function measures the distance between adjacent pairs of consecutive
+events within each track. It returns a vector of distances of the same length
+as the number of events in \code{x}, with the distance for the last event of each
+track padded with an NA. For unprojected longitudes and latitudes, the
+distance is computed as the geodesic distance, which for projected
+coordinates, the Euclidean distance is used.
 }

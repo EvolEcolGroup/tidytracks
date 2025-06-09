@@ -1,7 +1,8 @@
 #' Clean data based on speed
 #'
 #' This function uses the algorithm by McConnell et al. (2012) to clean data
-#' based on speed. This is a port of the `speedfilter` function from the `trip`.
+#' based on speed. This is a port of the `speedfilter` function from the `trip`
+#' package.
 #'
 #' @param x A move2 object
 #' @param max_speed speed, provided as a `units` object (e.g.
@@ -45,46 +46,44 @@ event_flag_mcconnell <- function(x, max_speed = NULL) {
 
   # Define parameters for filtering
   pprm <- 3 # Points per running mean (must be an odd number > 3)
-  grps <- levels(id) # Unique trip IDs
+  track_ids <- levels(id) # Unique track_ids
 
   # Create a logical vector to track valid points
-  okFULL <- rep(TRUE, nrow(coords))
+  valid_all <- rep(TRUE, nrow(coords))
 
-  # Loop through each unique trip ID
-  for (sub in grps) {
-    ind <- id == sub
-    xy <- coords[ind, ] # coordinates for this trip
-    tms <- time[ind] # time for this trip
+  # Loop through each unique track ID
+  for (i_track in track_ids) {
+    this_track <- id == i_track
+    xy <- coords[this_track, ] # coordinates for this trip
+    track_time <- time[this_track] # time for this trip
     npts <- nrow(xy)
 
-    # Ensure running mean parameters are valid
-    # this makes little sense as it is set to 3 in the beginning
-    if (pprm %% 2 == 0 || pprm < 3) {
-      msg <- paste(
-        "Points per running mean should be odd and",
-        "greater than 3, pprm=3"
-      )
-      stop(msg)
-    }
+    # # Ensure running mean parameters are valid
+    # # this makes little sense as it is set to 3 in the beginning
+    # if (pprm %% 2 == 0 || pprm < 3) {
+    #   stop(
+    #     "Points per running mean should be odd and greater than 3, pprm=3"
+    #   )
+    # }
 
     # Initialize speed values
     RMS <- rep(max_speed + 1, npts) # Root mean square speed
     offset <- pprm - 1
-    ok <- rep(TRUE, npts)
+    valid_track <- rep(TRUE, npts)
 
     # Check if there are enough points for filtering
     if (npts < (pprm + 1)) {
-      warning("Not enough points to filter ID: ", sub, " continuing . . . ")
-      okFULL[ind] <- ok # just accept them all
-      next # go to next individual
+      warning("Not enough points to filter ID: ", i_track, " continuing . . . ")
+      valid_all[this_track] <- valid_track # just accept them all
+      next # go to next track
     }
 
     index <- 1:npts
 
     # Iteratively filter points exceeding max_speed
     while (any(RMS > max_speed, na.rm = TRUE)) {
-      n <- length(which(ok)) # points to use
-      x1 <- xy[ok, ] # coordinates to use
+      n <- length(which(valid_track)) # points to use
+      x1 <- xy[valid_track, ] # coordinates to use
 
       # TODO check what these speeds are
       # Calculate speed between consecutive points
@@ -92,7 +91,7 @@ event_flag_mcconnell <- function(x, max_speed = NULL) {
         x1[-1, 1], x1[-1, 2],
         longlat = !projected
       ) /
-        (diff(unclass(tms[ok])) / 3600) # time in hours
+        (diff(unclass(track_time[valid_track])) / 3600) # time in hours
 
       # Calculate running mean speed
       speed2 <- dist_fast(x1[-((nrow(x1) - 1):nrow(x1)), 1],
@@ -100,11 +99,11 @@ event_flag_mcconnell <- function(x, max_speed = NULL) {
         x1[-(1:2), 1], x1[-(1:2), 2],
         longlat = !projected
       ) /
-        ((unclass(tms[ok][-c(1, 2)]) -
-          unclass(tms[ok][-c(n - 1, n)])) /
+        ((unclass(track_time[valid_track][-c(1, 2)]) -
+          unclass(track_time[valid_track][-c(n - 1, n)])) /
           3600) # time in hours
 
-      thisIndex <- index[ok] # indices for this iteration
+      this_index <- index[valid_track] # indices for this iteration
       npts <- length(speed1) # number of points (number of segments, really)
       if (npts < pprm) {
         next
@@ -141,12 +140,12 @@ event_flag_mcconnell <- function(x, max_speed = NULL) {
       RMS[rmsFlag] <- -10
 
       # Mark invalid points
-      ok[thisIndex][rmsFlag > 0] <- FALSE
+      valid_track[this_index][rmsFlag > 0] <- FALSE
     }
 
     # Update valid points
-    okFULL[ind] <- ok
+    valid_all[this_track] <- valid_track
   }
 
-  okFULL
+  valid_all
 }

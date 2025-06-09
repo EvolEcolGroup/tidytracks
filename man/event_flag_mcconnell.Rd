@@ -17,5 +17,6 @@ A logical vector indicating which points are valid
 }
 \description{
 This function uses the algorithm by McConnell et al. (2012) to clean data
-based on speed. This is a port of the \code{speedfilter} function from the \code{trip}.
+based on speed. This is a port of the \code{speedfilter} function from the \code{trip}
+package.
 }
