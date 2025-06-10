@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(tidytrack)
+library(tidytracks)
 
-test_check("tidytrack")
+test_check("tidytracks")

@@ -13,14 +13,14 @@ tt_drop_units(x)
 A move2 or sf object with units dropped
 }
 \description{
-Many functions in \code{tidytrack} produced values with units
+Many functions in \code{tidytracks} produced values with units
 (implemented via the package \code{units}). Units are very useful in ensuring that
 operations are performed in the correct units, but they are not always
 compatible with other packages, such as \code{ggplot2}. This function drops the
 units from the columns of a \code{move2} or \code{sf} object.
 }
 \details{
-Note that \verb{geom_*} functions in \code{tidytrack} automatically drop
+Note that \verb{geom_*} functions in \code{tidytracks} automatically drop
 units, so there is no need to use this function before plotting if you use
 the custom geometries in this package.
 }

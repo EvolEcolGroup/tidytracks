@@ -1,12 +1,12 @@
 #' A version of units::drop_units that is compatible with move2 and sf objects
 #'
-#' @description Many functions in `tidytrack` produced values with units
+#' @description Many functions in `tidytracks` produced values with units
 #' (implemented via the package `units`). Units are very useful in ensuring that
 #' operations are performed in the correct units, but they are not always
 #' compatible with other packages, such as `ggplot2`. This function drops the
 #' units from the columns of a `move2` or `sf` object.
 #'
-#' @details Note that `geom_*` functions in `tidytrack` automatically drop
+#' @details Note that `geom_*` functions in `tidytracks` automatically drop
 #' units, so there is no need to use this function before plotting if you use
 #' the custom geometries in this package.
 #'
