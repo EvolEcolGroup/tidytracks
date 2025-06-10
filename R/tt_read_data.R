@@ -1,6 +1,6 @@
-#' Read data from a csv file into a `move2` object
+#' Read the events from a csv file into a `move2` object
 #'
-#' This function reads a csv file containing event data (and possibly metadata) and converts it into a
+#' This function reads a csv file containing event data and converts it into a
 #' `move2` object. The csv file should contain contain at least the following
 #' columns:
 #'

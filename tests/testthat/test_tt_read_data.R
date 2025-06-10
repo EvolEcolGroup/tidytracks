@@ -4,7 +4,7 @@ test_that("tt_read_track_data works with valid input", {
   example_csv <- system.file("/extdata/csv_files/dataset_example_birdlife.csv",
                                      package = "tidytracks")
   
-  example_tt <- tt_read_events(albatross_csv,
+  example_tt <- tt_read_data(albatross_csv,
                                col_track_id = "track_id",
                                col_coords = c("longitude", "latitude"),
                                col_date_time = c("date_gmt", "time_gmt"))
