@@ -1,7 +1,7 @@
 #' A `ggplot2` geometry to plot event steps as paths
 #'
 #' @description This function provides a `ggplot2` geometry to plot steps
-#'   between events as paths. It uses [mt_segments()] to create `sf` lines
+#'   between events as paths. It uses [move2::mt_segments()] to create `sf` lines
 #'   joining each consecutive pair of events (i.e. steps. These steps are then
 #'   added to the events table (with a point for the last event of each track),
 #'   so that all variables in the event table are available for mapping the

@@ -43,7 +43,7 @@ kud[[4]]@h
 ```
 
 
-# Using tidytrack
+# Using tidytracks
 
 ```{r}
 boar_mt <- readRDS("../tests/testthat/testdata/wildboar_mt.rds")

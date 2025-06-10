@@ -1,9 +1,9 @@
 ---
-title: "tidytrack"
+title: "tidytracks"
 output: # rmarkdown::html_vignette
         pdf_document: default
 vignette: >
-  %\VignetteIndexEntry{tidytrack}
+  %\VignetteIndexEntry{tidytracks}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,9 +15,9 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Tracking data representation in `tidytrack`
+# Tracking data representation in `tidytracks`
 
-`tidytrack` uses tidy tables of tracks to represent tracking data (technically,
+`tidytracks` uses tidy tables of tracks to represent tracking data (technically,
 these are `move2` objects). In a tidy table of tracks, each row represents an
 event, which is a time-stamped observation,
 often associated with a location. Events are grouped into tracks. Tracks can
@@ -31,13 +31,13 @@ that we will use throughout this vignette. The dataset is included in the
 package, and can be loaded with the following command:
 
 ```{r setup}
-library(tidytrack)
+library(tidytracks)
 data(boobies_mt)
 ```
 
 It is a dataset on boobies containing 43 tracks with just over 178k GPS
 locations. Note that the data are based on XXX, but they were doctored to showcase
-functionality of `tidytrack`; do not use them for any real analysis!!!.
+functionality of `tidytracks`; do not use them for any real analysis!!!.
 
 We can start by printing a summary of object:
 ```{r}
@@ -158,7 +158,7 @@ boobies_sub %>%
 ```
 
 Note the message about 3 rows having been dropped; those are the 3 last events
-for which there is no distance. Also, functions in `tidytrack` tend to return
+for which there is no distance. Also, functions in `tidytracks` tend to return
 values with units, to avoid conversion problems (in this case, meters per minute).
 Functions usually have a `units` parameter that allows to change the units that
 are returned (more details about working with units below).

@@ -1,0 +1,58 @@
+---
+title: "reading_data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{reading_data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(tidytracks)
+```
+
+# Reading data into a `move2` object
+The `tidytracks` package is designed to work with `move2` objects, which are a type of spatial data structure used for tracking animal movements. In `tidytrackss`, we start by reading a table of events (e.g., GPS locations). This table
+(stored as a csv file) should contain at least the following columns:
+- one column which is the `track_id` (i.e. the variable that groups events into a track)
+- two columns representing the x and y coordinates (e.g. longitude and latitude)
+- a date-time column (or separate date and time columns)
+
+Additional columns of data will be stored in the events table if they have information
+that is specific to each event (i.e. the values are not unique within a given track), or
+they will be moved to the meta data table if they are track specific (e.g. bird_id, sex of the individual,
+colony coordiates, breeding status, etc.).
+
+# Example data
+We start with a small dataset of wandering albatrosses from the Birdlife Seabird Tracking Database. Let's quickly
+inspect it:
+```{r}
+albatross_csv <- system.file("/extdata/csv_files/dataset_example_birdlife.csv",
+                             package = "tidytracks")
+dplyr::glimpse(read.csv(albatross_csv))
+```
+
+Let us now read in the data using `tt_read_data()`. This function reads a csv file containing event data and converts it into a `move2` object.
+```{r}
+example_mt <- tt_read_data(albatross_csv,
+                              col_track_id = "track_id",
+                              col_coords = c("longitude", "latitude"),
+                              col_date_time = c("date_gmt", "time_gmt"))
+```
+
+Inspecting the events table, we have:
+```{r}
+example_mt
+```
+
+We can see that only date and locations were reatained as event specific variables, while the rest of the information was moved to the meta data table. We can inspect the meta data table as follows:
+```{r}
+dplyr::glimpse(show_meta(example_mt))
+```
