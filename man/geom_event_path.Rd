@@ -44,7 +44,7 @@ A \code{ggplot2} layer object.
 }
 \description{
 This function provides a \code{ggplot2} geometry to plot steps
-between events as paths. It uses \code{\link[=mt_segments]{mt_segments()}} to create \code{sf} lines
+between events as paths. It uses \code{\link[move2:mt_segments]{move2::mt_segments()}} to create \code{sf} lines
 joining each consecutive pair of events (i.e. steps. These steps are then
 added to the events table (with a point for the last event of each track),
 so that all variables in the event table are available for mapping the
