@@ -1,4 +1,24 @@
-test_that("tt_read_track_data works with valid input", {
+# test with events CSV and meta CSV
+
+# test with events CSV only, simple version
+#   (shouldn't make any extra metadata)
+
+# test with events CSV only, verbose version
+#   (should move extra columns to metadata)
+
+# test with events dataframe and meta dataframe
+
+# test with events dataframe only, simple version
+#   (shouldn't make any extra metadata)
+
+# test with events dataframe only, verbose version
+#   (should move extra columns to metadata)
+
+
+
+
+# OLD TEST to use as template and then delete
+test_that("tt_read_data works with valid input", {
   skip()
   # Read in the data from a csv
   example_csv <- system.file("/extdata/csv_files/dataset_example_birdlife.csv",

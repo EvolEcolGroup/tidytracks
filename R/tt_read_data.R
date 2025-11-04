@@ -20,7 +20,7 @@
 #'   `move2::mt_as_move2()` function. See the `reading_data` vignette for more
 #'   details.
 #'
-#' @param events_csv A path to a csv file containing the event data.
+#' @param events A path to a csv file containing the event data.
 #' @param col_track_id The name of the column in the csv file that contains the
 #'   track id.
 #' @param col_coords A vector of the x and y coordinate column names in the csv
@@ -48,7 +48,7 @@
 #'   col_date_time = c("date_gmt", "time_gmt"))
 #' @export
 
-tt_read_data <- function(events_csv,
+tt_read_data <- function(events,
                            col_track_id,
                            col_coords,
                            col_date_time,
@@ -56,25 +56,33 @@ tt_read_data <- function(events_csv,
                            time_zone = "UTC",
                            convert_meta = TRUE,
                            meta_csv = NULL) {
-  # Read the events data from the csv file
-  events_data <- utils::read.csv(events_csv, stringsAsFactors = FALSE)
-
+  
+  # if events is a character string (i.e. a file path), read it as a data frame
+  if (inherits(events, "character")) {
+    events <- utils::read.csv(events, stringsAsFactors = FALSE)
+  }
+  
+  # Ensure events is a data frame
+  if (!inherits(events, "data.frame")) {
+    stop("events must be a data frame or a path to a csv file.")
+  }
+  
   # Check if the required columns are present
-  if (!col_track_id %in% names(events_data)) {
+  if (!col_track_id %in% names(events)) {
     stop(paste("Column", col_track_id, "not found in the events data."))
   } else {
     # Ensure col_track_id is a factor
-    events_data[[col_track_id]] <- as.factor(events_data[[col_track_id]])
+    events[[col_track_id]] <- as.factor(events[[col_track_id]])
   }
-  if (!all(col_coords %in% names(events_data))) {
+  if (!all(col_coords %in% names(events))) {
     stop(paste("Columns", paste(col_coords, collapse = ", "), "not found in the events data."))
   }
   # check that the col_data_time exist
-  if (length(col_date_time) == 1 && !col_date_time %in% names(events_data)) {
+  if (length(col_date_time) == 1 && !col_date_time %in% names(events)) {
     stop(paste("Column", col_date_time, "not found in the events data."))
   } else if (length(col_date_time) == 2 && 
-             (!col_date_time[1] %in% names(events_data) || 
-              !col_date_time[2] %in% names(events_data))) {
+             (!col_date_time[1] %in% names(events) || 
+              !col_date_time[2] %in% names(events))) {
     stop(paste("Columns", paste(col_date_time, collapse = ", "), "not found in the events data."))
   }
   
@@ -85,19 +93,19 @@ tt_read_data <- function(events_csv,
 
   # Convert date and time to POSIXct
   if (length(col_date_time) == 1) {
-    events_data[[col_date_time]] <- as.POSIXct(events_data[[col_date_time]], tz = time_zone)
+    events[[col_date_time]] <- as.POSIXct(events[[col_date_time]], tz = time_zone)
   } else {
-    events_data$date_time <- as.POSIXct(paste(events_data[[col_date_time[1]]], 
-                                               events_data[[col_date_time[2]]]), tz = time_zone)
+    events$date_time <- as.POSIXct(paste(events[[col_date_time[1]]], 
+                                               events[[col_date_time[2]]]), tz = time_zone)
     # remove the old date and time columns
-    events_data <- events_data %>%
+    events <- events %>%
       dplyr::select(-dplyr::all_of(col_date_time))
     col_date_time <- "date_time"  # update col_date_time to the new column name
   }
 
   # Create a move2 object
   move2_obj <- move2::mt_as_move2(
-    sf::st_as_sf(events_data, coords = col_coords, crs = 4326),
+    sf::st_as_sf(events, coords = col_coords, crs = 4326),
     time_column = col_date_time,
     track_id_column = col_track_id
   )
@@ -105,13 +113,13 @@ tt_read_data <- function(events_csv,
   # Convert track-specific attributes to meta data if requested
   if (convert_meta) {
     # Identify columns that might contain track specific info (i.e. unique within a track)
-    candidate_cols <- setdiff(names(events_data), c(col_track_id, col_coords, col_date_time))
+    candidate_cols <- setdiff(names(events), c(col_track_id, col_coords, col_date_time))
     to_move_cols <- c()
     if (length(candidate_cols) > 0) {
       # Check if these columns are unique within each track
       for (col in candidate_cols) {
         # Check if the column is unique within each level of the track id column
-        is_unique <- all(tapply(events_data[[col]], events_data[[col_track_id]], function(x) length(unique(x)) == 1))
+        is_unique <- all(tapply(events[[col]], events[[col_track_id]], function(x) length(unique(x)) == 1))
         if (is_unique){ # if unique within each track, add to list to move to meta
           to_move_cols <- c(to_move_cols, col)
         }
