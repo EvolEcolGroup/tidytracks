@@ -53,6 +53,15 @@ coordinates) to the meta data table. Defaults to \code{TRUE}.}
 this will be used to populate the meta data table. It needs to have a
 column with the track ids which includes all the track ids in the events
 table (additional track ids will be discarded).}
+
+\item{events}{A path to a csv file containing the event data, OR a dataframe
+in R containing the event data.}
+
+\item{meta}{A path to a csv file containing the meta data, OR a dataframe
+in R containing the metadata. If provided,
+this will be used to populate the meta data table. It needs to have a
+column with the track ids which includes all the track ids in the events
+table (additional track ids will be discarded).}
 }
 \value{
 A \code{move2} object containing the event data.

@@ -55,3 +55,8 @@ write.csv(
   file = "tests/testthat/testdata/test_tt_read_data_meta.csv",
   row.names = FALSE
 )
+
+# make a version with separate date and time fields
+# TODO
+
+

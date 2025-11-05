@@ -20,7 +20,8 @@
 #'   `move2::mt_as_move2()` function. See the `reading_data` vignette for more
 #'   details.
 #'
-#' @param events A path to a csv file containing the event data.
+#' @param events A path to a csv file containing the event data, OR a dataframe
+#'   in R containing the event data.
 #' @param col_track_id The name of the column in the csv file that contains the
 #'   track id.
 #' @param col_coords A vector of the x and y coordinate column names in the csv
@@ -35,7 +36,8 @@
 #' @param convert_meta a boolean on whether to attempt to transfer information
 #'   in the events table that is track specific (e.g. bird id or colony
 #'   coordinates) to the meta data table. Defaults to `TRUE`.
-#' @param meta_csv A path to a csv file containing the meta data. If provided,
+#' @param meta A path to a csv file containing the meta data, OR a dataframe
+#'   in R containing the metadata. If provided,
 #'   this will be used to populate the meta data table. It needs to have a
 #'   column with the track ids which includes all the track ids in the events
 #'   table (additional track ids will be discarded).
@@ -49,13 +51,13 @@
 #' @export
 
 tt_read_data <- function(events,
-                           col_track_id,
-                           col_coords,
-                           col_date_time,
-                           crs = 4326,
-                           time_zone = "UTC",
-                           convert_meta = TRUE,
-                           meta_csv = NULL) {
+                         col_track_id,
+                         col_coords,
+                         col_date_time,
+                         crs = 4326,
+                         time_zone = "UTC",
+                         convert_meta = TRUE,
+                         meta_csv = NULL) {
   
   # if events is a character string (i.e. a file path), read it as a data frame
   if (inherits(events, "character")) {
@@ -132,11 +134,23 @@ tt_read_data <- function(events,
   }
 
   # If meta_csv is provided, read and merge meta data
-  if (!is.null(meta_csv)) {
-    new_meta <- utils::read.csv(meta_csv, stringsAsFactors = FALSE)
+  if (!is.null(meta)) {
+    # if meta is a character string (ie. filepath), read it as a data frame
+    if (inherits(meta, "character")) {
+      new_meta <- utils::read.csv(meta, stringsAsFactors = FALSE)
+    }# if it was already a dataframe, keep it as a dataframe
+    
+    # Ensure meta is a data frame
+    if (!inherits(meta, "data.frame")) {
+      stop("meta must be a data frame or a path to a csv file.")
+    }
+    
+    # check meta has the track ID field
     if (!col_track_id %in% names(new_meta)) {
       stop(paste("Column", col_track_id, "not found in the meta data."))
     }
+    
+    # join new meta to old meta
     old_meta <- show_meta(move2_obj)
     updated_meta <- dplyr::left_join(old_meta, new_meta, by = col_track_id)
     move2_obj <- move2::mt_set_track_data(move2_obj, updated_meta)
