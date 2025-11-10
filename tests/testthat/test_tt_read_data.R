@@ -73,11 +73,41 @@ test_that("tt_read_data works with verbose events CSV and no meta", {
         names(show_meta(example_tt))))
 })
 
-
-# test with events dataframe and meta dataframe
-
 # test with events dataframe only, simple version
 #   (shouldn't make any extra metadata)
+test_that("tt_read_data works with events dataframe", {
+  
+  df <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  
+  print(class(df))
+  print(is.character(df))
+  
+  example_tt <- tt_read_data(
+    events = df,
+    col_track_id = "track_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "datetime"
+  )
+  
+})
+
+
+# test with events dataframe and meta dataframe
+test_that("tt_read_data works with dataframes for both events and meta", {
+  
+  df <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  df_meta <- read.csv(test_path("testdata/test_tt_read_data_meta.csv"))
+  
+  example_tt <- tt_read_data(
+    events = df,
+    meta = df_meta,
+    col_track_id = "track_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "datetime"
+  )
+  
+})
+
 
 # test with events dataframe only, verbose version
 #   (should move extra columns to metadata)

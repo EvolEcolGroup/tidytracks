@@ -57,10 +57,11 @@ tt_read_data <- function(events,
                          crs = 4326,
                          time_zone = "UTC",
                          convert_meta = TRUE,
-                         meta_csv = NULL) {
+                         meta = NULL) {
   
   # if events is a character string (i.e. a file path), read it as a data frame
-  if (inherits(events, "character")) {
+  # if (inherits(events, "character")) {
+  if (is.character(events)) {
     events <- utils::read.csv(events, stringsAsFactors = FALSE)
   }
   
