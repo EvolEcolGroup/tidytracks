@@ -79,15 +79,25 @@ test_that("tt_read_data works with events dataframe", {
   
   df <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
   
-  print(class(df))
-  print(is.character(df))
-  
   example_tt <- tt_read_data(
     events = df,
     col_track_id = "track_id",
     col_coords = c("lon", "lat"),
     col_date_time = "datetime"
   )
+  
+  # Check that the move2 object is created correctly
+  expect_s3_class(example_tt, "move2")
+  # only have date and locations as event specific variables
+  expect_true(length(names(example_tt)) == 3)
+  expect_true(all(c("track_id", "datetime", "geometry") %in% names(example_tt)))
+  # Check that the meta data is correctly populated
+  expect_true(length(names(show_meta(example_tt))) == 1)
+  # expect that the meta data has the correct columns
+  expect_true(
+    all(
+      c("track_id") %in%
+        names(show_meta(example_tt))))
   
 })
 
@@ -106,11 +116,49 @@ test_that("tt_read_data works with dataframes for both events and meta", {
     col_date_time = "datetime"
   )
   
+  # Check that the move2 object is created correctly
+  expect_s3_class(example_tt, "move2")
+  # only have date and locations as event specific variables
+  expect_true(length(names(example_tt)) == 3)
+  expect_true(all(c("track_id", "datetime", "geometry") %in% names(example_tt)))
+  # Check that the meta data is correctly populated
+  expect_true(length(names(show_meta(example_tt))) == 4)
+  # expect that the meta data has the correct columns
+  expect_true(
+    all(
+      c("track_id", "age", "sex", "location") %in%
+        names(show_meta(example_tt))))
+  
 })
 
 
 # test with events dataframe only, verbose version
 #   (should move extra columns to metadata)
+test_that("tt_read_data works with verbose events dataframe and no meta", {
+  
+  df <- read.csv(test_path("testdata/test_tt_read_data_verbose.csv"))
+  
+  example_tt <- tt_read_data(
+    events = df,
+    col_track_id = "track_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "datetime"
+  )
+  
+  # Check that the move2 object is created correctly
+  expect_s3_class(example_tt, "move2")
+  # only have date and locations as event specific variables
+  expect_true(length(names(example_tt)) == 3)
+  expect_true(all(c("track_id", "datetime", "geometry") %in% names(example_tt)))
+  # Check that the meta data is correctly populated
+  expect_true(length(names(show_meta(example_tt))) == 4)
+  # expect that the meta data has the correct columns
+  expect_true(
+    all(
+      c("track_id", "age", "sex", "location") %in%
+        names(show_meta(example_tt))))
+  
+})
 
 # test with events CSV with separate date and time fields
 

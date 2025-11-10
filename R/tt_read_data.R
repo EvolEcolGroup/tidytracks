@@ -1,6 +1,6 @@
-#' Read the events from a csv file into a `move2` object
+#' Read data from a csv file into a `move2` object
 #'
-#' This function reads a csv file containing event data and converts it into a
+#' This function reads a csv file containing event data (and possibly metadata) and converts it into a
 #' `move2` object. The csv file should contain contain at least the following
 #' columns:
 #'
@@ -60,8 +60,8 @@ tt_read_data <- function(events,
                          meta = NULL) {
   
   # if events is a character string (i.e. a file path), read it as a data frame
-  # if (inherits(events, "character")) {
-  if (is.character(events)) {
+  if (inherits(events, "character")) {
+  # if (is.character(events)) {
     events <- utils::read.csv(events, stringsAsFactors = FALSE)
   }
   
@@ -139,10 +139,12 @@ tt_read_data <- function(events,
     # if meta is a character string (ie. filepath), read it as a data frame
     if (inherits(meta, "character")) {
       new_meta <- utils::read.csv(meta, stringsAsFactors = FALSE)
-    }# if it was already a dataframe, keep it as a dataframe
+    } else ( # if it was already a dataframe, keep it as a dataframe
+      new_meta <- meta
+    )
     
-    # Ensure meta is a data frame
-    if (!inherits(meta, "data.frame")) {
+    # Ensure new_meta is a data frame
+    if (!inherits(new_meta, "data.frame")) {
       stop("meta must be a data frame or a path to a csv file.")
     }
     
