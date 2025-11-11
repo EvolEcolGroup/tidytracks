@@ -93,17 +93,6 @@ tt_read_data <- function(events,
     stop("col_date_time must be a character vector of length 1 or 2.")
   }
 
-  # # Convert date and time to POSIXct
-  # if (length(col_date_time) == 1) {
-  #   events[[col_date_time]] <- as.POSIXct(events[[col_date_time]], tz = time_zone)
-  # } else {
-  #   events$date_time <- as.POSIXct(paste(events[[col_date_time[1]]], 
-  #                                              events[[col_date_time[2]]]), tz = time_zone)
-  #   # remove the old date and time columns
-  #   events <- events %>%
-  #     dplyr::select(-dplyr::all_of(col_date_time))
-  #   col_date_time <- "date_time"  # update col_date_time to the new column name
-  # }
 
   # Convert date and time to POSIXct - new version with tryCatch for informative error messages
   if (length(col_date_time) == 1) {
