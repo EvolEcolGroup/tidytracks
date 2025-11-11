@@ -153,7 +153,7 @@ tt_read_data <- function(events,
 
   # If meta_csv is provided, read and merge meta data
   if (!is.null(meta)) {
-    # if meta is a character string (ie. filepath), read it as a data frame
+    # if meta is a character string (i.e. filepath), read it as a data frame
     if (inherits(meta, "character")) {
       new_meta <- utils::read.csv(meta, stringsAsFactors = FALSE)
     } else ( # if it was already a dataframe, keep it as a dataframe
