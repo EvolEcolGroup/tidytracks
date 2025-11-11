@@ -246,4 +246,66 @@ test_that("tt_read_data gives errors for missing or incorrect fields", {
     "Column track_id not found in the meta data."
   )
   
+  # datetime not given as a character of length 1 or 2
+  df <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  expect_error(
+    tt_read_data(
+      events = df,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = c("datetime", "extra", "field")
+    ),
+    "col_date_time must be a character vector of length 1 or 2."
+  )
+  
 })
+
+
+# test with un-parse-able date-time field
+
+test_that("tt_read_data gives error for un-parse-able date-time field", {
+  
+  # with datetime that's just another character string
+  df_bad_datetime <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  df_bad_datetime$datetime <- "not a date"
+  expect_error(
+    tt_read_data(
+      events = df_bad_datetime,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "datetime"
+    ),
+    "Failed to parse date-time field 'datetime'. Please check that the format is consistent and uses a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
+    fixed = TRUE
+  )
+  
+  # with multiple different datetime formats :o
+  df_bad_datetime <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  df_bad_datetime$datetime[2] <- "01/01/2024 12:10"  # different format
+  expect_error(
+    tt_read_data(
+      events = df_bad_datetime,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "datetime"
+    ),
+    "Failed to parse date-time field 'datetime'. Please check that the format is consistent and uses a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
+    fixed = TRUE
+  )
+  
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

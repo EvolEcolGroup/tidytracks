@@ -94,18 +94,47 @@ tt_read_data <- function(events,
     stop("col_date_time must be a character vector of length 1 or 2.")
   }
 
-  # Convert date and time to POSIXct
+  # # Convert date and time to POSIXct
+  # if (length(col_date_time) == 1) {
+  #   events[[col_date_time]] <- as.POSIXct(events[[col_date_time]], tz = time_zone)
+  # } else {
+  #   events$date_time <- as.POSIXct(paste(events[[col_date_time[1]]], 
+  #                                              events[[col_date_time[2]]]), tz = time_zone)
+  #   # remove the old date and time columns
+  #   events <- events %>%
+  #     dplyr::select(-dplyr::all_of(col_date_time))
+  #   col_date_time <- "date_time"  # update col_date_time to the new column name
+  # }
+
+  # Convert date and time to POSIXct - new version with tryCatch for informative error messages
   if (length(col_date_time) == 1) {
-    events[[col_date_time]] <- as.POSIXct(events[[col_date_time]], tz = time_zone)
+    events[[col_date_time]] <- tryCatch(
+      as.POSIXct(events[[col_date_time]], tz = time_zone),
+      error = function(e) {
+        stop("Failed to parse date-time field '", col_date_time,
+             "'. Please check that the format is consistent and uses a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
+             call. = FALSE)
+      }
+    )
   } else {
-    events$date_time <- as.POSIXct(paste(events[[col_date_time[1]]], 
-                                               events[[col_date_time[2]]]), tz = time_zone)
+    events$date_time <- tryCatch(
+      as.POSIXct(paste(events[[col_date_time[1]]],
+                       events[[col_date_time[2]]]),
+                 tz = time_zone),
+      error = function(e) {
+        stop("Failed to parse date-time fields '", 
+             paste(col_date_time, collapse = "', '"),
+             "'. Please check that the formats are consistent and use a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
+             call. = FALSE)
+      }
+    )
+    
     # remove the old date and time columns
     events <- events %>%
       dplyr::select(-dplyr::all_of(col_date_time))
     col_date_time <- "date_time"  # update col_date_time to the new column name
   }
-
+  
   # Create a move2 object
   move2_obj <- move2::mt_as_move2(
     sf::st_as_sf(events, coords = col_coords, crs = 4326),
