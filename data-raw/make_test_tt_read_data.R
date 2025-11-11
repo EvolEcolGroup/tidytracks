@@ -39,7 +39,7 @@ meta <- data.frame(
 # make a version of df that has meta in it
 df_with_meta <- merge(df, meta, by = "track_id")
 
-# make a version with date and time in separate files
+# make a version with date and time in separate columns
 df_separate_datetime <- df %>%
   tidyr::separate(
     col = datetime,
