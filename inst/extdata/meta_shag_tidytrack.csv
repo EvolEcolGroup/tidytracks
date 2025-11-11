@@ -1,0 +1,10 @@
+species,bird_id,sex,colony,year,deployment_date,deployment_time_gmt,colony_lat,colony_lon,status
+antarctic_shag,KB_22_42644_29,Male,Killingbeck,2022,04/01/2022,09:02:50,-67.570716,-68.068935,good
+antarctic_shag,KB_22_42657_19,Male,Killingbeck,2022,03/01/2022,20:07:13,-67.570716,-68.068935,good
+antarctic_shag,KB_22_42718_27,Female,Killingbeck,2022,03/01/2022,21:07:13,-67.570716,-68.068935,good
+antarctic_shag,KB_22_42978_17,Male,Killingbeck,2022,03/01/2022,20:37:03,-67.570716,-68.068935,good
+antarctic_shag,KB_23_42768_43,Female,Killingbeck,2023,30/12/2022,16:48:55,-67.570716,-68.068935,good
+antarctic_shag,KB_23_42778_45,Female,Killingbeck,2023,30/12/2022,13:41:16,-67.570716,-68.068935,good
+antarctic_shag,KB_23_42928_42,Female,Killingbeck,2023,30/12/2022,12:16:10,-67.570716,-68.068935,good
+antarctic_shag,KB_23_42962_38,Male,Killingbeck,2023,30/12/2022,12:32:33,-67.570716,-68.068935,unusable
+antarctic_shag,KB_23_44224_40,Male,Killingbeck,2023,04/01/2023,10:18:43,-67.570716,-68.068935,left_colony
