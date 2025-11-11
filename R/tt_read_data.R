@@ -140,7 +140,7 @@ tt_read_data <- function(events,
       for (col in candidate_cols) {
         # Check if the column is unique within each level of the track id column
         is_unique <- all(tapply(events[[col]], events[[col_track_id]], function(x) length(unique(x)) == 1))
-        if (is_unique){ # if unique within each track, add to list to move to meta
+        if (is_unique) { # if unique within each track, add to list to move to meta
           to_move_cols <- c(to_move_cols, col)
         }
       }
