@@ -155,24 +155,22 @@ tt_read_data <- function(events,
   if (!is.null(meta)) {
     # if meta is a character string (i.e. filepath), read it as a data frame
     if (inherits(meta, "character")) {
-      new_meta <- utils::read.csv(meta, stringsAsFactors = FALSE)
-    } else ( # if it was already a dataframe, keep it as a dataframe
-      new_meta <- meta
-    )
+      meta <- utils::read.csv(meta, stringsAsFactors = FALSE)
+    } # if it was already a dataframe, keep it as a dataframe
     
-    # Ensure new_meta is a data frame
-    if (!inherits(new_meta, "data.frame")) {
+    # Ensure meta is a data frame
+    if (!inherits(meta, "data.frame")) {
       stop("meta must be a data frame or a path to a csv file.")
     }
     
     # check meta has the track ID field
-    if (!col_track_id %in% names(new_meta)) {
+    if (!col_track_id %in% names(meta)) {
       stop(paste("Column", col_track_id, "not found in the meta data."))
     }
     
     # join new meta to old meta
     old_meta <- show_meta(move2_obj)
-    updated_meta <- dplyr::left_join(old_meta, new_meta, by = col_track_id)
+    updated_meta <- dplyr::left_join(old_meta, meta, by = col_track_id)
     move2_obj <- move2::mt_set_track_data(move2_obj, updated_meta)
   }
 
