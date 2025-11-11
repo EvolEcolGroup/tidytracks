@@ -166,7 +166,7 @@ test_that("tt_read_data works with events CSV with separate date and time fields
   example_tt <- tt_read_data(
     events = test_path("testdata/test_tt_read_data_separate_datetime.csv"),
     col_track_id = "track_id",
-    col_coords  =c("lon","lat"),
+    col_coords = c("lon", "lat"),
     col_date_time = c("date","time")
   )
   
