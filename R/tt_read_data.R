@@ -79,7 +79,7 @@ tt_read_data <- function(events,
   if (!all(col_coords %in% names(events))) {
     stop(paste("Columns", paste(col_coords, collapse = ", "), "not found in the events data."))
   }
-  # check that the col_data_time exist
+  # check that the col_date_time exists
   if (length(col_date_time) == 1 && !col_date_time %in% names(events)) {
     stop(paste("Column", col_date_time, "not found in the events data."))
   } else if (length(col_date_time) == 2 && 
