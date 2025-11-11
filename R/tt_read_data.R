@@ -136,7 +136,7 @@ tt_read_data <- function(events,
   
   # Create a move2 object
   move2_obj <- move2::mt_as_move2(
-    sf::st_as_sf(events, coords = col_coords, crs = 4326),
+    sf::st_as_sf(events, coords = col_coords, crs = crs),
     time_column = col_date_time,
     track_id_column = col_track_id
   )
