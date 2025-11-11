@@ -39,6 +39,14 @@ meta <- data.frame(
 # make a version of df that has meta in it
 df_with_meta <- merge(df, meta, by = "track_id")
 
+# make a version with date and time in separate files
+df_separate_datetime <- df %>%
+  tidyr::separate(
+    col = datetime,
+    into = c("date", "time"),
+    sep = " "
+  )
+
 # save these as CSVs in tests/testthat/testdata
 write.csv(
   df,
@@ -55,8 +63,10 @@ write.csv(
   file = "tests/testthat/testdata/test_tt_read_data_meta.csv",
   row.names = FALSE
 )
-
-# make a version with separate date and time fields
-# TODO
+write.csv(
+  df_separate_datetime,
+  file = "tests/testthat/testdata/test_tt_read_data_separate_datetime.csv",
+  row.names = FALSE
+)
 
 
