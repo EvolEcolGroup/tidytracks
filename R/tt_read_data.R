@@ -61,7 +61,6 @@ tt_read_data <- function(events,
   
   # if events is a character string (i.e. a file path), read it as a data frame
   if (inherits(events, "character")) {
-  # if (is.character(events)) {
     events <- utils::read.csv(events, stringsAsFactors = FALSE)
   }
   
