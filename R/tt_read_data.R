@@ -92,36 +92,83 @@ tt_read_data <- function(events,
   if (!is.character(col_date_time) || length(col_date_time) < 1 || length(col_date_time) > 2) {
     stop("col_date_time must be a character vector of length 1 or 2.")
   }
-
-
-  # Convert date and time to POSIXct - new version with tryCatch for informative error messages
+  
+  # combine date/time columns if necessary
   if (length(col_date_time) == 1) {
-    events[[col_date_time]] <- tryCatch(
-      as.POSIXct(events[[col_date_time]], tz = time_zone),
-      error = function(e) {
-        stop("Failed to parse date-time field '", col_date_time,
+    # already a single datetime column
+    datetime_raw <- events[[col_date_time]]
+    col_date_time_original <- col_date_time # this to print in the error message
+  } else {
+    # combine separate date + time columns into one string, separated by a space
+    datetime_raw <- paste(events[[col_date_time[1]]], events[[col_date_time[2]]])
+    
+    # remove the old date/time columns
+    events <- events %>%
+      dplyr::select(-dplyr::all_of(col_date_time))
+    
+    # update col_date_time to the new column name
+    col_date_time_original <- col_date_time # this to print in the error message
+    col_date_time <- "date_time" # new combined datetime field will be called this
+  }
+  
+  # try to parse datetime values robustly using lubridate::parse_date_time()
+  events[[col_date_time]] <- tryCatch(
+    {
+      parsed <- suppressWarnings(lubridate::parse_date_time(
+        datetime_raw,
+        orders = c("Ymd HMS", "Ymd HM", "dmY HMS", "dmY HM", "dmy HMS", "dmy HM"),
+        tz = time_zone
+      )) # suppressed warnings because they interfere with our custom error messages
+      
+      # catch silent parse failures (NAs)
+      # TODO check if this can ever be triggered
+      if (any(is.na(parsed))) {
+        stop("Failed to parse some date-time values in '", col_date_time,
              "'. Please check that the format is consistent and uses a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
              call. = FALSE)
       }
-    )
-  } else {
-    events$date_time <- tryCatch(
-      as.POSIXct(paste(events[[col_date_time[1]]],
-                       events[[col_date_time[2]]]),
-                 tz = time_zone),
-      error = function(e) {
-        stop("Failed to parse date-time fields '", 
-             paste(col_date_time, collapse = "', '"),
-             "'. Please check that the formats are consistent and use a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
-             call. = FALSE)
-      }
-    )
-    
-    # remove the old date and time columns
-    events <- events %>%
-      dplyr::select(-dplyr::all_of(col_date_time))
-    col_date_time <- "date_time"  # update col_date_time to the new column name
-  }
+      
+      parsed # this goes in events[[col_date_time]]
+    },
+    error = function(e) {
+      stop("Failed to parse date-time field(s) '", paste(col_date_time_original, collapse = "', '"),
+           "'. Please check that the format is consistent and uses a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
+           call. = FALSE
+           )
+    }
+    # TODO maybe update the error message to print out how many entries failed to parse,
+    # and give some examples of the formats of the failed entries
+  )
+  
+  # # PREVIOUS CODE FOR COMPARISON
+  # # Convert date and time to POSIXct - new version with tryCatch for informative error messages
+  # if (length(col_date_time) == 1) {
+  #   events[[col_date_time]] <- tryCatch(
+  #     as.POSIXct(events[[col_date_time]], tz = time_zone),
+  #     error = function(e) {
+  #       stop("Failed to parse date-time field '", col_date_time,
+  #            "'. Please check that the format is consistent and uses a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
+  #            call. = FALSE)
+  #     }
+  #   )
+  # } else {
+  #   events$date_time <- tryCatch(
+  #     as.POSIXct(paste(events[[col_date_time[1]]],
+  #                      events[[col_date_time[2]]]),
+  #                tz = time_zone),
+  #     error = function(e) {
+  #       stop("Failed to parse date-time fields '", 
+  #            paste(col_date_time, collapse = "', '"),
+  #            "'. Please check that the formats are consistent and use a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
+  #            call. = FALSE)
+  #     }
+  #   )
+  #   
+  #   # remove the old date and time columns
+  #   events <- events %>%
+  #     dplyr::select(-dplyr::all_of(col_date_time))
+  #   col_date_time <- "date_time"  # update col_date_time to the new column name
+  # }
   
   # Create a move2 object
   move2_obj <- move2::mt_as_move2(
@@ -129,7 +176,7 @@ tt_read_data <- function(events,
     time_column = col_date_time,
     track_id_column = col_track_id
   )
-
+  
   # Convert track-specific attributes to meta data if requested
   if (convert_meta) {
     # Identify columns that might contain track specific info (i.e. unique within a track)
@@ -148,9 +195,9 @@ tt_read_data <- function(events,
         move2_obj <- move2::mt_as_track_attribute(move2_obj, dplyr::any_of(to_move_cols))
       }
     }
-
+    
   }
-
+  
   # If meta is provided, read and merge meta data
   if (!is.null(meta)) {
     # if meta is a character string (i.e. filepath), read it as a data frame
@@ -173,6 +220,6 @@ tt_read_data <- function(events,
     updated_meta <- dplyr::left_join(old_meta, meta, by = col_track_id)
     move2_obj <- move2::mt_set_track_data(move2_obj, updated_meta)
   }
-
+  
   return(move2_obj)
 }
