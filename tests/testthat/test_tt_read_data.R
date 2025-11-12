@@ -275,11 +275,24 @@ test_that("tt_read_data gives error for un-parse-able datetime field(s)", {
       col_coords = c("lon", "lat"),
       col_date_time = "datetime"
     ),
-    "Failed to parse date-time field(s) 'datetime'. Please check that the format is consistent and uses a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
-    fixed = TRUE
+    regexp = "Failed to parse date-time field(s) 'datetime'", fixed=TRUE
   )
   
-  # TODO add tests for separate date and time fields where one is bad
+  # with multiple different datetime formats in the same field
+  df_bad_datetime <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  df_bad_datetime$datetime[2] <- "01/01/2024 12:10"  # different format
+  expect_error(
+    tt_read_data(
+      events = df_bad_datetime,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "datetime"
+    ),
+    regexp = "Failed to parse date-time field(s) 'datetime'", fixed=TRUE
+  )
+    
+  
+  # test for separate date and time fields where one is bad
   df_diff_datetime <- read.csv(test_path("testdata/test_tt_read_data_separate_datetime.csv"))
   df_diff_datetime$date[2] <- "not a date"  # not parse-able
   expect_error(
@@ -289,8 +302,7 @@ test_that("tt_read_data gives error for un-parse-able datetime field(s)", {
       col_coords = c("lon", "lat"),
       col_date_time = c("date","time")
     ),
-    "Failed to parse date-time field(s) 'date', 'time'. Please check that the format is consistent and uses a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
-    fixed = TRUE
+    regexp = "Failed to parse date-time field(s) 'date', 'time'", fixed=TRUE
   )
   
 })
@@ -298,21 +310,6 @@ test_that("tt_read_data gives error for un-parse-able datetime field(s)", {
 
 # test with different but parse-able datetime field(s)
 test_that("tt_read_data works with a variety of datetime field(s) formats", {
-  
-  # with multiple different datetime formats in the same field - UPDATE this now works
-  df_bad_datetime <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
-  df_bad_datetime$datetime[2] <- "01/01/2024 12:10"  # different format
-  example_tt <- tt_read_data(
-    events = df_bad_datetime,
-    col_track_id = "track_id",
-    col_coords = c("lon", "lat"),
-    col_date_time = "datetime"
-  )
-  expect_s3_class(example_tt, "move2")
-  expect_equal(
-    example_tt$datetime[2],
-    as.POSIXct("2024-01-01 12:10:00", format="%Y-%m-%d %H:%M:%S", tz="UTC")
-  )
   
   # test with datetime formats starting with dd instead of yyyy
   example_tt <- tt_read_data(
@@ -345,7 +342,35 @@ test_that("tt_read_data works with a variety of datetime field(s) formats", {
 })
 
 
-
+# test with specifying the format_datetime parameter
+test_that("tt_read_data works with format_date_time parameter", {
+  
+  # test with datetime formats starting with dd instead of yyyy
+  example_tt <- tt_read_data(
+    events = test_path("testdata/test_tt_read_data_diff_datetimes.csv"),
+    col_track_id = "trackid",
+    col_coords = c("lon", "lat"),
+    col_date_time = "datetime_posix",
+    format_date_time = "%d/%m/%Y %H:%M"
+  )
+  expect_s3_class(example_tt, "move2")
+  expect_equal( # check first datetime parsed correctly
+    example_tt$datetime_posix[1],
+    as.POSIXct("2008-02-12 14:30:00", format="%Y-%m-%d %H:%M:%S", tz="UTC")
+  )
+  expect_equal(colnames(example_tt), c("trackid", "datetime_posix", "geometry"))
+  
+  # test with the wrong format_date_time parameter
+  expect_error(
+    tt_read_data(
+      events = test_path("testdata/test_tt_read_data_diff_datetimes.csv"),
+      col_track_id = "trackid",
+      col_coords = c("lon", "lat"),
+      col_date_time = "datetime_posix",
+      format_date_time = "%d-%m-%Y %H:%M" # a subtle bit important formatting difference!
+    ),
+    regexp = "Some date-time values could not be parsed using the provided format_date_time", fixed=TRUE)
+})
 
 
 
