@@ -34,7 +34,7 @@ colony coordiates, breeding status, etc.).
 We start with a small dataset of wandering albatrosses from the Birdlife Seabird Tracking Database. Let's quickly
 inspect it:
 ```{r}
-albatross_csv <- system.file("/extdata/csv_files/dataset_example_birdlife.csv",
+albatross_csv <- system.file("extdata/shag_tidytrack_sample_subset.csv",
                              package = "tidytracks")
 dplyr::glimpse(read.csv(albatross_csv))
 ```
@@ -42,7 +42,7 @@ dplyr::glimpse(read.csv(albatross_csv))
 Let us now read in the data using `tt_read_data()`. This function reads a csv file containing event data and converts it into a `move2` object.
 ```{r}
 example_mt <- tt_read_data(albatross_csv,
-                              col_track_id = "track_id",
+                              col_track_id = "bird_id",
                               col_coords = c("longitude", "latitude"),
                               col_date_time = c("date_gmt", "time_gmt"))
 ```
