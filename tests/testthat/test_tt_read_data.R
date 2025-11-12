@@ -320,7 +320,7 @@ test_that("tt_read_data works with a variety of datetime field(s) formats", {
   )
   expect_s3_class(example_tt, "move2")
   expect_equal( # check first datetime parsed correctly
-    example_tt$datetime[1],
+    example_tt$datetime_posix[1],
     as.POSIXct("2008-02-12 14:30:00", format="%Y-%m-%d %H:%M:%S", tz="UTC")
   )
   expect_equal(colnames(example_tt), c("trackid", "datetime_posix", "geometry"))

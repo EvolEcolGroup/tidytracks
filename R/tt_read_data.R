@@ -30,10 +30,10 @@
 #'   date-time information (or a vector of two elements, the names of separate
 #'   date and time columns). Time is assumed to be in UTC.
 #' @param format_date_time optional, a string containing the format of the 
-#' `datetime` field (or the `date` and `time` fields separated by a space) for
-#' use in `as.POSIXct` when parsing the date-time. If `NULL` (default), a set of 
-#' common formats will be tried. For help with specifying date-time formats, see
-#' `?strptime`.
+#' date-time field(s): either the single date-time column, or the date and 
+#' time columns separated by a space, for `as.POSIXct()` to parse the date-time. 
+#' If `NULL` (default), a set of common formats will be tried. For help with 
+#' specifying date-time formats, see `?strptime`.
 #' @param crs a proj4 string or EPSG code defining the coordinate reference
 #'   system of the data. Defaults to `4326` (WGS 84).
 #' @param time_zone a character string specifying the time zone of the
@@ -99,11 +99,20 @@ tt_read_data <- function(events,
     stop("col_date_time must be a character vector of length 1 or 2.")
   }
   
+  # make sure there are no pre-existing NAs in any of the required columns
+  # i.e. col_track_id, col_coords, col_date_time
+  required_cols <- c(col_track_id, col_coords, col_date_time)
+  for (col in required_cols) {
+    if (any(is.na(events[[col]]))) {
+      stop(paste("Column", col, "contains missing values (NAs). Please remove or impute these before proceeding."))
+    }
+  }
+  
   # combine date/time columns if necessary before converting to POSIXct
   if (length(col_date_time) == 1) {
     # already a single datetime column
     datetime_raw <- events[[col_date_time]]
-    col_date_time_original <- col_date_time # this to print in the error message
+    col_date_time_original <- col_date_time # store original name(s) for error messages
   } else {
     # combine separate date + time columns into one string, separated by a space
     datetime_raw <- paste(events[[col_date_time[1]]], events[[col_date_time[2]]])
@@ -113,12 +122,12 @@ tt_read_data <- function(events,
       dplyr::select(-dplyr::all_of(col_date_time))
     
     # update col_date_time to the new column name
-    col_date_time_original <- col_date_time # this to print in the error message
-    col_date_time <- "date_time" # new combined datetime field will be called this
+    col_date_time_original <- col_date_time # store original name(s) for error messages
+    col_date_time <- "date_time" # the combined datetime field will be named 'date_time'
   }
   
-  # attempt to parse the datetime column using as.POSIXct, couched in a tryCatch
-  # to provide informative error messages
+  # attempt to parse the datetime column using as.POSIXct, wrapped in a tryCatch
+  # block to provide informative error messages
   events[[col_date_time]] <- tryCatch(
     {
       if (is.null(format_date_time)) {
@@ -134,14 +143,16 @@ tt_read_data <- function(events,
                                   "%d-%m-%Y %H:%M:%OS", # 15-01-2024 13:45:30.123
                                   "%d-%m-%y %H:%M:%OS", # 15-01-24 13:45:30.123
                                   "%d/%m/%Y %H:%M",     # 15/01/2024 13:45
-                                  "%d-%m-%Y %H:%M"      # 15-01-2024 13:45
+                                  "%d-%m-%Y %H:%M",     # 15-01-2024 13:45
+                                  "%d-%m-%y %H:%M",     # 15-01-24 13:45
+                                  "%d/%m/%y %H:%M"      # 15/01/24 13:45
                                   ))
       } else {
         # use the provided format
+        # NB. if the provided format is wrong, you'll silently get NAs here
         as.POSIXct(datetime_raw, 
                    format = format_date_time,
                    tz = time_zone)
-        # NB. if the provided format is wrong, you'll silently get NAs here
       }
     },
     error = function(e) {
@@ -153,18 +164,27 @@ tt_read_data <- function(events,
     }
   )
   
-  # so let's check for any NAs and if there are any, throw an error
-  # saying that the provided format_date_time may be incorrect
-  # get the first two indices where the parsing failed, and find the original
-  # character strings for datetime so we can print them in the error message
+  # Check for any NAs in the parsed datetime values and throw an error if any are 
+  #   found, as this indicates the format_date_time may be incorrect
+  # Also get the first two indices where the parsing failed, and find the original
+  #   character strings for datetime so we can print them in the error message
   idx_na <- which(is.na(events[[col_date_time]]))
-  examples <- datetime_raw[head(idx_na, 2)]
   if (length(idx_na) > 0) {
-    stop("Some date-time values could not be parsed using the provided format_date_time '", format_date_time, "'.\n",
-         "Examples of unparsed date-time values: '",
-         paste(examples, collapse = "', '"),
-         "'.\nPlease check that the format_date_time parameter is correct and the data are consistently formatted.",
-         call. = FALSE)
+    examples <- datetime_raw[head(idx_na, 2)]
+    # Adjust error messsage based on whether format_date_time was supplied or not
+    if (!is.null(format_date_time)) {
+      stop("Some date-time values could not be parsed using the provided format_date_time '", format_date_time, "' .\n",
+           "Examples of unparsed date-time values: '",
+           paste(examples, collapse = "', '"),
+           "'.\nPlease check that the format_date_time parameter is correct and the data are consistently formatted.",
+           call. = FALSE)
+    } else {
+      stop("Some date-time values could not be parsed using auto-detected format.\n",
+           "Examples of unparsed date-time values: '",
+           paste(examples, collapse = "', '"),
+           "'.\nPlease check that the date-time columns are consistently formatted, or specify the format using the format_date_time parameter.",
+           call. = FALSE)
+    }
   }
   
   # Create a move2 object
