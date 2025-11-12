@@ -367,7 +367,7 @@ test_that("tt_read_data works with format_date_time parameter", {
       col_track_id = "trackid",
       col_coords = c("lon", "lat"),
       col_date_time = "datetime_posix",
-      format_date_time = "%d-%m-%Y %H:%M" # a subtle bit important formatting difference!
+      format_date_time = "%d-%m-%Y %H:%M" # a subtle but important formatting difference!
     ),
     regexp = "Some date-time values could not be parsed using the provided format_date_time", fixed=TRUE)
 })
