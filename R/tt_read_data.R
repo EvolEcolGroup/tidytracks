@@ -160,7 +160,7 @@ tt_read_data <- function(events,
   idx_na <- which(is.na(events[[col_date_time]]))
   examples <- datetime_raw[head(idx_na, 2)]
   if (any(is.na(events[[col_date_time]]))) {
-    stop("Some date-time values could not be parsed using the provided format_date_time '", format_date_time, "' .\n",
+    stop("Some date-time values could not be parsed using the provided format_date_time '", format_date_time, "'.\n",
          "Examples of unparsed date-time values: '",
          paste(examples, collapse = "', '"),
          "'.\nPlease check that the format_date_time parameter is correct and the data are consistently formatted.",
