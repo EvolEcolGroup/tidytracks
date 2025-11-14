@@ -45,20 +45,43 @@ that is specific to each event (i.e. the values are not unique within a given tr
 they will be moved to the meta data table if they are track specific (e.g. bird_id, sex of the individual, colony coordiates, breeding status, etc.).
 
 # Example data
-We start with a small dataset of Antarctic Shags. Let's quickly
+We start with a small data set of Antarctic Shags. Let's quickly
 inspect it:
 ```{r}
 shag_csv <- system.file("extdata/shag_tidytrack_sample_subset.csv",
                              package = "tidytracks")
 dplyr::glimpse(read.csv(shag_csv))
+
 ```
-Let us now read in the data using `tt_read_data()`. This function reads a csv file containing event data and converts it into a `move2` object.
+Read in the data from the csv and format date and time fields (temporary until tt_read_data function is updated). Check the structure to make sure has formatted correctly.
+
 ```{r}
-shags_mt <- tt_read_data(shag_csv,
-                              col_track_id = "bird_id",
-                              col_coords = c("longitude", "latitude"),
-                              col_date_time = c("date_gmt", "time_gmt"))
-#data_time still not reading in correctly
+shag_data <- read.csv(shag_csv) %>%
+  dplyr::select(-datetime, -datetime_rothera) %>%
+  dplyr::mutate(datetime = paste(date_gmt, time_gmt)) %>%
+  dplyr::mutate(datetime = as.POSIXct(datetime,
+                                  format = "%d/%m/%Y %H:%M:%S",
+                                  tz = "GMT")) %>%
+  dplyr::select(-date_gmt, -time_gmt, -sex, -colony, -year)
+
+
+str(shag_data)
+```
+There is a companion file of metadata including extra information such as colony coordinates and eployment dates. We will read this csv too and then it can be merged into the metadata table when we create the tidytracks object.
+
+```{r}
+# read shag metadata
+shag_meta <- read.csv(system.file("extdata/meta_shag_tidytrack.csv",
+                         package = "tidytracks"))
+```
+
+Let us now read in the data using `tt_read_data()`. This function reads a csv file containing event data and converts it into a `move2` object. 
+```{r}
+shags_mt <- tt_read_data(events = shag_data,
+                         col_track_id = "bird_id",
+                         col_coords = c("longitude", "latitude"),
+                         col_date_time = "datetime",
+                         meta = shag_meta)
 ```
 
 
@@ -82,8 +105,7 @@ summary(shags_mt)
 ```
 We can see how each row in the table is an event, in this case a time-stamped GPS location for 
 a given bird, with the column `date_time` providing the time and column `geometry`
-defining the location. `bird_id` (the designated `track_id_column`) is 
-is the identifier that groups a set of events into a single track.  #has multiple datetime colums-do we want this??
+defining the location. `bird_id` (the designated `track_id_column`) is is the identifier that groups a set of events into a single track.  
 
 We can access the metadata for the tracks with `show_meta()`:
 ```{r}
