@@ -136,43 +136,54 @@ the metadata to filter the tracks. We can use the `filter_by_meta()` function
 to do so:
 
 ```{r}
-boobies_sub <- boobies_mt %>%
-  filter_by_meta(bird_id %in% c("69302", "69303", "69304"))
-boobies_sub
+shags_sub <- shags_mt %>%
+  filter_by_meta(bird_id %in% c("KB_23_42962_38", "KB_23_42778_45", "KB_23_44224_40"))
+shags_sub
 ```
 
 We can now plot the data:
 ```{r}
 library(ggplot2)
 ggplot() +
-  geom_event_point(data = boobies_sub, aes(color = bird_id))
+  geom_event_point(data = shags_sub, aes(color = bird_id))
 
 
 ```
+In this plot we can see that at least one of the individuals has an outlying point at 0'00, 0'00 ('Null Island'). Lets quickly filter out these outliers by latitude so that we can see the map properly.
+```{r}
+shags_sub <- shags_sub %>%
+  dplyr::filter(st_coordinates(geometry)[,2] < -5)
+```
+We are left with only points south of 5 degrees latitude, the reasonable home range of our Antarctic Shags. Lets plot it again to check.
 
-We can only see two individuals in the plot. Let's explore what each individual
-is doing by plotting the locations of each individual separately:
 ```{r}
 ggplot() +
-  geom_event_point(data = boobies_sub, aes(color = bird_id)) +
+  geom_event_point(data = shags_sub, aes(color = bird_id))
+  
+```
+  
+Let's explore what each individual is doing by plotting the locations of each individual separately:
+```{r}
+ggplot() +
+  geom_event_point(data = shags_sub, aes(color = bird_id)) +
   facet_wrap(~bird_id)
 
 ```
 
 ```{r}
 ggplot() +
-  geom_event_path(data = boobies_sub) +
+  geom_event_path(data = shags_sub, aes(color = bird_id)) +
   facet_wrap(~bird_id)
 ```
 
 
-We can see that '69303' moved very little (or not at all) during the period.
+We can see that 'KB_23_42962_38' moved very little (or not at all) during the period.
 
 As a `move2` object is a derived `sf` tibble, we can simply use `coord_sf` to
 plot the data in a map projection:
 ```{r}
 ggplot() +
-  geom_event_point(data = boobies_sub, aes(color = bird_id)) +
+  geom_event_point(data = shags_sub, aes(color = bird_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
@@ -181,7 +192,7 @@ trajectory as a path:
 
 ```{r}
 ggplot() +
-  geom_track_path(data = boobies_sub, aes(color = bird_id)) +
+  geom_track_path(data = shags_sub, aes(color = bird_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
 ```
 
