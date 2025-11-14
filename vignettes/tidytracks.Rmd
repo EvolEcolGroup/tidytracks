@@ -80,7 +80,7 @@ We will also combine the colony coordinates into one column using the `sf` packa
 library(sf)
 shag_meta <- shag_meta %>%
   st_as_sf(coords = c("colony_lon", "colony_lat"), crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")%>%
-  rename(colony_coord = geometry)
+  dplyr::rename(colony_coord = geometry)
 ```
 
 Let us now read in the data using `tt_read_data()`. This function reads a csv file containing event data and converts it into a `move2` object. 
