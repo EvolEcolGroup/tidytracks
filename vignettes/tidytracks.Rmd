@@ -270,31 +270,31 @@ vector of length equal to the number of tracks in the object). #todo, how tos on
 
 We can get an overview of the speeds of each step with:
 ```{r}
-boobies_sub %>%
+shags_sub %>%
   summary()
 ```
 
-Some of those speeds (>2000 m/minute) seem a bit high. We can check the units (to make sure
+Some of those speeds (>1400 m/minute) seem a bit high. We can check the units (to make sure
 we have them right):
 ```{r}
-units(boobies_sub$speed)
+units(shags_sub$speed)
 ```
 
 
 Let's rephrase them in units that might be more familiar to us.
 
 ```{r}
-boobies_sub %>%
+shags_sub %>%
   mutate(speed = units::set_units(speed, "km/h")) %>%
   summary()
 ```
-Hmm, 146 km/h is a bit fast for a boobie; they are known to reach ~90 km/h.
+Hmm, 88 km/h is a bit fast for a shag (# is it?)
 
 Let's plot the speed of each event:
 ```{r}
 ggplot() +
   geom_event_path(
-    data = boobies_sub,
+    data = shags_sub,
     aes(color = speed)
   ) +
   facet_wrap(~bird_id)
@@ -309,8 +309,9 @@ algorithm (the same used by `trip::speedfilter()`). Note that we can give the
 units in the object.
 
 ```{r}
-boobies_sub <- boobies_sub %>%
-  tt_clean_mcconnell(max_speed = units::as_units(90, "km/h"))
+shags_sub <- shags_sub %>%
+  tt_clean_mcconnell(max_speed = units::as_units(80, "km/h")) 
+##this is for demo purposes need to find reasonable shag speed
 ```
 
 Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
@@ -321,9 +322,9 @@ details on how to use it (TODO there is no advance vignette yet!!!).
 Let us now recompute the speeds (directly in km/h):
 
 ```{r}
-boobies_sub <- boobies_sub %>%
+shags_sub <- shags_sub %>%
   mutate(speed = event_speed(., units = "km/h"))
-summary(boobies_sub)
+summary(shags_sub) ##didnt work? max still over 80
 ```
 
 We can see that we have removed step with an extreme speed. Note that the McConnell algorithm
