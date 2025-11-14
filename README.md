@@ -3,6 +3,7 @@
 
 <!-- badges: start -->
 [![Codecov test coverage](https://codecov.io/gh/EvolEcolGroup/tidytracks/graph/badge.svg)](https://app.codecov.io/gh/EvolEcolGroup/tidytracks)
+[![R-CMD-check](https://github.com/EvolEcolGroup/tidytracks/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/EvolEcolGroup/tidytracks/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The goal of tidytracks is to ...
