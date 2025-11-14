@@ -1,6 +1,8 @@
 ---
-title: "reading_data into tidytracks"
-output: rmarkdown::html_vignette
+title: "tidytracks"
+output: 
+        rmarkdown::html_vignette
+        # pdf_document: default
 vignette: >
   %\VignetteIndexEntry{reading_data}
   %\VignetteEngine{knitr::rmarkdown}
