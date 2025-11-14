@@ -213,10 +213,10 @@ two events, but for simplicity we will refer to it as the speed of the event.
 For each track, `event_speed()` returns the speed of each segment, padded with a
 final NA so that we have the same number of rows as the original track.
 
-So, we can add speed to our `boobies_sub` object with:
+So, we can add speed to our `shags_sub` object with:
 ```{r}
 library(dplyr)
-boobies_sub <- boobies_sub %>% mutate(speed = event_speed(.))
+shags_sub <- shags_sub %>% mutate(speed = event_speed(.))
 ```
 
 Note the use of the . place-holder in the brackets of `event_speed()` to pass
@@ -225,7 +225,7 @@ the `move2` object to the function. This is only possible with a `magrittr` pipe
 
 We can now visualise the distribution of speeds:
 ```{r}
-boobies_sub %>%
+shags_sub %>%
   ggplot(aes(x = speed)) +
   geom_histogram(bins = 100)
 ```
@@ -238,20 +238,21 @@ are returned (more details about working with units below).
 
 The histogram above is suggests that there might be outliers in the data,
 as we seem to have a few events with very high speeds. We will see later
-how we can clean up the data using McConnell's algorithm.
+how we can clean up the data using McConnell's algorithm. #to do, do we want to 
+leave in some of the outliers first? also what is a reasonable speed for  shag
 
 Finally, there are `track_*` functions, which operate on the whole track, and will
 generally return a vector of length equal to the number of tracks in the object.
 For example, `track_duration()` returns the total duration of each track:
 
 ```{r}
-boobies_sub %>%
+shags_sub %>%
   track_duration()
 ```
 
 If we wanted the same estimates in hours rather than days, we would simply say:
 ```{r}
-boobies_sub %>%
+shags_sub %>%
   track_duration(units = "hours")
 ```
 
@@ -263,7 +264,7 @@ using McConnell's algorithm, whilst `tt_clean_mcconnell()` will return a
 will return a vector of distances between events (a vector of the same length
 as the rows of the event column), while `track_distance()` will
 return the total (cumulative) distance for each track (and thus a shorter
-vector of length equal to the number of tracks in the object).
+vector of length equal to the number of tracks in the object). #todo, how tos on these functions?
 
 # Cleaning the data
 
