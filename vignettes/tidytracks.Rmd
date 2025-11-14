@@ -4,7 +4,7 @@ output:
         rmarkdown::html_vignette
         # pdf_document: default
 vignette: >
-  %\VignetteIndexEntry{tidytracks}
+  %\VignetteIndexEntry{reading_data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,11 +16,13 @@ knitr::opts_chunk$set(
 )
 ```
 
+```{r setup}
+library(tidytracks)
+```
+
 # Tracking data representation in `tidytracks`
 
-`tidytracks` uses tidy tables of tracks to represent tracking data (technically,
-these are `move2` objects). In a tidy table of tracks, each row represents an
-event, which is a time-stamped observation,
+`tidytracks` uses tidy tables of tracks to represent tracking data (`move2` objects: which are a type of spatial data structure used for tracking animal movements). In a tidy table of tracks, each row represents an event, which is a time-stamped observation,
 often associated with a location. Events are grouped into tracks. Tracks can
 be all the locations from a deployment, or a subset of locations for a trip
 of a central place forager. The metadata that describes each of these tracks is
@@ -28,30 +30,64 @@ stored in a separate table, which is linked to the event table by a
 `track_id_column`. In this way, we do not have to repeat information (such as the id of
 an animal, or its sex) for each event, but we can use the metadata of the track
 to characterise all events within that track. Let us inspect a sample dataset
-that we will use throughout this vignette. The dataset is included in the
-package, and can be loaded with the following command:
+that we will use throughout this vignette.  We can use the move2 object created in the previous section on reading in data.
 
-```{r setup}
-library(tidytracks)
-data(boobies_mt)
+
+# Reading data into a `move2` object
+In `tidytrackss`, we start by reading a table of events (e.g., GPS locations). This table
+(stored as a csv file) should contain at least the following columns:
+- one column which is the `track_id` (i.e. the variable that groups events into a track)
+- two columns representing the x and y coordinates (e.g. longitude and latitude)
+- a date-time column (or separate date and time columns)
+
+Additional columns of data will be stored in the events table if they have information
+that is specific to each event (i.e. the values are not unique within a given track), or
+they will be moved to the meta data table if they are track specific (e.g. bird_id, sex of the individual, colony coordiates, breeding status, etc.).
+
+# Example data
+We start with a small dataset of Antarctic Shags. Let's quickly
+inspect it:
+```{r}
+shag_csv <- system.file("extdata/shag_tidytrack_sample_subset.csv",
+                             package = "tidytracks")
+dplyr::glimpse(read.csv(shag_csv))
+```
+Let us now read in the data using `tt_read_data()`. This function reads a csv file containing event data and converts it into a `move2` object.
+```{r}
+shags_mt <- tt_read_data(shag_csv,
+                              col_track_id = "bird_id",
+                              col_coords = c("longitude", "latitude"),
+                              col_date_time = c("date_gmt", "time_gmt"))
+#data_time still not reading in correctly
 ```
 
-It is a dataset on boobies containing 43 tracks with just over 178k GPS
-locations. Note that the data are based on XXX, but they were doctored to showcase
-functionality of `tidytracks`; do not use them for any real analysis!!!.
+
+Inspecting the events table, we have:
+```{r}
+shags_mt
+```
+
+We can see that only date and locations were retained as event specific variables, while the rest of the information was moved to the meta data table. We can inspect the meta data table as follows:
+```{r}
+dplyr::glimpse(show_meta(shags_mt))
+```
+
+It is a dataset on antarctic shags containing 6 tracks with 7,798 GPS -->
+locations. Note that the data are based on XXX, but they were doctored to showcase -->
+functionality of `tidytracks`; do not use them for any real analysis!!!. --> 
 
 We can start by printing a summary of object:
 ```{r}
-boobies_mt
+summary(shags_mt)
 ```
-
 We can see how each row in the table is an event, in this case a time-stamped GPS location for 
 a given bird, with the column `date_time` providing the time and column `geometry`
 defining the location. `bird_id` (the designated `track_id_column`) is 
-is the identifier that groups a set of events into a single track. 
+is the identifier that groups a set of events into a single track.  #has multiple datetime colums-do we want this??
+
 We can access the metadata for the tracks with `show_meta()`:
 ```{r}
-head(show_meta(boobies_mt))
+head(show_meta(shags_mt))
 ```
 
 We can see how we have a `bird_id` column that links back to the events
@@ -62,7 +98,7 @@ geometries from the `sf` package, so that they come with crs information).
 Note that `move2` objects don't have to be ordered by time. We can order the
 data by time using the `tt_order_time()` function:
 ```{r}
-boobies_mt <- boobies_mt %>% tt_order_time()
+shags_mt <- shags_mt %>% tt_order_time()
 ```
 
 Functions that start with `tt_` are specific to tidy tables of tracks
@@ -88,6 +124,8 @@ We can now plot the data:
 library(ggplot2)
 ggplot() +
   geom_event_point(data = boobies_sub, aes(color = bird_id))
+
+
 ```
 
 We can only see two individuals in the plot. Let's explore what each individual
@@ -96,6 +134,7 @@ is doing by plotting the locations of each individual separately:
 ggplot() +
   geom_event_point(data = boobies_sub, aes(color = bird_id)) +
   facet_wrap(~bird_id)
+
 ```
 
 ```{r}
