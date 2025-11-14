@@ -1,7 +1,8 @@
 ---
 title: "tidytracks"
-output: # rmarkdown::html_vignette
-        pdf_document: default
+output: 
+        rmarkdown::html_vignette
+        # pdf_document: default
 vignette: >
   %\VignetteIndexEntry{tidytracks}
   %\VignetteEngine{knitr::rmarkdown}
