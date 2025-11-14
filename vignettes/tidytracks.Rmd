@@ -67,12 +67,20 @@ shag_data <- read.csv(shag_csv) %>%
 
 str(shag_data)
 ```
-There is a companion file of metadata including extra information such as colony coordinates and eployment dates. We will read this csv too and then it can be merged into the metadata table when we create the tidytracks object.
+There is a companion file of metadata including extra information such as colony coordinates and eployment dates. We will read this csv too and then it can be merged into the metadata table when we create the tidytracks object. We will also combine the colony coordinates into one column using 
 
 ```{r}
 # read shag metadata
 shag_meta <- read.csv(system.file("extdata/meta_shag_tidytrack.csv",
                          package = "tidytracks"))
+```
+
+We will also combine the colony coordinates into one column using the `sf` package (necessary or is this loaded anyway?):
+```{r}
+library(sf)
+shag_meta <- shag_meta %>%
+  st_as_sf(coords = c("colony_lon", "colony_lat"), crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")%>%
+  rename(colony_coord = geometry)
 ```
 
 Let us now read in the data using `tt_read_data()`. This function reads a csv file containing event data and converts it into a `move2` object. 
@@ -324,7 +332,7 @@ Let us now recompute the speeds (directly in km/h):
 ```{r}
 shags_sub <- shags_sub %>%
   mutate(speed = event_speed(., units = "km/h"))
-summary(shags_sub) ##didnt work? max still over 80
+summary(shags_sub) ## max still over 80, need more dramtic outlier
 ```
 
 We can see that we have removed step with an extreme speed. Note that the McConnell algorithm
@@ -336,13 +344,13 @@ point is not too far away.
 
 # Splitting trips
 
-Boobies are central place foragers, and we now want to split the track into
+Shags are central place foragers, and we now want to split the track into
 trips. For this we need to define the colony location, and a buffer around it.
 `tt_split_trips()` can take either a single colony point, or one nest location
 per track. 
 
 ```{r}
-boobies_sub <- boobies_sub %>%
+shags_sub <- shags_sub %>%
   tt_split_trips(
     center_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
@@ -353,12 +361,12 @@ boobies_sub <- boobies_sub %>%
 If we now inspect the object, we can see that there is a new column, `trip_id`,
 which is also used as the new `track_id_column` in the `move2` object:
 ```{r}
-boobies_sub
+shags_sub
 ```
 
 Let's look at the metadata:
 ```{r}
-show_meta(boobies_sub)
+show_meta(shags_sub)
 ```
 
 We can see that only individual 69302 performed proper central place trips, and
