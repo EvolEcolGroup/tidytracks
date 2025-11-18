@@ -53,7 +53,7 @@ shag_csv <- system.file("extdata/shag_tidytrack_sample_subset.csv",
 dplyr::glimpse(read.csv(shag_csv))
 
 ```
-Read in the data from the csv and format date and time fields (temporary until tt_read_data function is updated). Check the structure to make sure has formatted correctly.
+Read in the data from the csv and format date and time fields (temporary until tt_read_data function is updated). Check the structure to make sure has formatted correctly.We will also remove some of the columns that are not needed for this example.
 
 ```{r}
 shag_data <- read.csv(shag_csv) %>%
@@ -79,7 +79,7 @@ We will also combine the colony coordinates into one column using the `sf` packa
 ```{r}
 library(sf)
 shag_meta <- shag_meta %>%
-  st_as_sf(coords = c("colony_lon", "colony_lat"), crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")%>%
+  st_as_sf(coords = c("colony_lon", "colony_lat"), crs = "+proj=longlat +datum=WGS84 +no_defs")%>%
   dplyr::rename(colony_coord = geometry)
 ```
 
@@ -138,7 +138,7 @@ operate on the whole object.
 # Plotting the data
 
 We can plot the data using the `ggplot2` package. Let us filter out the tracks
-for individuals 69302, 69303, and 69304. We could filter directly the `move2`
+for individuals KB_23_42962_38, KB_23_42778_45, and KB_23_44224_40. We could filter directly the `move2`
 object as if it was a normal tibble. However, we can also use information from
 the metadata to filter the tracks. We can use the `filter_by_meta()` function
 to do so:
@@ -192,7 +192,7 @@ plot the data in a map projection:
 ```{r}
 ggplot() +
   geom_event_point(data = shags_sub, aes(color = bird_id)) +
-  coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')
 ```
 
 Instead of plotting the individual locations, we might prefer to plot the
@@ -201,7 +201,7 @@ trajectory as a path:
 ```{r}
 ggplot() +
   geom_track_path(data = shags_sub, aes(color = bird_id)) +
-  coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
 
 # A grammar of movement
@@ -354,7 +354,8 @@ shags_sub <- shags_sub %>%
   tt_split_trips(
     center_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
-    buffer_inbound = as_units(10, "km")
+    buffer_inbound = as_units(10, "km"),
+    complete = TRUE
   )
 ```
 
@@ -369,17 +370,18 @@ Let's look at the metadata:
 show_meta(shags_sub)
 ```
 
-We can see that only individual 69302 performed proper central place trips, and
-specifically it made 3 trips. 69303 never moved, and 69304 migrated away from
-the study area. We can now plot the
+We can see that only individual KB_23_42778_45 performed proper central place trips, and
+specifically it made 3 trips. KB_23_44224_40 migrated away from the study area. KB_23_42962_38 never moved and was therefore filtered out. The  We can now plot the
 trips with:
+
+#write something about buffer/complete removing trips
 ```{r}
 ggplot() +
   geom_sf(
-    data = track_lines(boobies_sub),
+    data = track_lines(shags_sub),
     aes(color = trip_id)
   ) +
-  coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
 
 # Summarising tracks
@@ -387,8 +389,9 @@ ggplot() +
 We can get a summary of our tracks with:
 
 ```{r}
-boobies_sub %>%
-  track_summary_stats(center_col = "colony_coord")
+shags_sub %>%
+  track_summary_stats(center_col = "colony_coord")#
+#tracks and center col not in same crs
 ```
 
 Note that `track_summary_stats()` will return a tibble with one row per track,
@@ -402,17 +405,18 @@ the full dataset to split trips, and drop individuals that did not move
 or migrated (such as the ones seen in the previous section):
 
 ```{r}
-boobies_trips <- boobies_mt %>%
+shags_trips <- shags_mt %>%
   tt_split_trips(
     center_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
-    buffer_inbound = as_units(10, "km")
+    buffer_inbound = as_units(10, "km"),
+    complete = TRUE
   )
 ```
 
 Let's get a summary of the metadata of what is left:
 ```{r}
-summary(show_meta(boobies_trips))
+summary(show_meta(shags_trips))
 ```
 
 We'll take the 3 birds with the most trips:
