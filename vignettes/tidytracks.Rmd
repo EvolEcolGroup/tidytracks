@@ -505,7 +505,7 @@ ggplot() +
 
 To get a minimum convex polygon covering 90% of the data, we can simply use:
 ```{r}
-boobies_mcp <- boobies_trips_sub %>%
+shags_mcp <- shags_trips_sub %>%
   group_by(bird_id) %>%
   tt_hr_mcp(levels = c(0.90))
 ```
@@ -514,11 +514,11 @@ We can plot the MCPs with:
 ```{r}
 ggplot() +
   geom_sf(
-    data = boobies_mcp,
+    data = shags_mcp,
     aes(fill = bird_id), alpha = 0.7
   ) +
   geom_event_point(
-    data = boobies_trips_sub,
+    data = shags_trips_sub,
     size = 0.1
   ) +
   facet_wrap(~bird_id)
