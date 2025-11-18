@@ -398,6 +398,7 @@ Note that `track_summary_stats()` will return a tibble with one row per track,
 rather than the usual vector of lenght equal to the number of tracks that is
 produced by most `track_*` functions.
 
+
 # Home Range estimates
 
 We can now estimate the home range of individuals. First, we will process
@@ -419,55 +420,72 @@ Let's get a summary of the metadata of what is left:
 summary(show_meta(shags_trips))
 ```
 
-We'll take the 3 birds with the most trips:
+First lets find the three shags with the most trips and make a subset of these:
 ```{r}
-boobies_trips_sub <- boobies_trips %>%
-  filter_by_meta(bird_id %in% c("69339", "69314", "69333"))
+top3_birds <- shags_trips %>%
+  count(bird_id, trip_id) %>%  
+  count(bird_id, name = "n_trips") %>% 
+  arrange(desc(n_trips)) %>% 
+  slice(1:3) %>% 
+  pull(bird_id)
+
+shags_trips_sub <- shags_trips %>%
+  filter_by_meta(bird_id %in% top3_birds)
+
 ```
-We can now plot the trips:
+
+We should also filter this subset by latitude
+
+```{r}
+shags_trips_sub<- shags_trips_sub %>%
+  dplyr::filter(st_coordinates(geometry)[,2] < -5)
+```
+
+We can now plot the trips
 ```{r}
 ggplot() +
   geom_track_path(
-    data = boobies_trips_sub,
+    data = shags_trips_sub,
     aes(color = trip_id)
   ) +
-  coord_sf(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m") +
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
   facet_wrap(~bird_id) + theme(legend.position="none")
+
 ```
 
 
-To estimate home ranges, we need to project the data to an equal area projection.
+- SEE NOTES To estimate home ranges, we need to project the data to an equal area projection.
 We can use the `sf::st_transform()` function to do this:
 ```{r}
-boobies_trips_sub <- boobies_trips_sub %>%
-  sf::st_transform(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m")
+#boobies_trips_sub <- boobies_trips_sub %>%
+  #sf::st_transform(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m") - its already in one
 ```
 
 We can now estimate the home range using Kernel Density Estimation. We want to 
 estimate the home range for each bird, so we will group by `bird_id`:
 
 ```{r}
-boobies_kde <- boobies_trips_sub %>%
+shags_kde <- shags_trips_sub %>%
   group_by(bird_id) %>%
   tt_hr_kde(levels = c(0.5, 0.95))
 ```
 
-`boobies_kde` is an `sf` object, with estimates of the area (in the units of
+`shags_kde` is an `sf` object, with estimates of the area (in the units of
 the projection, in this case m^2) and a geometry column:
 ```{r}
-boobies_kde
+shags_kde
 ```
 
 We could easily change the units of the area with `set_units()`:
 ```{r}
-boobies_kde %>%
+shags_kde %>%
   mutate(area = set_units(area, "km^2"))
 ```
 
 
 We can plot the home ranges:
 ```{r}
-ggplot(boobies_kde) +
+ggplot(shags_kde) +
   geom_sf(aes(fill = bird_id), alpha = 0.7)
 ```
 
@@ -475,11 +493,11 @@ We can simply add actual events with:
 ```{r}
 ggplot() +
   geom_sf(
-    data = boobies_kde,
+    data = shags_kde,
     aes(fill = bird_id), alpha = 0.7
   ) +
   geom_event_point(
-    data = boobies_trips_sub,
+    data = shags_trips_sub,
     size = 0.1
   ) +
   facet_wrap(~bird_id)
