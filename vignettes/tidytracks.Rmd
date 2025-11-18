@@ -48,15 +48,14 @@ they will be moved to the meta data table if they are track specific (e.g. bird_
 We start with a small data set of Antarctic Shags. Let's quickly
 inspect it:
 ```{r}
-shag_csv <- system.file("extdata/shag_tidytrack_sample_subset.csv",
-                             package = "tidytracks")
-dplyr::glimpse(read.csv(shag_csv))
+shags_csv <- system.file("extdata/shag_tidytrack_sample_subset_speed_filter.csv", package = "tidytracks")
+dplyr::glimpse(read.csv(shags_csv))
 
 ```
 Read in the data from the csv and format date and time fields (temporary until tt_read_data function is updated). Check the structure to make sure has formatted correctly.We will also remove some of the columns that are not needed for this example.
 
 ```{r}
-shag_data <- read.csv(shag_csv) %>%
+shags_data <- read.csv(shags_csv) %>%
   dplyr::select(-datetime, -datetime_rothera) %>%
   dplyr::mutate(datetime = paste(date_gmt, time_gmt)) %>%
   dplyr::mutate(datetime = as.POSIXct(datetime,
@@ -65,31 +64,32 @@ shag_data <- read.csv(shag_csv) %>%
   dplyr::select(-date_gmt, -time_gmt, -sex, -colony, -year)
 
 
-str(shag_data)
+str(shags_data)
 ```
 There is a companion file of metadata including extra information such as colony coordinates and eployment dates. We will read this csv too and then it can be merged into the metadata table when we create the tidytracks object. We will also combine the colony coordinates into one column using 
 
 ```{r}
 # read shag metadata
-shag_meta <- read.csv(system.file("extdata/meta_shag_tidytrack.csv",
+shags_meta <- read.csv(system.file("extdata/meta_shag_tidytrack.csv",
                          package = "tidytracks"))
 ```
 
 We will also combine the colony coordinates into one column using the `sf` package (necessary or is this loaded anyway?):
 ```{r}
 library(sf)
-shag_meta <- shag_meta %>%
-  st_as_sf(coords = c("colony_lon", "colony_lat"), crs = "+proj=longlat +datum=WGS84 +no_defs")%>%
+shags_meta <- shags_meta %>%
+  st_as_sf(coords = c("colony_lon", "colony_lat"), crs = 4326)%>%
   dplyr::rename(colony_coord = geometry)
 ```
 
 Let us now read in the data using `tt_read_data()`. This function reads a csv file containing event data and converts it into a `move2` object. 
 ```{r}
-shags_mt <- tt_read_data(events = shag_data,
+shags_mt <- tt_read_data(events = shags_data,
                          col_track_id = "bird_id",
                          col_coords = c("longitude", "latitude"),
                          col_date_time = "datetime",
-                         meta = shag_meta)
+                         meta = shags_meta,
+                         crs =4326)
 ```
 
 
@@ -202,6 +202,8 @@ trajectory as a path:
 ggplot() +
   geom_track_path(data = shags_sub, aes(color = bird_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
+
+#use coord sf to change poroj of map
 ```
 
 # A grammar of movement
@@ -296,7 +298,7 @@ shags_sub %>%
   mutate(speed = units::set_units(speed, "km/h")) %>%
   summary()
 ```
-Hmm, 88 km/h is a bit fast for a shag (# is it?)
+Hmm, 186 km/h is a bit fast for a shag (# is it?)
 
 Let's plot the speed of each event:
 ```{r}
@@ -312,14 +314,12 @@ Note that, as we did not save the object with the new speed units, the
 original units are still in the object.
 
 We can remove locations characterised by unlikely speeds using the McConnell's
-algorithm (the same used by `trip::speedfilter()`). Note that we can give the
-`max_speed` in any units we want, and they will be automatically converted to the
-units in the object.
+algorithm (the same used by `trip::speedfilter()`). Max speed can be set to an appropriate number for the species we are working with. Shags have been observed flying at 60km/h so we will set the maximum to 80. Note that we can give the
+`max_speed` in any units we want, and they will be automatically converted to the units in the object.
 
 ```{r}
 shags_sub <- shags_sub %>%
   tt_clean_mcconnell(max_speed = units::as_units(80, "km/h")) 
-##this is for demo purposes need to find reasonable shag speed
 ```
 
 Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
@@ -332,7 +332,7 @@ Let us now recompute the speeds (directly in km/h):
 ```{r}
 shags_sub <- shags_sub %>%
   mutate(speed = event_speed(., units = "km/h"))
-summary(shags_sub) ## max still over 80, need more dramtic outlier
+summary(shags_sub)
 ```
 
 We can see that we have removed step with an extreme speed. Note that the McConnell algorithm
@@ -354,7 +354,7 @@ shags_sub <- shags_sub %>%
   tt_split_trips(
     center_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
-    buffer_inbound = as_units(10, "km"),
+    buffer_inbound = as_units(3, "km"),
     complete = TRUE
   )
 ```
@@ -390,20 +390,20 @@ We can get a summary of our tracks with:
 
 ```{r}
 shags_sub %>%
-  track_summary_stats(center_col = "colony_coord")#
-#tracks and center col not in same crs
+  track_summary_stats(center_col = "colony_coord")
 ```
 
 Note that `track_summary_stats()` will return a tibble with one row per track,
 rather than the usual vector of lenght equal to the number of tracks that is
 produced by most `track_*` functions.
 
-
+#TODO: filter trips by duration and length
+#filter by meta
 # Home Range estimates
 
 We can now estimate the home range of individuals. First, we will process
 the full dataset to split trips, and drop individuals that did not move
-or migrated (such as the ones seen in the previous section):
+or migrated (such as the ones seen in the previous section):  re-project somewhere here
 
 ```{r}
 shags_trips <- shags_mt %>%
@@ -457,8 +457,8 @@ ggplot() +
 - SEE NOTES To estimate home ranges, we need to project the data to an equal area projection.
 We can use the `sf::st_transform()` function to do this:
 ```{r}
-#boobies_trips_sub <- boobies_trips_sub %>%
-  #sf::st_transform(crs = "+proj=aeqd +lon_0=-16 +lat_0=-5 +units=m") - its already in one
+shags_trips_sub <- shags_trips_sub %>%
+  sf::st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
 
 We can now estimate the home range using Kernel Density Estimation. We want to 
@@ -468,7 +468,7 @@ estimate the home range for each bird, so we will group by `bird_id`:
 shags_kde <- shags_trips_sub %>%
   group_by(bird_id) %>%
   tt_hr_kde(levels = c(0.5, 0.95)) 
-#might want to define plot a bit better so looks less cramped in rmd
+#to do discuss h value param 
 ```
 
 `shags_kde` is an `sf` object, with estimates of the area (in the units of
