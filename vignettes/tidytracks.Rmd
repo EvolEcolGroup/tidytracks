@@ -113,7 +113,7 @@ summary(shags_mt)
 ```
 We can see how each row in the table is an event, in this case a time-stamped GPS location for 
 a given bird, with the column `date_time` providing the time and column `geometry`
-defining the location. `bird_id` (the designated `track_id_column`) is is the identifier that groups a set of events into a single track.  
+defining the location. `bird_id` (the designated `track_id_column`) is the identifier that groups a set of events into a single track.  
 
 We can access the metadata for the tracks with `show_meta()`:
 ```{r}
@@ -203,7 +203,7 @@ ggplot() +
   geom_track_path(data = shags_sub, aes(color = bird_id)) +
   coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 
-#use coord sf to change poroj of map
+#use coord sf to change proj of map
 ```
 
 # A grammar of movement
