@@ -461,9 +461,14 @@ shags_trips_sub <- shags_trips_sub %>%
   sf::st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
 
-We can now estimate the home range using Kernel Density Estimation. We want to 
-estimate the home range for each bird, so we will group by `bird_id`:
+We can now estimate the home range using Kernel Density Estimation (KDE). The 
+default smoothing parameter (h) in the `tt_hr_kde` function is set to
+"h_ref_mean". The bandwidth for the kernel density estimation can be either a 
+number, or "h_ref_indiv" for using the reference bandwidth
+for each individual, or "h_ref_mean" for using the mean bandwidth for all
+individuals (the default). 
 
+We want to estimate the home range for each bird, so we will group by `bird_id`:
 ```{r}
 shags_kde <- shags_trips_sub %>%
   group_by(bird_id) %>%
