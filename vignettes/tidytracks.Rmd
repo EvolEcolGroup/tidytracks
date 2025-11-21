@@ -66,7 +66,7 @@ shags_data <- read.csv(shags_csv) %>%
 
 str(shags_data)
 ```
-There is a companion file of metadata including extra information such as colony coordinates and eployment dates. We will read this csv too and then it can be merged into the metadata table when we create the tidytracks object. We will also combine the colony coordinates into one column using 
+There is a companion file of metadata including extra information such as colony coordinates and deployment dates. We will read this csv too and then it can be merged into the metadata table when we create the tidytracks object. We will also combine the colony coordinates into one column using 
 
 ```{r}
 # read shag metadata
