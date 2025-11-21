@@ -374,7 +374,7 @@ show_meta(shags_sub)
 We can see that only individual KB_23_42778_45 performed proper central place trips, and
 specifically it made 3 trips. KB_23_44224_40 migrated away from the study area. KB_23_42962_38 never moved and was therefore filtered out. We can now plot the trips with:
 
-#write something about buffer/complete removing trips
+Essentially, the `buffer_outbound` and `buffer_inbound` arguments in `tt_split_trips` define zones around the central place (colony) that an animal must cross to be considered as starting or ending a trip. The `complete = TRUE` argument ensures that only trips which both leave and return to the colony (i.e., complete round trips) are retained. As a result, any tracks that do not leave the buffer zone, or trips that are not complete, are removed from the dataset.
 ```{r}
 ggplot() +
   geom_sf(
