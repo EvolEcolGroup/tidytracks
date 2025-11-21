@@ -403,7 +403,7 @@ produced by most `track_*` functions.
 
 We can now estimate the home range of individuals. First, we will process
 the full dataset to split trips, and drop individuals that did not move
-or migrated (such as the ones seen in the previous section):  re-project somewhere here
+or migrated (such as the ones seen in the previous section).
 
 ```{r}
 shags_trips <- shags_mt %>%
