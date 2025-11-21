@@ -89,7 +89,7 @@ shags_mt <- tt_read_data(events = shags_data,
                          col_coords = c("longitude", "latitude"),
                          col_date_time = "datetime",
                          meta = shags_meta,
-                         crs =4326)
+                         crs = 4326)
 ```
 
 
