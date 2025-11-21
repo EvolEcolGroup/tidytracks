@@ -52,7 +52,7 @@ shags_csv <- system.file("extdata/shag_tidytrack_sample_subset_speed_filter.csv"
 dplyr::glimpse(read.csv(shags_csv))
 
 ```
-Read in the data from the csv and format date and time fields (temporary until tt_read_data function is updated). Check the structure to make sure has formatted correctly.We will also remove some of the columns that are not needed for this example.
+Read in the data from the csv and format date and time fields (temporary until tt_read_data function is updated). Check the structure to make sure has formatted correctly. We will also remove some of the columns that are not needed for this example.
 
 ```{r}
 shags_data <- read.csv(shags_csv) %>%
