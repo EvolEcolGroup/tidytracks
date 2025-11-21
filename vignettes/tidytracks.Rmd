@@ -372,8 +372,7 @@ show_meta(shags_sub)
 ```
 
 We can see that only individual KB_23_42778_45 performed proper central place trips, and
-specifically it made 3 trips. KB_23_44224_40 migrated away from the study area. KB_23_42962_38 never moved and was therefore filtered out. The  We can now plot the
-trips with:
+specifically it made 3 trips. KB_23_44224_40 migrated away from the study area. KB_23_42962_38 never moved and was therefore filtered out. We can now plot the trips with:
 
 #write something about buffer/complete removing trips
 ```{r}
