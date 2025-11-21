@@ -320,7 +320,7 @@ algorithm (the same used by `trip::speedfilter()`). Max speed can be set to an a
 
 ```{r}
 shags_sub <- shags_sub %>%
-  tt_clean_mcconnell(max_speed = units::as_units(80, "km/h")) 
+  tt_clean_mcconnell(max_speed = units::as_units(80, "km/h"))
 ```
 
 Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
