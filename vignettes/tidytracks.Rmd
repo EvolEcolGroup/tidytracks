@@ -299,7 +299,7 @@ shags_sub %>%
   mutate(speed = units::set_units(speed, "km/h")) %>%
   summary()
 ```
-Hmm, 186 km/h is a bit fast for a shag (# is it?)
+Hmm, 186 km/h is much faster than typical flight speeds for a shag (European shags usually fly at speeds around 50–65 km/h; see e.g. Wanless et al. 1997).
 
 Let's plot the speed of each event:
 ```{r}
