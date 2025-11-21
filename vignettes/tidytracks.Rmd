@@ -248,8 +248,9 @@ are returned (more details about working with units below).
 
 The histogram above is suggests that there might be outliers in the data,
 as we seem to have a few events with very high speeds. We will see later
-how we can clean up the data using McConnell's algorithm. #to do, do we want to 
-leave in some of the outliers first? also what is a reasonable speed for  shag
+how we can clean up the data using McConnell's algorithm. 
+#to do, 
+do we want to leave in some of the outliers first? also what is a reasonable speed for  shag
 
 Finally, there are `track_*` functions, which operate on the whole track, and will
 generally return a vector of length equal to the number of tracks in the object.
