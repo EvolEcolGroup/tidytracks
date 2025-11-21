@@ -78,7 +78,7 @@ We will also combine the colony coordinates into one column using the `sf` packa
 ```{r}
 library(sf)
 shags_meta <- shags_meta %>%
-  st_as_sf(coords = c("colony_lon", "colony_lat"), crs = 4326)%>%
+  st_as_sf(coords = c("colony_lon", "colony_lat"), crs = 4326) %>%
   dplyr::rename(colony_coord = geometry)
 ```
 
