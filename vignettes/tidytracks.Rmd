@@ -441,7 +441,7 @@ shags_trips_sub<- shags_trips_sub %>%
   dplyr::filter(st_coordinates(geometry)[,2] < -5)
 ```
 
-We can now plot the trips
+We can now plot the trips:
 ```{r}
 ggplot() +
   geom_track_path(
