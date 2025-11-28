@@ -52,7 +52,7 @@ track_summary_stats <- function(x,  center_col = NULL,
   tot_distance <- x %>%
     dplyr::mutate(distance = move2::mt_distance(x)) %>%
     dplyr::group_by(event_track_id(x)) %>%
-    dplyr::summarise(tot_distance = sum(distance, na.rm = TRUE)) %>%
+    dplyr::summarise(tot_distance = sum(.data[["distance"]], na.rm = TRUE)) %>%
     dplyr::pull(tot_distance)
   bboxes <- x %>%
     dplyr::group_by(event_track_id(x)) %>%
