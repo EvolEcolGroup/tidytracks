@@ -46,9 +46,9 @@ geom_event_path <- function(mapping = ggplot2::aes(), data = NULL, stat = "sf",
   }
   # TODO check if geom_steps already exists, and if so, use it
   # to speed up the plotting
-
+  
   data_steps <- data %>%
-    dplyr::mutate(geom_steps = move2::mt_segments(.))
+    dplyr::mutate(geom_steps = move2::mt_segments(data))
   # change the geometry column
   data_steps <- data_steps %>%
     dplyr::mutate(geometry = geom_steps) %>%
