@@ -1,0 +1,154 @@
+---
+title: "get_data_ready_for_tidytracks"
+output: 
+        rmarkdown::html_vignette
+        # pdf_document: default
+vignette: >
+  %\VignetteIndexEntry{reading_data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Sources of datasets `tidytracks`
+
+Typically, there are 3 key sources of tracking data:
+
+  * Raw data straight from the tag that has not been processed
+  * You can download data from an online repositry which has its own data stucture
+  * You may be given data from a colobrator. This can already be processed via methods you are unaware of
+
+
+# Getting data into a `move2` object
+In `tidytracks`, we start by reading a table of events (e.g., GPS locations). This table
+(stored as a csv file) should contain at least the following columns:
+- one column which is the `track_id` (i.e. the variable that groups events into a track)
+- two columns representing the x and y coordinates (e.g. longitude and latitude)
+- a date-time column (or separate date and time columns)
+
+# Raw data downloaded from the device
+Here is some raw data from Antarctic shags collected in 2022. Let's have a look at what columns are included:
+```{r}
+#getwd()
+shags_pathtrack_csv <- read.csv("raw/shag_pathtrack_tidytracks.csv")
+dplyr::glimpse(shags_pathtrack_csv)
+
+```
+Read in the data from the csv and format date and time fields (temporary until tt_read_data function is updated). Check the structure to make sure has formatted correctly. We will also remove some of the columns that are not needed for this example.
+
+```{r}
+## setting directories ----
+
+getwd()  # check working directory
+
+## move to the data directory
+setwd("data")
+
+## file path to where the raw data files are
+raw_data_dir <- "raw/pathtrack"
+
+## file path to where the processed data will be 
+processed_data_dir <- "intermediate"
+
+## reading in files starts here ----
+
+## get list of all raw data files
+all_files <- list.files(raw_data_dir)
+
+## add the full filepath onto the filenames
+all_files2 <- paste(raw_data_dir, "/", all_files, sep="")
+
+head(all_files2)
+
+
+## 0. set up results data frame
+df_all <- data.frame(matrix(ncol = 8, nrow = 0))
+colnames(df_all) <- c("bird_id", "sex", "colony", "year", "date_gmt", "time_gmt", "latitude", "longitude")
+
+
+## LOOP over all files ----
+for (i in 1:length(all_files2)) {
+  
+  ## start with one file
+ # i <- 1  # TESTING
+  
+  print(paste("starting file number", i))
+  
+  ## read in the file
+  df <- read.csv(all_files2[i])
+  
+  # head(df)  # check format
+  
+  ## 1. make date field and time field ----
+  
+  ## new year field - add 20 on the front
+  #### Maybe take out 20 if already there i.e. paste("", df$year, sep="")
+  df$year2 <- paste("20", df$year.1, sep="")
+  
+  ## new month field - add 0 on the front if it's no 10, 11, 12
+  df$month2 <- sprintf(df$month, fmt = '%02d')
+  
+  ## new day field
+  df$day2 <- sprintf(df$day, fmt = '%02d')
+  
+  ## make date field
+  df$date_gmt <- paste(df$year2, df$month2, df$day2, sep="-")
+  # range(nchar(df$date_gmt))
+  # unique(df$date_gmt)
+  # head(df)
+  
+  ## 2. make time field ----
+  
+  ## new hour field - add 0 on the front
+  df$hour2 <- sprintf(df$hour, fmt = '%02d')
+  # unique(df$hour2)
+  
+  ## new month field - add 0 on the front if it's no 10, 11, 12
+  df$minute2 <- sprintf(df$minute, fmt = '%02d')
+  # unique(df$minute2)
+  
+  ## new day field
+  df$second2 <- sprintf(df$second, fmt = '%02d')
+  
+  ## make date field
+  df$time_gmt <- paste(df$hour2, df$minute2, df$second2, sep=":")
+  # unique(df$time_gmt)
+  # head(df)
+  
+  ## 3. Remove unnecessary columns ----
+  df_bird <- df %>%
+    dplyr::select(bird_id, sex, colony, year, date_gmt, time_gmt, latitude = lat, longitude = long)
+  # head(df)
+  # head(df_bird)
+  
+  ## 4. Add this bird data to the overall data frame ----
+  df_all <- rbind(df_all, df_bird)
+  
+  ##clean up
+  
+  rm(df, df_bird)
+}
+
+
+### check data frame -----
+
+## how many birds?
+head(df_all)
+range(df_all$bird_id)
+unique(df_all$bird_id)
+
+## make filename to write all data to file
+# file_name <- paste("formatted_data/all_processed_skua_files.csv")
+file_name <- paste(processed_data_dir, "/01_shag_processed/all_processed_shag_files_2023.csv", sep = "")
+
+## write to file
+write.csv(df_all, file = file_name, row.names = FALSE)
+
+```
+There is a companion file of metadata including extra information such as colony coordinates and deployment dates. We will read this csv too and then it can be merged into the metadata table when we create the 
