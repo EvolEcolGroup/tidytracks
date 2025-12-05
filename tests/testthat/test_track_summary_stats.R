@@ -57,7 +57,7 @@ test_that("track_summary_stats correctly computes track summaries", {
   # run the trip splitting with complete = FALSE (includes incomplete trips
   # and locations at centre)
   test_mt_split <- tt_split_trips(test_mt,
-                                  center_col = "colony_sf",
+                                  centre_col = "colony_sf",
                                   buffer_outbound = as_units(100, "km"),
                                   buffer_inbound = as_units(100, "km"),
                                   complete = FALSE
@@ -67,11 +67,54 @@ test_that("track_summary_stats correctly computes track summaries", {
   expect_equal(length(unique(test_mt_split$bird_id)), 2)
   
   # compute track summaries
-  # track_summaries <- track_summary_stats(
-  #   test_mt_split,
-  #   center_col = center_sf,
-  #   units_duration = "hours"
-  # )
+  test_sums <- track_summary_stats(
+    x = test_mt_split,
+    centre_col = "colony_sf",
+    units_duration = units::as_units(1, "hours")
+  )
   
+  # check that all the expected columns are present
+  expected_cols <- c(move2::mt_track_id_column(test_mt_split),
+                     "tot_duration", "tot_distance", 
+                     "max_latitude", "min_latitude",
+                     "max_longitude", "min_longitude",
+                     "max_dist", "lat_at_max_dist")
+  expect_true(all(expected_cols %in% colnames(test_sums)))
+  
+  # check that trip_nas have been removed, so number of trips is no longer the same
+  expect_true(nrow(test_sums) < nrow(show_meta(test_mt_split)))
+  
+  # if we remove trip_nas from show_meta(test_mt_split), then the trip_ids in 
+  # sum_stats, should equal the trip_ids in show_meta
+  trip_ids <- unique(event_track_id(test_mt_split))
+  trip_na_ids <- trip_ids[grepl("_trip_na$", trip_ids)]
+  meta_no_nas <- show_meta(test_mt_split)[
+    !(show_meta(test_mt_split)[[move2::mt_track_id_column(test_mt_split)]] %in% 
+        trip_na_ids), ]
+  expect_equal(
+    test_sums[[move2::mt_track_id_column(test_mt_split)]],
+    meta_no_nas[[move2::mt_track_id_column(test_mt_split)]]
+  )
+  
+  # check the units of duration are as requested (hours)
+  expect_true(
+    as.character(base::units(test_sums$tot_duration)) == "h"
+  )
+  
+  # check the units of distance are metres (unless we add a units argument
+  #   for distance as well as duration)
+  expect_true(
+    as.character(base::units(test_sums$tot_distance)) == "m"
+  )
+  expect_true(
+    as.character(base::units(test_sums$max_dist)) == "m"
+  )
+  
+  # TODO add tests that the values are correct
   
 })
+
+# TODO add test for where there are >10 trips per individual (to make sure
+# the trip_id field is carrying through the function correctly)
+
+

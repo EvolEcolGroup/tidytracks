@@ -31,7 +31,7 @@ create_toy_df <- function() {
 }
 
 
-test_that("mt_trip_split works with center_col as an sf object of same length as number of tracks", {
+test_that("mt_trip_split works with centre_col as an sf object of same length as number of tracks", {
   
   # create the toy dataframe of longitude, latitude, date_time, bird_id
   coords_df <- create_toy_df()
@@ -48,8 +48,8 @@ test_that("mt_trip_split works with center_col as an sf object of same length as
   #   ggplot2::geom_sf(ggplot2::aes(color = bird_id)) +
   #   ggplot2::geom_sf(data = move2::mt_track_lines(test_mt))
   
-  # create a center_col of length 2 (same number as tracks in test_mt)
-  center_sf <- sf::st_as_sf(
+  # create a centre_col of length 2 (same number as tracks in test_mt)
+  centre_sf <- sf::st_as_sf(
     data.frame(
       bird_id = c("id_1", "id_2"),
       lon = rep(0, 2),
@@ -62,17 +62,17 @@ test_that("mt_trip_split works with center_col as an sf object of same length as
 
   # measure distances from point 0,0
   coords <- sf::st_coordinates(test_mt)
-  center_dist <- geodist::geodist(
+  centre_dist <- geodist::geodist(
     x = coords,
     y = data.frame(lon = 0, lat = 0),
     measure = "geodesic"
   ) / 1000
   # points at the colony
-  at_center <- center_dist < 100
+  at_centre <- centre_dist < 100
 
-  # split the trips using center_sf
+  # split the trips using centre_sf
   test_mt_split <- tt_split_trips(test_mt,
-    center_col = center_sf,
+    centre_col = centre_sf,
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(100, "km"),
     complete = FALSE
@@ -104,7 +104,7 @@ test_that("mt_trip_split works with center_col as an sf object of same length as
   # detect correctly time at colony
   expect_true(
     all(
-      test_mt_split$trip_id[at_center] %in%
+      test_mt_split$trip_id[at_centre] %in%
         c("id_1_trip_na", "id_2_trip_na")
     )
   )
@@ -118,7 +118,7 @@ test_that("mt_trip_split works with center_col as an sf object of same length as
 
   # repeat with a differnet units
   test_mt_split2 <- tt_split_trips(test_mt,
-    center_col = center_sf,
+    centre_col = centre_sf,
     buffer_outbound = as_units(100000, "m"),
     buffer_inbound = as_units(100, "km"),
     complete = FALSE
@@ -127,7 +127,7 @@ test_that("mt_trip_split works with center_col as an sf object of same length as
 
   # change inbound buffer
   test_mt_split3 <- tt_split_trips(test_mt,
-    center_col = center_sf,
+    centre_col = centre_sf,
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(300, "km"),
     complete = FALSE
@@ -142,7 +142,7 @@ test_that("mt_trip_split works with center_col as an sf object of same length as
 
   # check that, if we say complete = TRUE, all trips are complete
   test_mt_split4 <- tt_split_trips(test_mt,
-    center_col = center_sf,
+    centre_col = centre_sf,
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(300, "km"),
     complete = TRUE
@@ -153,5 +153,5 @@ test_that("mt_trip_split works with center_col as an sf object of same length as
   expect_equal(nrow(show_meta(test_mt_split4)), 4)
 })
 
-# @TODO write tests with center inputs as different from each others, or
+# @TODO write tests with centre inputs as different from each others, or
 #   provided as additional column of meta (like in the vignette)
