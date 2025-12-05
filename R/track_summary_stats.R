@@ -72,15 +72,16 @@ track_summary_stats <- function(x,  centre_col = NULL,
   
   # 2 - total distance travelled
   # TODO write a cum_distance function that works on coords
+  .group_var <- move2::mt_track_id_column(x)
   tot_distance_df <- x %>%
     dplyr::mutate(distance = move2::mt_distance(x)) %>% # add distance to next point (end-of-track is NA)
     sf::st_drop_geometry() %>% # otherwise we end up with a geometry field in the output
-    dplyr::group_by(event_track_id(x)) %>% # TODO do we need to use tidyselect here?
+    dplyr::group_by(.data[[.group_var]]) %>% # TODO do we need to use tidyselect here?
     # dplyr::group_by(move2::mt_track_id_column(x)) %>% # TODO not sure if this is better than the line above
     dplyr::summarise(tot_distance = sum(.data[["distance"]], na.rm = TRUE)) %>%
     # dplyr::pull(tot_distance)
     # instead of extracting just tot_distance, extract as df including track_id
-    dplyr::select(track_id = `event_track_id(x)`, dplyr::all_of("tot_distance")) # TODO use tidyselect here
+    dplyr::select(track_id = dplyr::all_of(.group_var), dplyr::all_of("tot_distance")) # TODO use tidyselect here
   # tot_distance has units too
   
   # 3 - min and max lon and lat
@@ -118,6 +119,10 @@ track_summary_stats <- function(x,  centre_col = NULL,
     centre_sums <-
       foreach::foreach(i = seq_len(nrow(show_meta(x))),
                        .combine=rbind) %do% {
+      #TODO we probably need to use globalVariables to declare a global counter
+      # if so, use a better name for that counter, e.g. i_foreach
+                         
+                         
       # get the track id
       track_id <- show_meta(x)[[move2::mt_track_id_column(x)]][i]
       # get the events for this track
