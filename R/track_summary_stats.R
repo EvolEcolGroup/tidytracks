@@ -80,7 +80,7 @@ track_summary_stats <- function(x,  centre_col = NULL,
     dplyr::summarise(tot_distance = sum(.data[["distance"]], na.rm = TRUE)) %>%
     # dplyr::pull(tot_distance)
     # instead of extracting just tot_distance, extract as df including track_id
-    dplyr::select(track_id = `event_track_id(x)`, tot_distance)
+    dplyr::select(track_id = `event_track_id(x)`, dplyr::all_of("tot_distance")) # TODO use tidyselect here
   # tot_distance has units too
   
   # 3 - min and max lon and lat
@@ -90,11 +90,12 @@ track_summary_stats <- function(x,  centre_col = NULL,
   bboxes <- bboxes %>%
     dplyr::group_map(~ sf::st_bbox(.x$geometry))
   bboxes_df <- tibble::as_tibble(do.call(rbind, bboxes)) %>%
-    dplyr::mutate(max_latitude = ymax,
-                  min_latitude = ymin,
-                  max_longitude = xmax,
-                  min_longitude = xmin) %>%
-    dplyr::select(-xmax, -xmin, -ymax, -ymin) %>%
+    dplyr::mutate(max_latitude = .data$ymax,
+                  min_latitude = .data$ymin,
+                  max_longitude = .data$xmax,
+                  min_longitude = .data$xmin) %>%
+    # dplyr::select(-xmax, -xmin, -ymax, -ymin) %>%
+    dplyr::select(-dplyr::all_of(c("xmax", "xmin", "ymax", "ymin"))) %>%
     dplyr::mutate(track_id = groups$`event_track_id(x)`)
   
   # 1-3 join into sum_stats table
