@@ -31,7 +31,7 @@ create_toy_df <- function() {
 }
 
 
-test_that("mt_trip_split works with centre_col as an sf object of same length as number of tracks", {
+test_that("tt_split_trips works with centre_col as an sf object of same length as number of tracks", {
   
   # create the toy dataframe of longitude, latitude, date_time, bird_id
   coords_df <- create_toy_df()

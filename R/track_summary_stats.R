@@ -35,7 +35,6 @@ track_summary_stats <- function(x,  centre_col = NULL,
     # remove these trip_na events from x
     x <- x[!event_track_id(x) %in% trip_na_ids, ]
   }
-  rm(trip_ids, trip_na_ids)
   
   # check centre_col input
   if (!is.null(centre_col)){
@@ -76,12 +75,10 @@ track_summary_stats <- function(x,  centre_col = NULL,
   tot_distance_df <- x %>%
     dplyr::mutate(distance = move2::mt_distance(x)) %>% # add distance to next point (end-of-track is NA)
     sf::st_drop_geometry() %>% # otherwise we end up with a geometry field in the output
-    dplyr::group_by(.data[[.group_var]]) %>% # TODO do we need to use tidyselect here?
-    # dplyr::group_by(move2::mt_track_id_column(x)) %>% # TODO not sure if this is better than the line above
+    dplyr::group_by(.data[[.group_var]]) %>% # group by the track id field (whatever it's called)
     dplyr::summarise(tot_distance = sum(.data[["distance"]], na.rm = TRUE)) %>%
-    # dplyr::pull(tot_distance)
     # instead of extracting just tot_distance, extract as df including track_id
-    dplyr::select(track_id = dplyr::all_of(.group_var), dplyr::all_of("tot_distance")) # TODO use tidyselect here
+    dplyr::select(track_id = dplyr::all_of(.group_var), dplyr::all_of("tot_distance"))
   # tot_distance has units too
   
   # 3 - min and max lon and lat
@@ -95,7 +92,6 @@ track_summary_stats <- function(x,  centre_col = NULL,
                   min_latitude = .data$ymin,
                   max_longitude = .data$xmax,
                   min_longitude = .data$xmin) %>%
-    # dplyr::select(-xmax, -xmin, -ymax, -ymin) %>%
     dplyr::select(-dplyr::all_of(c("xmax", "xmin", "ymax", "ymin"))) %>%
     dplyr::mutate(track_id = groups[[.group_var]])
   
@@ -105,25 +101,15 @@ track_summary_stats <- function(x,  centre_col = NULL,
   sum_stats <- dplyr::full_join(sum_stats, bboxes_df,
                                  by = "track_id")
   
-  # check that sum_stats has the right number of rows (number of unique track IDs)
-  # This is a sanity check, it should never happen.
-  if (nrow(sum_stats) != length(unique(x[[move2::mt_track_id_column(x)]]))) {
-    stop("There is a problem with the summary statistics. ",
-         "The number of rows in the summary statistics does not match ",
-         "the number of unique track IDs in x.")
-  }
-  
   # 4 - if centre_col is given, calculate max distance from centre and 
   #     latitude at that point
   if (!is.null(centre_col)){
-    i_foreach <- NULL # appease R CMD check
-    #get maximum distance between the centre and the events for each track
+    # appease R CMD check - could have used a globalVariable for this instead
+    i_foreach <- NULL
+    # get maximum distance between the centre and the events for each track
     centre_sums <-
       foreach::foreach(i_foreach = seq_len(nrow(show_meta(x))),
                        .combine=rbind) %do% {
-      #TODO we probably need to use globalVariables to declare a global counter
-      # if so, use a better name for that counter, e.g. i_foreach
-                         
       # get the track id
       track_id <- show_meta(x)[[move2::mt_track_id_column(x)]][i_foreach]
       # get the events for this track
@@ -134,14 +120,17 @@ track_summary_stats <- function(x,  centre_col = NULL,
       # TODO re-write with our distance function instead of sf::st_distance()
       dists <- sf::st_distance(events$geometry, centre)
       max_dist <- max(dists, na.rm = TRUE)
-      # get lat at max dist
+      # get lat and lon at max dist
       lat_at_max_dist <- sf::st_coordinates(
-        events$geometry[which(dists==max_dist)])[,"Y"]
+        events$geometry[which(dists==max_dist)[1]])[,"Y"]
+      lon_at_max_dist <- sf::st_coordinates(
+        events$geometry[which(dists==max_dist)[1]])[,"X"]
 
-      # return a dataframe of track id, maximum distance, and latitude at it.
+      # return a dataframe of track id, maximum distance, and lat/lon at it.
       return(data.frame(track_id = track_id,
-                        max_dist = max_dist,
-                        lat_at_max_dist = lat_at_max_dist))
+                        max_dist_centre = max_dist,
+                        lat_at_max_dist_centre = lat_at_max_dist,
+                        lon_at_max_dist_centre = lon_at_max_dist))
                        }
     
     # join into sum_stats by track_id

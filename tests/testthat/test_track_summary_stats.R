@@ -86,7 +86,7 @@ test_that("track_summary_stats correctly computes track summaries", {
                      "tot_duration", "tot_distance", 
                      "max_latitude", "min_latitude",
                      "max_longitude", "min_longitude",
-                     "max_dist", "lat_at_max_dist")
+                     "max_dist_centre", "lat_at_max_dist_centre")
   expect_true(all(expected_cols %in% colnames(test_sums)))
   
   # check that trip_nas have been removed, so number of trips is no longer the same
@@ -115,7 +115,7 @@ test_that("track_summary_stats correctly computes track summaries", {
     as.character(base::units(test_sums$tot_distance)) == "m"
   )
   expect_true(
-    as.character(base::units(test_sums$max_dist)) == "m"
+    as.character(base::units(test_sums$max_dist_centre)) == "m"
   )
   
   # TODO add tests that the values are correct
