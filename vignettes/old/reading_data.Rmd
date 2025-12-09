@@ -34,25 +34,29 @@ colony coordiates, breeding status, etc.).
 We start with a small dataset of wandering albatrosses from the Birdlife Seabird Tracking Database. Let's quickly
 inspect it:
 ```{r}
-albatross_csv <- system.file("/extdata/csv_files/dataset_example_birdlife.csv",
+shag_csv <- system.file("extdata/shag_tidytrack_sample_subset.csv",
                              package = "tidytracks")
-dplyr::glimpse(read.csv(albatross_csv))
+dplyr::glimpse(read.csv(shag_csv))
 ```
 
 Let us now read in the data using `tt_read_data()`. This function reads a csv file containing event data and converts it into a `move2` object.
 ```{r}
-example_mt <- tt_read_data(albatross_csv,
-                              col_track_id = "track_id",
+shags_mt <- tt_read_data(shag_csv,
+                              col_track_id = "bird_id",
                               col_coords = c("longitude", "latitude"),
                               col_date_time = c("date_gmt", "time_gmt"))
+#data_time still not reading in correctly
 ```
+
+
 
 Inspecting the events table, we have:
 ```{r}
 example_mt
 ```
 
-We can see that only date and locations were reatained as event specific variables, while the rest of the information was moved to the meta data table. We can inspect the meta data table as follows:
+
+We can see that only date and locations were retained as event specific variables, while the rest of the information was moved to the meta data table. We can inspect the meta data table as follows:
 ```{r}
 dplyr::glimpse(show_meta(example_mt))
 ```
