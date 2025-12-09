@@ -353,7 +353,7 @@ per track.
 ```{r}
 shags_sub <- shags_sub %>%
   tt_split_trips(
-    center_col = "colony_coord",
+    centre_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(3, "km"),
     complete = TRUE
@@ -390,7 +390,7 @@ We can get a summary of our tracks with:
 
 ```{r}
 shags_sub %>%
-  track_summary_stats(center_col = "colony_coord")
+  track_summary_stats(centre_col = "colony_coord")
 ```
 
 Note that `track_summary_stats()` will return a tibble with one row per track,
@@ -408,7 +408,7 @@ or migrated (such as the ones seen in the previous section).
 ```{r}
 shags_trips <- shags_mt %>%
   tt_split_trips(
-    center_col = "colony_coord",
+    centre_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(10, "km"),
     complete = TRUE

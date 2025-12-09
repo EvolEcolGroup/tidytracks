@@ -1,4 +1,5 @@
-test_that("mt_trip_split works as expected", {
+
+create_toy_df <- function() {
   # create a simple trajectory that goes out and comes back along the longitude
   # axis
   set.seed(1)
@@ -26,49 +27,70 @@ test_that("mt_trip_split works as expected", {
   )
   coords_df$bird_id <- paste0("id_", c(rep(1, 24), rep(2, 6)))
   coords_df$bird_id <- as.factor(coords_df$bird_id)
-  coords_df$lon_colony <- 0
-  coords_df$lat_colony <- 0
-  coords_df <- sf::st_as_sf(coords_df,
-    coords = c("longitude", "latitude"),
-    crs = "+proj=longlat +datum=WGS84"
-  ) # todo use equal area proj in km
-  test_mt <- move2::mt_as_move2(coords_df,
-    track_id_column = "bird_id",
-    time_column = "date_time"
-  )
-  # ggplot(test_mt) + geom_sf(aes (color = date_time))+
-  #  geom_sf(data = move2::mt_track_lines(test_mt))
-  # add some metadata
-  center_sf <- sf::st_as_sf(
+  return(coords_df)
+}
+
+
+test_that("tt_split_trips works with centre_col as an sf object of same length as number of tracks", {
+  
+  # create the toy dataframe of longitude, latitude, date_time, bird_id
+  coords_df <- create_toy_df()
+  
+  # convert to a tidytracks object
+  test_mt <- tt_read_data(events = coords_df,
+                          col_track_id = "bird_id",
+                          col_coords = c("longitude", "latitude"),
+                          col_date_time = "date_time"
+                          )
+  # quick plot to check it
+  # ggplot2::ggplot(test_mt) +
+  #   # ggplot2::geom_sf(ggplot2::aes(color = date_time)) +
+  #   ggplot2::geom_sf(ggplot2::aes(color = bird_id)) +
+  #   ggplot2::geom_sf(data = move2::mt_track_lines(test_mt))
+  
+  # create a centre_col of length 2 (same number as tracks in test_mt)
+  centre_sf <- sf::st_as_sf(
     data.frame(
-      lon = rep(0, 1),
-      lat = rep(0, 1)
+      bird_id = c("id_1", "id_2"),
+      lon = rep(0, 2),
+      lat = rep(0, 2)
     ),
-    coords = c("lon", "lat"), crs = "+proj=longlat +datum=WGS84"
+    coords = c("lon", "lat"), crs = 4326
   )
 
   # now test the trip splitting
 
   # measure distances from point 0,0
   coords <- sf::st_coordinates(test_mt)
-  center_dist <- geodist::geodist(
+  centre_dist <- geodist::geodist(
     x = coords,
     y = data.frame(lon = 0, lat = 0),
     measure = "geodesic"
   ) / 1000
   # points at the colony
-  at_center <- center_dist < 100
+  at_centre <- centre_dist < 100
 
-  # test the trip splitting
+  # split the trips using centre_sf
   test_mt_split <- tt_split_trips(test_mt,
-    center_col = center_sf,
+    centre_col = centre_sf,
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(100, "km"),
     complete = FALSE
   )
+  
   # check that the trip ids are correct
+  expected_trip_id_field <- c("id_1_trip_na", "id_1_trip_1",  "id_1_trip_1",  "id_1_trip_1",  
+                              "id_1_trip_1",  "id_1_trip_1",  "id_1_trip_1",  "id_1_trip_1", 
+                              "id_1_trip_1",  "id_1_trip_1",  "id_1_trip_1",  "id_1_trip_1",  
+                              "id_1_trip_na", "id_1_trip_2",  "id_1_trip_2",  "id_1_trip_2",
+                              "id_1_trip_2",  "id_1_trip_2",  "id_1_trip_na", "id_1_trip_na", 
+                              "id_1_trip_3",  "id_1_trip_3",  "id_1_trip_3",  "id_1_trip_3", 
+                              "id_2_trip_na", "id_2_trip_na", "id_2_trip_1",  "id_2_trip_1",  
+                              "id_2_trip_1",  "id_2_trip_1")
+  expect_identical(test_mt_split$trip_id, expected_trip_id_field)
   expect_equal(length(unique(test_mt_split$trip_id)), 6)
   expect_equal(length(unique(test_mt_split$bird_id)), 2)
+  
   # the first trip is from 2 to 12
   expect_true(
     all(
@@ -82,7 +104,7 @@ test_that("mt_trip_split works as expected", {
   # detect correctly time at colony
   expect_true(
     all(
-      test_mt_split$trip_id[at_center] %in%
+      test_mt_split$trip_id[at_centre] %in%
         c("id_1_trip_na", "id_2_trip_na")
     )
   )
@@ -94,9 +116,9 @@ test_that("mt_trip_split works as expected", {
     )$trip_type == "incomplete"
   )
 
-  # repeat with a differnet units
+  # repeat with different units
   test_mt_split2 <- tt_split_trips(test_mt,
-    center_col = center_sf,
+    centre_col = centre_sf,
     buffer_outbound = as_units(100000, "m"),
     buffer_inbound = as_units(100, "km"),
     complete = FALSE
@@ -105,7 +127,7 @@ test_that("mt_trip_split works as expected", {
 
   # change inbound buffer
   test_mt_split3 <- tt_split_trips(test_mt,
-    center_col = center_sf,
+    centre_col = centre_sf,
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(300, "km"),
     complete = FALSE
@@ -120,7 +142,7 @@ test_that("mt_trip_split works as expected", {
 
   # check that, if we say complete = TRUE, all trips are complete
   test_mt_split4 <- tt_split_trips(test_mt,
-    center_col = center_sf,
+    centre_col = centre_sf,
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(300, "km"),
     complete = TRUE
@@ -131,5 +153,5 @@ test_that("mt_trip_split works as expected", {
   expect_equal(nrow(show_meta(test_mt_split4)), 4)
 })
 
-# @TODO write tests with center inputs as different from each others, or
+# @TODO write tests with centre inputs as different from each others, or
 #   provided as additional column of meta (like in the vignette)
