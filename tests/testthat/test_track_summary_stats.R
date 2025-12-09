@@ -43,7 +43,7 @@ test_that("track_summary_stats correctly computes track summaries", {
     species = c("species_a", "species_b"),
     geometry = sf::st_sfc(
       sf::st_point(c(0, 0)),
-      sf::st_point(c(0, 0)), crs = "+proj=longlat +datum=WGS84")
+      sf::st_point(c(0, 0)), crs = 4326)
   )
   colnames(meta_df)[which(colnames(meta_df) == "geometry")] <- "colony_sf"
   sf::st_geometry(meta_df) <- "colony_sf"
@@ -86,7 +86,8 @@ test_that("track_summary_stats correctly computes track summaries", {
                      "tot_duration", "tot_distance", 
                      "max_latitude", "min_latitude",
                      "max_longitude", "min_longitude",
-                     "max_dist_centre", "lat_at_max_dist_centre")
+                     "max_dist_centre", "lat_at_max_dist_centre",
+                     "lon_at_max_dist_centre")
   expect_true(all(expected_cols %in% colnames(test_sums)))
   
   # check that trip_nas have been removed, so number of trips is no longer the same
