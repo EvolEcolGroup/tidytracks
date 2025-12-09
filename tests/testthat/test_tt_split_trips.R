@@ -116,7 +116,7 @@ test_that("mt_trip_split works with centre_col as an sf object of same length as
     )$trip_type == "incomplete"
   )
 
-  # repeat with a differnet units
+  # repeat with different units
   test_mt_split2 <- tt_split_trips(test_mt,
     centre_col = centre_sf,
     buffer_outbound = as_units(100000, "m"),
