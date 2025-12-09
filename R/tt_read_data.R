@@ -171,7 +171,7 @@ tt_read_data <- function(events,
   #   character strings for datetime so we can print them in the error message
   idx_na <- which(is.na(events[[col_date_time]]))
   if (length(idx_na) > 0) {
-    examples <- datetime_raw[head(idx_na, 2)]
+    examples <- datetime_raw[utils::head(idx_na, 2)]
     # Adjust error messsage based on whether format_date_time was supplied or not
     if (!is.null(format_date_time)) {
       stop("Some date-time values could not be parsed using the provided format_date_time '", format_date_time, "' .\n",
