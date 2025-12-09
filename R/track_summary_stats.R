@@ -86,7 +86,7 @@ track_summary_stats <- function(x,  centre_col = NULL,
   
   # 3 - min and max lon and lat
   bboxes <- x %>%
-    dplyr::group_by(event_track_id(x)) # break here to extract the group keys
+    dplyr::group_by(.data[[.group_var]]) # break here to extract the group keys
   groups <- dplyr::group_keys(bboxes)
   bboxes <- bboxes %>%
     dplyr::group_map(~ sf::st_bbox(.x$geometry))
