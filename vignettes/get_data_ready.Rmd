@@ -1,0 +1,384 @@
+---
+title: "get_data_ready_for_tidytracks"
+output: 
+        rmarkdown::html_vignette
+        # pdf_document: default
+vignette: >
+  %\VignetteIndexEntry{reading_data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Sources of datasets `tidytracks`
+
+Generally there are 3 main sources of where you can get tracking data:
+
+-   Raw data straight from the tag that has not been processed
+-   You can download data from an online repository which has its own data structure
+-   You may be given data from a collaborator. This can already be processed via methods you are unaware of.
+
+# Getting data into a `move2` object
+
+In `tidytracks`, we start by reading a table of events (e.g., GPS locations). This table (stored as a csv file) should contain at least the following columns: - one column which is the `track_id` (i.e. the variable that groups events into a track) - two columns representing the x and y coordinates (e.g. longitude and latitude) - a date-time column (or separate date and time columns)
+
+# 1) Raw data downloaded from the device
+
+Here is some raw data from Antarctic shags collected in 2022. Let's have a look at what columns are included:
+
+```{r}
+getwd()
+shags_pathtrack_csv <- read.csv("inst/extdata/csv_files/get_data_ready/pathtrack/shag_pathtrack_tidytracks.csv")
+dplyr::glimpse(shags_pathtrack_csv)
+
+```
+
+Once we have read in the raw data, we can see there some important columns, however, columns such the number of satellites (as no_of_sats) and the GPS-tags battery (Battery) are less relevant. The key columns we would like to keep from this dataset is the identifier column `track_id` (e.g. bird_id), a date-time column and two columns representing the x and y coordinates (e.g. long and lat). Note that the data from pathtrack tags are separated; we will want to merge these together into a datetime stamp format that `tidytracks` likes.
+
+If you have multiple .csv files for each tag deployment / animal, these should be placed in a folder within your raw data directory. We will process these and save them into a folder within the intermediate data directory.
+
+```{r}
+## setting directories ----
+
+getwd()  # check working directory
+
+## move to the data directory
+#setwd("data")
+
+## file path to where the raw data files are
+raw_data_dir <- "inst/extdata/csv_files/get_data_ready/pathtrack"
+
+## file path to where the processed data will be 
+processed_data_dir <- "intermediate"
+
+## reading in files starts here ----
+
+## get list of all raw data files
+all_files <- list.files(raw_data_dir)
+
+## add the full filepath onto the filenames
+all_files2 <- paste(raw_data_dir, "/", all_files, sep="")
+
+head(all_files2)
+
+#library(dplyr)
+
+## 0. set up results data frame
+df_all <- data.frame(matrix(ncol = 8, nrow = 0))
+colnames(df_all) <- c("bird_id", "sex", "colony", "year", "date_gmt", "time_gmt", "latitude", "longitude")
+
+
+## LOOP over all files ----
+for (i in 1:length(all_files2)) {
+  
+  ## start with one file
+ # i <- 1  # TESTING
+  
+  print(paste("starting file number", i))
+  
+  ## read in the file
+  df <- read.csv(all_files2[i])
+  
+  # head(df)  # check format
+  
+  ## 1. make date field and time field ----
+  
+  ## new year field - add 20 on the front
+  #### Maybe take out 20 if already there i.e. paste("", df$year, sep="")
+  df$year2 <- paste("20", df$year.1, sep="")
+  
+  ## new month field - add 0 on the front if it's no 10, 11, 12
+  df$month2 <- sprintf(df$month, fmt = '%02d')
+  
+  ## new day field
+  df$day2 <- sprintf(df$day, fmt = '%02d')
+  
+  ## make date field
+  df$date_gmt <- paste(df$year2, df$month2, df$day2, sep="-")
+  # range(nchar(df$date_gmt))
+  # unique(df$date_gmt)
+  # head(df)
+  
+  ## 2. make time field ----
+  
+  ## new hour field - add 0 on the front
+  df$hour2 <- sprintf(df$hour, fmt = '%02d')
+  # unique(df$hour2)
+  
+  ## new month field - add 0 on the front if it's no 10, 11, 12
+  df$minute2 <- sprintf(df$minute, fmt = '%02d')
+  # unique(df$minute2)
+  
+  ## new day field
+  df$second2 <- sprintf(df$second, fmt = '%02d')
+  
+  ## make date field
+  df$time_gmt <- paste(df$hour2, df$minute2, df$second2, sep=":")
+  # unique(df$time_gmt)
+  # head(df)
+  
+  ## 3. Remove unnecessary columns ----
+  df_bird <- df %>%
+    dplyr::select(bird_id, sex, colony, year, date_gmt, time_gmt, latitude = lat, longitude = long)
+  # head(df)
+  # head(df_bird)
+  
+  ## 4. Add this bird data to the overall data frame ----
+  df_all <- rbind(df_all, df_bird)
+  
+  ##clean up
+  
+  rm(df, df_bird)
+}
+
+```
+
+Check the data frame
+
+```{r}
+
+head(df_all)
+```
+
+```{r}
+## how many birds?
+unique(df_all$bird_id)
+
+```
+
+Save the processed raw data as a .csv into a folder in your intermediate directory
+
+```{r}
+
+## make filename to write all data to file
+# file_name <- paste("formatted_data/all_processed_skua_files.csv")
+#file_name <- paste(processed_data_dir, "/01_shag_processed/all_processed_shag_files_2023.csv", sep = "")
+
+## write to file
+write.csv(df_all, file = file_name, row.names = FALSE)
+
+```
+
+# 2) Data downloaded from an online repository
+
+Online data repositories are great sources of animal tracking data and are often public available to download with certain permissions. Online repositories such as `MoveBank` and the `Seabird Tracking Database` have been proven sources of good quality data. Typically these online repositories have their own format they like research to use when they upload their data. Some might have their own unique column naming or might have useful metadata that we want to keep.
+
+Here is some made up data from Antarctic shags in the format of the Seabird Tracking Database. Let's have a look at what columns are included:
+
+```{r}
+getwd()
+shags_stdb_csv <- read.csv("inst/extdata/csv_files/get_data_ready/stdb/STDB_example_birdlife_shag.csv")
+dplyr::glimpse(shags_stdb_csv)
+
+```
+
+Okay, we can see they have lots of column and a different naming function. Lets select the data we want from this and while doing so, rename the columns. The key columns we would like to keep from this dataset is the identifier column `bird_id`, `track_id`, `colony_name`, the `date_gmt` and `time_gmt` so we can make a date-time column and the two columns representing the x and y coordinates (e.g. `longitude` and `latitude`). We can keep `lat_col`, `lon_col`, `age`, `sex`, `breed_stage` and `breed_status` for the meta data.
+
+If you have multiple .csv files download that are from the same repository and thus the same format, these should be placed in a folder within your raw data directory. We will process these and save them into a folder within the intermediate data directory.
+
+```{r}
+## setting directories ----
+
+getwd()  # check working directory
+
+## move to the data directory
+#setwd("data")
+
+## file path to where the raw data files are
+raw_data_dir <- "inst/extdata/csv_files/get_data_ready/stdb"
+
+## file path to where the processed data will be 
+processed_data_dir <- "intermediate"
+
+## reading in files starts here ----
+
+## get list of all raw data files
+all_files <- list.files(raw_data_dir)
+
+## add the full filepath onto the filenames
+all_files2 <- paste(raw_data_dir, "/", all_files, sep="")
+
+head(all_files2)
+
+#library(dplyr)
+
+## 0. set up results data frame
+df_all <- data.frame(matrix(ncol = 7, nrow = 0))
+colnames(df_all) <- c("bird_id", "track_id", "colony_name", "date_gmt", "time_gmt", "lat", "lon")
+
+df_all_meta <- data.frame(matrix(ncol = 6, nrow = 0))
+colnames(df_all_meta) <- c("bird_id", "lat_col", "lon_col", "age", "sex", "breed_stage", "breed_status")
+
+
+## LOOP over all files ----
+for (i in 1:length(all_files2)) {
+  
+  ## start with one file
+ # i <- 1  # TESTING
+  
+  print(paste("starting file number", i))
+  
+  ## read in the file
+  df <- read.csv(all_files2[i])
+  
+  ## 2. Select columns for the dataframe ----
+  df_bird <- df %>%
+    dplyr::select(bird_id, track_id, colony = colony_name, date_gmt, time_gmt, lat = latitude, lon = longitude)
+  
+   ## 2. Select columns for the dataframe ----
+  df_bird_meta <- df %>%
+    dplyr::select(bird_id, lat_col = lat_colony, lon_col = lon_colony, age, sex, breed_stage, breed_status)
+  
+  ## 2. make time field ----
+  
+  ## create a datetime column by merging the date_gmt and time_gmt
+  df_bird$datetime <- paste(df_bird$date_gmt, df_bird$time_gmt, sep = " ")
+  # unique(df$time_gmt)
+  # head(df)
+  
+  
+  
+  ## 4. Add this bird data to the overall data frame ----
+  df_all <- rbind(df_all, df_bird)
+  df_all_meta <- rbind(df_all_meta, df_bird_meta)
+  
+  ##clean up
+  
+  rm(df, df_bird)
+}
+
+```
+
+Check the data frame
+
+```{r}
+
+head(df_all)
+```
+
+```{r}
+
+head(df_all_meta)
+```
+
+# 3) Processed data given to you
+
+Quite often you may be given data from a collaborator for example. This may have already been processed with methods unknown to you. They may have already put their data through a trip split function using certain thresholds or transformed their datetime into local timezones. Best thing to do is explore the data.
+
+We can make a table summarizing the datagroups and see what we have. We can make sure we have it in the right format for `tidytracks`
+
+Here is some made up data from Antarctic shags that we have already processed. Let's have a look at what columns are included:
+
+```{r}
+getwd()
+shags_collaborator_csv <- read.csv("inst/extdata/csv_files/get_data_ready/collaborator/collaborator_processed_data.csv")
+dplyr::glimpse(df_table)
+
+```
+
+Lets first inspect the databefore we decide what we want to keep.
+
+```{r}
+library(lubridate)
+## Summarise the data by colony, year, breed_stage, sex.
+## lets add a new year column by splitting the date column so we can get information about years
+df_table <- shags_collaborator_csv %>% mutate(year.x = year(date_gmt)) %>% 
+  ## then we group the data by relevant columns
+  group_by(colony, 
+           year.x,
+           breeding_stage, 
+           sex) %>% 
+  ## then we continue to summarise by the distinct number of entries per group
+  summarise(n_birds = n_distinct(bird_id),
+            n_tracks = n_distinct(trip_id))
+
+## review the summary output
+df_table
+```
+
+Lets select the data we want from this and while doing so, rename the columns. The key columns we would like to keep from this dataset is the identifier column `bird_id`, `track_id`, `colony_name`, the `date_gmt` and `time_gmt` so we can make a date-time column and the two columns representing the x and y coordinates (e.g. `longitude` and `latitude`). We can keep `lat_col`, `lon_col`, `age`, `sex`, `breed_stage` and `breed_status` for the meta data.
+
+If you have multiple .csv files download that are from the same repository and thus the same format, these should be placed in a folder within your raw data directory. We will process these and save them into a folder within the intermediate data directory.
+
+```{r}
+## setting directories ----
+
+getwd()  # check working directory
+
+## move to the data directory
+#setwd("data")
+
+## file path to where the raw data files are
+raw_data_dir <- "inst/extdata/csv_files/get_data_ready/stdb"
+
+## file path to where the processed data will be 
+processed_data_dir <- "intermediate"
+
+## reading in files starts here ----
+
+## get list of all raw data files
+all_files <- list.files(raw_data_dir)
+
+## add the full filepath onto the filenames
+all_files2 <- paste(raw_data_dir, "/", all_files, sep="")
+
+head(all_files2)
+
+#library(dplyr)
+
+## 0. set up results data frame
+df_all <- data.frame(matrix(ncol = 7, nrow = 0))
+colnames(df_all) <- c("bird_id", "track_id", "colony_name", "date_gmt", "time_gmt", "lat", "lon")
+
+
+## LOOP over all files ----
+for (i in 1:length(all_files2)) {
+  
+  ## start with one file
+ # i <- 1  # TESTING
+  
+  print(paste("starting file number", i))
+  
+  ## read in the file
+  df <- read.csv(all_files2[i])
+  
+  ## 2. Select columns for the dataframe ----
+  df_bird <- df %>%
+    dplyr::select(bird_id, track_id, colony = colony_name, date_gmt, time_gmt, lat = latitude, lon = longitude)
+  
+   ## 2. Select columns for the dataframe ----
+  df_bird_meta <- df %>%
+    dplyr::select(bird_id, lat_col = lat_colony, lon_col = lon_colony, age, sex, breed_stage, breed_status)
+  
+  ## 2. make time field ----
+  
+  ## create a datetime column by merging the date_gmt and time_gmt
+  df_bird$datetime <- paste(df_bird$date_gmt, df_bird$time_gmt, sep = " ")
+  # unique(df$time_gmt)
+  # head(df)
+  
+  
+  
+  ## 4. Add this bird data to the overall data frame ----
+  df_all <- rbind(df_all, df_bird)
+  df_all_meta <- rbind(df_all_meta, df_bird_meta)
+  
+  ##clean up
+  
+  rm(df, df_bird)
+}
+
+```
+
+Check the data frame
+
+```{r}
+
+head(df_all)
+```
