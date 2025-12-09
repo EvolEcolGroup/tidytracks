@@ -106,6 +106,7 @@ track_summary_stats <- function(x,  centre_col = NULL,
                                  by = "track_id")
   
   # check that sum_stats has the right number of rows (number of unique track IDs)
+  # This is a sanity check, it should never happen.
   if (nrow(sum_stats) != length(unique(x[[move2::mt_track_id_column(x)]]))) {
     stop("There is a problem with the summary statistics. ",
          "The number of rows in the summary statistics does not match ",
@@ -150,6 +151,7 @@ track_summary_stats <- function(x,  centre_col = NULL,
   }
   
   # check that sum_stats has the right number of rows (number of unique track IDs)
+  # This is a sanity check, it should never happen.
   if (nrow(sum_stats) != length(unique(x[[move2::mt_track_id_column(x)]]))) {
     stop("There is a problem with the summary statistics. ",
          "The number of rows in the summary statistics does not match ",
