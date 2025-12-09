@@ -360,6 +360,20 @@ test_that("tt_read_data works with format_date_time parameter", {
   )
   expect_equal(colnames(example_tt), c("trackid", "datetime_posix", "geometry"))
   
+  # as above, but without specifying format_date_time - does it choose the correct format?
+  example_tt <- tt_read_data(
+    events = test_path("testdata/test_tt_read_data_diff_datetimes.csv"),
+    col_track_id = "trackid",
+    col_coords = c("lon", "lat"),
+    col_date_time = "datetime_posix"
+  )
+  expect_s3_class(example_tt, "move2")
+  expect_equal( # check first datetime parsed correctly
+    example_tt$datetime_posix[1],
+    as.POSIXct("2008-02-12 14:30:00", format="%Y-%m-%d %H:%M:%S", tz="UTC")
+  )
+  expect_equal(colnames(example_tt), c("trackid", "datetime_posix", "geometry"))
+  
   # test with the wrong format_date_time parameter
   expect_error(
     tt_read_data(
@@ -372,6 +386,50 @@ test_that("tt_read_data works with format_date_time parameter", {
     regexp = "Some date-time values could not be parsed using the provided format_date_time", fixed=TRUE)
 })
 
+# test with multiple datetime fields, make sure the correct one is chosen
+test_that("tt_read_data works with multiple datetime_xyz fields", {
+  
+  test_df <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  test_df$datetime_posix <- "not the real datetime field"
+  test_df$datetime_old <- "also not the real datetime field"
+  
+  example_tt <- tt_read_data(
+    events = test_df,
+    col_track_id = "track_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "datetime"
+  )
+  
+  # Check that the move2 object is created correctly
+  expect_s3_class(example_tt, "move2")
+  # only have date and locations as event specific variables
+  expect_true(length(names(example_tt)) == 3)
+  expect_true(all(c("track_id", "datetime", "geometry") %in% names(example_tt)))
+  
+  # check that the date and time in the first row are correct
+  expect_equal(
+    example_tt$datetime[1],
+    as.POSIXct("2024-01-01 12:00:00", format="%Y-%m-%d %H:%M:%S", tz="UTC")
+  )
+  
+  # test again, this time there is no datetime field but multiple datetime_xyz field
+  test_df <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  test_df$datetime_real <- test_df$datetime
+  test_df$datetime <- NULL
+  test_df$datetime_abc <- "not the real datetime field"
+  test_df$datetime_old <- "also not the real datetime field"
+  
+  expect_error(
+    tt_read_data(
+      events = test_df,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "datetime"
+    ),
+    regexp = "Column datetime not found in the events data.", fixed=TRUE
+  )
+  
+})
 
 
 

@@ -134,6 +134,7 @@ tt_read_data <- function(events,
         # try a set of common formats
         as.POSIXct(datetime_raw, 
                    tz = time_zone,
+                   # NB. %OS accounts for fractional seconds but doesn't require them
                    tryFormats = c("%Y-%m-%d %H:%M:%OS", # 2024-01-15 13:45:30.123
                                   "%Y/%m/%d %H:%M:%OS", # 2024/01/15 13:45:30.123
                                   "%Y-%m-%d %H:%M",     # 2024-01-15 13:45
