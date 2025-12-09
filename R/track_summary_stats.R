@@ -97,7 +97,7 @@ track_summary_stats <- function(x,  centre_col = NULL,
                   min_longitude = .data$xmin) %>%
     # dplyr::select(-xmax, -xmin, -ymax, -ymin) %>%
     dplyr::select(-dplyr::all_of(c("xmax", "xmin", "ymax", "ymin"))) %>%
-    dplyr::mutate(track_id = groups$`event_track_id(x)`)
+    dplyr::mutate(track_id = groups[[.group_var]])
   
   # 1-3 join into sum_stats table
   sum_stats <- dplyr::full_join(tot_duration_df, tot_distance_df,
@@ -116,20 +116,20 @@ track_summary_stats <- function(x,  centre_col = NULL,
   # 4 - if centre_col is given, calculate max distance from centre and 
   #     latitude at that point
   if (!is.null(centre_col)){
+    i_foreach <- NULL # appease R CMD check
     #get maximum distance between the centre and the events for each track
     centre_sums <-
-      foreach::foreach(i = seq_len(nrow(show_meta(x))),
+      foreach::foreach(i_foreach = seq_len(nrow(show_meta(x))),
                        .combine=rbind) %do% {
       #TODO we probably need to use globalVariables to declare a global counter
       # if so, use a better name for that counter, e.g. i_foreach
                          
-                         
       # get the track id
-      track_id <- show_meta(x)[[move2::mt_track_id_column(x)]][i]
+      track_id <- show_meta(x)[[move2::mt_track_id_column(x)]][i_foreach]
       # get the events for this track
       events <- x[event_track_id(x) == track_id, ]
       # get the centre
-      centre <- centre_col[i, ]
+      centre <- centre_col[i_foreach, ]
       # calculate the distance between the centre and the events
       # TODO re-write with our distance function instead of sf::st_distance()
       dists <- sf::st_distance(events$geometry, centre)

@@ -1,4 +1,12 @@
 
+test_that("track_summary_stats gives the correct errors", {
+  # try running it on an object that isn't a move2 object
+  expect_error(
+    track_summary_stats(x = data.frame(a = 1:10, b = 11:20)),
+    "x must be a move2 object"
+  )
+})
+
 test_that("track_summary_stats correctly computes track summaries", {
   
   # create a simple trajectory that goes out and comes back along the longitude
