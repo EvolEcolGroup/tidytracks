@@ -6,7 +6,7 @@
 \usage{
 tt_split_trips(
   x,
-  center_col = NULL,
+  centre_col = NULL,
   buffer_outbound = units::as_units(1000, "m"),
   buffer_inbound = units::as_units(1000, "m"),
   complete = TRUE
@@ -15,16 +15,16 @@ tt_split_trips(
 \arguments{
 \item{x}{A move2 object}
 
-\item{center_col}{the column name for the center of the colony/nest of each
+\item{centre_col}{the column name for the centre of the colony/nest of each
 track as found in the metadata table. Alternatively, an \code{sf} object of
 either length 1 or the same length as the number of tracks in the move2
 object. If a single geometry object is provided, it will be used as the
-center for all tracks.}
+centre for all tracks.}
 
-\item{buffer_outbound}{the distance from the center to define outbound trips,
+\item{buffer_outbound}{the distance from the centre to define outbound trips,
 specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
-\item{buffer_inbound}{the distance from the center to define inbound trips,
+\item{buffer_inbound}{the distance from the centre to define inbound trips,
 specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
 \item{complete}{boolean, if TRUE, only complete trips (i.e. the ones that

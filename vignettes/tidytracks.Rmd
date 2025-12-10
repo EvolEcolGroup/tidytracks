@@ -475,7 +475,7 @@ per track (as a column in the metadata).
 ```{r}
 shags_mt <- shags_mt %>%
   tt_split_trips(
-    center_col = "colony_coord",
+    centre_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(3, "km"),
     complete = TRUE # keep only complete trips
@@ -523,10 +523,8 @@ ggplot() +
 We can get a summary of our tracks with:
 
 ```{r}
-track_stats <- shags_mt %>%
-  track_summary_stats(center_col = "colony_coord",
-                      units_duration = units::as_units(1, "hours"))
-track_stats
+shags_sub %>%
+  track_summary_stats(centre_col = "colony_coord")
 ```
 
 Note that `track_summary_stats()` will return a tibble with one row per track,

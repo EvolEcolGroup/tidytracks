@@ -9,8 +9,8 @@ split_one_track(
   x,
   y,
   is_lonlat,
-  center_x,
-  center_y,
+  centre_x,
+  centre_y,
   buffer_outbound,
   buffer_inbound
 )
@@ -24,9 +24,9 @@ split_one_track(
 
 \item{is_lonlat}{a logical indicating if the coordinates are in lonlat}
 
-\item{center_x}{the x coordinate for the central place (e.g. colony, nest)}
+\item{centre_x}{the x coordinate for the central place (e.g. colony, nest)}
 
-\item{center_y}{the y coordinate for the central place (e.g. colony, nest)}
+\item{centre_y}{the y coordinate for the central place (e.g. colony, nest)}
 
 \item{buffer_outbound}{the buffer for outbound trips}
 

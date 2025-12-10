@@ -4,15 +4,15 @@
 #'   foragers by identifying the trips based on a distance from the colony/nest.
 #'
 #' @param x A move2 object
-#' @param center_col the column name for the center of the colony/nest of each
+#' @param centre_col the column name for the centre of the colony/nest of each
 #'   track as found in the metadata table. Alternatively, an `sf` object of
 #'   either length 1 or the same length as the number of tracks in the move2
 #'   object. If a single geometry object is provided, it will be used as the
-#'   center for all tracks.
-#' @param buffer_outbound the distance from the center to define outbound trips,
+#'   centre for all tracks.
+#' @param buffer_outbound the distance from the centre to define outbound trips,
 #'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
 #'   "km")`.
-#' @param buffer_inbound the distance from the center to define inbound trips,
+#' @param buffer_inbound the distance from the centre to define inbound trips,
 #'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
 #'   "km")`.
 #' @param complete boolean, if TRUE, only complete trips (i.e. the ones that
@@ -24,7 +24,7 @@
 #' @importFrom foreach %do%
 #' @importFrom rlang :=
 
-tt_split_trips <- function(x, center_col = NULL,
+tt_split_trips <- function(x, centre_col = NULL,
                            buffer_outbound = units::as_units(1000, "m"),
                            buffer_inbound = units::as_units(1000, "m"),
                            complete = TRUE) {
@@ -33,30 +33,30 @@ tt_split_trips <- function(x, center_col = NULL,
     stop("x must be a move2 object")
   }
 
-  # Check if center_col is provided
-  if (is.null(center_col)) {
-    stop("center_col must be provided")
+  # Check if centre_col is provided
+  if (is.null(centre_col)) {
+    stop("centre_col must be provided")
   }
 
-  # Check if center_col is a geometry object
-  if (inherits(center_col, "character")) {
+  # Check if centre_col is a geometry object
+  if (inherits(centre_col, "character")) {
     # check if it exists in the metadata
-    if (!center_col %in% names(show_meta(x))) {
-      stop("center_col must be a column name in the metadata table")
+    if (!centre_col %in% names(show_meta(x))) {
+      stop("centre_col must be a column name in the metadata table")
     }
-    center_col <- sf::st_coordinates(show_meta(x)[[center_col]])
-  } else if (inherits(center_col, "sf")) {
-    center_col <- sf::st_coordinates(center_col)
-    if (nrow(center_col) == 1) {
+    centre_col <- sf::st_coordinates(show_meta(x)[[centre_col]])
+  } else if (inherits(centre_col, "sf")) {
+    centre_col <- sf::st_coordinates(centre_col)
+    if (nrow(centre_col) == 1) {
       # we have a single origin
       # copy over for as many times as n tracks
-      center_col <- matrix(rep(center_col, nrow(x)), ncol = 2)
-    } else if (nrow(center_col) != nrow(show_meta(x))) {
-      stop("center_col must be a geometry object of length 1 or the same ",
+      centre_col <- matrix(rep(centre_col, nrow(x)), ncol = 2)
+    } else if (nrow(centre_col) != nrow(show_meta(x))) {
+      stop("centre_col must be a geometry object of length 1 or the same ",
            "length as the number of tracks in x")
     }
   } else {
-    stop("center_col must be the name of a column in the metadata or ",
+    stop("centre_col must be the name of a column in the metadata or ",
          "an `sf` point object")
   }
 
@@ -99,8 +99,8 @@ tt_split_trips <- function(x, center_col = NULL,
       coords[ids == unique_ids[i], 1],
       coords[ids == unique_ids[i], 2],
       is_lonlat = is_longlat,
-      center_x = center_col[i, 1],
-      center_y = center_col[i, 2],
+      centre_x = centre_col[i, 1],
+      centre_y = centre_col[i, 2],
       buffer_inbound = buffer_in_uless,
       buffer_outbound = buffer_out_uless
     )
@@ -141,8 +141,8 @@ tt_split_trips <- function(x, center_col = NULL,
 #' @param x the x coordinates
 #' @param y the y coordinates
 #' @param is_lonlat a logical indicating if the coordinates are in lonlat
-#' @param center_x the x coordinate for the central place (e.g. colony, nest)
-#' @param center_y the y coordinate for the central place (e.g. colony, nest)
+#' @param centre_x the x coordinate for the central place (e.g. colony, nest)
+#' @param centre_y the y coordinate for the central place (e.g. colony, nest)
 #' @param buffer_outbound the buffer for outbound trips
 #' @param buffer_inbound the buffer for inbound trips
 #' @returns a vector with trip IDs for each event (events to remove are marked
@@ -150,17 +150,17 @@ tt_split_trips <- function(x, center_col = NULL,
 #' @keywords internal
 split_one_track <- function(label,
                             x, y, is_lonlat,
-                            center_x, center_y,
+                            centre_x, centre_y,
                             buffer_outbound,
                             buffer_inbound) {
-  center_x_vec <- rep(center_x, length(x))
-  center_y_vec <- rep(center_y, length(y))
+  centre_x_vec <- rep(centre_x, length(x))
+  centre_y_vec <- rep(centre_y, length(y))
   # Get distances between events and colony
-  dist_to_center <- dist_fast(x, y, center_x_vec, center_y_vec,
+  dist_to_centre <- dist_fast(x, y, centre_x_vec, centre_y_vec,
     longlat = is_lonlat
   )
   # define distances outside the outbound buffer
-  out_events <- dist_to_center > buffer_outbound
+  out_events <- dist_to_centre > buffer_outbound
   # label trips
   runs <- rle(out_events)
   # now we can label the trips
@@ -175,11 +175,11 @@ split_one_track <- function(label,
     trip_id = unique(trip_labels),
     trip_type = ifelse(
       unique(trip_labels) != paste0(label, "_trip_na"),
-      "complete", "at_center"
+      "complete", "at_centre"
     )
   )
   # check if last trip is incomplete
-  if (dist_to_center[length(dist_to_center)] > buffer_inbound) {
+  if (dist_to_centre[length(dist_to_centre)] > buffer_inbound) {
     trip_meta$trip_type[nrow(trip_meta)] <- "incomplete"
   }
 
