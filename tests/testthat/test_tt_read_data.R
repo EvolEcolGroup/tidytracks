@@ -1,3 +1,22 @@
+test_that("tt_read_data throws error if NAs in events table", {
+  example_df <- data.frame(
+    track_id = c(1, 1, 2, 2),
+    lon = c(10, NA, 20, 21),
+    lat = c(50, 51, NA, 52),
+    datetime = c("2024-01-01 12:00:00", "2024-01-01 12:10:00",
+                 "2024-01-02 13:00:00", "2024-01-02 13:10:00")
+  )
+  expect_error(
+    tt_read_data(
+      events = example_df,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "datetime"
+    ),
+    regexp = "Column lon contains missing values (NAs). Please remove or impute these before proceeding.", fixed=TRUE
+  )
+})
+
 # test with events CSV and meta CSV
 test_that("tt_read_data works with events CSV and meta CSV", {
 
@@ -431,6 +450,20 @@ test_that("tt_read_data works with multiple datetime_xyz fields", {
   
 })
 
-
+# test error when some datetimes have a different format
+test_that("tt_read_data gives error when the provided datetime format is wrong", {
+  
+  expect_error(
+    tt_read_data(
+      events = read.csv(test_path("testdata/test_tt_read_data_simple.csv")),
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "datetime",
+      format_date_time = "%d/%m/%Y %H:%M:%S"
+    ),
+    regexp = "Some date-time values could not be parsed using the provided format_date_time", fixed=TRUE
+  )
+  
+})
 
 
