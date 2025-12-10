@@ -172,7 +172,7 @@ tt_read_data <- function(events,
   idx_na <- which(is.na(events[[col_date_time]]))
   if (length(idx_na) > 0) {
     examples <- datetime_raw[utils::head(idx_na, 2)]
-    # Adjust error messsage based on whether format_date_time was supplied or not
+    # Adjust error message based on whether format_date_time was supplied or not
     if (!is.null(format_date_time)) {
       stop("Some date-time values could not be parsed using the provided format_date_time '", format_date_time, "' .\n",
            "Examples of unparsed date-time values: '",
