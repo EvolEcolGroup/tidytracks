@@ -490,7 +490,7 @@ shags_mt
 
 Let's look at the metadata:
 ```{r}
-str(show_meta(shags_sub))
+str(show_meta(shags_mt))
 ```
 
 TODO update this paragraph now that we're keeping all birds in: We can see that
