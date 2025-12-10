@@ -287,12 +287,12 @@ shags_sub
 
 # A grammar of movement
 
-As we saw above, `tt_*` functions are specific operate on the whole object, and
-often will return a complete table of tracks (aka a `move2` object).
-There are functions to clean the data using different algorithms
-(e.g. `tt_clean_mcconnell`), or to split the data into trips for central place
-foragers (e.g. `tt_split_trips`). We will see those functions in action in a later
-section.
+As we saw above, `tt_*` functions are specific to and operate on the whole table
+of tracks (aka the `move2` object), and often will return a complete table of
+tracks. There are functions to clean the data using
+different algorithms (e.g. `tt_clean_mcconnell`), or to split the data into
+trips for central place foragers (e.g. `tt_split_trips`). We will see those
+functions in action in a later section.
 
 `event_*` functions, on the other hand, operate on events, and return a vector
 of the same length as number of rows in the event table (and thus can be use in
