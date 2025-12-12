@@ -15,3 +15,6 @@ The metadata table from the input \code{move2} object
 \description{
 Show the track metadata of a \code{move2} object
 }
+\examples{
+show_meta(shags_tt)
+}

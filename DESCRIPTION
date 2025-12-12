@@ -1,6 +1,6 @@
 Package: tidytracks
 Title: Functions to Analyse Tracking Data
-Version: 0.0.0.9001
+Version: 0.0.0.9002
 Authors@R: 
     person("Andrea", "Manica", , "am315@cam.ac.uk", role = c("aut", "cre"))
 Description: Tidy functions to analyse tracking data, based on the move2 objects.

@@ -1,16 +1,17 @@
-#' A move2 object of boobies trajectories
+#' A move2 object of Antarctic shag movements
+#' 
+#' A GPS tracking data set of Antarctic shags during foraging trips from
+#' colonies from the Antarctic Peninsula. The version of the data set used here has been
+#' doctored to illustrate the functionalities of the package; in other words,
+#' some of the data have been changed, and this dataset should not be used for
+#' any biological analysis.
 #'
-#' A GPS tracking data set of Masked Boobies during incubation and chick rearing
-#' at St. Helena Island. The version of the data set used here has been doctored
-#' to illustrate the functionalities of the package; in other words, some fo the
-#' data have been changed, and this dataset should not be used for any
-#' biological analysis.
-#'
-#' @format An move2 object with 178006 rows and 3 columns
+#' @format An move2 object with 7798 events from 9 tracks (one per individual).
+#' We have 3 columns
 #' \describe{
 #'   \item{bird_id}{ids of each bird}
 #'   \item{date_time}{time stamp for each event}
 #'   \item{geometry}{longitudes and latitudes, as an `sf` geometry
 #'   for each event}
 #' }
-"boobies_mt"
+"shags_tt"
