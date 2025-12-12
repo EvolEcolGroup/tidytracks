@@ -12,10 +12,7 @@ show_meta <- move2::mt_track_data
 #' @export
 #' @return The modified `move2` object with updated metadata
 #' @examples
-#' data("boobies_mt", package = "tidytracks")
-#' meta <- show_meta(boobies_mt)
-#' meta$new_column <- "example"
-#' show_meta(boobies_mt) <- meta
+#' show_meta(boobies_mt)$new_column <- "example_info"
 
 "show_meta<-" <- function(x, value) {
   x <- move2::mt_set_track_data(x, value)
