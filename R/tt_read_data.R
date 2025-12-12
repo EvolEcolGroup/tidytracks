@@ -29,6 +29,11 @@
 #' @param col_date_time The name of the column in the csv file that contains the
 #'   date-time information (or a vector of two elements, the names of separate
 #'   date and time columns). Time is assumed to be in UTC.
+#' @param format_date_time optional, a string containing the format of the 
+#' date-time field(s): either the single date-time column, or the date and 
+#' time columns separated by a space, for `as.POSIXct()` to parse the date-time. 
+#' If `NULL` (default), a set of common formats will be tried. For help with 
+#' specifying date-time formats, see `?strptime`.
 #' @param crs a proj4 string or EPSG code defining the coordinate reference
 #'   system of the data. Defaults to `4326` (WGS 84).
 #' @param time_zone a character string specifying the time zone of the
@@ -54,6 +59,7 @@ tt_read_data <- function(events,
                          col_track_id,
                          col_coords,
                          col_date_time,
+                         format_date_time = NULL,
                          crs = 4326,
                          time_zone = "UTC",
                          convert_meta = TRUE,
@@ -92,35 +98,94 @@ tt_read_data <- function(events,
   if (!is.character(col_date_time) || length(col_date_time) < 1 || length(col_date_time) > 2) {
     stop("col_date_time must be a character vector of length 1 or 2.")
   }
-
-
-  # Convert date and time to POSIXct - new version with tryCatch for informative error messages
+  
+  # make sure there are no pre-existing NAs in any of the required columns
+  # i.e. col_track_id, col_coords, col_date_time
+  required_cols <- c(col_track_id, col_coords, col_date_time)
+  for (col in required_cols) {
+    if (any(is.na(events[[col]]))) {
+      stop(paste("Column", col, "contains missing values (NAs). Please remove or impute these before proceeding."))
+    }
+  }
+  
+  # combine date/time columns if necessary before converting to POSIXct
   if (length(col_date_time) == 1) {
-    events[[col_date_time]] <- tryCatch(
-      as.POSIXct(events[[col_date_time]], tz = time_zone),
-      error = function(e) {
-        stop("Failed to parse date-time field '", col_date_time,
-             "'. Please check that the format is consistent and uses a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
-             call. = FALSE)
-      }
-    )
+    # already a single datetime column
+    datetime_raw <- events[[col_date_time]]
+    col_date_time_original <- col_date_time # store original name(s) for error messages
   } else {
-    events$date_time <- tryCatch(
-      as.POSIXct(paste(events[[col_date_time[1]]],
-                       events[[col_date_time[2]]]),
-                 tz = time_zone),
-      error = function(e) {
-        stop("Failed to parse date-time fields '", 
-             paste(col_date_time, collapse = "', '"),
-             "'. Please check that the formats are consistent and use a standard format (e.g. YYYY-mm-dd hh:mm:ss).",
-             call. = FALSE)
-      }
-    )
+    # combine separate date + time columns into one string, separated by a space
+    datetime_raw <- paste(events[[col_date_time[1]]], events[[col_date_time[2]]])
     
-    # remove the old date and time columns
+    # remove the old date/time columns
     events <- events %>%
       dplyr::select(-dplyr::all_of(col_date_time))
-    col_date_time <- "date_time"  # update col_date_time to the new column name
+    
+    # update col_date_time to the new column name
+    col_date_time_original <- col_date_time # store original name(s) for error messages
+    col_date_time <- "date_time" # the combined datetime field will be named 'date_time'
+  }
+  
+  # attempt to parse the datetime column using as.POSIXct, wrapped in a tryCatch
+  # block to provide informative error messages
+  events[[col_date_time]] <- tryCatch(
+    {
+      if (is.null(format_date_time)) {
+        # try a set of common formats
+        as.POSIXct(datetime_raw, 
+                   tz = time_zone,
+                   # NB. %OS accounts for fractional seconds but doesn't require them
+                   tryFormats = c("%Y-%m-%d %H:%M:%OS", # 2024-01-15 13:45:30.123
+                                  "%Y/%m/%d %H:%M:%OS", # 2024/01/15 13:45:30.123
+                                  "%Y-%m-%d %H:%M",     # 2024-01-15 13:45
+                                  "%Y/%m/%d %H:%M",     # 2024/01/15 13:45
+                                  "%d/%m/%Y %H:%M:%OS", # 15/01/2024 13:45:30.123
+                                  "%d/%m/%y %H:%M:%OS", # 15/01/24 13:45:30.123
+                                  "%d-%m-%Y %H:%M:%OS", # 15-01-2024 13:45:30.123
+                                  "%d-%m-%y %H:%M:%OS", # 15-01-24 13:45:30.123
+                                  "%d/%m/%Y %H:%M",     # 15/01/2024 13:45
+                                  "%d-%m-%Y %H:%M",     # 15-01-2024 13:45
+                                  "%d-%m-%y %H:%M",     # 15-01-24 13:45
+                                  "%d/%m/%y %H:%M"      # 15/01/24 13:45
+                                  ))
+      } else {
+        # use the provided format
+        # NB. if the provided format is wrong, you'll silently get NAs here
+        as.POSIXct(datetime_raw, 
+                   format = format_date_time,
+                   tz = time_zone)
+      }
+    },
+    error = function(e) {
+      stop("Failed to parse date-time field(s) '",
+           paste(col_date_time_original, collapse = "', '"),
+           "'.\nPlease check that the format is consistent and uses a standard format (e.g. YYYY-mm-dd hh:mm:ss).\n",
+           "Note that you can specify the format using the format_date_time parameter.",
+           call. = FALSE)
+    }
+  )
+  
+  # Check for any NAs in the parsed datetime values and throw an error if any are 
+  #   found, as this indicates the format_date_time may be incorrect
+  # Also get the first two indices where the parsing failed, and find the original
+  #   character strings for datetime so we can print them in the error message
+  idx_na <- which(is.na(events[[col_date_time]]))
+  if (length(idx_na) > 0) {
+    examples <- datetime_raw[utils::head(idx_na, 2)]
+    # Adjust error message based on whether format_date_time was supplied or not
+    if (!is.null(format_date_time)) {
+      stop("Some date-time values could not be parsed using the provided format_date_time '", format_date_time, "'.\n",
+           "Examples of unparsed date-time values: '",
+           paste(examples, collapse = "', '"),
+           "'.\nPlease check that the format_date_time parameter is correct and the data are consistently formatted.",
+           call. = FALSE)
+    } else {
+      stop("Some date-time values could not be parsed using auto-detected format.\n",
+           "Examples of unparsed date-time values: '",
+           paste(examples, collapse = "', '"),
+           "'.\nPlease check that the date-time columns are consistently formatted, or specify the format using the format_date_time parameter.",
+           call. = FALSE)
+    }
   }
   
   # Create a move2 object
@@ -129,7 +194,7 @@ tt_read_data <- function(events,
     time_column = col_date_time,
     track_id_column = col_track_id
   )
-
+  
   # Convert track-specific attributes to meta data if requested
   if (convert_meta) {
     # Identify columns that might contain track specific info (i.e. unique within a track)
@@ -148,9 +213,9 @@ tt_read_data <- function(events,
         move2_obj <- move2::mt_as_track_attribute(move2_obj, dplyr::any_of(to_move_cols))
       }
     }
-
+    
   }
-
+  
   # If meta is provided, read and merge meta data
   if (!is.null(meta)) {
     # if meta is a character string (i.e. filepath), read it as a data frame
@@ -173,6 +238,6 @@ tt_read_data <- function(events,
     updated_meta <- dplyr::left_join(old_meta, meta, by = col_track_id)
     move2_obj <- move2::mt_set_track_data(move2_obj, updated_meta)
   }
-
+  
   return(move2_obj)
 }
