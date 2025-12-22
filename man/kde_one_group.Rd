@@ -4,7 +4,7 @@
 \alias{kde_one_group}
 \title{Create kde isopleths at multiple levels for a given group}
 \usage{
-kde_one_group(xy, levels, crs, grid, h, keep_object = FALSE)
+kde_one_group(xy, levels, crs, bbox, res, h, keep_object = FALSE)
 }
 \arguments{
 \item{xy}{a matrix of coordinates}
@@ -13,8 +13,10 @@ kde_one_group(xy, levels, crs, grid, h, keep_object = FALSE)
 
 \item{crs}{the crs of the coordinates (to use in the geometry)}
 
-\item{grid}{A list of length 5, with values xmin, ymin,
-xmax, ymax and res (all in the units of the projection of x).}
+\item{bbox}{A named vector of four elements: xmin, ymin, xmax, ymax to define the
+bounding box of the grid over which to compute the KDE.}
+
+\item{res}{The resolution of the grid (in the units of the projection of x).}
 
 \item{h}{The bandwidth for the kernel density estimation.}
 

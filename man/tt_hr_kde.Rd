@@ -7,7 +7,8 @@
 tt_hr_kde(
   x,
   h = "h_ref_mean",
-  grid = NULL,
+  bbox = NULL,
+  res = NULL,
   levels = c(0.5, 0.95),
   keep_objects = FALSE
 )
@@ -20,10 +21,12 @@ tt_hr_kde(
 "h_ref_mean" for using the mean bandwidth for all individuals (the
 default).}
 
-\item{grid}{A list of length 5, with values xmin, ymin, xmax, ymax and res
-(all in the units of the projection of x). If null, the extent is taken by
-combining all points in \code{x} (expanded by 10\%), and the number of cells is
-set to 1000.}
+\item{bbox}{a name vector of four elements: xmin, ymin, xmax, ymax to define the
+bounding box of the grid over which to compute the KDE. If NULL, the
+extent is taken by combining all points in \code{x} (expanded by 10\%).}
+
+\item{res}{The resolution of the grid (in the units of the projection of x).
+If NULL, res is set to obtained ~ 1000 cells.}
 
 \item{levels}{A vector of levels for the contour lines. The default is
 \code{c(0.5, 0.95)}, which corresponds to the 50\% and 95\% home ranges.}

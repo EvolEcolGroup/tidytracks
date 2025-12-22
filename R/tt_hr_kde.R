@@ -8,10 +8,11 @@
 #'   "h_ref_indiv" for using the reference bandwidth for each individual, or
 #'   "h_ref_mean" for using the mean bandwidth for all individuals (the
 #'   default).
-#' @param grid A list of length 5, with values xmin, ymin, xmax, ymax and res
-#'   (all in the units of the projection of x). If null, the extent is taken by
-#'   combining all points in `x` (expanded by 10%), and the number of cells is
-#'   set to 1000.
+#' @param bbox a name vector of four elements: xmin, ymin, xmax, ymax to define the
+#'  bounding box of the grid over which to compute the KDE. If NULL, the
+#'  extent is taken by combining all points in `x` (expanded by 10%).
+#' @param res The resolution of the grid (in the units of the projection of x).
+#'   If NULL, res is set to obtained ~ 1000 cells.
 #' @param levels A vector of levels for the contour lines. The default is
 #'   `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
 #' @param keep_objects whether the individual KDE objects should be kept as a
@@ -25,7 +26,8 @@
 #'   `keep_objects = TRUE`)
 #' @export
 
-tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
+tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
+                      res = NULL, levels = c(0.5, 0.95),
                       keep_objects = FALSE) {
   # Check if x is a grouped move2 object
   if (!inherits(x, "move2") || !inherits(x, "grouped_df")) {
@@ -65,37 +67,41 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
   }
 
   # Check if grid is provided
-  if (is.null(grid)) {
+  if (is.null(bbox)) {
     # get extend of x, which is an sf object
-    grid_bbox <- sf::st_bbox(x)
+    bbox <- sf::st_bbox(x)
     # extend the grid by a fixed factor
     # TODO compare to amt (extending by 50%), adehabitatHR (extending by 1)
     # and track2kba (extending by 0.05 or h*2000, whichever is larger))
-    extend_x <- (grid_bbox$xmax - grid_bbox$xmin) * 1
-    extend_y <- (grid_bbox$ymax - grid_bbox$ymin) * 1
+    extend_x <- (bbox$xmax - bbox$xmin) * 1
+    extend_y <- (bbox$ymax - bbox$ymin) * 1
 
-    grid <- list(
-      xmin = grid_bbox$xmin - extend_x,
-      ymin = grid_bbox$ymin - extend_y,
-      xmax = grid_bbox$xmax + extend_x,
-      ymax = grid_bbox$ymax + extend_y
-    )
-    # set resolution to get a 1000 cells
-    grid[["res"]] <- sqrt((grid$xmax - grid$xmin) *
-      (grid$ymax - grid$ymin) / 1500)
-    # update the max to be an exact multiple of res
-    grid[["xmax"]] <- grid$xmin +
-      ceiling((grid$xmax - grid$xmin) / grid$res) * grid$res
-    grid[["ymax"]] <- grid$ymin +
-      ceiling((grid$ymax - grid$ymin) / grid$res) * grid$res
-  } else if (length(grid) != 5) {
-    stop("grid must be a named vector of length 5")
-  } else if (!all(c("xmin", "ymin", "xmax", "ymax", "res") %in% names(grid))) {
-    stop(
-      "grid must be a list of length 5 with names xmin, ymin, ",
-      "xmax, ymax, and res"
-    )
+      bbox["xmin"] = bbox$xmin - extend_x
+      bbox["ymin"] = bbox$ymin - extend_y
+      bbox["xmax"] = bbox$xmax + extend_x
+      bbox["ymax"] = bbox$ymax + extend_y
+
   }
+  # check that bbox is a vector of four correctly named elements
+  if (length(bbox) != 4 ||
+    !all(c("xmin", "ymin", "xmax", "ymax")
+      %in% names(bbox))) {
+    stop("bbox must be a named vector of length 4")
+  }
+  
+  
+  if (is.null(res)){
+    # set resolution to get a 1000 cells
+    res <- sqrt((bbox$xmax - bbox$xmin) *
+                            (bbox$ymax - bbox$ymin) / 1500)
+  }
+
+    # update the max to be an exact multiple of res
+    bbox["xmax"] <- bbox$xmin +
+      ceiling((bbox$xmax - bbox$xmin) / res) * res
+    bbox["ymax"] <- bbox$ymin +
+      ceiling((bbox$ymax - bbox$ymin) / res) * res
+
 
   group_id <- NULL # hack to avoid it being flagged as global in checks
   kde_results <- foreach::foreach(
@@ -108,7 +114,8 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
     # Create kernel for each level
     geometry <- kde_one_group(xy_sub, levels,
       crs = sf::st_crs(x),
-      grid = grid,
+      bbox = bbox,
+      res = res,
       h = h_val,
       keep_object = keep_objects
     )
@@ -150,28 +157,29 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
 #' @param xy a matrix of coordinates
 #' @param levels A vector of levels for the contour lines
 #' @param crs the crs of the coordinates (to use in the geometry)
-#' @param grid A list of length 5, with values xmin, ymin,
-#' xmax, ymax and res (all in the units of the projection of x).
+#' @param bbox A named vector of four elements: xmin, ymin, xmax, ymax to define the
+#' bounding box of the grid over which to compute the KDE.
+#' @param res The resolution of the grid (in the units of the projection of x).
 #' @param h The bandwidth for the kernel density estimation.
 #' @param keep_object whether the individual KDE object should be kept. If so,
 #' the function returns a list of sf polygons and the kde object.
 #' @returns A list of sf polygons representing the kde isopleths at each level
 #' @keywords internal
 
-kde_one_group <- function(xy, levels, crs, grid, h, keep_object = FALSE) {
+kde_one_group <- function(xy, levels, crs, bbox, res, h, keep_object = FALSE) {
   # Create a kde object
   kde <- MASS::kde2d(xy[, 1],
     xy[, 2],
     n = round(c(
-      (grid$xmax - grid$xmin) / grid$res,
-      (grid$ymax - grid$ymin) / grid$res
+      (bbox$xmax - bbox$xmin) / res,
+      (bbox$ymax - bbox$ymin) / res
     )),
     # note that MASS needs h multiplied by 4 to be comparable with other kde
     # approaches (e.g. adehabitatHR or KernSmooth)
     h = h * 4,
     lims = c(
-      grid$xmin, grid$xmax,
-      grid$ymin, grid$ymax
+      bbox$xmin, bbox$xmax,
+      bbox$ymin, bbox$ymax
     )
   )
   #
