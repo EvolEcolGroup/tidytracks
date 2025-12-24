@@ -9,6 +9,7 @@ tt_read_data(
   col_track_id,
   col_coords,
   col_date_time,
+  format_date_time = NULL,
   crs = 4326,
   time_zone = "UTC",
   convert_meta = TRUE,
@@ -28,6 +29,12 @@ file.}
 \item{col_date_time}{The name of the column in the csv file that contains the
 date-time information (or a vector of two elements, the names of separate
 date and time columns). Time is assumed to be in UTC.}
+
+\item{format_date_time}{optional, a string containing the format of the
+date-time field(s): either the single date-time column, or the date and
+time columns separated by a space, for \code{as.POSIXct()} to parse the date-time.
+If \code{NULL} (default), a set of common formats will be tried. For help with
+specifying date-time formats, see \code{?strptime}.}
 
 \item{crs}{a proj4 string or EPSG code defining the coordinate reference
 system of the data. Defaults to \code{4326} (WGS 84).}

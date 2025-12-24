@@ -29,5 +29,7 @@ print.move2 <- function(x, ..., n = getOption("sf_max_print", default = 10L)) {
 #' @param x A move2 object
 #' @return The metadata table from the input `move2` object
 #' @export
+#' @examples
+#' show_meta(shags_tt)
 
 show_meta <- move2::mt_track_data

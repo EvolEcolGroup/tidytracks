@@ -34,3 +34,6 @@ meta <- show_meta(boobies_mt)
 meta$new_column <- "example"
 show_meta(boobies_mt) <- meta
 }
+\examples{
+show_meta(shags_tt)
+}
