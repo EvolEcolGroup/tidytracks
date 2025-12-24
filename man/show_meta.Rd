@@ -29,11 +29,8 @@ Show the track metadata of a \code{move2} object
 Show or set the track metadata of a \code{move2} object
 }
 \examples{
-data("boobies_mt", package = "tidytracks")
-meta <- show_meta(boobies_mt)
-meta$new_column <- "example"
-show_meta(boobies_mt) <- meta
-}
-\examples{
+show_meta(shags_tt)
+show_meta(shags_tt)
+show_meta(shags_tt)$new_column <- "example_info"
 show_meta(shags_tt)
 }
