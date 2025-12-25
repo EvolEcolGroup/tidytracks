@@ -14,10 +14,8 @@
 #' @param res The resolution of the grid (in the units of the projection of x).
 #'   If NULL, res is set to obtained ~ 1000 cells.
 #' @param levels A vector of levels for the contour lines. The default is
-#'   `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
-#' @param keep_objects whether the individual KDE objects should be kept as a
-#'   column in the output object. This is useful for debugging, but will
-#'   increase the size of the object.
+#'   `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges. If set
+#'   to NULL, the full kde object is returned (useful for debugging)
 #' @returns A tibble of subclass `tt_hr_tbl` of results, with columns:
 #' - `group_id`: the ids from the groping of `x`
 #' - `.level_XX`: the sf polygons for level XX; the number of this type of
@@ -27,15 +25,14 @@
 #' @export
 
 tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
-                      res = NULL, levels = c(0.5, 0.95),
-                      keep_objects = FALSE) {
+                      res = NULL, levels = c(0.5, 0.95)) {
   # Check if x is a grouped move2 object
   if (!inherits(x, "move2") || !inherits(x, "grouped_df")) {
     stop("x must be a grouped move2 object")
   }
 
   # Check if levels are valid
-  if (any(levels < 0 | levels > 1)) {
+  if (!is.null(levels) && (any(levels < 0 | levels > 1))) {
     stop("levels must be between 0 and 1")
   }
   # reorder levels from big to small
@@ -112,24 +109,35 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     xy_sub <- xy[group_index == group_id, ]
     h_val <- h[group_id]
     # Create kernel for each level
-    geometry <- kde_one_group(xy_sub, levels,
+    geometry_set <- kde_one_group(xy_sub, levels,
       crs = sf::st_crs(x),
       bbox = bbox,
       res = res,
-      h = h_val,
-      keep_object = keep_objects
+      h = h_val
     )
-    # Calculate area
-    area <- sf::st_area(geometry)
-    # Create a tibble with the results
-    cbind(tibble::tibble(
+    res_tbl <- tibble::tibble(
       group_id = group_labels[group_id],
       level = levels,
-      h = h_val,
-      area = area
-    ), geometry)
+      h = h_val)
+    
+    if (is.null(levels)) {
+      res_tbl$kde <- list(kde = geometry_set)
+      res_tbl
+    } else {
+      # Calculate area
+      area <- sf::st_area(geometry_set)
+      # Create a tibble with the results
+      cbind(res_tbl, area, geometry_set)
+    }
+    
+
   }
 
+  # if levels is null, we just return the tibble of results
+  if (is.null(levels)) {
+    return(kde_results)
+  }
+  
   # now cast the results to an sf object
   kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
   # add a method attribute
@@ -149,24 +157,25 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
 
 #' Create kde isopleths at multiple levels for a given group
 #'
-#' This is the internal function that is called by `tt_hr_kde` to create the
-#' kde isopleths
-#' at multiple levels for a given group. It is not intended to be called
-#' directly by the user.
+#' This is the internal function that is called by `tt_hr_kde` to create the kde
+#' isopleths at multiple levels for a given group. It is not intended to be
+#' called directly by the user.
 #'
 #' @param xy a matrix of coordinates
-#' @param levels A vector of levels for the contour lines
+#' @param levels A vector of levels for the contour lines. If set to NULL,
+#'  the full kde object is returned (useful for debugging)
 #' @param crs the crs of the coordinates (to use in the geometry)
-#' @param bbox A named vector of four elements: xmin, ymin, xmax, ymax to define the
-#' bounding box of the grid over which to compute the KDE.
+#' @param bbox A named vector of four elements: xmin, ymin, xmax, ymax to define
+#'   the bounding box of the grid over which to compute the KDE.
 #' @param res The resolution of the grid (in the units of the projection of x).
 #' @param h The bandwidth for the kernel density estimation.
-#' @param keep_object whether the individual KDE object should be kept. If so,
-#' the function returns a list of sf polygons and the kde object.
-#' @returns A list of sf polygons representing the kde isopleths at each level
+#' @returns A list of with an element called `geometry` containing the sf
+#'   polygons representing the kde isopleths at each level, and a second,
+#'   optional element called `kde` containing the kde object 
+#'   (if `keep_object = TRUE`).
 #' @keywords internal
 
-kde_one_group <- function(xy, levels, crs, bbox, res, h, keep_object = FALSE) {
+kde_one_group <- function(xy, levels, crs, bbox, res, h) {
   # Create a kde object
   kde <- MASS::kde2d(xy[, 1],
     xy[, 2],
@@ -182,9 +191,13 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h, keep_object = FALSE) {
       bbox$ymin, bbox$ymax
     )
   )
-  #
-  kde_cud <- hr_kde_cud(kde$z)
+  if (is.null(levels)) {
+    return(kde)
+  }
 
+  # compute the cumulative utilisation distribution
+  kde_cud <- hr_kde_cud(kde$z)
+  
   # create a list of sf polygons for each level
   kde_polys <- lapply(levels, function(level) {
     # get the contour lines for this level
@@ -200,5 +213,6 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h, keep_object = FALSE) {
   })
   # create a geometry set with one feature per level
   kde_polys <- sf::st_sfc(do.call(rbind, kde_polys), crs = crs)
+  
   return(kde_polys)
 }

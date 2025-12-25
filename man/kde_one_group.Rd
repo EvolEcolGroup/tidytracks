@@ -4,32 +4,32 @@
 \alias{kde_one_group}
 \title{Create kde isopleths at multiple levels for a given group}
 \usage{
-kde_one_group(xy, levels, crs, bbox, res, h, keep_object = FALSE)
+kde_one_group(xy, levels, crs, bbox, res, h)
 }
 \arguments{
 \item{xy}{a matrix of coordinates}
 
-\item{levels}{A vector of levels for the contour lines}
+\item{levels}{A vector of levels for the contour lines. If set to NULL,
+the full kde object is returned (useful for debugging)}
 
 \item{crs}{the crs of the coordinates (to use in the geometry)}
 
-\item{bbox}{A named vector of four elements: xmin, ymin, xmax, ymax to define the
-bounding box of the grid over which to compute the KDE.}
+\item{bbox}{A named vector of four elements: xmin, ymin, xmax, ymax to define
+the bounding box of the grid over which to compute the KDE.}
 
 \item{res}{The resolution of the grid (in the units of the projection of x).}
 
 \item{h}{The bandwidth for the kernel density estimation.}
-
-\item{keep_object}{whether the individual KDE object should be kept. If so,
-the function returns a list of sf polygons and the kde object.}
 }
 \value{
-A list of sf polygons representing the kde isopleths at each level
+A list of with an element called \code{geometry} containing the sf
+polygons representing the kde isopleths at each level, and a second,
+optional element called \code{kde} containing the kde object
+(if \code{keep_object = TRUE}).
 }
 \description{
-This is the internal function that is called by \code{tt_hr_kde} to create the
-kde isopleths
-at multiple levels for a given group. It is not intended to be called
-directly by the user.
+This is the internal function that is called by \code{tt_hr_kde} to create the kde
+isopleths at multiple levels for a given group. It is not intended to be
+called directly by the user.
 }
 \keyword{internal}

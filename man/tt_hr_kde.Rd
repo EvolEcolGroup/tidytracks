@@ -4,14 +4,7 @@
 \alias{tt_hr_kde}
 \title{Quantify the home range using kernel density estimation}
 \usage{
-tt_hr_kde(
-  x,
-  h = "h_ref_mean",
-  bbox = NULL,
-  res = NULL,
-  levels = c(0.5, 0.95),
-  keep_objects = FALSE
-)
+tt_hr_kde(x, h = "h_ref_mean", bbox = NULL, res = NULL, levels = c(0.5, 0.95))
 }
 \arguments{
 \item{x}{A grouped move2 object}
@@ -29,11 +22,8 @@ extent is taken by combining all points in \code{x} (expanded by 10\%).}
 If NULL, res is set to obtained ~ 1000 cells.}
 
 \item{levels}{A vector of levels for the contour lines. The default is
-\code{c(0.5, 0.95)}, which corresponds to the 50\% and 95\% home ranges.}
-
-\item{keep_objects}{whether the individual KDE objects should be kept as a
-column in the output object. This is useful for debugging, but will
-increase the size of the object.}
+\code{c(0.5, 0.95)}, which corresponds to the 50\% and 95\% home ranges. If set
+to NULL, the full kde object is returned (useful for debugging)}
 }
 \value{
 A tibble of subclass \code{tt_hr_tbl} of results, with columns:
