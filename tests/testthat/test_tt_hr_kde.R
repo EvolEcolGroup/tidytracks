@@ -28,4 +28,5 @@ test_that("tt_hr_mcp works with multiple tracks", {
   # expect the kde column is present
   expect_true("kde" %in% names(boar_kde2))
 
+  # modify the grid
 })

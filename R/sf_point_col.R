@@ -12,6 +12,10 @@
 #' If NULL (default), no CRS is assigned.
 #' @return A `sf` geometry set of POINT geometries
 #' @export
+#' @examples
+#' sf_point_col(show_meta(shags_tt)$lon_colony,
+#'   show_meta(shags_tt)$lat_colony,
+#'   crs = 4326)
 #' 
 sf_point_col <- function(x, y, crs = NULL) {
   sf::st_sfc(
