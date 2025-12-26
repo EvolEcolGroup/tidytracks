@@ -45,7 +45,6 @@ track_summary_stats <- function(x,  centre_col = NULL,
       }
       centre_col <- show_meta(x)[[centre_col]]
     } else if (inherits(centre_col, "sf")) {
-      browser()
       stop("this option has yet to be properly implemented")
       # @TODO @BUG the code below needs changing
       centre_col <- sf::st_geometry(centre_col)

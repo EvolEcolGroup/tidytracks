@@ -26,14 +26,21 @@ If NULL, res is set to obtained ~ 1000 cells.}
 to NULL, the full kde object is returned (useful for debugging)}
 }
 \value{
-A tibble of subclass \code{tt_hr_tbl} of results, with columns:
+An \code{sf} tibble , with columns:
 \itemize{
-\item \code{group_id}: the ids from the groping of \code{x}
-\item \code{.level_XX}: the sf polygons for level XX; the number of this type of
-column depends on the length of \code{levels}
-\item \code{kde}: the KDE object used to create the polygons (if
-\code{keep_objects = TRUE})
+\item the grouping variable (as named in \code{x}; if \code{x} is grouped by
+multiple variables, this column is named \code{group_id}): the ids from
+the grouping of \code{x}
+\item \code{level}: the level of the isopleth
+\item \code{h}: the bandwidth used for the KDE
+\item \code{area}: the area of the home range at this level (in the units
+of the projection of \code{x}, e.g. m^2 for a UTM projection)
+\item \code{geometry}:  an \code{sfc} column containing the multipolygons representing
+the isopleth for the appropriate level
 }
+
+If \code{levels} is NULL, a standard tibble is returned with columns:
+\code{group_id}, \code{h}, and \code{kde}.
 }
 \description{
 This function estimates the home range of an animal using kernel density

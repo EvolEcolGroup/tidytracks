@@ -16,12 +16,19 @@
 #' @param levels A vector of levels for the contour lines. The default is
 #'   `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges. If set
 #'   to NULL, the full kde object is returned (useful for debugging)
-#' @returns A tibble of subclass `tt_hr_tbl` of results, with columns:
-#' - `group_id`: the ids from the groping of `x`
-#' - `.level_XX`: the sf polygons for level XX; the number of this type of
-#'   column depends on the length of `levels`
-#' - `kde`: the KDE object used to create the polygons (if
-#'   `keep_objects = TRUE`)
+#' @returns An `sf` tibble , with columns:
+#' - the grouping variable (as named in `x`; if `x` is grouped by 
+#' multiple variables, this column is named `group_id`): the ids from
+#' the grouping of `x`
+#' - `level`: the level of the isopleth
+#' - `h`: the bandwidth used for the KDE
+#' - `area`: the area of the home range at this level (in the units
+#'  of the projection of `x`, e.g. m^2 for a UTM projection)
+#'  - `geometry`:  an `sfc` column containing the multipolygons representing
+#'  the isopleth for the appropriate level
+#'
+#'   If `levels` is NULL, a standard tibble is returned with columns:
+#'   `group_id`, `h`, and `kde`.
 #' @export
 
 tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
@@ -43,14 +50,13 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
   group_unique <- unique(group_index)
   group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
-  # Compute the minimum convex polygon for each group and level
-
-
+  # extract coordinates
   xy <- sf::st_coordinates(x)
   # check h
   if (!is.numeric(h)) {
     h <- match.arg(h, c(
-      "h_ref_mean", "h_ref_indiv"))
+      "h_ref_mean", "h_ref_indiv"
+    ))
     h_fun <- get(h) # assign the function to h_fun
     h <- h_fun(xy, group_index) # compute h
   }
@@ -73,31 +79,30 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     extend_x <- (bbox$xmax - bbox$xmin) * 1
     extend_y <- (bbox$ymax - bbox$ymin) * 1
 
-      bbox["xmin"] = bbox$xmin - extend_x
-      bbox["ymin"] = bbox$ymin - extend_y
-      bbox["xmax"] = bbox$xmax + extend_x
-      bbox["ymax"] = bbox$ymax + extend_y
-
+    bbox["xmin"] <- bbox$xmin - extend_x
+    bbox["ymin"] <- bbox$ymin - extend_y
+    bbox["xmax"] <- bbox$xmax + extend_x
+    bbox["ymax"] <- bbox$ymax + extend_y
   }
   # check that bbox is a vector of four correctly named elements
   if (length(bbox) != 4 ||
     !all(c("xmin", "ymin", "xmax", "ymax")
-      %in% names(bbox))) {
+    %in% names(bbox))) {
     stop("bbox must be a named vector of length 4")
   }
-  
-  
-  if (is.null(res)){
+
+
+  if (is.null(res)) {
     # set resolution to get a 1000 cells
     res <- sqrt((bbox$xmax - bbox$xmin) *
-                            (bbox$ymax - bbox$ymin) / 1500)
+      (bbox$ymax - bbox$ymin) / 1500)
   }
 
-    # update the max to be an exact multiple of res
-    bbox["xmax"] <- bbox$xmin +
-      ceiling((bbox$xmax - bbox$xmin) / res) * res
-    bbox["ymax"] <- bbox$ymin +
-      ceiling((bbox$ymax - bbox$ymin) / res) * res
+  # update the max to be an exact multiple of res
+  bbox["xmax"] <- bbox$xmin +
+    ceiling((bbox$xmax - bbox$xmin) / res) * res
+  bbox["ymax"] <- bbox$ymin +
+    ceiling((bbox$ymax - bbox$ymin) / res) * res
 
 
   group_id <- NULL # hack to avoid it being flagged as global in checks
@@ -118,30 +123,28 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     res_tbl <- tibble::tibble(
       group_id = group_labels[group_id],
       level = levels,
-      h = h_val)
-    
+      h = h_val
+    )
+
+    # if returning the full kde object, we simply add it to the kde column
     if (is.null(levels)) {
       res_tbl$kde <- list(kde = geometry_set)
       res_tbl
-    } else {
+    } else { # with multiple levels, we create the area and geometry columns
       # Calculate area
       area <- sf::st_area(geometry_set)
       # Create a tibble with the results
       cbind(res_tbl, area, geometry_set)
     }
-    
-
   }
 
   # if levels is null, we just return the tibble of results
   if (is.null(levels)) {
     return(kde_results)
   }
-  
+
   # now cast the results to an sf object
   kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
-  # add a method attribute
-  attr(kde_results, "hr_method") <- c("kde")
 
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
@@ -150,7 +153,9 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
         ~ dplyr::group_vars(x), dplyr::all_of("group_id")
       )
   }
-
+  
+  # add a method attribute
+  attr(kde_results, "hr_method") <- c("kde")
 
   return(kde_results)
 }
@@ -171,7 +176,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
 #' @param h The bandwidth for the kernel density estimation.
 #' @returns A list of with an element called `geometry` containing the sf
 #'   polygons representing the kde isopleths at each level, and a second,
-#'   optional element called `kde` containing the kde object 
+#'   optional element called `kde` containing the kde object
 #'   (if `keep_object = TRUE`).
 #' @keywords internal
 
@@ -197,7 +202,7 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h) {
 
   # compute the cumulative utilisation distribution
   kde_cud <- hr_kde_cud(kde$z)
-  
+
   # create a list of sf polygons for each level
   kde_polys <- lapply(levels, function(level) {
     # get the contour lines for this level
@@ -213,6 +218,6 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h) {
   })
   # create a geometry set with one feature per level
   kde_polys <- sf::st_sfc(do.call(rbind, kde_polys), crs = crs)
-  
+
   return(kde_polys)
 }
