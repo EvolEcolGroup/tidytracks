@@ -156,6 +156,8 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
   
   # add a method attribute
   attr(kde_results, "hr_method") <- c("kde")
+  attr(kde_results, "bbox") <- bbox
+  attr(kde_results, "res") <- res
 
   return(kde_results)
 }
