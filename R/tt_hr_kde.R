@@ -97,8 +97,8 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
 
   if (is.null(res)) {
     # set resolution to get a 1000 cells
-    res <- sqrt((bbox$xmax - bbox$xmin) *
-      (bbox$ymax - bbox$ymin) / 1500)
+    res <- sqrt((bbox[["xmax"]] - bbox[["xmin"]]) *
+      (bbox[["ymax"]] - bbox[["ymin"]]) / 1500)
   }
 
   # update the max to be an exact multiple of res
@@ -141,14 +141,11 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     }
   }
 
-  # if levels is null, we just return the tibble of results
-  if (is.null(levels)) {
-    return(kde_results)
-  }
-
+  # if levels is not  null, we convert to sf
+  if (!is.null(levels)) {
   # now cast the results to an sf object
   kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
-
+}
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
     kde_results <- kde_results %>%
