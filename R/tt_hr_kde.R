@@ -29,6 +29,9 @@
 #'
 #'   If `levels` is NULL, a standard tibble is returned with columns:
 #'   `group_id`, `h`, and `kde`.
+#'   
+#'   The bbox and res used are stored as attributes of the returned object.
+#' 
 #' @export
 
 tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,

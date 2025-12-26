@@ -41,6 +41,8 @@ the isopleth for the appropriate level
 
 If \code{levels} is NULL, a standard tibble is returned with columns:
 \code{group_id}, \code{h}, and \code{kde}.
+
+The bbox and res used are stored as attributes of the returned object.
 }
 \description{
 This function estimates the home range of an animal using kernel density
