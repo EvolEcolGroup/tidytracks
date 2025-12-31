@@ -1,4 +1,4 @@
-# make a very simple dataset of 3 individual, with 5 obs per individual,
+# make a very simple dataset of 3 individuals, with 5 obs per individual,
 # used for examples
 
 tt_read_data("./data-raw/raw_csv/example_tt.csv",
