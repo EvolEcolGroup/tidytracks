@@ -7,12 +7,12 @@ data <- mt_sim_brownian_motion(tracks = letters[1:4])
 head(data)
 nrow(data)
 
-# need to change time to a datetime, and make up some metadata for each track
+# need to change time to a date_time, and make up some metadata for each track
 
 # extract the simulated data as a dataframe (not a move2 object) so we can 
 #   play around with it without upsetting the move2 data structures
 
-# make a vector of 10 datetimes as a sequence at 10-min intervals
+# make a vector of 10 date_times as a sequence at 10-min intervals
 ten_dttms <- seq(
   from = as.POSIXct("2024-01-01 12:00:00", tz = "UTC"),
   by = "10 min",
@@ -21,7 +21,7 @@ ten_dttms <- seq(
 
 df <- data.frame(
   track_id = as.character(data$track),
-  datetime = rep(ten_dttms, times = 4),
+  date_time = rep(ten_dttms, times = 4),
   lon = sf::st_coordinates(data)[, 1],
   lat = sf::st_coordinates(data)[, 2]
 )
@@ -40,9 +40,9 @@ meta <- data.frame(
 df_with_meta <- merge(df, meta, by = "track_id")
 
 # make a version with date and time in separate columns
-df_separate_datetime <- df %>%
+df_separate_date_time <- df %>%
   tidyr::separate(
-    col = datetime,
+    col = date_time,
     into = c("date", "time"),
     sep = " "
   )
@@ -64,8 +64,8 @@ write.csv(
   row.names = FALSE
 )
 write.csv(
-  df_separate_datetime,
-  file = "tests/testthat/testdata/test_tt_read_data_separate_datetime.csv",
+  df_separate_date_time,
+  file = "tests/testthat/testdata/test_tt_read_data_separate_date_time.csv",
   row.names = FALSE
 )
 

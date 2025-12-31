@@ -3,7 +3,7 @@ test_that("tt_read_data throws error if NAs in events table", {
     track_id = c(1, 1, 2, 2),
     lon = c(10, NA, 20, 21),
     lat = c(50, 51, NA, 52),
-    datetime = c("2024-01-01 12:00:00", "2024-01-01 12:10:00",
+    date_time = c("2024-01-01 12:00:00", "2024-01-01 12:10:00",
                  "2024-01-02 13:00:00", "2024-01-02 13:10:00")
   )
   expect_error(
@@ -11,7 +11,7 @@ test_that("tt_read_data throws error if NAs in events table", {
       events = example_df,
       col_track_id = "track_id",
       col_coords = c("lon", "lat"),
-      col_date_time = "datetime"
+      col_date_time = "date_time"
     ),
     regexp = "Column lon contains missing values (NAs). Please remove or impute these before proceeding.", fixed=TRUE
   )
@@ -25,14 +25,14 @@ test_that("tt_read_data works with events CSV and meta CSV", {
     meta = test_path("testdata/test_tt_read_data_meta.csv"),
     col_track_id = "track_id",
     col_coords = c("lon", "lat"),
-    col_date_time = "datetime"
+    col_date_time = "date_time"
   )
   
   # Check that the move2 object is created correctly
   expect_s3_class(example_tt, "move2")
   # only have date and locations as event specific variables
   expect_true(length(names(example_tt)) == 3)
-  expect_true(all(c("track_id", "datetime", "geometry") %in% names(example_tt)))
+  expect_true(all(c("track_id", "date_time", "geometry") %in% names(example_tt)))
   # Check that the meta data is correctly populated
   expect_true(length(names(show_meta(example_tt))) == 4)
   # expect that the meta data has the correct columns
@@ -50,14 +50,14 @@ test_that("tt_read_data works with events CSV and no meta", {
     events = test_path("testdata/test_tt_read_data_simple.csv"),
     col_track_id = "track_id",
     col_coords = c("lon", "lat"),
-    col_date_time = "datetime"
+    col_date_time = "date_time"
   )
   
   # Check that the move2 object is created correctly
   expect_s3_class(example_tt, "move2")
   # only have date and locations as event specific variables
   expect_true(length(names(example_tt)) == 3)
-  expect_true(all(c("track_id", "datetime", "geometry") %in% names(example_tt)))
+  expect_true(all(c("track_id", "date_time", "geometry") %in% names(example_tt)))
   # Check that the meta data is correctly populated
   expect_true(length(names(show_meta(example_tt))) == 1)
   # expect that the meta data has the correct columns
@@ -75,14 +75,14 @@ test_that("tt_read_data works with verbose events CSV and no meta", {
     events = test_path("testdata/test_tt_read_data_verbose.csv"),
     col_track_id = "track_id",
     col_coords = c("lon", "lat"),
-    col_date_time = "datetime"
+    col_date_time = "date_time"
   )
   
   # Check that the move2 object is created correctly
   expect_s3_class(example_tt, "move2")
   # only have date and locations as event specific variables
   expect_true(length(names(example_tt)) == 3)
-  expect_true(all(c("track_id", "datetime", "geometry") %in% names(example_tt)))
+  expect_true(all(c("track_id", "date_time", "geometry") %in% names(example_tt)))
   # Check that the meta data is correctly populated
   expect_true(length(names(show_meta(example_tt))) == 4)
   # expect that the meta data has the correct columns
@@ -102,14 +102,14 @@ test_that("tt_read_data works with events dataframe", {
     events = df,
     col_track_id = "track_id",
     col_coords = c("lon", "lat"),
-    col_date_time = "datetime"
+    col_date_time = "date_time"
   )
   
   # Check that the move2 object is created correctly
   expect_s3_class(example_tt, "move2")
   # only have date and locations as event specific variables
   expect_true(length(names(example_tt)) == 3)
-  expect_true(all(c("track_id", "datetime", "geometry") %in% names(example_tt)))
+  expect_true(all(c("track_id", "date_time", "geometry") %in% names(example_tt)))
   # Check that the meta data is correctly populated
   expect_true(length(names(show_meta(example_tt))) == 1)
   # expect that the meta data has the correct columns
@@ -132,14 +132,14 @@ test_that("tt_read_data works with dataframes for both events and meta", {
     meta = df_meta,
     col_track_id = "track_id",
     col_coords = c("lon", "lat"),
-    col_date_time = "datetime"
+    col_date_time = "date_time"
   )
   
   # Check that the move2 object is created correctly
   expect_s3_class(example_tt, "move2")
   # only have date and locations as event specific variables
   expect_true(length(names(example_tt)) == 3)
-  expect_true(all(c("track_id", "datetime", "geometry") %in% names(example_tt)))
+  expect_true(all(c("track_id", "date_time", "geometry") %in% names(example_tt)))
   # Check that the meta data is correctly populated
   expect_true(length(names(show_meta(example_tt))) == 4)
   # expect that the meta data has the correct columns
@@ -161,14 +161,14 @@ test_that("tt_read_data works with verbose events dataframe and no meta", {
     events = df,
     col_track_id = "track_id",
     col_coords = c("lon", "lat"),
-    col_date_time = "datetime"
+    col_date_time = "date_time"
   )
   
   # Check that the move2 object is created correctly
   expect_s3_class(example_tt, "move2")
   # only have date and locations as event specific variables
   expect_true(length(names(example_tt)) == 3)
-  expect_true(all(c("track_id", "datetime", "geometry") %in% names(example_tt)))
+  expect_true(all(c("track_id", "date_time", "geometry") %in% names(example_tt)))
   # Check that the meta data is correctly populated
   expect_true(length(names(show_meta(example_tt))) == 4)
   # expect that the meta data has the correct columns
@@ -183,14 +183,14 @@ test_that("tt_read_data works with verbose events dataframe and no meta", {
 test_that("tt_read_data works with events CSV with separate date and time fields", {
   
   example_tt <- tt_read_data(
-    events = test_path("testdata/test_tt_read_data_separate_datetime.csv"),
+    events = test_path("testdata/test_tt_read_data_separate_date_time.csv"),
     col_track_id = "track_id",
     col_coords = c("lon", "lat"),
     col_date_time = c("date","time")
   )
   
-  # NB. when tt_read_data creates a datetime field from a date and time field
-  # it calls it date_time (different from datetime that we normally use).
+  # NB. when tt_read_data is given separate date and time columns, it combines
+  # them into a single date_time column in the resulting object.
   
   # Check that the move2 object is created correctly
   expect_s3_class(example_tt, "move2")
@@ -218,22 +218,22 @@ test_that("tt_read_data gives errors for missing or incorrect fields", {
       events = df_no_id,
       col_track_id = "track_id",
       col_coords = c("lon", "lat"),
-      col_date_time = "datetime"
+      col_date_time = "date_time"
     ),
     "Column track_id not found in the events data."
   )
   
-  # no datetime field
-  df_no_datetime <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
-  df_no_datetime$datetime <- NULL
+  # no date_time field
+  df_no_date_time <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  df_no_date_time$date_time <- NULL
   expect_error(
     tt_read_data(
-      events = df_no_datetime,
+      events = df_no_date_time,
       col_track_id = "track_id",
       col_coords = c("lon", "lat"),
-      col_date_time = "datetime"
+      col_date_time = "date_time"
     ),
-    "Column datetime not found in the events data."
+    "Column date_time not found in the events data."
   )
   
   # no coord field
@@ -244,7 +244,7 @@ test_that("tt_read_data gives errors for missing or incorrect fields", {
       events = df_no_coords,
       col_track_id = "track_id",
       col_coords = c("lon", "lat"),
-      col_date_time = "datetime"
+      col_date_time = "date_time"
     ),
     "Columns lon, lat not found in the events data."
   )
@@ -260,19 +260,19 @@ test_that("tt_read_data gives errors for missing or incorrect fields", {
       meta = df_meta_no_id,
       col_track_id = "track_id",
       col_coords = c("lon", "lat"),
-      col_date_time = "datetime"
+      col_date_time = "date_time"
     ),
     "Column track_id not found in the meta data."
   )
   
-  # datetime not given as a character of length 1 or 2
+  # date_time not given as a character of length 1 or 2
   df <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
   expect_error(
     tt_read_data(
       events = df,
       col_track_id = "track_id",
       col_coords = c("lon", "lat"),
-      col_date_time = c("datetime", "extra", "field")
+      col_date_time = c("date_time", "extra", "field")
     ),
     "col_date_time must be a character vector of length 1 or 2."
   )
@@ -280,43 +280,43 @@ test_that("tt_read_data gives errors for missing or incorrect fields", {
 })
 
 
-# test with un-parse-able datetime field(s)
+# test with un-parse-able date_time field(s)
 
-test_that("tt_read_data gives error for un-parse-able datetime field(s)", {
+test_that("tt_read_data gives error for un-parse-able date_time field(s)", {
   
-  # with datetime that's just another character string
-  df_bad_datetime <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
-  df_bad_datetime$datetime <- "not a date"
+  # with date_time that's just another character string
+  df_bad_date_time <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  df_bad_date_time$date_time <- "not a date"
   expect_error(
     tt_read_data(
-      events = df_bad_datetime,
+      events = df_bad_date_time,
       col_track_id = "track_id",
       col_coords = c("lon", "lat"),
-      col_date_time = "datetime"
+      col_date_time = "date_time"
     ),
-    regexp = "Failed to parse date-time field(s) 'datetime'", fixed=TRUE
+    regexp = "Failed to parse date-time field(s) 'date_time'", fixed=TRUE
   )
   
-  # with multiple different datetime formats in the same field
-  df_bad_datetime <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
-  df_bad_datetime$datetime[2] <- "01/01/2024 12:10"  # different format
+  # with multiple different date_time formats in the same field
+  df_bad_date_time <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  df_bad_date_time$date_time[2] <- "01/01/2024 12:10"  # different format
   expect_error(
     tt_read_data(
-      events = df_bad_datetime,
+      events = df_bad_date_time,
       col_track_id = "track_id",
       col_coords = c("lon", "lat"),
-      col_date_time = "datetime"
+      col_date_time = "date_time"
     ),
-    regexp = "Failed to parse date-time field(s) 'datetime'", fixed=TRUE
+    regexp = "Failed to parse date-time field(s) 'date_time'", fixed=TRUE
   )
     
   
   # test for separate date and time fields where one is bad
-  df_diff_datetime <- read.csv(test_path("testdata/test_tt_read_data_separate_datetime.csv"))
-  df_diff_datetime$date[2] <- "not a date"  # not parse-able
+  df_diff_date_time <- read.csv(test_path("testdata/test_tt_read_data_separate_date_time.csv"))
+  df_diff_date_time$date[2] <- "not a date"  # not parse-able
   expect_error(
     tt_read_data(
-      events = df_diff_datetime,
+      events = df_diff_date_time,
       col_track_id = "track_id",
       col_coords = c("lon", "lat"),
       col_date_time = c("date","time")
@@ -327,28 +327,28 @@ test_that("tt_read_data gives error for un-parse-able datetime field(s)", {
 })
 
 
-# test with different but parse-able datetime field(s)
-test_that("tt_read_data works with a variety of datetime field(s) formats", {
+# test with different but parse-able date_time field(s)
+test_that("tt_read_data works with a variety of date_time field(s) formats", {
   
-  # test with datetime formats starting with dd instead of yyyy
+  # test with date_time formats starting with dd instead of yyyy
   example_tt <- tt_read_data(
-    events = test_path("testdata/test_tt_read_data_diff_datetimes.csv"),
+    events = test_path("testdata/test_tt_read_data_diff_date_times.csv"),
     col_track_id = "trackid",
     col_coords = c("lon", "lat"),
-    col_date_time = "datetime_posix"
+    col_date_time = "date_time_posix"
   )
   expect_s3_class(example_tt, "move2")
-  expect_equal( # check first datetime parsed correctly
-    example_tt$datetime_posix[1],
+  expect_equal( # check first date_time parsed correctly
+    example_tt$date_time_posix[1],
     as.POSIXct("2008-02-12 14:30:00", format="%Y-%m-%d %H:%M:%S", tz="UTC")
   )
-  expect_equal(colnames(example_tt), c("trackid", "datetime_posix", "geometry"))
+  expect_equal(colnames(example_tt), c("trackid", "date_time_posix", "geometry"))
   
   # check it works on separate date and time fields with different formats
-  df_diff_datetime <- read.csv(test_path("testdata/test_tt_read_data_separate_datetime.csv"))
-  df_diff_datetime$date <- "01/01/2024"  # different date format
+  df_diff_date_time <- read.csv(test_path("testdata/test_tt_read_data_separate_date_time.csv"))
+  df_diff_date_time$date <- "01/01/2024"  # different date format
   example_tt <- tt_read_data(
-    events = df_diff_datetime,
+    events = df_diff_date_time,
     col_track_id = "track_id",
     col_coords = c("lon", "lat"),
     col_date_time = c("date","time")
@@ -361,104 +361,104 @@ test_that("tt_read_data works with a variety of datetime field(s) formats", {
 })
 
 
-# test with specifying the format_datetime parameter
+# test with specifying the format_date_time parameter
 test_that("tt_read_data works with format_date_time parameter", {
   
-  # test with datetime formats starting with dd instead of yyyy
+  # test with date_time formats starting with dd instead of yyyy
   example_tt <- tt_read_data(
-    events = test_path("testdata/test_tt_read_data_diff_datetimes.csv"),
+    events = test_path("testdata/test_tt_read_data_diff_date_times.csv"),
     col_track_id = "trackid",
     col_coords = c("lon", "lat"),
-    col_date_time = "datetime_posix",
+    col_date_time = "date_time_posix",
     format_date_time = "%d/%m/%Y %H:%M"
   )
   expect_s3_class(example_tt, "move2")
-  expect_equal( # check first datetime parsed correctly
-    example_tt$datetime_posix[1],
+  expect_equal( # check first date_time parsed correctly
+    example_tt$date_time_posix[1],
     as.POSIXct("2008-02-12 14:30:00", format="%Y-%m-%d %H:%M:%S", tz="UTC")
   )
-  expect_equal(colnames(example_tt), c("trackid", "datetime_posix", "geometry"))
+  expect_equal(colnames(example_tt), c("trackid", "date_time_posix", "geometry"))
   
   # as above, but without specifying format_date_time - does it choose the correct format?
   example_tt <- tt_read_data(
-    events = test_path("testdata/test_tt_read_data_diff_datetimes.csv"),
+    events = test_path("testdata/test_tt_read_data_diff_date_times.csv"),
     col_track_id = "trackid",
     col_coords = c("lon", "lat"),
-    col_date_time = "datetime_posix"
+    col_date_time = "date_time_posix"
   )
   expect_s3_class(example_tt, "move2")
-  expect_equal( # check first datetime parsed correctly
-    example_tt$datetime_posix[1],
+  expect_equal( # check first date_time parsed correctly
+    example_tt$date_time_posix[1],
     as.POSIXct("2008-02-12 14:30:00", format="%Y-%m-%d %H:%M:%S", tz="UTC")
   )
-  expect_equal(colnames(example_tt), c("trackid", "datetime_posix", "geometry"))
+  expect_equal(colnames(example_tt), c("trackid", "date_time_posix", "geometry"))
   
   # test with the wrong format_date_time parameter
   expect_error(
     tt_read_data(
-      events = test_path("testdata/test_tt_read_data_diff_datetimes.csv"),
+      events = test_path("testdata/test_tt_read_data_diff_date_times.csv"),
       col_track_id = "trackid",
       col_coords = c("lon", "lat"),
-      col_date_time = "datetime_posix",
+      col_date_time = "date_time_posix",
       format_date_time = "%d-%m-%Y %H:%M" # a subtle but important formatting difference!
     ),
     regexp = "Some date-time values could not be parsed using the provided format_date_time", fixed=TRUE)
 })
 
-# test with multiple datetime fields, make sure the correct one is chosen
-test_that("tt_read_data works with multiple datetime_xyz fields", {
+# test with multiple date_time fields, make sure the correct one is chosen
+test_that("tt_read_data works with multiple date_time_xyz fields", {
   
   test_df <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
-  test_df$datetime_posix <- "not the real datetime field"
-  test_df$datetime_old <- "also not the real datetime field"
+  test_df$date_time_posix <- "not the real date_time field"
+  test_df$date_time_old <- "also not the real date_time field"
   
   example_tt <- tt_read_data(
     events = test_df,
     col_track_id = "track_id",
     col_coords = c("lon", "lat"),
-    col_date_time = "datetime"
+    col_date_time = "date_time"
   )
   
   # Check that the move2 object is created correctly
   expect_s3_class(example_tt, "move2")
   # only have date and locations as event specific variables
   expect_true(length(names(example_tt)) == 3)
-  expect_true(all(c("track_id", "datetime", "geometry") %in% names(example_tt)))
+  expect_true(all(c("track_id", "date_time", "geometry") %in% names(example_tt)))
   
   # check that the date and time in the first row are correct
   expect_equal(
-    example_tt$datetime[1],
+    example_tt$date_time[1],
     as.POSIXct("2024-01-01 12:00:00", format="%Y-%m-%d %H:%M:%S", tz="UTC")
   )
   
-  # test again, this time there is no datetime field but multiple datetime_xyz field
+  # test again, this time there is no date_time field but multiple date_time_xyz field
   test_df <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
-  test_df$datetime_real <- test_df$datetime
-  test_df$datetime <- NULL
-  test_df$datetime_abc <- "not the real datetime field"
-  test_df$datetime_old <- "also not the real datetime field"
+  test_df$date_time_real <- test_df$date_time
+  test_df$date_time <- NULL
+  test_df$date_time_abc <- "not the real date_time field"
+  test_df$date_time_old <- "also not the real date_time field"
   
   expect_error(
     tt_read_data(
       events = test_df,
       col_track_id = "track_id",
       col_coords = c("lon", "lat"),
-      col_date_time = "datetime"
+      col_date_time = "date_time"
     ),
-    regexp = "Column datetime not found in the events data.", fixed=TRUE
+    regexp = "Column date_time not found in the events data.", fixed=TRUE
   )
   
 })
 
-# test error when some datetimes have a different format
-test_that("tt_read_data gives error when the provided datetime format is wrong", {
+# test error when some date_times have a different format
+test_that("tt_read_data gives error when the provided date_time format is wrong", {
   
   expect_error(
     tt_read_data(
       events = read.csv(test_path("testdata/test_tt_read_data_simple.csv")),
       col_track_id = "track_id",
       col_coords = c("lon", "lat"),
-      col_date_time = "datetime",
+      col_date_time = "date_time",
       format_date_time = "%d/%m/%Y %H:%M:%S"
     ),
     regexp = "Some date-time values could not be parsed using the provided format_date_time", fixed=TRUE

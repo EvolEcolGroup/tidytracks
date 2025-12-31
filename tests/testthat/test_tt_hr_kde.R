@@ -1,6 +1,6 @@
-test_that("tt_hr_mcp works with multiple tracks", {
+test_that("tt_hr_kde works with multiple tracks", {
   # load a simple dataset originally from adehabitat
-  boar_mt <- readRDS("testdata/wildboar_mt.rds")
+  boar_mt <- readRDS(test_path("testdata/wildboar_mt.rds"))
   # error if not grouped
   expect_error(
     tt_hr_kde(boar_mt, levels = c(0.50, 0.95, 1)),

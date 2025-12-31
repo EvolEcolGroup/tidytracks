@@ -1,6 +1,6 @@
 # make shags dataset from csv file
 
-shags_meta <- read.csv(system.file("extdata/meta_shag_tidytrack.csv",
+shags_meta <- read.csv(system.file("extdata/shag_tidytrack_meta.csv",
                                    package = "tidytracks"))
 library(dplyr)
 # add geometry column (colony location point) to metadata
