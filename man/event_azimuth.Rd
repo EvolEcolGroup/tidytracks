@@ -13,7 +13,7 @@ event_azimuth(x, units)
 }
 \value{
 a vector of azimuths of the same length as the number of events in
-\code{x}
+\code{x}, with the last value set to NA for each track.
 }
 \description{
 This function measures the azimuth between two events. It returns a vector of

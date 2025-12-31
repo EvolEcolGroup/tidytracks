@@ -7,7 +7,8 @@
 #' @param x A move2 object
 #' @param max_speed speed, provided as a `units` object (e.g.
 #' `as_units(50, 'm/s')`.
-#' @return A logical vector indicating which points are valid
+#' @return A logical vector of the same length as the number of events in `x`,
+#' indicating which points are valid.
 #' @export
 
 
