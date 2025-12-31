@@ -110,12 +110,12 @@ tt_read_data <- function(events,
   
   # combine date/time columns if necessary before converting to POSIXct
   if (length(col_date_time) == 1) {
-    # already a single datetime column
-    datetime_raw <- events[[col_date_time]]
+    # already a single date_time column
+    date_time_raw <- events[[col_date_time]]
     col_date_time_original <- col_date_time # store original name(s) for error messages
   } else {
     # combine separate date + time columns into one string, separated by a space
-    datetime_raw <- paste(events[[col_date_time[1]]], events[[col_date_time[2]]])
+    date_time_raw <- paste(events[[col_date_time[1]]], events[[col_date_time[2]]])
     
     # remove the old date/time columns
     events <- events %>%
@@ -123,16 +123,16 @@ tt_read_data <- function(events,
     
     # update col_date_time to the new column name
     col_date_time_original <- col_date_time # store original name(s) for error messages
-    col_date_time <- "date_time" # the combined datetime field will be named 'date_time'
+    col_date_time <- "date_time" # the combined date_time field will be named 'date_time'
   }
   
-  # attempt to parse the datetime column using as.POSIXct, wrapped in a tryCatch
+  # attempt to parse the date_time column using as.POSIXct, wrapped in a tryCatch
   # block to provide informative error messages
   events[[col_date_time]] <- tryCatch(
     {
       if (is.null(format_date_time)) {
         # try a set of common formats
-        as.POSIXct(datetime_raw, 
+        as.POSIXct(date_time_raw, 
                    tz = time_zone,
                    # NB. %OS accounts for fractional seconds but doesn't require them
                    tryFormats = c("%Y-%m-%d %H:%M:%OS", # 2024-01-15 13:45:30.123
@@ -151,7 +151,7 @@ tt_read_data <- function(events,
       } else {
         # use the provided format
         # NB. if the provided format is wrong, you'll silently get NAs here
-        as.POSIXct(datetime_raw, 
+        as.POSIXct(date_time_raw, 
                    format = format_date_time,
                    tz = time_zone)
       }
@@ -165,13 +165,13 @@ tt_read_data <- function(events,
     }
   )
   
-  # Check for any NAs in the parsed datetime values and throw an error if any are 
+  # Check for any NAs in the parsed date_time values and throw an error if any are 
   #   found, as this indicates the format_date_time may be incorrect
   # Also get the first two indices where the parsing failed, and find the original
-  #   character strings for datetime so we can print them in the error message
+  #   character strings for date_time so we can print them in the error message
   idx_na <- which(is.na(events[[col_date_time]]))
   if (length(idx_na) > 0) {
-    examples <- datetime_raw[utils::head(idx_na, 2)]
+    examples <- date_time_raw[utils::head(idx_na, 2)]
     # Adjust error message based on whether format_date_time was supplied or not
     if (!is.null(format_date_time)) {
       stop("Some date-time values could not be parsed using the provided format_date_time '", format_date_time, "'.\n",

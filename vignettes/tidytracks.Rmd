@@ -98,7 +98,7 @@ merged into the metadata table when we create the tidytracks object.
 
 ```{r read_meta}
 # read shag metadata
-shags_meta <- read.csv(system.file("extdata/meta_shag_tidytrack.csv",
+shags_meta <- read.csv(system.file("extdata/shag_tidytrack_meta.csv",
                          package = "tidytracks"))
 ```
 
@@ -156,7 +156,7 @@ let's remove them:
 
 ```{r remove_unnecessary_columns}
 shags_tt <- shags_tt %>%
-  dplyr::select(-fid, -datetime, -datetime_rothera)
+  dplyr::select(-fid, -date_time, -date_time_rothera)
 ```
 
 Now we just have `bird_id`, `date_time` and `geometry` (location) as the 
