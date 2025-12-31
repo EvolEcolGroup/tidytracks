@@ -133,8 +133,9 @@ if (!inherits(max_speed, "units")) {
   stop("max_speed must be a units object: e.g. units::as_units(50, 'm/s')")
 }
 
-# Convert units
-max_speed <- units::ud_convert(unclass(max_speed), units(max_speed), ref_units)
+# Convert units (example with defined target units)
+target_units <- "m/s"
+max_speed <- units::ud_convert(unclass(max_speed), units(max_speed), target_units)
 ```
 
 ## Important Notes
