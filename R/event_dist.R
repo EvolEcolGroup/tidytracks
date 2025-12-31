@@ -9,7 +9,7 @@
 #' @param x A move2 object
 #' @param units Optional, the units to use for the distance. The default is "m".
 #' @returns a vector of distances of the same length as the number of events in
-#'   `x`
+#'   `x`, with the last value set to NA for each track.
 #' @export
 
 event_distance <- move2::mt_distance

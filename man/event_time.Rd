@@ -10,10 +10,10 @@ event_time(x)
 \item{x}{A move2 object}
 }
 \value{
-a vector of times of the same length as the number of events in
-\code{x}
+a vector of times of the same length as the number of events in \code{x}
 }
 \description{
 This is a helper function to access the time of each event in a move2 object;
-it accesses the designated "time_column" in the move2 object.
+it returns content of the column designated "time_column" in the move2
+object.
 }
