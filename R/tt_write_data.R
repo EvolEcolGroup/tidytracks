@@ -38,22 +38,24 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
 
   # Write event table
   time_col <- move2::mt_time_column(x)
-  utils::write.csv(
-    cbind(
-      as.data.frame(x) |>
-        dplyr::select(
-          -dplyr::all_of("geometry"),  # drop geom column
-          -dplyr::all_of(time_col)     # drop original time column
-        ) |>
-        dplyr::mutate(
-          date_time = format(
-            x[[time_col]],
-            "%Y-%m-%d %H:%M:%S %Z"
-          )
-        ),
-      sf::st_coordinates(x)
-    ),
-    file = event_file,
-    row.names = FALSE
+  invisible(
+    utils::write.csv(
+      cbind(
+        as.data.frame(x) |>
+          dplyr::select(
+            -dplyr::all_of("geometry"),  # drop geom column
+            -dplyr::all_of(time_col)     # drop original time column
+          ) |>
+          dplyr::mutate(
+            date_time = format(
+              x[[time_col]],
+              "%Y-%m-%d %H:%M:%S %Z"
+            )
+          ),
+        sf::st_coordinates(x)
+      ),
+      file = event_file,
+      row.names = FALSE
+    )
   )
 }
