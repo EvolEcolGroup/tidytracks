@@ -485,7 +485,7 @@ test_that("tt_read_data handles duplicated columns in event and meta data", {
     col_coords = c("lon", "lat"),
     col_date_time = "date_time"
   )
-  # check that there is only ony location column in the final object
+  # check that there is only one location column in the final object
   expect_false("location.meta" %in% names(show_meta(duplicated_tt)))
   expect_true("location" %in% names(show_meta(duplicated_tt)))
   expect_equal(
@@ -518,4 +518,20 @@ test_that("tt_read_data handles duplicated columns in event and meta data", {
     show_meta(duplicated2_tt)$`location.meta`,
     test_meta_changed$location
   )
+  # test case where duplicated columns differ only in NA patterns
+  test_meta_na <- test_meta
+  test_meta_na$location[1] <- NA
+  expect_warning(
+    duplicated3_tt <- tt_read_data(
+      events = test_event,
+      meta = test_meta_na,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    ),
+    "Conflicting values found"
+  )
+  # check that both location columns are present when NA patterns differ
+  expect_true("location" %in% names(show_meta(duplicated3_tt)))
+  expect_true("location.meta" %in% names(show_meta(duplicated3_tt)))
 })
