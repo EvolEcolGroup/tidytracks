@@ -6,5 +6,7 @@
 #' @returns a vector of distances of the same length as the number of events in
 #'   `x`
 #' @export
-
+#' @examples
+#' event_track_id(example_tt)
+#' 
 event_track_id <- move2::mt_track_id

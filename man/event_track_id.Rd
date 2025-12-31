@@ -17,3 +17,7 @@ a vector of distances of the same length as the number of events in
 This is a helper function to access the track id of each event in a move2
 object; it accesses the designated "track_id_column" in the move2 object.
 }
+\examples{
+event_track_id(example_tt)
+
+}

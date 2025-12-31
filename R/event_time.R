@@ -6,5 +6,8 @@
 #' @returns a vector of times of the same length as the number of events in
 #'   `x`
 #' @export
+#' @examples
+#' event_time(example_tt)
+#' 
 
 event_time <- move2::mt_time

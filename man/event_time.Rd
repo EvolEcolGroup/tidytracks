@@ -17,3 +17,7 @@ a vector of times of the same length as the number of events in
 This is a helper function to access the time of each event in a move2 object;
 it accesses the designated "time_column" in the move2 object.
 }
+\examples{
+event_time(example_tt)
+
+}

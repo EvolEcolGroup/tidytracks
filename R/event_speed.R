@@ -10,5 +10,9 @@
 #'   Other
 #' @returns a vector of speeds of the same lenght as the number of events in `x`
 #' @export
+#' @examples
+#' event_speed(example_tt)
+#' event_speed(example_tt, units = "km/h")
+#' 
 
 event_speed <- move2::mt_speed
