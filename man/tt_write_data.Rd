@@ -2,7 +2,7 @@
 % Please edit documentation in R/tt_write_data.R
 \name{tt_write_data}
 \alias{tt_write_data}
-\title{Write a 'tidy_tracks' object to a CSV files}
+\title{Write a 'tidy_tracks' object to CSV files}
 \usage{
 tt_write_data(x, file_prefix, combined = FALSE)
 }
@@ -16,6 +16,10 @@ the combined table will be saved as '<file_prefix>_combined.csv'.}
 
 \item{combined}{Logical, whether to write a combined CSV file with both the
 event and metadata tables. Default is FALSE.}
+}
+\value{
+Invisibly, the result of the final \code{\link[utils:write.table]{utils::write.csv()}} call; this
+function is primarily called for its side effect of writing CSV files.
 }
 \description{
 This function writes the event table and the metadata table of a

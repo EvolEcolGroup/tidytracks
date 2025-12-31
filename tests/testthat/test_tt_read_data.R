@@ -189,8 +189,8 @@ test_that("tt_read_data works with events CSV with separate date and time fields
     col_date_time = c("date","time")
   )
   
-  # NB. when tt_read_data creates a date_time field from a date and time field
-  # it calls it date_time (different from date_time that we normally use).
+  # NB. when tt_read_data is given separate date and time columns, it combines
+  # them into a single date_time column in the resulting object.
   
   # Check that the move2 object is created correctly
   expect_s3_class(example_tt, "move2")
