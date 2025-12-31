@@ -10,7 +10,7 @@ event_track_id(x)
 \item{x}{A move2 object}
 }
 \value{
-a vector of distances of the same length as the number of events in
+a vector of track IDs of the same length as the number of events in
 \code{x}
 }
 \description{

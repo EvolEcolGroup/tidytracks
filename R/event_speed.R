@@ -6,8 +6,8 @@
 #' the distance between events divided by the time between events.
 #'
 #' @param x A move2 object
-#' @param units Optiona, the units to use for the speed. The default is "m/s".
-#'   Other
+#' @param units Optional, the units to use for the speed. The default is "m/s".
+#'   Other speed units supported by the `units` package can also be supplied.
 #' @returns a vector of speeds of the same length as the number of events in
 #' `x`, with the last value set to NA for each track.
 #' @export
