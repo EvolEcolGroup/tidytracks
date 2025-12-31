@@ -8,7 +8,8 @@
 #' @param x A move2 object
 #' @param units Optiona, the units to use for the speed. The default is "m/s".
 #'   Other
-#' @returns a vector of speeds of the same lenght as the number of events in `x`
+#' @returns a vector of speeds of the same lenght as the number of events in
+#' `x`, with the last value set to NA for each track.
 #' @export
 
 event_speed <- move2::mt_speed

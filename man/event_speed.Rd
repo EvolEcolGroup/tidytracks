@@ -13,7 +13,8 @@ event_speed(x, units)
 Other}
 }
 \value{
-a vector of speeds of the same lenght as the number of events in \code{x}
+a vector of speeds of the same lenght as the number of events in
+\code{x}, with the last value set to NA for each track.
 }
 \description{
 This function returns the speed of each segment between events for each
