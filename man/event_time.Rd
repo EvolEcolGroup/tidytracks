@@ -17,3 +17,7 @@ This is a helper function to access the time of each event in a move2 object;
 it returns content of the column designated "time_column" in the move2
 object.
 }
+\examples{
+event_time(example_tt)
+
+}

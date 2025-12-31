@@ -11,5 +11,9 @@
 #' @returns a vector of speeds of the same length as the number of events in
 #' `x`, with the last value set to NA for each track.
 #' @export
+#' @examples
+#' event_speed(example_tt)
+#' event_speed(example_tt, units = "km/h")
+#' 
 
 event_speed <- move2::mt_speed

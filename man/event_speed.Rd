@@ -22,3 +22,8 @@ track. In order to return a vector with the same number of rows as the event
 table, the speed of the last event is set to NA. The speed is calculated as
 the distance between events divided by the time between events.
 }
+\examples{
+event_speed(example_tt)
+event_speed(example_tt, units = "km/h")
+
+}

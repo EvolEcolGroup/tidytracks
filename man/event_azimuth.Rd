@@ -21,3 +21,6 @@ This function measures the azimuth between two events. It returns a vector of
 azimuths of the same length as the number of events in \code{x}, with the azimuth
 for the last event of each track padded with an NA.
 }
+\examples{
+event_azimuth(example_tt)
+}

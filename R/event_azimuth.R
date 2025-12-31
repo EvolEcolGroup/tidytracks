@@ -9,5 +9,7 @@
 #' @returns a vector of azimuths of the same length as the number of events in
 #'   `x`, with the last value set to NA for each track.
 #' @export
+#' @examples
+#' event_azimuth(example_tt)
 
 event_azimuth <- move2::mt_azimuth
