@@ -45,7 +45,10 @@
 #'   in R containing the metadata. If provided,
 #'   this will be used to populate the meta data table. It needs to have a
 #'   column with the track ids which includes all the track ids in the events
-#'   table (additional track ids will be discarded).
+#'   table (additional track ids will be discarded). If a column exists in both
+#'   the events table and the metadata table, the values will be compared: when
+#'   identical, the duplicate is removed; when values conflict, both versions
+#'   are retained with a '.meta' suffix added to the metadata version.
 #' @return A `move2` object containing the event data.
 #' @examples
 #' example_events_csv <- system.file("/extdata/csv_files/dataset_example_birdlife.csv",
@@ -251,18 +254,18 @@ tt_read_data <- function(events,
       if (grepl("\\.meta$", col)) {
         base_col <- sub("\\.meta$", "", col)
         if (base_col %in% names(updated_meta)) {
-          # compare the two columns
-          if (all(updated_meta[[base_col]] == updated_meta[[col]], na.rm = TRUE)) {
+          # compare the two columns (including NA patterns)
+          if (identical(updated_meta[[base_col]], updated_meta[[col]])) {
             # if identical, remove the .meta column
             updated_meta[[col]] <- NULL
           } else {
             # throw a warning that there will be a .meta column as the values
             # are conflicting between the two versions of the variable
-            warning(paste(
-              "Conflicting values found for variable", base_col,
-              "between event and additional metadata. ",
-              "Keeping both versions with suffix '.meta' for the ",
-              "provided meta data."
+            warning(paste0(
+              "Conflicting values found for variable '",
+              base_col,
+              "' between events and metadata. ",
+              "Keeping both versions with '.meta' suffix for metadata."
             ))
           }
         }
