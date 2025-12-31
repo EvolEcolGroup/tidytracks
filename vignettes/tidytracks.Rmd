@@ -16,10 +16,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
-library(tidytracks)
-```
-
 # Tracking data representation in `tidytracks`
 
 `tidytracks` uses tidy tables to represent movement data.
@@ -31,8 +27,8 @@ data such as activity information).
 **Events** are grouped into **tracks**. Initially a **track** might be all the 
 locations from one deployment of a tracking device on an animal. However, for
 central place foragers, we might want to split this track into separate trips 
-away from the central place. In this case, the unit of tracking will become 
-the trip, rather than the full deployment.
+away from the central place. In this case, the unit of tracking (i.e. the new
+**track**) will become the trip, rather than the full deployment.
 
 The **metadata** that describes each of these tracks is stored in a separate
 table, which is linked to the event table by a `track_id_column`. This means we
@@ -46,14 +42,10 @@ This dataset contains 9 tracks with nearly 8,000 locations. Note that these are
 based on real data, but have been modified to show the functionality of
 `tidytracks`. Please do not use them for any real analyses of shag movement!
 
-<br>
-
-***
-
 # Reading data into a `move2` object
 
 In `tidytracks`, we start by reading a table of events (e.g., GPS locations)
-from a CSV file.
+from a CSV file or as existing `data.frame` in R.
 
 This table should contain at least the following columns:
 - one column which is the `track_id` (i.e. the variable that groups events into 
@@ -62,15 +54,12 @@ This table should contain at least the following columns:
  `latitude`)
 - a `date-time` column (or separate `date` and `time` columns)
 
-Additional columns of data will be stored in the events table if they have
+Additional columns of data will be stored in the **events** table if they have
 information that is specific to each event (i.e. the values are not unique
-within a given track), or they will be moved to the meta data table if they are
+within a given track, e.g. the temperature recorded at each location),
+or they will be moved to the **metadata** table if they are
 track specific (e.g. bird_id, sex of the individual, colony coordinates,
 breeding status, etc.).
-
-<br>
-
-***
 
 ## Example data
 
@@ -106,6 +95,7 @@ We will combine the colony coordinates into one column using the `sf`
 package - we'll use this metadata column for trip splitting later.
 
 ```{r add_colony_geom_to_meta}
+library(tidytracks)
 library(dplyr)
 # add geometry column (colony location point) to metadata
 shags_meta <- shags_meta %>%
@@ -134,15 +124,7 @@ shags_tt <- tt_read_data(events = shags_csv,
 Inspecting the events table, we have:
 
 ```{r inspect_events}
-```
-
-
-```{r inspect_events}
 shags_tt
-```
-
-
-```{r inspect_events}
 ```
 
 We can see how each row in the table is an event, in this case a time-stamped
@@ -151,26 +133,11 @@ and column `geometry` defining the location. `bird_id` (the designated
 `track_id_column`) is the identifier that groups a set of events into a single
 track.
 
-Some unnecessary columns have been read in, so 
-let's remove them:
-
-```{r remove_unnecessary_columns}
-shags_tt <- shags_tt %>%
-  dplyr::select(-fid, -date_time, -date_time_rothera)
-```
-
-Now we just have `bird_id`, `date_time` and `geometry` (location) as the 
-event-specific variables.
-
-```{r inspect_events_2}
-shags_tt
-```
-
 The rest of the information was moved to the meta data table. We can inspect 
 the meta data table as follows:
 
 ```{r inspect_meta}
-str(show_meta(shags_tt))
+show_meta(shags_tt)
 ```
 
 We have a `bird_id` column that links back to the events table, and then
@@ -178,7 +145,6 @@ information about the sex and species of the bird, as well as a column of
 coordinates for the colony location (they are stored as `sfc_POINT` geometries
 from the `sf` package, so that they come with crs information).
 
-<br>
 
 Note that `move2` objects don't have to be ordered by time. We can order the
 data by time using the `tt_order_time()` function:
@@ -188,10 +154,6 @@ shags_tt <- shags_tt %>% tt_order_time()
 
 Functions that start with `tt_` are specific to tidy tables of tracks (i.e.
 `move2` objects), and they operate on the whole object.
-
-<br>
-
-***
 
 # Plotting the data
 
@@ -243,11 +205,9 @@ ggplot() +
   facet_wrap(~bird_id)
 ```
 
-
 We can see that bird `'KB_23_42962_38'` moved very little (or not at all) during
 the tracked period.
 
-<br>
 
 ## Projecting
 
@@ -269,10 +229,6 @@ ggplot() +
   coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
 
-<br>
-
-***
-
 # Filtering data
 
 *TODO move this section further down, and show an example of filtering by 
@@ -288,10 +244,6 @@ shags_sub <- shags_tt %>%
   filter_by_meta(bird_id %in% c("KB_23_42962_38", "KB_23_42778_45", "KB_23_44224_40"))
 shags_sub
 ```
-
-<br>
-
-***
 
 # A grammar of movement
 
