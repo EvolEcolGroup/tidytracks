@@ -4,7 +4,7 @@
 #' object; it returns content of the column designated "track_id_column" in the
 #' move2 object.
 #' @param x A move2 object
-#' @returns a vector of distances of the same length as the number of events in
+#' @returns a vector of track IDs of the same length as the number of events in
 #'   `x`
 #' @export
 

@@ -9,7 +9,8 @@ event_azimuth(x, units)
 \arguments{
 \item{x}{A move2 object}
 
-\item{units}{Optional, the units to use for the azimuth. The default is "m".}
+\item{units}{Optional, the units to use for the azimuth (e.g., "degrees" or
+"radians"). The default is "degrees".}
 }
 \value{
 a vector of azimuths of the same length as the number of events in
