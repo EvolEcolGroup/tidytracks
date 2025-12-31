@@ -1,4 +1,4 @@
-#' Write a 'tidy_tracks' object to a CSV files
+#' Write a 'tidy_tracks' object to CSV files
 #'
 #' This function writes the event table and the metadata table of a
 #' 'tidy_tracks' object to CSV files (or one combined CSV file).
@@ -10,6 +10,8 @@
 #'   the combined table will be saved as '<file_prefix>_combined.csv'.
 #' @param combined Logical, whether to write a combined CSV file with both the
 #'   event and metadata tables. Default is FALSE.
+#' @return Invisibly, the result of the final [utils::write.csv()] call; this
+#'   function is primarily called for its side effect of writing CSV files.
 #' @export
 tt_write_data <- function(x, file_prefix, combined = FALSE) {
   # check that the base path of these files exists
@@ -35,13 +37,17 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
 
 
   # Write event table
+  time_col <- move2::mt_time_column(x)
   utils::write.csv(
     cbind(
       as.data.frame(x) |>
-        dplyr::select(-dplyr::all_of("geometry")) |> # drop geom column
+        dplyr::select(
+          -dplyr::all_of("geometry"),  # drop geom column
+          -dplyr::all_of(time_col)     # drop original time column
+        ) |>
         dplyr::mutate(
           date_time = format(
-            x[[move2::mt_time_column(x)]],
+            x[[time_col]],
             "%Y-%m-%d %H:%M:%S %Z"
           )
         ),
