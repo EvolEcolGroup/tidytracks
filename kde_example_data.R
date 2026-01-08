@@ -1,5 +1,5 @@
-library(tidytracks)
 library(dplyr)
+library(sf)
 
 #read in data
 shag_data <- read.csv("inst/extdata/shag_tidytrack_sample.csv")
@@ -54,14 +54,17 @@ shags_kde_1 <- shags_mt %>%
             h="h_ref_mean")
 
 #We can plot the first kde with:
-image(shags_kde$kde[[1]]$z)
+image(shags_kde_1$kde[[1]]$z)
 
 #we can see that the grid resolution is quite coarse
+
 
 shags_kde_2 <- shags_mt %>%
   group_by(bird_id) %>%
   tt_hr_kde(levels = c(0.5, 0.95), 
             h="h_ref_mean")
+
+View(shags_kde_2)
 
 #check attributes of the kde to see which bbox and res were used
 attributes(shags_kde_2)
@@ -70,4 +73,109 @@ attributes(shags_kde_2)
 #$res =  372840.7
 
 ?tt_hr_kde
+
+#shags dataset too small doesnt break
+
+#try with bba data
+
+bba_data <- readRDS("./bba_data_cleaned.rds")
+
+bba_mt <- tt_read_data(events = bba_data,
+                       col_track_id = "track_id",
+                       col_coords = c("longitude", "latitude"),
+                       col_date_time = "datetime")
+
+show_meta(bba_mt)$colony_coords <- 
+  sf_point_col(show_meta(bba_mt)$lon_colony,
+               show_meta(bba_mt)$lat_colony,
+               crs = 4326)
+show_meta(bba_mt)
+
+## Filter and remove duplicates based on track_id and datetime  
+
+offending_all <- bba_mt %>% 
+  tt_order_time() %>%      
+  group_by(track_id) %>%
+  mutate(prev_time = lag(datetime),
+         prev_row  = lag(row_number())) %>%
+  filter(!is.na(prev_time) & datetime <= prev_time)
+
+
+bba_mt <- bba_mt %>%
+  filter(!(track_id == 81964 & datetime == as.POSIXct("2010-01-09 10:35:00", tz = "GMT")) &
+          !(track_id == 82002 & datetime == as.POSIXct("2010-01-06 19:35:00", tz = "GMT")))
+
+bba_mt <- bba_mt %>% tt_order_time()
+
+### Reproject to equal area for KDEs
+
+bba_mt <- bba_mt %>%
+  sf::st_transform(crs = "+proj=laea +lat_0=-67 +lon_0=-68 +datum=WGS84 +units=m +no_defs")
+
+#raw kde
+bba_kde <- bba_mt %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = NULL, h="h_ref_mean")
+
+image(bba_kde$kde[[1]]$z)
+
+bba_kde_1 <- bba_mt %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95), 
+            h="h_ref_mean")
+
+attributes(bba_kde_1)
+?tt_hr_kde
+
+#most polygons empty
+
+bba_kde_2 <- bba_mt %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95), 
+            h="h_ref_indiv")
+
+
+#count number of areas of 0 in bba_kde_1
+count_0_1 <- sum(units::drop_units(bba_kde_1$area) == 0, na.rm = TRUE)
+count_0_2 <- sum(units::drop_units(bba_kde_2$area) == 0, na.rm = TRUE)
+
+#marginally MORE empty polygons in the indiv h version
+#given raw kde, def need to change resolution
+
+bba_kde_3 <- bba_mt %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95), 
+            h="h_ref_mean",
+            res = 10000) 
+count_0_3 <- sum(units::drop_units(bba_kde_3$area) == 0, na.rm = TRUE)
+
+#increasing the res to 10km grid cells removes all empty polygons
+
+bba_kde_4 <- bba_mt %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95), 
+            h="h_ref_indiv",
+            res = 10000) 
+count_0_4 <- sum(units::drop_units(bba_kde_4$area) == 0, na.rm = TRUE)
+View(bba_kde_4)
+#just one area of 0
+#find polygone with 0 area
+bba_kde_4 %>%
+  filter(units::drop_units(area) == 0)
+
+#track ID 81941
+#plot that track
+
+
+
+#10km squares
+
+#calculate number of cells area of bounding box and dividing it by 1000
+#area of boundingbox
+
+#find smallest 
+bbox <- sf::st_bbox(bba_mt)
+bbox_area <- (bbox$xmax - bbox$xmin) * (bbox$ymax - bbox$ymin) 
+area_per_cell <- bbox_area / (5000^2)
+km_res <- sqrt(area_per_cell) / 1000
 
