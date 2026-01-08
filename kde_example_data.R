@@ -1,5 +1,7 @@
 library(dplyr)
 library(sf)
+library(ggplot2)
+library(rnaturalearth)
 
 #read in data
 shag_data <- read.csv("inst/extdata/shag_tidytrack_sample.csv")
@@ -160,22 +162,50 @@ count_0_4 <- sum(units::drop_units(bba_kde_4$area) == 0, na.rm = TRUE)
 View(bba_kde_4)
 #just one area of 0
 #find polygone with 0 area
-bba_kde_4 %>%
+track_81941_empty<- bba_kde_4 %>%
   filter(units::drop_units(area) == 0)
+
+#look at that track in the original data
+track_81941 <- bba_mt %>%
+  filter(track_id == 81941)
+
 
 #track ID 81941
 #plot that track
 
+world <- ne_countries(scale = "medium", returnclass = "sf")
+wgs84 <- st_crs(4326)
+ggplot() +
+  geom_sf(data = world, fill = "grey", color = "black") +
+  geom_sf(data = track_81941, aes(color = factor(track_id)), size = 1) +
+  coord_sf(xlim = c(-39, -37), ylim = c(-54.5, -53.5))+
+  theme_minimal() +
+  labs(color = "Track ID")
 
+#really tiny track!!
 
-#10km squares
+track_summary_stats(track_81941)
+track_81941 <-  track_81941 %>% tt_order_time()
+track_summary_stats(track_81941)
+#131 km only, fill less than a cell
 
-#calculate number of cells area of bounding box and dividing it by 1000
-#area of boundingbox
+#try increasing res further
+track_81941_kde <- track_81941 %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95), 
+            h="h_ref_indiv",
+            res = 10000)
+View(track_81941_kde)
 
-#find smallest 
-bbox <- sf::st_bbox(bba_mt)
-bbox_area <- (bbox$xmax - bbox$xmin) * (bbox$ymax - bbox$ymin) 
-area_per_cell <- bbox_area / (5000^2)
-km_res <- sqrt(area_per_cell) / 1000
+#so make resolution 5km2
+track_81941_kde_2 <- track_81941 %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95), 
+            h="h_ref_indiv",
+            res = 5000)
+View(track_81941_kde_2)
 
+#now this fills a polygon (probably badly)
+#so make small dataset including this track, and some long tracks
+#then can add in others which break at doifferent resolutions
+#not sure why breaks at h_ref_indov but nit h_ref_mean
