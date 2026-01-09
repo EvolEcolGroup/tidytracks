@@ -1,4 +1,3 @@
-
 # tidytracks <img src="./man/figures/tidytracks_logo_cropped.png" align="right" width="150"/>
 
 <!-- badges: start -->
@@ -32,4 +31,3 @@ This is a basic example which shows you how to solve a common problem:
 library(tidytracks)
 ## basic example code
 ```
-
