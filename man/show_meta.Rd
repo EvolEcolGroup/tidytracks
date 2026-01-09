@@ -23,7 +23,7 @@ The track metadata is stored as a data frame within the \code{move2} object. Thi
 function allows you to view or modify this metadata. When retrieving the
 metadata, it returns a tibble containing the metadata for each track. When
 setting the metadata, you can provide a new data frame with the updated
-metadat, or modify or remove specific columns, as you would normally do with
+metadata, or modify or remove specific columns, as you would normally do with
 a data.frame/tibble. If providing a new metadata table, make sure that
 the number of rows matches the number of tracks in the \code{move2} object, and
 that the track IDs correspond to those in the \code{move2} object.
