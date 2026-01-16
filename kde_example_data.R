@@ -2,7 +2,9 @@ library(dplyr)
 library(sf)
 library(ggplot2)
 library(rnaturalearth)
-
+devtools::load_all()
+#check package version
+packageVersion("tidytracks")
 #read in data
 shag_data <- read.csv("inst/extdata/shag_tidytrack_sample.csv")
 
@@ -59,8 +61,6 @@ shags_kde_1 <- shags_mt %>%
 image(shags_kde_1$kde[[1]]$z)
 
 #we can see that the grid resolution is quite coarse
-
-
 shags_kde_2 <- shags_mt %>%
   group_by(bird_id) %>%
   tt_hr_kde(levels = c(0.5, 0.95), 
@@ -205,7 +205,20 @@ track_81941_kde_2 <- track_81941 %>%
             res = 5000)
 View(track_81941_kde_2)
 
+#find longest track
+bba_mt %>%
+  track_summary_stats() %>%
+  arrange(desc(total_distance)) %>%
+  slice(1)
+
+
+
+
+
+#if grid too fine won't work as won't join cells for along tracks?
 #now this fills a polygon (probably badly)
 #so make small dataset including this track, and some long tracks
-#then can add in others which break at doifferent resolutions
+#then can add in others which break at different resolutions
 #not sure why breaks at h_ref_indov but nit h_ref_mean
+# one linear trip for which the kernel doesn't work
+# one trip that does some area-restricted search for which the kernel does work
