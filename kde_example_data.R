@@ -12,7 +12,7 @@ shag_data <- read.csv("inst/extdata/shag_tidytrack_sample.csv")
 meta <- read.csv("inst/extdata/meta_shag_tidytrack.csv")
 
 #check column names and remove doubles so don't end up with duplicated in metadata
-
+?tt_hr_kde
 colnames(shag_data)
 colnames(meta)
 
@@ -159,7 +159,7 @@ bba_kde_4 <- bba_mt %>%
             h="h_ref_indiv",
             res = 10000) 
 count_0_4 <- sum(units::drop_units(bba_kde_4$area) == 0, na.rm = TRUE)
-View(bba_kde_4)
+bba_kde_4
 #just one area of 0
 #find polygone with 0 area
 track_81941_empty<- bba_kde_4 %>%
@@ -195,7 +195,7 @@ track_81941_kde <- track_81941 %>%
   tt_hr_kde(levels = c(0.5, 0.95), 
             h="h_ref_indiv",
             res = 10000)
-View(track_81941_kde)
+track_81941_kde
 
 #so make resolution 5km2
 track_81941_kde_2 <- track_81941 %>%
@@ -203,17 +203,161 @@ track_81941_kde_2 <- track_81941 %>%
   tt_hr_kde(levels = c(0.5, 0.95), 
             h="h_ref_indiv",
             res = 5000)
-View(track_81941_kde_2)
+track_81941_kde_2
 
 #find longest track
 bba_mt %>%
   track_summary_stats() %>%
-  arrange(desc(total_distance)) %>%
+  arrange(desc(tot_distance)) %>%
   slice(1)
 
+#longest track is track 82036
+#look at that track in the original data
+track_82036 <- bba_mt %>%
+  filter(track_id == 82036)
+
+track_82036_kde <- track_82036 %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95), 
+            h="h_ref_indiv",
+            res = 10000)
+
+show_meta(track_82036)
+
+#long and short track
+long_and_short <- bba_mt %>%
+  filter(track_id %in% c("82036", "81941"))
+
+long_and_short_kde <- long_and_short %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95), 
+            h="h_ref_indiv",
+            res = 20000)
+
+#fills all polygons (but such a large diff that looks terrible on a map)
+?tt_hr_kde
+
+
+#raw kde
+track_82036_kde <- track_82036 %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = NULL, h="h_ref_mean")
+
+image(long_and_short_kde$kde[[1]]$z)
+attributes(long_and_short_kde)
+
+#plot the new kde on a map
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+wgs84 <- st_crs(4326)
+
+#level as factor
+nine_tracks_kde <- nine_tracks_kde %>% 
+  mutate(level = factor(level, levels = c(0.95, 0.5)))
+
+#reproject for map
+bba_kde_map <- ggplot() +
+  geom_sf(data = world, fill = "grey90", color = "grey70", linewidth =    0.3) + 
+  geom_sf(
+    data = nine_tracks_kde, aes(fill = level), color = "black", linewidth = 1,      alpha = 0.5
+  ) +
+  scale_fill_manual(
+    values = c("0.95" = "lightblue", "0.5" = "orange"),
+    labels = c("95% Home Range", "50% Home Range"),
+    name = "KDE Level"
+  ) +
+  coord_sf(
+    xlim = c(-40, -35), ylim = c(-55, -53), crs = wgs84, expand = TRUE
+  )  +
+  facet_wrap(~track_id)+
+  theme_bw() +
+  theme(
+    legend.position = "bottom",
+    strip.text = element_text(size = 14)
+  )
+print(bba_kde_map)
+
+#get bounding box of nine_tracks
+st_bbox(nine_tracks_kde)%>%
+  print()
+
+#project bbox to crs of nine_tracks
+
+#get chunk of tracks
+ten_tracks <- track_summary_stats(bba_mt) %>%
+  arrange(tot_distance) %>%
+  slice(18:25)%>%
+  pull(track_id)
+
+#add to long and short
+ten_tracks <- bba_mt %>%
+  filter(track_id %in% c("82036", "81941", ten_tracks))
+
+ten_tracks_kde <- ten_tracks %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95), 
+            h="h_ref_mean",
+            res = 10000)
+
+attributes(ten_tracks_kde)
+
+
+#break 1, via bbox
+
+broken_bbox <- list(
+  xmin = 2.2e6,
+  ymin = 1.4e6,
+  xmax = 2.4e6,
+  ymax = 1.6e6
+)
+
+broken_kde_mean <- ten_tracks %>%
+  group_by(track_id) %>%
+  tt_hr_kde(
+  levels = c(0.5, 0.95),
+  h = "h_ref_mean",
+  bbox = broken_bbox,
+  res = 10000
+)
+
+#causes error "polygons not (all) closed, and won't even compute, because bbox is too small 
+
+#break 2, grid resulution in relation to bandwidth
+#use resulution larger than mea bandwidth
+
+#remove the massive track to make this easier to see and define
+nine_tracks <- ten_tracks %>%
+  filter(!track_id %in% c("82036"))
+
+nine_tracks_kde <- nine_tracks %>%
+  group_by(track_id) %>%
+  tt_hr_kde(levels = c(0.5, 0.95), 
+            h="h_ref_mean",
+            res = 10000) 
 
 
 
+
+#add to long and short
+#with mean, much more spikey but still not broken
+#so changing mean bandwidth alone doesnt break the function
+
+#tyry with a medium track so we can still view 
+
+#Key idea: when do KDE isopleths become empty?
+
+# Empty polygons usually occur when:
+#   
+#   The KDE grid does not meaningfully overlap the data
+# 
+# The KDE surface is too coarse to capture peaks
+# 
+# The bandwidth is wildly inappropriate for the data scale
+# 
+# The requested isopleth level cannot be achieved on the grid
+# 
+#induce one of these, then undo it.
+#   
 
 #if grid too fine won't work as won't join cells for along tracks?
 #now this fills a polygon (probably badly)
