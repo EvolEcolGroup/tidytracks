@@ -1,4 +1,4 @@
-bird_id,sex,colony,year,date_gmt,time_gmt,latitude,longitude,datetime,datetime_rothera
+bird_id,sex,colony,year,date_gmt,time_gmt,latitude,longitude,date_time,date_time_rothera
 KB_22_42644_29,Male,Killingbeck,2022,06/01/2022,00:03:47,-67.477225,-67.868745,06/01/2022 00:03,05/01/2022 21:03
 KB_22_42644_29,Male,Killingbeck,2022,06/01/2022,00:13:41,-67.439308,-67.637237,06/01/2022 00:13,05/01/2022 21:13
 KB_22_42644_29,Male,Killingbeck,2022,06/01/2022,00:23:41,-67.420771,-67.615306,06/01/2022 00:23,05/01/2022 21:23

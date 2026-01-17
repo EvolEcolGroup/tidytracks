@@ -50,7 +50,10 @@ coordinates) to the meta data table. Defaults to \code{TRUE}.}
 in R containing the metadata. If provided,
 this will be used to populate the meta data table. It needs to have a
 column with the track ids which includes all the track ids in the events
-table (additional track ids will be discarded).}
+table (additional track ids will be discarded). If a column exists in both
+the events table and the metadata table, the values will be compared: when
+identical, the duplicate is removed; when values conflict, both versions
+are retained with a '.meta' suffix added to the metadata version.}
 }
 \value{
 A \code{move2} object containing the event data.
@@ -81,8 +84,11 @@ details.
 }
 \examples{
 example_events_csv <- system.file("/extdata/csv_files/dataset_example_birdlife.csv",
-package = "tidytracks")
-example_tt <- tt_read_data(example_events_csv, col_track_id = "track_id",
+  package = "tidytracks"
+)
+example_tt <- tt_read_data(example_events_csv,
+  col_track_id = "track_id",
   col_coords = c("longitude", "latitude"),
-  col_date_time = c("date_gmt", "time_gmt"))
+  col_date_time = c("date_gmt", "time_gmt")
+)
 }

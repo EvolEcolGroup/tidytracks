@@ -13,7 +13,7 @@ event_distance(x, units)
 }
 \value{
 a vector of distances of the same length as the number of events in
-\code{x}
+\code{x}, with the last value set to NA for each track.
 }
 \description{
 This function measures the distance between adjacent pairs of consecutive
