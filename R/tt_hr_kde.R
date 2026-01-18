@@ -17,7 +17,7 @@
 #'   `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges. If set
 #'   to NULL, the full kde object is returned (useful for debugging)
 #' @returns An `sf` tibble , with columns:
-#' - the grouping variable (as named in `x`; if `x` is grouped by 
+#' - the grouping variable (as named in `x`; if `x` is grouped by
 #' multiple variables, this column is named `group_id`): the ids from
 #' the grouping of `x`
 #' - `level`: the level of the isopleth
@@ -29,9 +29,9 @@
 #'
 #'   If `levels` is NULL, a standard tibble is returned with columns:
 #'   `group_id`, `h`, and `kde`.
-#'   
+#'
 #'   The bbox and res used are stored as attributes of the returned object.
-#' 
+#'
 #' @export
 
 tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
@@ -116,36 +116,45 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, ]
     h_val <- h[group_id]
-    # Create kernel for each level
-    geometry_set <- kde_one_group(xy_sub, levels,
-      crs = sf::st_crs(x),
-      bbox = bbox,
-      res = res,
-      h = h_val
-    )
+    # prepare results table
     res_tbl <- tibble::tibble(
       group_id = group_labels[group_id],
       level = levels,
       h = h_val
     )
+    # estimate the UD surface
+    ud_surface <- kde_surface_one_group(xy_sub,
+      bbox = bbox,
+      res = res,
+      h = h_val
+    )
+
 
     # if returning the full kde object, we simply add it to the kde column
     if (is.null(levels)) {
-      res_tbl$kde <- list(kde = geometry_set)
+      res_tbl$kde <- list(kde = ud_surface)
       res_tbl
     } else { # with multiple levels, we create the area and geometry columns
+      # get the isopleths
+      isopleths_set <- kde_isopleths_one_group(
+        ud_surface,
+        levels,
+        crs = sf::st_crs(x),
+        bbox = bbox,
+        res = res
+      )
       # Calculate area
-      area <- sf::st_area(geometry_set)
+      area <- sf::st_area(isopleths_set)
       # Create a tibble with the results
-      cbind(res_tbl, area, geometry_set)
+      cbind(res_tbl, area, isopleths_set)
     }
   }
 
   # if levels is not  null, we convert to sf
   if (!is.null(levels)) {
-  # now cast the results to an sf object
-  kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
-}
+    # now cast the results to an sf object
+    kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
+  }
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
     kde_results <- kde_results %>%
@@ -153,7 +162,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
         ~ dplyr::group_vars(x), dplyr::all_of("group_id")
       )
   }
-  
+
   # add a method attribute
   attr(kde_results, "hr_method") <- c("kde")
   attr(kde_results, "bbox") <- bbox
@@ -162,27 +171,20 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
   return(kde_results)
 }
 
-#' Create kde isopleths at multiple levels for a given group
+#' Estimate the KDE surface for a given group
 #'
-#' This is the internal function that is called by `tt_hr_kde` to create the kde
-#' isopleths at multiple levels for a given group. It is not intended to be
-#' called directly by the user.
-#'
+#' This is the internal function that is called by `tt_hr_kde` to estimate the
+#' KDE surface for a given group. It is not intended to be called directly by
+#' the user.
 #' @param xy a matrix of coordinates
-#' @param levels A vector of levels for the contour lines. If set to NULL,
-#'  the full kde object is returned (useful for debugging)
-#' @param crs the crs of the coordinates (to use in the geometry)
-#' @param bbox A named vector of four elements: xmin, ymin, xmax, ymax to define
-#'   the bounding box of the grid over which to compute the KDE.
-#' @param res The resolution of the grid (in the units of the projection of x).
+#' @param bbox A list with xmin, ymin, xmax, ymax defining the bounding box
+#' @param res The resolution of the grid
 #' @param h The bandwidth for the kernel density estimation.
-#' @returns A list of with an element called `geometry` containing the sf
-#'   polygons representing the kde isopleths at each level, and a second,
-#'   optional element called `kde` containing the kde object
-#'   (if `keep_object = TRUE`).
+#' @returns The KDE representing the cumulative utilisation
+#' distribution (cud)
 #' @keywords internal
 
-kde_one_group <- function(xy, levels, crs, bbox, res, h) {
+kde_surface_one_group <- function(xy, bbox, res, h) {
   # Create a kde object
   kde <- MASS::kde2d(xy[, 1],
     xy[, 2],
@@ -198,10 +200,25 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h) {
       bbox$ymin, bbox$ymax
     )
   )
-  if (is.null(levels)) {
-    return(kde)
-  }
+  return(kde)
+}
 
+
+#' Create kde isopleths at multiple levels for a given group
+#'
+#' This is the internal function that is called by `tt_hr_kde` to create the kde
+#' isopleths at multiple levels for a given group. It is not intended to be
+#' called directly by the user.
+#' @param kde a kde object as returned by `kde_surface_one_group`
+#' @param levels A vector of levels for the contour lines
+#' @param crs the crs of the coordinates (to use in the geometry)
+#' @param bbox A list with xmin, ymin, xmax, ymax defining the bounding box
+#' @param res The resolution of the grid
+#' @returns A list of sf polygons representing the kde isopleths at each level
+#' @keywords internal
+#'
+
+kde_isopleths_one_group <- function(kde, levels, crs, bbox, res) {
   # compute the cumulative utilisation distribution
   kde_cud <- hr_kde_cud(kde$z)
 
