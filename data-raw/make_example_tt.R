@@ -8,4 +8,6 @@ tt_read_data("./data-raw/raw_csv/example_tt.csv",
              format_date_time = "%Y-%m-%d %H:%M:%S",
              time_zone = "UTC",
              crs = 4326) -> example_tt
+# add a metadata column
+show_meta(example_tt)$sex <- c("male", "male", "female")
 usethis::use_data(example_tt, overwrite = TRUE)
