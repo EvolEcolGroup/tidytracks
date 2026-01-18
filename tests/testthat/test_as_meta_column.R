@@ -8,7 +8,7 @@ test_that("as_meta_column works correctly", {
   expect_true("sex" %in% colnames(show_meta(example_tt3)))
   expect_false("sex" %in% colnames(example_tt3))
 
-    # now use the .keep option
+  # now use the .keep option
   example_tt4 <- as_meta_column(example_tt2, sex, .keep = TRUE)
   expect_true("sex" %in% colnames(show_meta(example_tt4)))
   expect_true("sex" %in% colnames(example_tt4))
