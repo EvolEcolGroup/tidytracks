@@ -3,7 +3,8 @@
 \name{as_meta_column}
 \alias{as_meta_column}
 \title{Move one (or more) variable(s) from the event data to the metadata as a new
-column(s). ' This function moves one or more columns from the event data of a
+column(s).
+This function moves one or more columns from the event data of a
 \code{move2} object to the metadata, adding them as new columns. This is useful
 when you want to include event-level information in the metadata. Note that
 all events for a given track must have the same value for the variable being
@@ -29,7 +30,8 @@ metadata.
 }
 \description{
 Move one (or more) variable(s) from the event data to the metadata as a new
-column(s). ' This function moves one or more columns from the event data of a
+column(s).
+This function moves one or more columns from the event data of a
 \code{move2} object to the metadata, adding them as new columns. This is useful
 when you want to include event-level information in the metadata. Note that
 all events for a given track must have the same value for the variable being
@@ -40,5 +42,5 @@ moved to metadata.
 example_tt2 <- as_event_column(example_tt, sex)
 # and now we move it back to the metadata
 example_tt2 <- as_meta_column(example_tt2, sex)
-show_meta(example_tt)
+show_meta(example_tt2)
 }
