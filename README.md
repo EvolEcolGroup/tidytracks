@@ -12,7 +12,7 @@ Movement ecology has been transformed by the availability of high-resolution tra
 
 `tidytracks` includes fast implementations of essential analysis steps - including speed filtering, trip splitting, summary statistics, and home range estimation - that previously required data class conversions across multiple packages. Integration with ggplot2 enables easy plotting of maps and figures.
 
-By simplifying and standardizing common tasks in movement analysis, `tidytracks` accelerates exploratory workflows and promotes reproducibility in movement ecology.
+By simplifying and standardising common tasks in movement analysis, `tidytracks` accelerates exploratory workflows and promotes reproducibility in movement ecology.
 
 ## Installation
 
