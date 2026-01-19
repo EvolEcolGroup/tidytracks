@@ -20,11 +20,11 @@ library(dplyr)
 
 # Sources of datasets `tidytracks`
 
-Generally there are 3 main sources of where you can get tracking data:
+Generally there are 3 main sources where one can get tracking data:
 
--   Raw data straight from the tag that has not been processed
+-   Raw data straight from the tracking device that has yet to be processed
 -   You can download data from an online repository which has its own data structure
--   You may be given data from a collaborator. This can already be processed via methods you are unaware of.
+-   You may be given data from a collaborator. This can already be processed via methods you are unaware of
 
 # Getting data into a `move2` object
 
