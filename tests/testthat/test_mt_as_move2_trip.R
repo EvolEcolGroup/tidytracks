@@ -1,3 +1,4 @@
+skip_if_not_installed("trip")
 test_that("mt_as_move2_trip work correctly", {
   test_trip <- trip::walrus818[1:300, ]
   test_move2 <- mt_as_move2(test_trip)

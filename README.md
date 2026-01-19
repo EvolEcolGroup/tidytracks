@@ -1,8 +1,10 @@
-# tidytracks <img src="./man/figures/tidytracks_logo_cropped.png" align="right" width="150"/>
+
+# tidytracks <img src="./man/figures/tidytracks_logo_readme.png" align="right" width="150"/>
 
 <!-- badges: start -->
 
-[![Codecov test coverage](https://codecov.io/gh/EvolEcolGroup/tidytracks/graph/badge.svg)](https://app.codecov.io/gh/EvolEcolGroup/tidytracks) [![R-CMD-check](https://github.com/EvolEcolGroup/tidytracks/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/EvolEcolGroup/tidytracks/actions/workflows/R-CMD-check.yaml)
+[![codecov](https://codecov.io/gh/EvolEcolGroup/tidytracks/graph/badge.svg?token=SP8LM10YB3)](https://codecov.io/gh/EvolEcolGroup/tidytracks)
+[![R-CMD-check](https://github.com/EvolEcolGroup/tidytracks/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/EvolEcolGroup/tidytracks/actions/workflows/R-CMD-check.yaml)
 
 <!-- badges: end -->
 
@@ -12,7 +14,8 @@ Movement ecology has been transformed by the availability of high-resolution tra
 
 `tidytracks` includes fast implementations of essential analysis steps - including speed filtering, trip splitting, summary statistics, and home range estimation - that previously required data class conversions across multiple packages. Integration with ggplot2 enables easy plotting of maps and figures.
 
-By simplifying and standardizing common tasks in movement analysis, `tidytracks` accelerates exploratory workflows and promotes reproducibility in movement ecology.
+
+By simplifying and standardising common tasks in movement analysis, `tidytracks` accelerates exploratory workflows and promotes reproducibility in movement ecology.
 
 ## Installation
 
