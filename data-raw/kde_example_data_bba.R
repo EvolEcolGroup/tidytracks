@@ -7,13 +7,6 @@ library(tidytracks)
 # read in rds
 ten_tracks <- readRDS("data-raw/kde_example_data_bba.rds")
 
-#make sf point column for colony coordinates
-
-show_meta(shags_mt)$colony_coords <- 
-  sf_point_col(show_meta(shags_mt)$colony_lon,
-               show_meta(shags_mt)$colony_lat,
-               crs = 4326)
-
 # Reproject to equal area for KDEs
 
 ten_tracks<- ten_tracks %>%
@@ -77,5 +70,5 @@ nine_tracks_kde_2 <- nine_tracks %>%
 # count number of empty geometries
 sum(sf::st_is_empty(nine_tracks_kde_2))
 
-# still one left, on really short track
+# still one empty polygone left, on really short track
 #so should maybe have warning here saying empty polygons created
