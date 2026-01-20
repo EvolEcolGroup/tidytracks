@@ -1,0 +1,90 @@
+---
+title: "Testing UDs in adehabitatHR"
+output: html_document
+---
+
+Here we are running through the functions for making and comparing utilization
+distributions (UDs) in the R package `adehabitatHR` (Calenge 2006) so that we can
+sort out the logic of the UD functions in `tidytracks` and compare the outputs.
+
+## load packages
+
+```{r load_packages}
+
+library(adehabitatHR)
+
+```
+
+## load data
+
+The adehabitatHR package has function for estimating home ranges from animal
+tracking data.
+
+The functions accept an object of class `SpatialPoints` (one animal) or
+`SpatialPointsDataFrame` (multiple animals).
+
+The example boar tracking data has environmental variables in `map` and 
+tracking data in `relocs`. We're interested in the latter, which are stored 
+as a `SpatialPointsDataFrame`.
+
+```{r load_data}
+
+data(puechabonsp)
+class(puechabonsp)
+names(puechabonsp)
+
+# two spatial points data frames
+summary(puechabonsp)
+
+# the tracking locations are in relocs
+head(as.data.frame(puechabonsp$relocs))
+
+# map of elevation
+image(puechabonsp$map, col=grey(c(1:10)/10))
+# add relocs
+plot(puechabonsp$relocs, add=TRUE,
+     col=as.data.frame(puechabonsp$relocs)[,1])
+
+# extract relocs only as an object to use
+relocs <- puechabonsp$relocs
+class(relocs)
+head(relocs)
+```
+
+## MCP
+
+Compute 95% MCP for each animal. The output is stored as a 
+`SpatialPolygonsDataFrame`.
+
+```{r mcp}
+# compute mcp using just the first column (coordinates) of relocs
+mcp95 <- mcp(relocs[,1], percent=95)
+
+# spatial polygons data frame with area calculated
+mcp95
+
+# plot polygons with points on top
+plot(mcp95)
+plot(relocs, add=TRUE)
+
+```
+
+## Kernel UD
+
+"An animal's use of space can be described by a bivariate probability density
+function, the UD, which gives the probability density to relocate the animal at
+any place according to the coordinates (x, y)"
+
+The kernel method is used to estimate the UD using the tracking data.
+
+"The basic principle of the method is the following: a bivariate kernel function
+is placed over each relocation, and the values of these functions are averaged
+together."
+
+
+
+
+
+
+
+
