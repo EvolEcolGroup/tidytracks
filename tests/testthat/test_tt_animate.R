@@ -48,14 +48,27 @@ x %>%
 
 # TODO turn these into actual tests which test that something reasonable has been produced.
 # # test tt_animate for points ----
-# t_anim <- tt_animate(x = x,
-#                      type = "points",
-#                      basemap = basemap,
-#                      wake_length = 0.5)
+# list_anim <- tt_animate(x = x,
+#                         type = "points",
+#                         basemap = basemap,
+#                         wake_length = 0.5)
+# 
+# # animate the gganim using av_renderer()
+# gganimate::animate(plot = list_anim$p_anim,
+#                    nframes = list_anim$n_frames,
+#                    fps = 10,
+#                    renderer = gganimate::av_renderer())
+# 
 # 
 # # test tt_animate for paths ----
-# t_anim <- tt_animate(x = x,
+# list_anim <- tt_animate(x = x,
 #                      type = "paths",
 #                      basemap = basemap,
 #                      wake_length = 0.5)
+# 
+# # animate as a video
+# gganimate::animate(plot = list_anim$p_anim,
+#                    nframes = list_anim$n_frames,
+#                    fps = 10,
+#                    renderer = gganimate::av_renderer())
 

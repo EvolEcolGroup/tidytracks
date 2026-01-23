@@ -153,7 +153,7 @@ tt_animate <- function(x,
     
     # animation logic for points
     p_anim <- p +
-      gganimate::transition_time(frame_no) +
+      gganimate::transition_time(date_time) +
       gganimate::shadow_wake(
         wake_length = wake_length,
         size = TRUE,
@@ -186,16 +186,16 @@ tt_animate <- function(x,
     
     # animation logic for paths
     p_anim <- p +
-      gganimate::transition_reveal(along = frame_no) +
+      gganimate::transition_reveal(along = date_time) +
       gganimate::ease_aes("linear") +
       ggplot2::labs(
-        title = "{closest_state}",  # will show the current date_time for that frame
+        title = "{frame_along}",
         subtitle = "Frame {frame} of {nframes}")
     
   }
   
   # return the gganimate object, the use can render it themselves
-  return(p_anim)
+  return(list(p_anim = p_anim, n_frames = n_frames))
   
 }
 
