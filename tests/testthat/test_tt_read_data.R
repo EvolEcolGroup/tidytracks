@@ -535,3 +535,27 @@ test_that("tt_read_data handles duplicated columns in event and meta data", {
   expect_true("location" %in% names(show_meta(duplicated3_tt)))
   expect_true("location.meta" %in% names(show_meta(duplicated3_tt)))
 })
+
+# tests for giving the wrong type of objects
+test_that("tt_read_data gives errors for wrong input types", {
+  expect_error(
+    tt_read_data(
+      events = 12345,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    ),
+    "events must be a data frame or a path to a csv file."
+  )
+
+  expect_error(
+    tt_read_data(
+      events = test_path("testdata/test_tt_read_data_simple.csv"),
+      meta = 12345,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    ),
+    "meta must be either Null, a data frame or a path to a csv file."
+  )
+})
