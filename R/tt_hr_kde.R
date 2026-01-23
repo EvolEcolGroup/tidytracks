@@ -3,42 +3,45 @@
 #' This function estimates the home range of an animal using kernel density
 #' estimation (KDE).
 #'
-#' @param x A grouped move2 object
+#' @param x A move2 object; if explicitely grouped, the home range is estimated
+#'   for each group, combining all tracks within each group. Otherwise, the
+#'   track id is used as grouping variable.
 #' @param h The bandwidth for the kernel density estimation. Either a number, or
 #'   "h_ref_indiv" for using the reference bandwidth for each individual, or
 #'   "h_ref_mean" for using the mean bandwidth for all individuals (the
 #'   default).
-#' @param bbox a name vector of four elements: xmin, ymin, xmax, ymax to define the
-#'  bounding box of the grid over which to compute the KDE. If NULL, the
-#'  extent is taken by combining all points in `x` (expanded by 10%).
+#' @param bbox a name vector of four elements: xmin, ymin, xmax, ymax to define
+#'   the bounding box of the grid over which to compute the KDE. If NULL, the
+#'   extent is taken by combining all points in `x` (expanded by 10%).
 #' @param res The resolution of the grid (in the units of the projection of x).
 #'   If NULL, res is set to obtained ~ 1000 cells.
-#' @param levels A vector of levels for the contour lines. The default is
-#'   `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges. If set
-#'   to NULL, the full kde object is returned (useful for debugging)
+#' @param levels A vector of levels for the isopleths (i.e. contour lines). The
+#'   default is `c(0.5, 0.95)`, which corresponds to the 50% and 95% home
+#'   ranges. If set to NULL, the full kde object is returned (useful for
+#'   debugging)
 #' @returns An `sf` tibble , with columns:
-#' - the grouping variable (as named in `x`; if `x` is grouped by 
-#' multiple variables, this column is named `group_id`): the ids from
-#' the grouping of `x`
+#' - the grouping variable (as named in `x`; if `x` is grouped by
+#'   multiple variables, this column is named `group_id`): the ids from the
+#'   grouping of `x`
 #' - `level`: the level of the isopleth
 #' - `h`: the bandwidth used for the KDE
 #' - `area`: the area of the home range at this level (in the units
-#'  of the projection of `x`, e.g. m^2 for a UTM projection)
+#'   of the projection of `x`, e.g. m^2 for a UTM projection)
 #'  - `geometry`:  an `sfc` column containing the multipolygons representing
-#'  the isopleth for the appropriate level
+#'   the isopleth for the appropriate level
 #'
 #'   If `levels` is NULL, a standard tibble is returned with columns:
 #'   `group_id`, `h`, and `kde`.
-#'   
+#'
 #'   The bbox and res used are stored as attributes of the returned object.
-#' 
+#'
 #' @export
 
 tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
                       res = NULL, levels = c(0.5, 0.95)) {
-  # Check if x is a grouped move2 object
-  if (!inherits(x, "move2") || !inherits(x, "grouped_df")) {
-    stop("x must be a grouped move2 object")
+  # if x is not grouped, used the track ID as grouping variable
+  if (!inherits(x, "grouped_df")) {
+    x <- dplyr::group_by(x, event_track_id(x))
   }
 
   # Check if levels are valid
@@ -143,9 +146,9 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
 
   # if levels is not  null, we convert to sf
   if (!is.null(levels)) {
-  # now cast the results to an sf object
-  kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
-}
+    # now cast the results to an sf object
+    kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
+  }
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
     kde_results <- kde_results %>%
