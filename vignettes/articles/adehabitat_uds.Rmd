@@ -250,6 +250,8 @@ possible to use the same grid for all animals by setting the parameter
 
 kus <- kernelUD(puechabonsp$relocs[,1], same4all=TRUE)
 image(kus)
+# do the values in each UD sum to 1? NO.
+sapply(kus, function(x) sum(x@data))
 
 ```
 

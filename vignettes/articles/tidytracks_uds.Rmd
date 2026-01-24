@@ -42,4 +42,9 @@ sum(wildboars_kde$kde[[3]]$z)
 sum(wildboars_kde$kde[[4]]$z)
 
 ```
-There is something wrong here, as we seem to have identical kdes for all individuals
+These values are not the same as when we set same4all=TRUE in adehabitatHR 
+(we have 2.636395e-05 there). We need to check whether we are using exactly
+the same grid and resolution (we have the correct h values though).
+
+Same grid corner, but different resolution (we have 252.9354 vs 194.7458 in adehabitatHR in the `kus` object from the other vignette).
+
