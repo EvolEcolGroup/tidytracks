@@ -44,7 +44,8 @@ tt_animate <- function(x,
                        type = c("points","paths"),
                        basemap = NULL, 
                        wake_length = 0.5,
-                       plot_lims = NULL) {
+                       plot_lims = NULL,
+                       label_format = "%Y-%m-%d %H:%M:%S") {
  
   # check inputs
   # check x is a move2 object using inherits()
@@ -94,29 +95,6 @@ tt_animate <- function(x,
   # get number of frames
   n_frames <- length(unique(x$date_time))
   
-  # TODO sort out this lookup table for frame labels because it's not working!
-  # add frame number (1 to nrow(x_plot))
-  x_plot <- x_plot %>%
-    dplyr::mutate(frame_id = as.factor(date_time),
-                  frame_no = as.integer(frame_id)) %>%
-    # ensure arranged for the geom_path correctly
-    dplyr::arrange(track_id, frame_no)
-  
-  # make a lookup table for frame label
-  frame_lookup <- x_plot %>%
-    dplyr::distinct(frame_no, date_time) %>%
-    dplyr::arrange(frame_no) %>%
-    dplyr::mutate(
-      frame_label = as.character(date_time)
-      # TODO update this later to format date_time nicely, with user-specified format
-    ) %>%
-    dplyr::select(-dplyr::all_of("date_time")) # otherwise get date_time_x and y when left_joining back into x_plot
-  
-  # add labels back into x_plot
-  x_plot <- x_plot %>%
-    dplyr::left_join(frame_lookup, by = "frame_no")
-  
-  
   # start building plot ----
   # with layers that are relevant for both points and paths plots
   
@@ -133,12 +111,8 @@ tt_animate <- function(x,
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "right") +
     ggplot2::coord_sf(xlim = c(plot_lims[1], plot_lims[3]),
-                      ylim = c(plot_lims[2], plot_lims[4])) 
-  
-  # add title with datetime label and frame number here? or not 
-  # p <- p +
-  #   ggtitle('{frame_time}',
-  #           subtitle = 'Frame {frame} of {nframes}')
+                      ylim = c(plot_lims[2], plot_lims[4])) +
+    ggplot2::labs(x = "Longitude", y = "Latitude")
   
   # choose type
   if (type == "points") {
@@ -166,8 +140,9 @@ tt_animate <- function(x,
         # exclude_phase = c("enter", "exit")
       ) +
       ggplot2::labs(
-        title = "{frame_time}",
-        subtitle = "Frame {frame} of {nframes}")
+        title = "{format(frame_time, label_format)}"#,
+        # subtitle = "Frame {frame} of {nframes}"
+        )
     
   } else if (type == "paths") {
     
@@ -189,8 +164,9 @@ tt_animate <- function(x,
       gganimate::transition_reveal(along = date_time) +
       gganimate::ease_aes("linear") +
       ggplot2::labs(
-        title = "{frame_along}",
-        subtitle = "Frame {frame} of {nframes}")
+        title = "{format(frame_along, label_format)}"#,
+        # subtitle = "Frame {frame} of {nframes}"
+        )
     
   }
   
