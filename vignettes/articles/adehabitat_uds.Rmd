@@ -167,6 +167,16 @@ range(kud_brock@data)
 # grid info
 kud_brock@grid
 
+
+
+#so to get grid for TT we want to reconstruct the bounding box
+# also the resulution is cell size of 89.954 map units in each direction. So to get the grid we just need to reconstruct the bounding box and then split it into cells of 89.954 map units (how to work out if units the same?, does it matter? - actually probably not)
+
+# find min and max coords of relocs before expanding by extent param
+xmin <- min(as.data.frame(puechabonsp$relocs)[,2])
+xmax <- max(as.data.frame(puechabonsp$relocs)[,2])
+ymin <- min(as.data.frame(puechabonsp$relocs)[,3])
+ymax <- max(as.data.frame(puechabonsp$relocs)[,3])
 ```
 
 ## using LCSV
@@ -212,6 +222,8 @@ and `Xmax + e × Rx` respectively. Similarly, the minimum and maximum
 * Finally, these extents are split into `g` intervals, where `g` is the value 
 of the parameter `grid.`
 
+
+
 Consequently, the parameter `grid` controls the resolution of the grid and the
 parameter extent controls its extent. 
 
@@ -237,6 +249,16 @@ title(main="grid=20, extent=3")
 ## Estimation of the UD with grid=80 and extent=3
 image(kernelUD(firs, grid=80, extent=3))
 title(main="grid=80, extent=3")
+
+## extract grid info for one of the UDs
+kud_brock_20_02 <- kernelUD(firs, grid=20, extent=0.2)
+
+
+kud_brock_20_02@grid # gives us the grid topology, including the cell size and dimensions of the grid
+
+library(sf)
+sf::st_crs(puechabonsp$relocs)
+
 
 ```
 
