@@ -228,13 +228,13 @@ par(mfrow=c(2,2))
 ## Estimation of the UD with grid=20 and extent=0.2
 image(kernelUD(firs, grid=20, extent=0.2))
 title(main="grid=20, extent=0.2")
-## Estimation of the UD with grid=20 and extent=0.2
+## Estimation of the UD with grid=80 and extent=0.2
 image(kernelUD(firs, grid=80, extent=0.2))
 title(main="grid=80, extent=0.2")
-## Estimation of the UD with grid=20 and extent=0.2
+## Estimation of the UD with grid=20 and extent=3
 image(kernelUD(firs, grid=20, extent=3))
 title(main="grid=20, extent=3")
-## Estimation of the UD with grid=20 and extent=0.2
+## Estimation of the UD with grid=80 and extent=3
 image(kernelUD(firs, grid=80, extent=3))
 title(main="grid=80, extent=3")
 
