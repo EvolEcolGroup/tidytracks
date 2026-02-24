@@ -32,10 +32,13 @@
 #'   no basemap is used.
 #' @param wake_length Numeric, length of the wake behind each point as a
 #'   proportion of the total length of the animation (only for `type = "points"`).
+#' @param path_alpha Numeric, the alpha to use for the path (only for `type == "path"`).
 #' @param plot_lims A numeric vector of length 4 giving the limits of the plot
 #'   (`xmin`, `ymin`, `xmax`, `ymax`), default is `NULL` which uses the full
 #'   extent of the data, but you may wish to add a buffer around the bounding
 #'   box of `x`.
+#' @param label_format A character string specifying the format of the date-time
+#'  labels on the animation frames. Default is `"%Y-%m-%d %H:%M:%S"`.
 #'
 #' @return A `gganimate` object. To save this as a gif or video, use the
 #'   function `anim_save()` from the `gganimate` package.
@@ -43,7 +46,8 @@
 tt_animate <- function(x,
                        type = c("points","paths"),
                        basemap = NULL, 
-                       wake_length = 0.5,
+                       wake_length = 0.5, # only for type = "points"
+                       path_alpha = 0.5, # only for type = "paths"
                        plot_lims = NULL,
                        label_format = "%Y-%m-%d %H:%M:%S") {
  

@@ -9,7 +9,9 @@ tt_animate(
   type = c("points", "paths"),
   basemap = NULL,
   wake_length = 0.5,
-  plot_lims = NULL
+  path_alpha = 0.5,
+  plot_lims = NULL,
+  label_format = "\%Y-\%m-\%d \%H:\%M:\%S"
 )
 }
 \arguments{
@@ -24,10 +26,15 @@ no basemap is used.}
 \item{wake_length}{Numeric, length of the wake behind each point as a
 proportion of the total length of the animation (only for \code{type = "points"}).}
 
+\item{path_alpha}{Numeric, the alpha to use for the path (only for \code{type == "path"}).}
+
 \item{plot_lims}{A numeric vector of length 4 giving the limits of the plot
 (\code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}), default is \code{NULL} which uses the full
 extent of the data, but you may wish to add a buffer around the bounding
 box of \code{x}.}
+
+\item{label_format}{A character string specifying the format of the date-time
+labels on the animation frames. Default is \code{"\%Y-\%m-\%d \%H:\%M:\%S"}.}
 }
 \value{
 A \code{gganimate} object. To save this as a gif or video, use the
