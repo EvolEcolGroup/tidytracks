@@ -1,0 +1,196 @@
+---
+title: "Comparing kernels: adehabitatHR and tidytracks"
+author: "Lizzie Pearmain"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load packages
+library(adehabitatHR)
+library(MASS)
+library(reshape2)
+library(dplyr)
+```
+
+## genetta data
+
+```{r}
+genetta <- as.data.frame(matrix(
+  c(
+    0.5519758, 0.27524548,
+    0.5725632, 0.12309273,
+    0.5547747, 0.06100429,
+    0.6110925, 0.16211416,
+    0.5951087, 0.09316814,
+    0.5333567, 0.11673812,
+    0.5855461, 0.11170616,
+    0.5221387, 0.11061583,
+    0.5848452, 0.17213175
+  ),
+  ncol = 2, byrow = TRUE
+))
+```
+
+adehabitatHR
+
+```{r}
+# this grid to be used in both
+my_grid <- expand.grid(x = seq(0.01, 1, by = 0.01), 
+                            y = seq(-0.4, 0.59, by = 0.01))
+
+# kernel using adehabitat
+mask_xy_grid <- my_grid
+sp::coordinates(mask_xy_grid) <- ~ x + y
+sp::gridded(mask_xy_grid) <- TRUE
+
+g_ade <- adehabitatHR::kernelUD(sp::SpatialPoints(genetta),
+  h = "href",
+  grid = mask_xy_grid,
+  kern = "bivnorm"
+)
+
+plot(g_ade)
+
+```
+
+MASS
+
+```{r}
+# kernel using MASS
+mask.xy <- as.data.frame(my_grid)
+
+H <- (sqrt(0.5 * (var(genetta[[1]]) + var(genetta[[2]])))) * (nrow(genetta)^-(1 / 6))
+
+g_mass <- MASS::kde2d(genetta$V1,
+  genetta$V2,
+  n = c(100, 100), # TODO check this is right - it's still square
+  h = c(H * 4, H * 4),
+  lims = c(range(mask.xy$x), range(mask.xy$y))
+)
+
+# convert to spdf for plotting
+g_mass_spdf <- sp::SpatialPixelsDataFrame(
+  points = mask.xy,
+  data = data.frame(est = reshape2::melt(g_mass$z)$value)
+)
+plot(g_mass_spdf)
+```
+
+Are they equal?
+
+```{r}
+
+abs(mean(g_ade$ud - g_mass_spdf$est))
+abs(mean(g_ade$ud - g_mass_spdf$est)) < 0.001
+
+```
+
+```{r}
+# clean up
+rm(my_grid, mask_xy_grid, mask.xy, H)
+rm(genetta, g_ade, g_mass, g_mass_spdf)
+```
+
+
+## puechabon example
+
+```{r}
+data(puechabonsp)
+
+brock <- as.data.frame(puechabonsp$relocs) %>%
+  dplyr::filter(Name == "Brock") %>%
+  dplyr::select(x = X, y = Y)
+
+# this grid to be used in both
+my_grid <- expand.grid(x = seq(697000, 701950, by = 50), 
+                       y = seq(3158550, 3163500, by = 50))
+
+```
+
+
+adehabitat
+
+```{r}
+# kernel using adehabitat
+mask_xy_grid <- my_grid
+sp::coordinates(mask_xy_grid) <- ~ x + y
+sp::gridded(mask_xy_grid) <- TRUE
+
+brock_ade <- adehabitatHR::kernelUD(sp::SpatialPoints(brock),
+  h = "href",
+  grid = mask_xy_grid,
+  kern = "bivnorm"
+)
+
+plot(brock_ade)
+```
+
+MASS
+
+```{r}
+# kernel using MASS
+mask.xy <- as.data.frame(my_grid)
+
+H <- (sqrt(0.5 * (var(brock[[1]]) + var(brock[[2]])))) * (nrow(brock)^-(1 / 6))
+
+brock_mass <- MASS::kde2d(brock$x,
+  brock$y,
+  n = c(100, 100), # TODO check this is right - it's still square
+  h = c(H * 4, H * 4),
+  lims = c(range(mask.xy$x), range(mask.xy$y))
+)
+
+# convert to spdf for plotting
+brock_mass_spdf <- sp::SpatialPixelsDataFrame(
+  points = mask.xy,
+  data = data.frame(est = reshape2::melt(brock_mass$z)$value)
+)
+plot(brock_mass_spdf)
+```
+
+Are they equal?
+
+```{r}
+
+abs(mean(brock_ade$ud - brock_mass_spdf$est))
+abs(mean(brock_ade$ud - brock_mass_spdf$est)) < 0.001
+
+```
+
+## next steps
+
+- try with `tidytracks::tt_hr_kde()` - getting the exact same grid etc. will be 
+   difficult.
+- check the differences are still <0.1%
+- replace the `adehabitatHR` object's values (in `@data`) with the values from 
+   the tidytracks kernel so they are exactly identical, just in different data
+   formats from the different packages
+- use this to test that the downstream functions work identically to the 
+    `adehabitatHR` equivalents.
+
+
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
