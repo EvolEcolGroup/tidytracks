@@ -1,11 +1,7 @@
 test_that("tt_hr_mcp works with multiple tracks", {
   # load a simple dataset originally from adehabitat
   boar_mt <- readRDS(file.path( test_path("testdata"),"wildboar_mt.rds"))
-  # error if not grouped
-  expect_error(
-    tt_hr_kde(boar_mt, levels = c(0.50, 0.95, 1)),
-    "x must be a grouped move2 object"
-  )
+
   # group by name
   boar_mt <- boar_mt %>%
     dplyr::group_by(Name)

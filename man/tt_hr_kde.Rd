@@ -7,30 +7,33 @@
 tt_hr_kde(x, h = "h_ref_mean", bbox = NULL, res = NULL, levels = c(0.5, 0.95))
 }
 \arguments{
-\item{x}{A grouped move2 object}
+\item{x}{A move2 object; if explicitely grouped, the home range is estimated
+for each group, combining all tracks within each group. Otherwise, the
+track id is used as grouping variable.}
 
 \item{h}{The bandwidth for the kernel density estimation. Either a number, or
 "h_ref_indiv" for using the reference bandwidth for each individual, or
 "h_ref_mean" for using the mean bandwidth for all individuals (the
 default).}
 
-\item{bbox}{a name vector of four elements: xmin, ymin, xmax, ymax to define the
-bounding box of the grid over which to compute the KDE. If NULL, the
+\item{bbox}{a name vector of four elements: xmin, ymin, xmax, ymax to define
+the bounding box of the grid over which to compute the KDE. If NULL, the
 extent is taken by combining all points in \code{x} (expanded by 10\%).}
 
 \item{res}{The resolution of the grid (in the units of the projection of x).
 If NULL, res is set to obtained ~ 1000 cells.}
 
-\item{levels}{A vector of levels for the contour lines. The default is
-\code{c(0.5, 0.95)}, which corresponds to the 50\% and 95\% home ranges. If set
-to NULL, the full kde object is returned (useful for debugging)}
+\item{levels}{A vector of levels for the isopleths (i.e. contour lines). The
+default is \code{c(0.5, 0.95)}, which corresponds to the 50\% and 95\% home
+ranges. If set to NULL, the full kde object is returned (useful for
+debugging)}
 }
 \value{
 An \code{sf} tibble , with columns:
 \itemize{
 \item the grouping variable (as named in \code{x}; if \code{x} is grouped by
-multiple variables, this column is named \code{group_id}): the ids from
-the grouping of \code{x}
+multiple variables, this column is named \code{group_id}): the ids from the
+grouping of \code{x}
 \item \code{level}: the level of the isopleth
 \item \code{h}: the bandwidth used for the KDE
 \item \code{area}: the area of the home range at this level (in the units

@@ -2,15 +2,12 @@
 % Please edit documentation in R/tt_hr_kde.R
 \name{kde_one_group}
 \alias{kde_one_group}
-\title{Create kde isopleths at multiple levels for a given group}
+\title{Compute the kde for a given group}
 \usage{
 kde_one_group(xy, levels, crs, bbox, res, h)
 }
 \arguments{
 \item{xy}{a matrix of coordinates}
-
-\item{levels}{A vector of levels for the contour lines. If set to NULL,
-the full kde object is returned (useful for debugging)}
 
 \item{crs}{the crs of the coordinates (to use in the geometry)}
 
@@ -22,14 +19,11 @@ the bounding box of the grid over which to compute the KDE.}
 \item{h}{The bandwidth for the kernel density estimation.}
 }
 \value{
-A list of with an element called \code{geometry} containing the sf
-polygons representing the kde isopleths at each level, and a second,
-optional element called \code{kde} containing the kde object
-(if \code{keep_object = TRUE}).
+A list containing the x, y and z elements of the kde, as returned by
+MASS::kde2d.
 }
 \description{
-This is the internal function that is called by \code{tt_hr_kde} to create the kde
-isopleths at multiple levels for a given group. It is not intended to be
-called directly by the user.
+This is the internal function that is called by \code{tt_hr_kde} to compute the
+kde for a given group. It is not intended to be called directly by the user.
 }
 \keyword{internal}

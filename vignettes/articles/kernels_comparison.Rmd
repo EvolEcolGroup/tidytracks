@@ -160,6 +160,42 @@ abs(mean(brock_ade$ud - brock_mass_spdf$est)) < 0.001
 
 ```
 
+# Fit kernel with tidytracks
+
+# load the boar data
+```{r}
+library(tidytracks)
+wildboars_tt <- readRDS("./articles_data/wildboar_mt.rds")
+wildboars_tt
+```
+
+Check the metadata
+```{r}
+show_meta(wildboars_tt)
+```
+
+Compute the kde
+```{r}
+wildboars_tt <- wildboars_tt %>% dplyr::group_by(Name)
+wildboars_kde <- tt_hr_kde(wildboars_tt, levels = NULL,
+                           h = "h_ref_indiv",
+                           res = 50,
+                           bbox = list(xmin = brock_ade@bbox[1,1], ymin = brock_ade@bbox[2,1],
+                                    xmax = brock_ade@bbox[1,2], ymax = brock_ade@bbox[2,2]))
+```
+
+
+check that we have the same h values (we do)
+```{r}
+brock_ade@h$h == wildboars_kde$h[1]
+
+```
+
+```{r}
+abs(mean(brock_ade$ud - wildboars_kde$kde[[1]]$z))
+abs(mean(brock_ade$ud - wildboars_kde$kde[[1]]$z)) < 0.001
+```
+
 ## next steps
 
 - try with `tidytracks::tt_hr_kde()` - getting the exact same grid etc. will be 
@@ -170,6 +206,7 @@ abs(mean(brock_ade$ud - brock_mass_spdf$est)) < 0.001
    formats from the different packages
 - use this to test that the downstream functions work identically to the 
     `adehabitatHR` equivalents.
+
 
 
 
