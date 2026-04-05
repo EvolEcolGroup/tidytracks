@@ -174,14 +174,22 @@ Check the metadata
 show_meta(wildboars_tt)
 ```
 
-Compute the kde
+Compute the kde with tidytracks. We need to be careful how we set the bounding box.
+In terra, the extent is the corners, but kde works on centroids of cells.
+TODO we need to check what ade habitat is doing, is the bbox same as a terra extent.
+Are the individual coordinates the centroids (do we have individual coordinates?!?)
+
+yes, it looks like the bbox of the grid is the same as the extent of the grid, so we can use the same values for both. We just need to make sure we are using the same resolution (we have 50 here, but we need to check what adehabitat is doing).
+
+Note that the limits in the MASS kde function refer to centroids (i.e. the determine the actual values of x and y)
 ```{r}
 wildboars_tt <- wildboars_tt %>% dplyr::group_by(Name)
 wildboars_kde <- tt_hr_kde(wildboars_tt, levels = NULL,
                            h = "h_ref_indiv",
                            res = 50,
-                           bbox = list(xmin = brock_ade@bbox[1,1], ymin = brock_ade@bbox[2,1],
-                                    xmax = brock_ade@bbox[1,2], ymax = brock_ade@bbox[2,2]))
+                           bbox = list(xmin = min(mask.xy$x)-25, ymin = min(mask.xy$y)-25,
+                                    xmax = max(mask.xy$x)+25, ymax = max(mask.xy$y)+25))
+
 ```
 
 
@@ -191,10 +199,49 @@ brock_ade@h$h == wildboars_kde$h[1]
 
 ```
 
+Check that the grid is the same
+```{r}
+all.equal(wildboars_kde$kde[[1]]$x, brock_mass$x)
+all.equal(wildboars_kde$kde[[1]]$y, brock_mass$y)
+all.equal(wildboars_kde$kde[[1]]$x, mask.xy$x[1:100])
+
+```
+
 ```{r}
 abs(mean(brock_ade$ud - wildboars_kde$kde[[1]]$z))
 abs(mean(brock_ade$ud - wildboars_kde$kde[[1]]$z)) < 0.001
+# this should be zero as we are comparing mass with mass 
+# (just check that we are using the correct grid)
+abs(mean(wildboars_kde$kde[[1]]$z - brock_mass_spdf$est))
 ```
+
+Now transfer values from the tidytracks kernel to the adehabitatHR object, so
+that we can check various operations
+
+```{r}
+brock_ade$ud <- as.vector(wildboars_kde$kde[[1]]$z)
+# and confirm that now the values are identical
+abs(mean(brock_ade$ud - wildboars_kde$kde[[1]]$z))
+```
+
+No create isopleths
+```{r}
+iso_90 <- getverticeshr(x = brock_ade,
+                        percent = 90)
+class(iso_90)
+plot(iso_90, col=1:4)
+```
+
+```{r cumulative_ud}
+
+vud <-  getvolumeUD(brock_ade)
+vud
+class(vud)
+
+sum(vud@data)
+
+```
+
 
 ## next steps
 

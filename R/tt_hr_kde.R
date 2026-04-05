@@ -110,7 +110,6 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
   bbox["ymax"] <- bbox$ymin +
     ceiling((bbox$ymax - bbox$ymin) / res) * res
 
-
   group_id <- NULL # hack to avoid it being flagged as global in checks
   kde_results <- foreach::foreach(
     group_id = group_unique,
@@ -151,7 +150,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     res_tbl
   }
   
-  browser()
+
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
     kde_results <- kde_results %>%
@@ -194,8 +193,10 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h) {
     # approaches (e.g. adehabitatHR or KernSmooth)
     h = h * 4,
     lims = c(
-      bbox$xmin, bbox$xmax,
-      bbox$ymin, bbox$ymax
+      # note that the limits in MASS refer to the centroids of the cells, so we
+      # need to add res/2 to the min and subtract res/2 from the maxS
+      bbox$xmin+res/2, bbox$xmax-res/2,
+      bbox$ymin+res/2, bbox$ymax-res/2
     )
   )
   return(kde)
