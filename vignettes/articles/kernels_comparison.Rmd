@@ -165,7 +165,7 @@ abs(mean(brock_ade$ud - brock_mass_spdf$est)) < 0.001
 # load the boar data
 ```{r}
 library(tidytracks)
-wildboars_tt <- readRDS("./articles_data/wildboar_mt.rds")
+wildboars_tt <- readRDS("./articles_data/wildboar_tt.rds")
 wildboars_tt
 ```
 
@@ -238,7 +238,21 @@ vud <-  getvolumeUD(brock_ade)
 vud
 class(vud)
 
-sum(vud@data)
+sum(vud@vol)
+
+vud_std <- getvolumeUD(brock_ade, standardize = TRUE)
+sum(vud_std@vol)
+
+x <- brock_ade
+        sg <- as(x, "SpatialPixelsDataFrame")
+        sg <- as(sg, "SpatialGridDataFrame")
+        gr <- gridparameters(sg)
+        uu <- names(sg)
+        gri <- as.image.SpatialGridDataFrame(sg)
+  asc <- gri$z
+
+just_std <- asc/(sum(asc))
+
 
 ```
 
@@ -253,6 +267,10 @@ sum(vud@data)
    formats from the different packages
 - use this to test that the downstream functions work identically to the 
     `adehabitatHR` equivalents.
+- we need to assign a projection to this dataset. I think it is 
+  Lambert II Étendu (EPSG:27572).
+  for the original dataset, it is something like:
+proj4string(wildboar$relocations) <- CRS("+init=epsg:27572")
 
 
 

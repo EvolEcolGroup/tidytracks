@@ -25,8 +25,7 @@ If NULL, res is set to obtained ~ 1000 cells.}
 
 \item{levels}{A vector of levels for the isopleths (i.e. contour lines). The
 default is \code{c(0.5, 0.95)}, which corresponds to the 50\% and 95\% home
-ranges. If set to NULL, the full kde object is returned (useful for
-debugging)}
+ranges. If set to NULL, the full utilisation distribution is returned.}
 }
 \value{
 An \code{sf} tibble , with columns:

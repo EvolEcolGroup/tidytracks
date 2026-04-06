@@ -17,8 +17,7 @@
 #'   If NULL, res is set to obtained ~ 1000 cells.
 #' @param levels A vector of levels for the isopleths (i.e. contour lines). The
 #'   default is `c(0.5, 0.95)`, which corresponds to the 50% and 95% home
-#'   ranges. If set to NULL, the full kde object is returned (useful for
-#'   debugging)
+#'   ranges. If set to NULL, the full utilisation distribution is returned.
 #' @returns An `sf` tibble , with columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
@@ -101,7 +100,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
   if (is.null(res)) {
     # set resolution to get a 1000 cells
     res <- sqrt((bbox[["xmax"]] - bbox[["xmin"]]) *
-      (bbox[["ymax"]] - bbox[["ymin"]]) / 1500)
+      (bbox[["ymax"]] - bbox[["ymin"]]) / 1000)
   }
 
   # update the max to be an exact multiple of res
@@ -129,12 +128,23 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     res_tbl <- tibble::tibble(
       group_id = group_labels[group_id],
       level = levels,
-      h = h_val
+      h = h_val,
+      xmin = bbox["xmin"],
+      ymin = bbox["ymin"],
+      xmax = bbox["xmax"],
+      ymax = bbox["ymax"],
+      res = res
     )
 
     # if returning the full kde object, we simply add it to the kde column
     if (is.null(levels)) {
+      # add a class to the kde object for easier handling in the future
+      class(kde) <- c("tt_kde", class(kde))
+      # add the crs to the kde object as an element of the list
+      kde$crs <- sf::st_crs(x)
       res_tbl$kde <- list(kde = kde)
+      # add a class to the tibble
+      class(res_tbl) <- c("tt_kde_tbl", class(res_tbl))
       res_tbl
     } else { # with multiple levels, we create the area and geometry columns
       # create the isopleths for each level
@@ -146,6 +156,8 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
       cbind(res_tbl, area, geometry_set)
       # now cast the results to an sf object
       kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
+      # add a class
+      class(kde_results) <- c("tt_iso_tbl", class(kde_results))
     }
     res_tbl
   }
@@ -194,7 +206,7 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h) {
     h = h * 4,
     lims = c(
       # note that the limits in MASS refer to the centroids of the cells, so we
-      # need to add res/2 to the min and subtract res/2 from the maxS
+      # need to add res/2 to the min and subtract res/2 from the max
       bbox$xmin+res/2, bbox$xmax-res/2,
       bbox$ymin+res/2, bbox$ymax-res/2
     )

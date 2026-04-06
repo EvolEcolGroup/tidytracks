@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # load the boar data
 ```{r}
 library(tidytracks)
-wildboars_tt <- readRDS("./articles_data/wildboar_mt.rds")
+wildboars_tt <- readRDS("./articles_data/wildboar_tt.rds")
 wildboars_tt
 ```
 

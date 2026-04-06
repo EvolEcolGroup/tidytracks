@@ -1,6 +1,6 @@
 test_that("tt_hr_mcp works with multiple tracks", {
   # load a simple dataset originally from adehabitat
-  boar_mt <- readRDS(file.path( test_path("testdata"),"wildboar_mt.rds"))
+  boar_mt <- readRDS(file.path( test_path("testdata"),"wildboar_tt.rds"))
 
   # group by name
   boar_mt <- boar_mt %>%
