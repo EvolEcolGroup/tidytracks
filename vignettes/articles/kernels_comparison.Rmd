@@ -83,9 +83,18 @@ Are they equal?
 
 ```{r}
 # THIS is wrong, as it is VERY different
-# likely flipped
+# likely flipped, possibly shifted
 mean(abs(g_ade$ud - g_mass_spdf$est))
 abs(mean(g_ade$ud - g_mass_spdf$est)) < 0.001
+
+# flip it around
+mean(abs(g_ade$ud - as.vector(matrix(g_mass$z,ncol=100, byrow=TRUE))))
+
+# we are still slightly offset
+which.max(g_ade$ud)
+which.max(as.vector(matrix(g_mass$z,ncol=100, byrow=TRUE)))
+
+
 
 ```
 
