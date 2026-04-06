@@ -82,8 +82,9 @@ plot(g_mass_spdf)
 Are they equal?
 
 ```{r}
-
-abs(mean(g_ade$ud - g_mass_spdf$est))
+# THIS is wrong, as it is VERY different
+# likely flipped
+mean(abs(g_ade$ud - g_mass_spdf$est))
 abs(mean(g_ade$ud - g_mass_spdf$est)) < 0.001
 
 ```
@@ -222,6 +223,8 @@ that we can check various operations
 brock_ade$ud <- as.vector(wildboars_kde$kde[[1]]$z)
 # and confirm that now the values are identical
 abs(mean(brock_ade$ud - wildboars_kde$kde[[1]]$z))
+# plot it to check that it works
+plot(brock_ade)
 ```
 
 No create isopleths
