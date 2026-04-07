@@ -78,30 +78,51 @@ g_mass_spdf <- sp::SpatialPixelsDataFrame(
 )
 plot(g_mass_spdf)
 ```
-
-Are they equal?
-
+create a copy of ade and reinsert the values to see whether we can make it look
+similar
 ```{r}
-# THIS is wrong, as it is VERY different
-# likely flipped, possibly shifted
-mean(abs(g_ade$ud - g_mass_spdf$est))
-abs(mean(g_ade$ud - g_mass_spdf$est)) < 0.001
+g_ade_copy <- g_ade
+# flip the matrix to match the orientation of the grid
+g_ade_copy$ud <- as.vector(t(g_mass$z)[100:1,]) 
+plot(g_ade_copy)
+```
 
-# flip it around
-mean(abs(g_ade$ud - as.vector(matrix(g_mass$z,ncol=100, byrow=TRUE))))
+They look similar, but are they similar:
+```{r}
+mean(g_ade$ud)
+mean(abs(g_ade$ud - g_ade_copy$ud))#
+```
+YES!!! Out of a mean value just below 1, there is a difference of 10^-4
 
-# we are still slightly offset
-which.max(g_ade$ud)
-which.max(as.vector(matrix(g_mass$z,ncol=100, byrow=TRUE)))
+We write a little function to flip the vector from mass to adehabitat
+```{r}
 
+flip_mass_to_ade <- function(mass_kde) {
+  # flip the matrix to match the orientation of the grid
+  return(as.vector(t(mass_kde$z)[nrow(mass_kde$z):1,]))
+}
+```
 
+and test it:
+```{r}
+mean(abs(g_ade$ud - flip_mass_to_ade(g_mass)))
 
 ```
+
 
 ```{r}
 # clean up
 rm(my_grid, mask_xy_grid, mask.xy, H)
 rm(genetta, g_ade, g_mass, g_mass_spdf)
+```
+
+We write a little function to flip the vector from mass to adehabitat
+```{r}
+
+flip_mass_to_ade <- function(mass_kde) {
+  # flip the matrix to match the orientation of the grid
+  return(as.vector(t(mass_kde$z)[nrow(mass_kde$z):1,]))
+}
 ```
 
 
@@ -162,11 +183,20 @@ plot(brock_mass_spdf)
 ```
 
 Are they equal?
+We use a function to flip the vector from mass to adehabitat
+```{r}
+
+flip_mass_to_ade <- function(mass_kde) {
+  # flip the matrix to match the orientation of the grid
+  return(as.vector(t(mass_kde$z)[nrow(mass_kde$z):1,]))
+}
+```
+
 
 ```{r}
 
-abs(mean(brock_ade$ud - brock_mass_spdf$est))
-abs(mean(brock_ade$ud - brock_mass_spdf$est)) < 0.001
+mean(abs(brock_ade$ud - flip_mass_to_ade(brock_mass)))
+mean(abs(brock_ade$ud - flip_mass_to_ade(brock_mass))) < 0.001
 
 ```
 
@@ -218,8 +248,9 @@ all.equal(wildboars_kde$kde[[1]]$x, mask.xy$x[1:100])
 ```
 
 ```{r}
-abs(mean(brock_ade$ud - wildboars_kde$kde[[1]]$z))
-abs(mean(brock_ade$ud - wildboars_kde$kde[[1]]$z)) < 0.001
+mean(abs(brock_ade$ud - flip_mass_to_ade(wildboars_kde$kde[[1]])))
+mean(abs(brock_ade$ud - flip_mass_to_ade(wildboars_kde$kde[[1]]))) < 0.001
+
 # this should be zero as we are comparing mass with mass 
 # (just check that we are using the correct grid)
 abs(mean(wildboars_kde$kde[[1]]$z - brock_mass_spdf$est))
@@ -229,10 +260,10 @@ Now transfer values from the tidytracks kernel to the adehabitatHR object, so
 that we can check various operations
 
 ```{r}
-brock_ade$ud <- as.vector(wildboars_kde$kde[[1]]$z)
+brock_ade$ud <- flip_mass_to_ade(wildboars_kde$kde[[1]])
 # and confirm that now the values are identical
-abs(mean(brock_ade$ud - wildboars_kde$kde[[1]]$z))
-# plot it to check that it works
+mean(abs(brock_ade$ud - flip_mass_to_ade(wildboars_kde$kde[[1]])))
+# plot it to check that it works visually
 plot(brock_ade)
 ```
 
