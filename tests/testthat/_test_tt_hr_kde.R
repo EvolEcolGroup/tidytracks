@@ -5,7 +5,7 @@ test_that("tt_hr_mcp works with multiple tracks", {
   # group by name
   boar_mt <- boar_mt %>%
     dplyr::group_by(Name)
-  boar_kde <- tt_hr_kde(boar_mt, levels = c(0.50, 0.95))
+  boar_kde <- tt_hr_kde(boar_mt, res = 50, levels = c(0.50, 0.95))
   # expect 8 rows
   expect_equal(nrow(boar_kde), 8)
   # expect this is an sf object

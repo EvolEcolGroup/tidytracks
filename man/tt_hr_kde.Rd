@@ -35,6 +35,8 @@ multiple variables, this column is named \code{group_id}): the ids from the
 grouping of \code{x}
 \item \code{level}: the level of the isopleth
 \item \code{h}: the bandwidth used for the KDE
+\item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}: the bounding box used for the KDE
+\item \code{res}: the resolution used for the KDE
 \item \code{area}: the area of the home range at this level (in the units
 of the projection of \code{x}, e.g. m^2 for a UTM projection)
 \item \code{geometry}:  an \code{sfc} column containing the multipolygons representing

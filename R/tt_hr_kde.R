@@ -24,6 +24,8 @@
 #'   grouping of `x`
 #' - `level`: the level of the isopleth
 #' - `h`: the bandwidth used for the KDE
+#' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
+#' - `res`: the resolution used for the KDE
 #' - `area`: the area of the home range at this level (in the units
 #'   of the projection of `x`, e.g. m^2 for a UTM projection)
 #'  - `geometry`:  an `sfc` column containing the multipolygons representing
@@ -148,16 +150,15 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
       res_tbl
     } else { # with multiple levels, we create the area and geometry columns
       # create the isopleths for each level
-      browser()
       geometry_set <- isopleths_one_group(kde, levels, crs = sf::st_crs(x))
       # Calculate area
       area <- sf::st_area(geometry_set)
       # Create a tibble with the results
-      cbind(res_tbl, area, geometry_set)
+      res_tbl <- cbind(res_tbl, area, geometry_set)
       # now cast the results to an sf object
-      kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
+      res_tbl <- sf::st_as_sf(res_tbl, crs = sf::st_crs(x))
       # add a class
-      class(kde_results) <- c("tt_iso_tbl", class(kde_results))
+      class(res_tbl) <- c("tt_iso_tbl", class(res_tbl))
     }
     res_tbl
   }
