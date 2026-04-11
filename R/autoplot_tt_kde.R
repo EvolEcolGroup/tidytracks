@@ -1,4 +1,7 @@
-#' Autoplot a utilisation distriution created by kde
+#' Autoplot a utilisation distribution created by kde
+#' 
+#' This autoplot function can be used to plot a specific kernel, rather
+#' than the full tibble.
 #' 
 #' @param object an object of class \code{tt_kde}
 #' @param ... not used

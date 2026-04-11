@@ -2,7 +2,7 @@
 % Please edit documentation in R/autoplot_tt_kde.R
 \name{autoplot.tt_kde}
 \alias{autoplot.tt_kde}
-\title{Autoplot a utilisation distriution created by kde}
+\title{Autoplot a utilisation distribution created by kde}
 \usage{
 \method{autoplot}{tt_kde}(object, ...)
 }
@@ -15,5 +15,6 @@
 a ggplot object
 }
 \description{
-Autoplot a utilisation distriution created by kde
+This autoplot function can be used to plot a specific kernel, rather
+than the full tibble.
 }

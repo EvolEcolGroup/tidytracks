@@ -1,7 +1,21 @@
 #' Quantify the home range using kernel density estimation
 #'
 #' This function estimates the home range of an animal using kernel density
-#' estimation (KDE).
+#' estimation (KDE). #' The home range is estimated for each group in `x`, which
+#' can be defined by grouping `x` by one or more variables. If `x` is not
+#' grouped, the track ID is used as grouping variable, and the home range is
+#' estimated for each track separately.
+#'
+#' @details By default, the full UD is returned. If `levels` is set, the
+#' isopleths for the specified levels are returned instead, along with their
+#' area. This option is useful to reduce memory use, but has the drawback that
+#' the full UD is not returned, which can be useful for some applications (e.g.
+#' to compute overlap between home ranges). If `levels` is set, the area of the
+#' isopleths is computed using `sf::st_area()`, which returns the area in the
+#' units of the projection of `x` (e.g. m^2 for a UTM projection). If `x` is
+#' unprojected, the area is computed in degrees^2, which is not a meaningful
+#' unit for area. In this case, it is recommended to project `x` to an
+#' appropriate projection before using this function. 
 #'
 #' @param x A move2 object; if explicitely grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
@@ -15,10 +29,13 @@
 #'   extent is taken by combining all points in `x` (expanded by 10%).
 #' @param res The resolution of the grid (in the units of the projection of x).
 #'   If NULL, res is set to obtained ~ 1000 cells.
-#' @param levels A vector of levels for the isopleths (i.e. contour lines). The
-#'   default is `c(0.5, 0.95)`, which corresponds to the 50% and 95% home
-#'   ranges. If set to NULL, the full utilisation distribution is returned.
-#' @returns An `sf` tibble , with columns:
+#' @param levels A vector of levels for the isopleths (i.e. contour lines), as
+#'   numbers between 0 and 1.If set to NULL (the defaul), the full utilisation
+#'   distribution is returned; otherwise just the isopleths are returned. It is
+#'   possible to specify more than two levels, e.g.  `c(0.5, 0.95)` corresponds
+#'   to the 50% and 95% home ranges.
+#' @returns Either a `tibble`, or, if `levels` is not NULL, an `sf` tibble , 
+#' with columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
 #'   grouping of `x`
@@ -26,20 +43,18 @@
 #' - `h`: the bandwidth used for the KDE
 #' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
 #' - `res`: the resolution used for the KDE
+#' If `levels` is NULL:
+#' - `kde`: the full KDE object is returned in a list column
+#' Else, if `levels` is not NULL, the following columns are added:
 #' - `area`: the area of the home range at this level (in the units
 #'   of the projection of `x`, e.g. m^2 for a UTM projection)
 #'  - `geometry`:  an `sfc` column containing the multipolygons representing
 #'   the isopleth for the appropriate level
 #'
-#'   If `levels` is NULL, a standard tibble is returned with columns:
-#'   `group_id`, `h`, and `kde`.
-#'
-#'   The bbox and res used are stored as attributes of the returned object.
-#'
 #' @export
 
 tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
-                      res = NULL, levels = c(0.5, 0.95)) {
+                      res = NULL, levels = NULL) {
   # if x is not grouped, used the track ID as grouping variable
   if (!inherits(x, "grouped_df")) {
     x <- dplyr::group_by(x, event_track_id(x))
@@ -49,8 +64,8 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
   if (!is.null(levels) && (any(levels < 0 | levels > 1))) {
     stop("levels must be between 0 and 1")
   }
-  # reorder levels from big to small
-  levels <- sort(levels, decreasing = TRUE)
+  # reorder levels from small to big
+  levels <- sort(levels)
 
   # get the group indices
   group_index <- dplyr::group_indices(x)
@@ -129,36 +144,34 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     # row for the table to integrate the results
     res_tbl <- tibble::tibble(
       group_id = group_labels[group_id],
-      level = levels,
       h = h_val,
       xmin = bbox["xmin"],
       ymin = bbox["ymin"],
       xmax = bbox["xmax"],
       ymax = bbox["ymax"],
-      res = res
+      res = res,
+      level = levels
     )
 
     # if returning the full kde object, we simply add it to the kde column
     if (is.null(levels)) {
-      # add a class to the kde object for easier handling in the future
-      class(kde) <- c("tt_kde", class(kde))
-      # add the crs to the kde object as an element of the list
-      kde$crs <- sf::st_crs(x)
+      # add the kde to the tibble as a list column
       res_tbl$kde <- list(kde = kde)
       # add a class to the tibble
-      class(res_tbl) <- c("tt_kde_tbl", class(res_tbl))
+      class(res_tbl) <- c("hr_kde_tbl", class(res_tbl))
       res_tbl
     } else { # with multiple levels, we create the area and geometry columns
       # create the isopleths for each level
-      geometry_set <- isopleths_one_group(kde, levels, crs = sf::st_crs(x))
+      geometry_set <- hr_iso(kde, levels)
       # Calculate area
       area <- sf::st_area(geometry_set)
       # Create a tibble with the results
-      res_tbl <- cbind(res_tbl, area, geometry_set)
+      res_tbl <- res_tbl %>%
+        dplyr::mutate(area = area, geometry = geometry_set)
       # now cast the results to an sf object
-      res_tbl <- sf::st_as_sf(res_tbl, crs = sf::st_crs(x))
+      res_tbl <- sf::st_as_sf(res_tbl)
       # add a class
-      class(res_tbl) <- c("tt_iso_tbl", class(res_tbl))
+      class(res_tbl) <- c("hr_iso_tbl", class(res_tbl))
     }
     res_tbl
   }
@@ -172,11 +185,10 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
       )
   }
   
-  # add a method attribute
-  attr(kde_results, "hr_method") <- c("kde")
-  attr(kde_results, "bbox") <- bbox
-  attr(kde_results, "res") <- res
-
+  # add a class
+  class(kde_results) <- c("hr_iso_tbl", class(kde_results))
+  
+  
   return(kde_results)
 }
 
@@ -212,46 +224,10 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h) {
       bbox$ymin+res/2, bbox$ymax-res/2
     )
   )
+  # add the crs to the kde object for later use
+  kde$crs <- crs
+  # add a class to the kde object for easier handling in the future
+  class(kde) <- c("hr_kde", class(kde))
   return(kde)
 }
 
-
-#' Create kde isopleths at multiple levels for a given group
-#'
-#' This is the internal function that is called by `tt_hr_kde` to create the kde
-#' isopleths at multiple levels for a given group. It is not intended to be
-#' called directly by the user.
-#'
-#' @param kde a kde object, as returned by `kde_one_group`. This is a list of x,
-#'   y and z elements, as returned from MASS::kde2d, where x and y are the grid
-#'   of values used for the kde, and z is the matrix of density estimates.
-#' @param levels A vector of levels for the contour lines. If set to NULL, the
-#'   full kde object is returned (useful for debugging)
-#' @param crs the crs of the coordinates (to use in the geometry)
-#' @returns A list of with an element called `geometry` containing the sf
-#'   polygons representing the kde isopleths at each level.
-#' @keywords internal
-
-isopleths_one_group <- function(kde, levels, crs) {
-
-  # compute the cumulative utilisation distribution
-  kde_cud <- hr_kde_cud(kde$z)
-
-  # create a list of sf polygons for each level
-  kde_polys <- lapply(levels, function(level) {
-    # get the contour lines for this level
-    contour_lines <- grDevices::contourLines(kde$x, kde$y, kde_cud,
-      level = level
-    )
-    # convert to sf polygons
-    sf_polys <- lapply(contour_lines, function(line) {
-      sf::st_polygon(list(cbind(line$x, line$y)))
-    })
-    # combine into a single sf multipolygon
-    sf::st_combine(sf::st_sfc(sf_polys, crs = crs))
-  })
-  # create a geometry set with one feature per level
-  kde_polys <- sf::st_sfc(do.call(rbind, kde_polys), crs = crs)
-
-  return(kde_polys)
-}
