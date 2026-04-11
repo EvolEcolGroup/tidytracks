@@ -275,12 +275,17 @@ vud <-  getvolumeUD(brock_ade, standardize = TRUE)
 vud
 ```
 
-
+Get the standardise cud from the tidytracks kernel and check that it is the same as the one from adehabitatHR
 ```{r}
-
-
+kde_cud$z <- hr_kde_cud(wildboars_kde$kde[[1]]$z)
+mean(abs(vud@data)$n -100 * flip_mass_to_ade(kde_cud))
 
 ```
+
+These are identical, with the exception that the volume has been multiplied by 100 to
+turn it into percentages
+
+
 
 ```{r}
 class(vud)
