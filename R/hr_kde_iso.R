@@ -8,22 +8,22 @@
 #' @param levels numeric vector of isopleth levels to create. Default is
 #' `c(0.50, 0.95)`, which will create 50% and 95% isopleths. Levels should be between
 #' 0 and 1.
-#' @return If `x` is a tibble, a tibble of class `hr_iso_tbl` with columns
+#' @return If `x` is a tibble, a tibble of class `hr_kde_iso_tbl` with columns
 #' `id`, `level`, and `geometry`. If `x` is a `hr_kde` object, 
 #' a `sfc_GEOMETRYCOLLECTION` object.
 #' @export
 
-hr_iso <- function(x, levels = c(0.50, 0.95)) {
-  UseMethod("hr_iso")
+hr_kde_iso <- function(x, levels = c(0.50, 0.95)) {
+  UseMethod("hr_kde_iso")
 }
 
 #' @export
-#' @rdname hr_iso
-hr_iso.hr_kde_tbl <- function(x, levels = c(0.50, 0.95)) {
+#' @rdname hr_kde_iso
+hr_kde_iso.hr_kde_tbl <- function(x, levels = c(0.50, 0.95)) {
   levels <- sort(levels)
-  # apply hr_iso to each row of the tibble, and unnest the results
+  # apply hr_kde_iso to each row of the tibble, and unnest the results
   iso_list <- x %>%
-    dplyr::reframe(iso = purrr::map(.data$kde, ~ hr_iso(.x, levels))) %>%
+    dplyr::reframe(iso = purrr::map(.data$kde, ~ hr_kde_iso(.x, levels))) %>%
     dplyr::pull(dplyr::any_of("iso")) %>%
     unlist(recursive = FALSE) %>%
     sf::st_sfc(crs = x$kde[[1]]$crs)
@@ -35,13 +35,13 @@ hr_iso.hr_kde_tbl <- function(x, levels = c(0.50, 0.95)) {
     dplyr::mutate(area = sf::st_area(iso_list)) %>%
     dplyr::mutate(geometry = iso_list) %>%
     sf::st_as_sf()
-  class(res_tbl) <- c("hr_iso_tbl", class(res_tbl))
+  class(res_tbl) <- c("hr_kde_iso_tbl", class(res_tbl))
   return(res_tbl)
 }
 
 #' @export
-#' @rdname hr_iso
-hr_iso.hr_kde <- function(x, levels) {
+#' @rdname hr_kde_iso
+hr_kde_iso.hr_kde <- function(x, levels) {
   # check that levels are between 0 and 1
   if (any(levels < 0 | levels > 1)) {
     stop("levels should be between 0 and 1")

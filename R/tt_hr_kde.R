@@ -162,7 +162,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
       res_tbl
     } else { # with multiple levels, we create the area and geometry columns
       # create the isopleths for each level
-      geometry_set <- hr_iso(kde, levels)
+      geometry_set <- hr_kde_iso(kde, levels)
       # Calculate area
       area <- sf::st_area(geometry_set)
       # Create a tibble with the results
@@ -171,7 +171,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
       # now cast the results to an sf object
       res_tbl <- sf::st_as_sf(res_tbl)
       # add a class
-      class(res_tbl) <- c("hr_iso_tbl", class(res_tbl))
+      class(res_tbl) <- c("hr_kde_iso_tbl", class(res_tbl))
     }
     res_tbl
   }
@@ -186,7 +186,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
   }
   
   # add a class
-  class(kde_results) <- c("hr_iso_tbl", class(kde_results))
+  class(kde_results) <- c("hr_kde_iso_tbl", class(kde_results))
   
   
   return(kde_results)

@@ -267,18 +267,22 @@ mean(abs(brock_ade$ud - flip_mass_to_ade(wildboars_kde$kde[[1]])))
 plot(brock_ade)
 ```
 
-No create isopleths
-```{r}
-iso_90 <- getverticeshr(x = brock_ade,
-                        percent = 90)
-class(iso_90)
-plot(iso_90, col=1:4)
-```
+
 
 ```{r cumulative_ud}
 
-vud <-  getvolumeUD(brock_ade)
+vud <-  getvolumeUD(brock_ade, standardize = TRUE)
 vud
+```
+
+
+```{r}
+
+
+
+```
+
+```{r}
 class(vud)
 
 sum(vud@vol)
@@ -297,6 +301,18 @@ x <- brock_ade
 just_std <- asc/(sum(asc))
 
 
+```
+
+
+
+
+
+No create isopleths
+```{r}
+iso_90 <- getverticeshr(x = brock_ade,
+                        percent = 90)
+class(iso_90)
+plot(iso_90, col=1:4)
 ```
 
 

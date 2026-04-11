@@ -608,8 +608,7 @@ We want to estimate the home range for each bird, so we will group by `bird_id`:
 ```{r}
 shags_kde <- shags_trips_sub %>%
   group_by(bird_id) %>%
-  tt_hr_kde(levels = c(0.5, 0.95)) 
-#to do discuss h value param 
+  tt_hr_kde(levels = c(0.5, 0.95))
 ```
 
 `shags_kde` is an `sf` object, with estimates of the area (in the units of
