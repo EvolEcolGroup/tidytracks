@@ -1,18 +1,30 @@
 #' Autoplot a utilisation distribution created by kde
-#' 
-#' This autoplot function can be used to plot a specific kernel, rather
-#' than the full tibble.
-#' 
+#'
+#' This autoplot function can be used to plot a specific kernel, rather than the
+#' full tibble.
+#'
 #' @param object an object of class \code{tt_kde}
+#' @param standardise logical, whether to standardise the density values to sum
+#'   to 1. Default is TRUE.
 #' @param ... not used
 #' @importFrom ggplot2 autoplot
 #' @returns a ggplot object
 #' @export
 
-autoplot.tt_kde <- function(object, ...) {
+autoplot.hr_kde <- function(object, standardise = TRUE, ...) {
 
-  # Create a terra SpatRaster from the list
-  # assume x and y form a grid
+  # check the ellipses are empty
+  if (length(list(...)) > 0) {
+    stop("additional arguments .. are not used")
+  }
+  
+  if (standardise) {
+    # standardise the density values to sum to 1
+    object$z <- object$z / sum(object$z, na.rm = TRUE)
+  }
+  
+  # Create a terra SpatRaster from the list object,
+  # which includes x, y, z and crs
   r <- kde2spatraster(object)
 
   # Create the ggplot object using tidyterra
