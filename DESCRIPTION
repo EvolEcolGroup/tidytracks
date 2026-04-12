@@ -35,7 +35,6 @@ Imports:
   tidyterra
 Suggests:
     lubridate,
-    lwgeom,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
