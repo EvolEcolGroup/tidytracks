@@ -19,7 +19,7 @@
 #'   a data.frame with multiple UDs.
 #' @export
 
-ud_overlap <- function(x, y = NULL, ud_col = "kde", method = "BA") {
+hr_ud_overlap <- function(x, y = NULL, ud_col = "kde", method = "BA") {
   warning("this function has not been fully tested yet")
   if (is.data.frame(x)) {
     if (!is.null(y)) {
