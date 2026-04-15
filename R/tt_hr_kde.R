@@ -139,7 +139,8 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
       crs = sf::st_crs(x),
       bbox = bbox,
       res = res,
-      h = h_val
+      h = h_val,
+      id = group_id
     )
     # row for the table to integrate the results
     res_tbl <- tibble::tibble(
@@ -156,9 +157,9 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     # if returning the full kde object, we simply add it to the kde column
     if (is.null(levels)) {
       # add the kde to the tibble as a list column
-      res_tbl$kde <- list(kde = kde)
+      res_tbl$ud <- list(kde)
       # add a class to the tibble
-      class(res_tbl) <- c("hr_kde_tbl", class(res_tbl))
+      class(res_tbl) <- c("hr_ud_tbl", class(res_tbl))
       res_tbl
     } else { # with multiple levels, we create the area and geometry columns
       # create the isopleths for each level
@@ -171,12 +172,14 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
       # now cast the results to an sf object
       res_tbl <- sf::st_as_sf(res_tbl)
       # add a class
-      class(res_tbl) <- c("hr_kde_iso_tbl", class(res_tbl))
+      class(res_tbl) <- c("hr_poly_tbl", class(res_tbl))
     }
     res_tbl
   }
+  # change class of ud column to PackedSpatRaster_list
+  names(kde_results$ud) <- group_labels
+  kde_results$ud <- as_PackedSpatRaster_list(kde_results$ud)
   
-
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
     kde_results <- kde_results %>%
@@ -204,10 +207,9 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
 #'   the bounding box of the grid over which to compute the KDE.
 #' @param res The resolution of the grid (in the units of the projection of x).
 #' @param h The bandwidth for the kernel density estimation.
-#' @return A list containing the x, y and z elements of the kde, as returned by
-#'   MASS::kde2d.
+#' @return A PackedSpatRaster.
 #' @keywords internal
-kde_one_group <- function(xy, levels, crs, bbox, res, h) {
+kde_one_group <- function(xy, levels, crs, bbox, res, h, id) {
   kde <- MASS::kde2d(xy[, 1],
     xy[, 2],
     n = round(c(
@@ -224,10 +226,23 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h) {
       bbox$ymin+res/2, bbox$ymax-res/2
     )
   )
-  # add the crs to the kde object for later use
-  kde$crs <- crs
-  # add a class to the kde object for easier handling in the future
-  class(kde) <- c("hr_kde", class(kde))
-  return(kde)
+  
+  # standardise the density values to sum to 1
+  kde$z <- kde$z / sum(kde$z, na.rm = TRUE)
+  
+
+  # turn it into a raster (flipping the x axis appropriately)
+  r <- terra::rast(t(kde$z)[nrow(kde$z):1,],
+                   crs = crs$wkt,
+                   extent =terra::ext(bbox$xmin, bbox$xmax, 
+                                      bbox$ymin, bbox$ymax)
+  )
+  names(r) <- "ud"
+  #terra::metags(r) <- list(method = "kde", h = h, id = id)
+  
+  # TODO mass uses centroids, but what does terra use? Do we need to shift
+  # to corners???
+  # return it wrapped (so that it can be put in a list)
+  return(terra::wrap(r))
 }
 

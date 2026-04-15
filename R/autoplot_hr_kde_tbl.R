@@ -21,8 +21,7 @@
 #' @importFrom ggplot2 autoplot
 #' @export
 
-autoplot.hr_kde_tbl <- function(object, id_to_plot = NULL, layout = NULL,
-                                standardise = TRUE, ...) {
+autoplot.hr_kde_tbl <- function(object, id_to_plot = NULL, layout = NULL,...) {
   
   
   ## Get appropriate ids to plot

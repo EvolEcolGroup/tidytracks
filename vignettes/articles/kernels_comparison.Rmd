@@ -89,8 +89,8 @@ plot(g_ade_copy)
 
 They look similar, but are they similar:
 ```{r}
-mean(g_ade$ud)
-mean(abs(g_ade$ud - g_ade_copy$ud))#
+sum(g_ade$ud)
+sum(abs(g_ade$ud - g_ade_copy$ud))#
 ```
 YES!!! Out of a mean value just below 1, there is a difference of 10^-4
 

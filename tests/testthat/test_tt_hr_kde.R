@@ -9,7 +9,7 @@ test_that("tt_hr_mcp works with multiple tracks", {
   # we expect 4 rows, one per group
   expect_equal(nrow(boar_kde), 4)
   # this should be  a hr_kde_tbl object
-  expect_true(inherits(boar_kde, "hr_kde_tbl"))
+  expect_true(inherits(boar_kde, "hr_ud_tbl"))
   # the group_id column should have been renamed to Name
   expect_true("Name" %in% names(boar_kde))
   # create isopleths at 50 and 95% levels
