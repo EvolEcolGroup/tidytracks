@@ -42,7 +42,12 @@ test_that("tt_animate errors if plot_lims is wrong length or type", {
 # Return value correctness with type = points
 # n_frames matches unique datetimes, p_anim is a gganim object
 test_that("n_frames and p_anim are correct with type = points", {
-  result <- tt_animate(x, type = "points")
+  # with extra frames prepended so the wake starts when the bird starts moving
+  result <- tt_animate(x, type = "points", pad_start = TRUE)
+  expect_type(list_anim$n_frames, "integer")
+  expect_s3_class(result$p_anim, "gganim")
+  # without the prepended extra frames
+  result <- tt_animate(x, type = "points", pad_start = FALSE)
   expect_equal(result$n_frames, length(unique(x$date_time)))
   expect_s3_class(result$p_anim, "gganim")
 })
@@ -80,7 +85,7 @@ test_that("tt_animate embeds label_format in the title for type=paths", {
 })
 
 # for manual testing only: animate the gganim using av_renderer()
-# gganimate::animate(plot = result$p_anim,
-#                    n_frames = result$n_frames,
-#                    fps = 10,
-#                    renderer = gganimate::av_renderer())
+gganimate::animate(plot = result$p_anim,
+                   n_frames = result$n_frames,
+                   fps = 10,
+                   renderer = gganimate::av_renderer())

@@ -10,6 +10,7 @@ tt_animate(
   basemap = NULL,
   wake_length = 0.5,
   path_alpha = 0.5,
+  pad_start = FALSE,
   plot_lims = NULL,
   label_format = "\%Y-\%m-\%d \%H:\%M:\%S"
 )
@@ -26,7 +27,18 @@ no basemap is used.}
 \item{wake_length}{Numeric, length of the wake behind each point as a
 proportion of the total length of the animation (only for \code{type = "points"}).}
 
-\item{path_alpha}{Numeric, the alpha to use for the path (only for \code{type == "path"}).}
+\item{path_alpha}{Numeric, the alpha to use for the path (only for
+\code{type ="path"}).}
+
+\item{pad_start}{Logical, whether to add synthetic rows at the start of each
+track so that the wake is visible from the first frame of the animation
+(only for \code{type = "points"}). If \code{FALSE}, the wake will only start to
+appear after \code{wake_length * n_frames} frames. If \code{TRUE}, the function will
+add synthetic rows at the start of each track with timestamps before the
+first timestamp in the data, so that the wake is visible from the first
+frame. This is useful if you want to see the wake from the beginning of the
+animation, but it will increase the number of frames and may not be
+appropriate if your data have a long time gap at the start of each track.}
 
 \item{plot_lims}{A numeric vector of length 4 giving the limits of the plot
 (\code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}), default is \code{NULL} which uses the full
