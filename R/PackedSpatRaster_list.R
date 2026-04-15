@@ -84,7 +84,10 @@ new_PackedSpatRaster_list <- function(packed) {
 `[[<-.PackedSpatRaster_list` <- function(x, i, value) {
   if (!is.null(value)) {
     if (!inherits(value, "SpatRaster") && !inherits(value, "PackedSpatRaster")) {
-      browser()
+      # this is a strange special case raised every so often by terra
+      if (value == "<S4 class ‘SpatRaster’ [package “terra”] with 1 slot>"){
+        NextMethod()
+      }
       stop("value must be a SpatRaster or PackedSpatRaster.", call. = FALSE)
     }
     value <- if (inherits(value, "PackedSpatRaster")) value else terra::wrap(value)
