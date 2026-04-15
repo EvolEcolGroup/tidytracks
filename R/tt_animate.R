@@ -139,12 +139,12 @@ tt_animate <- function(x,
         # colour = 'grey92',
         # fill = NULL,
         # falloff = "cubic-in",
-        # wrap = TRUE,
+        wrap = FALSE,
         # exclude_layer = NULL,
-        # exclude_phase = c("enter", "exit")
+        # exclude_phase = NULL # c("enter", "exit")
       ) +
       ggplot2::labs(
-        title = "{format(frame_time, label_format)}"#,
+        title = paste0("{format(frame_time, '", label_format, "')}")#,
         # subtitle = "Frame {frame} of {nframes}"
         )
     
@@ -168,9 +168,9 @@ tt_animate <- function(x,
       gganimate::transition_reveal(along = date_time) +
       gganimate::ease_aes("linear") +
       ggplot2::labs(
-        title = "{format(frame_along, label_format)}"#,
+        title = paste0("{format(frame_along, '", label_format, "')}")#,
         # subtitle = "Frame {frame} of {nframes}"
-        )
+      )
     
   }
   

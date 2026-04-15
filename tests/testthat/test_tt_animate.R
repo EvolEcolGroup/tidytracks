@@ -1,93 +1,86 @@
 
-# only rnu this test if gganimate package is installed
 skip_if_not_installed("gganimate")
-skip_if_not_installed("rnaturalearth")
 
-# set up example dataset ----
-# TODO save a cleaned mini example .rds file somewhere to use for tests like this
-x <- tt_read_data(events = system.file("extdata/shag_tidytrack_sample.csv", 
-                                       package = "tidytracks"),
-                  col_track_id = "bird_id",
-                  col_coords = c("longitude", "latitude"),
-                  col_date_time = c("date_gmt", "time_gmt"),
-                  format_date_time = "%d/%m/%Y %H:%M:%S",
-                  meta = system.file("extdata/shag_tidytrack_meta.csv",
-                                     package = "tidytracks"),
-                  time_zone = "UTC",
-                  crs = 4326) %>%
-  # filter by latitude to remove obvious errors
-  dplyr::filter(sf::st_coordinates(.)[,2] < -5) %>%
-  # just two birds
-  filter_by_meta(bird_id %in% c("KB_23_42778_45", "KB_23_44224_40")) %>%
-  # clean the data
-  tt_order_time() %>%
-  tt_clean_mcconnell(max_speed = units::as_units(80, "km/h")) %>%
-  # interpolate to 10-min regular intervals
-  move2::mt_interpolate(., "10 mins", omit=TRUE)
+# helper: build a minimal move2 object for lightweight tests ----
+make_test_tracks <- function(crs = 4326) {
+  times <- seq(
+    as.POSIXct("2023-01-01 00:00:00", tz = "UTC"),
+    by = "10 mins", length.out = 10
+  )
+  df <- data.frame(
+    bird_id   = rep(c("A", "B"), each = 10),
+    date_time = rep(times, 2),
+    x = c(seq(0, 1, length.out = 10), seq(0.5, 1.5, length.out = 10)),
+    y = c(seq(0, 1, length.out = 10), seq(0.5, 1.5, length.out = 10))
+  )
+  sf_df <- sf::st_as_sf(df, coords = c("x", "y"), crs = crs)
+  move2::mt_as_move2(sf_df, track_id_column = "bird_id", 
+                     time_column = "date_time")
+}
 
-# change datetimes for bird 2 to match bird 1 so they're concurrent
-x$date_time[x$bird_id == "KB_23_44224_40"] <- 
-  x$date_time[x$bird_id == "KB_23_42778_45"][1:length(
-    x$date_time[x$bird_id == "KB_23_44224_40"]
-  )]
+x <- make_test_tracks()
 
-# truncate date range so the first track isn't so long
-x <- x %>%
-  # dplyr::filter(date_time <= (x %>% filter(bird_id == "KB_23_44224_40") %>% pull(date_time) %>% max()))
-  dplyr::filter(date_time <= as.POSIXct("2022-12-31 17:30:00", tz = "UTC"))
-
-# read basemap (rnaturalearth ne coastline, converted to sf object)
-basemap <- rnaturalearth::ne_countries(country = "antarctica", 
-                                       scale = "medium",
-                                       returnclass = "sf") %>%
-  dplyr::select(name) # remove extra fields
-
-# re-project both to Antarctic Polar Stereographic
-x <- sf::st_transform(x, crs = 3031)
-basemap <- sf::st_transform(basemap, crs = 3031)
-
-# check datetime range
-# x %>%
-#   dplyr::group_by(bird_id) %>%
-#   dplyr::summarise(start = min(date_time),
-#                    end = max(date_time))
-
-
-# test tt_animate for points ----
-test_that("tt_animate produces a gganim object with type=points", {
-  list_anim <- tt_animate(x = x,
-                          type = "points",
-                          basemap = basemap,
-                          wake_length = 0.5,
-                          label_format = "%b %e %H:%M")
-  # list_anim should be a list of length 2 with names p_anim and n_frames
-  expect_type(list_anim, "list")
-  expect_named(list_anim, c("p_anim", "n_frames"))
-  # the second element should be a single integer (n frames)
-  expect_type(list_anim$n_frames, "integer")
-  # the first element should be a gganim object
-  expect_s3_class(list_anim$p_anim, "gganim")
+# Input validation
+test_that("tt_animate errors if x is not a move2 object", {
+  expect_error(tt_animate(data.frame()), "move2")
 })
 
-# test tt_animate for paths ----
-test_that("tt_animed produces a gganim object with type=path", {
-  list_anim <- tt_animate(x = x,
-                          type = "paths",
-                          basemap = basemap,
-                          wake_length = 0.5,
-                          label_format = "%b %e %H:%M")
-  # list_anim should be a list of length 2 with names p_anim and n_frames
-  expect_type(list_anim, "list")
-  expect_named(list_anim, c("p_anim", "n_frames"))
-  # the second element should be a single integer (n frames)
-  expect_type(list_anim$n_frames, "integer")
-  # the first element should be a gganim object
-  expect_s3_class(list_anim$p_anim, "gganim")
+test_that("tt_animate errors if x has no CRS", {
+  x_no_crs <- sf::st_set_crs(x, NA)
+  expect_error(tt_animate(x_no_crs), "CRS")
 })
-  
+
+test_that("tt_animate errors if basemap is not NULL or sf", {
+  expect_error(tt_animate(x, basemap = "not_sf"), "basemap")
+})
+
+test_that("tt_animate errors if plot_lims is wrong length or type", {
+  expect_error(tt_animate(x, plot_lims = c(0, 1, 2)), "plot_lims")
+  expect_error(tt_animate(x, plot_lims = c("a", "b", "c", "d")), "plot_lims")
+})
+
+# Return value correctness with type = points
+# n_frames matches unique datetimes, p_anim is a gganim object
+test_that("n_frames and p_anim are correct with type = points", {
+  result <- tt_animate(x, type = "points")
+  expect_equal(result$n_frames, length(unique(x$date_time)))
+  expect_s3_class(result$p_anim, "gganim")
+})
+
+# return value correctness with type = paths
+test_that("n_frames and p_anim are correct with type = path", {
+  result <- tt_animate(x, type = "paths")
+  expect_equal(result$n_frames, length(unique(x$date_time)))
+  expect_s3_class(result$p_anim, "gganim")
+})
+
+# NULL basemap
+test_that("tt_animate works without a basemap", {
+  result <- tt_animate(x, type = "points", basemap = NULL)
+  expect_s3_class(result$p_anim, "gganim")
+})
+
+# custom plot_lims
+test_that("tt_animate accepts custom plot_lims", {
+  result <- tt_animate(x, type = "paths", plot_lims = c(-1, -1, 2, 2))
+  expect_s3_class(result$p_anim, "gganim")
+})
+
+# test that label_format is embedded in the title expression ----
+test_that("tt_animate embeds label_format in the title for type=points", {
+  fmt <- "%b %e %H:%M"
+  result <- tt_animate(make_test_tracks(), type = "points", label_format = fmt)
+  expect_true(grepl(fmt, result$p_anim$labels$title, fixed = TRUE))
+})
+
+test_that("tt_animate embeds label_format in the title for type=paths", {
+  fmt <- "%Y/%m/%d"
+  result <- tt_animate(make_test_tracks(), type = "paths", label_format = fmt)
+  expect_true(grepl(fmt, result$p_anim$labels$title, fixed = TRUE))
+})
+
 # for manual testing only: animate the gganim using av_renderer()
-# gganimate::animate(plot = list_anim$p_anim,
-#                    nframes = list_anim$n_frames,
+# gganimate::animate(plot = result$p_anim,
+#                    n_frames = result$n_frames,
 #                    fps = 10,
 #                    renderer = gganimate::av_renderer())
-
