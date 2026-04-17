@@ -38,6 +38,7 @@ Suggests:
     sp,
     knitr,
     rmarkdown,
+    reshape2,
     lwgeom,
     testthat (>= 3.0.0),
     trip,
