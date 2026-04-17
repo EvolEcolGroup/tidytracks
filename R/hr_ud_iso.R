@@ -25,8 +25,8 @@ hr_ud_iso.hr_ud_tbl <- function(x, levels = c(0.50, 0.95)) {
   iso_list <- x %>%
     dplyr::reframe(iso = purrr::map(.data$ud, ~ hr_ud_iso(.x, levels))) %>%
     dplyr::pull(dplyr::any_of("iso")) %>%
-    as.list() %>%
-    do.call(rbind, .)
+    as.list()
+  iso_list <- do.call(rbind, iso_list)
   # double each line of the tibble for each level
   res_tbl <- x %>%
     dplyr::select(-dplyr::any_of("ud")) %>%
@@ -76,8 +76,8 @@ hr_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
   # rename the geometry column, add the level column, and calculate area
   contours <- sf::st_as_sf(contours) %>% 
     dplyr::rename(geometry = x) %>%
-    dplyr::mutate(level = levels, area = sf::st_area(geometry),
-                  .before = geometry)
+    dplyr::mutate(level = levels, area = sf::st_area(.data$geometry),
+                  .before = "geometry")
    return(contours)
   
 }

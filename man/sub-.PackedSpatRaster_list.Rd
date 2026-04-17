@@ -2,10 +2,18 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{[.PackedSpatRaster_list}
 \alias{[.PackedSpatRaster_list}
-\title{[ subsets and returns a new PackedSpatRaster_list (still packed)}
+\title{Subset a PackedSpatRaster_list by position or name}
 \usage{
 \method{[}{PackedSpatRaster_list}(x, i, ...)
 }
+\arguments{
+\item{x}{A PackedSpatRaster_list.}
+
+\item{i}{The indices or names of the elements to subset.}
+
+\item{...}{Additional arguments passed to \code{NextMethod()}, for compatibility
+with generic.}
+}
 \description{
-[ subsets and returns a new PackedSpatRaster_list (still packed)
+\code{[} subsets and returns a new PackedSpatRaster_list (still packed)
 }

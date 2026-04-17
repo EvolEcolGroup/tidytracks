@@ -2,13 +2,21 @@
 % Please edit documentation in R/hr_ud_overlap.R
 \name{hr_ud_overlap}
 \alias{hr_ud_overlap}
+\alias{hr_ud_overlap.SpatRaster}
+\alias{hr_ud_overlap.hr_ud_tbl}
 \title{Compute overlap for utilisation distributions}
 \usage{
 hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi"))
+
+\method{hr_ud_overlap}{SpatRaster}(x, y, ..., method = c("ba", "vi", "udoi"))
+
+\method{hr_ud_overlap}{hr_ud_tbl}(x, ..., method = c("ba", "vi", "udoi"))
 }
 \arguments{
 \item{x}{A SpatRaster of the utilisation distribution (with a layer \code{ud}),
 or a tibble of UDs of class \code{hr_ud_tbl} (e.g. as created with \code{\link[=tt_hr_kde]{tt_hr_kde()}}.}
+
+\item{...}{Additional arguments (not currently used)}
 
 \item{method}{A character string specifying the method to use for overlap
 calculation. Options will include "ba" (Bhattacharyya's Affinity), "vi" (Volume

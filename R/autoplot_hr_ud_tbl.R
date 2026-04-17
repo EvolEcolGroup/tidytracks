@@ -14,8 +14,6 @@
 #'   column.
 #' @param layout A vector of length 2, the number of rows and columns in the
 #'   plot layout. If `NULL`, the layout is determined automatically.
-#' @param standardise Logical. If `TRUE` (the default), the utilisation
-#'   distributions are standardised to sum to 1.
 #' @param ... Not used.
 #' @return A ggplot object.
 #' @importFrom ggplot2 autoplot

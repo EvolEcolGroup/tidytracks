@@ -125,7 +125,6 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     ceiling((bbox$xmax - bbox$xmin) / res) * res
   bbox["ymax"] <- bbox$ymin +
     ceiling((bbox$ymax - bbox$ymin) / res) * res
-
   group_id <- NULL # hack to avoid it being flagged as global in checks
   kde_results <- foreach::foreach(
     group_id = group_unique,
@@ -217,9 +216,9 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h, id) {
   # standardise the density values to sum to 1
   kde$z <- kde$z / sum_density
   
-
   # turn it into a raster (flipping the x axis appropriately)
-  r <- terra::rast(t(kde$z)[nrow(kde$z):1,],
+  kde$z <- t(kde$z)
+  r <- terra::rast(kde$z[nrow(kde$z):1,],
                    crs = crs$wkt,
                    extent =terra::ext(bbox$xmin, bbox$xmax, 
                                       bbox$ymin, bbox$ymax)

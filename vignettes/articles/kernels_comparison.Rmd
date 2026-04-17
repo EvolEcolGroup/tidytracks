@@ -13,6 +13,7 @@ library(adehabitatHR)
 library(MASS)
 library(reshape2)
 library(dplyr)
+library(sp)
 ```
 
 ## genetta data
@@ -43,10 +44,10 @@ my_grid <- expand.grid(x = seq(0.01, 1, by = 0.01),
 
 # kernel using adehabitat
 mask_xy_grid <- my_grid
-sp::coordinates(mask_xy_grid) <- ~ x + y
-sp::gridded(mask_xy_grid) <- TRUE
+coordinates(mask_xy_grid) <- ~ x + y
+gridded(mask_xy_grid) <- TRUE
 
-g_ade <- adehabitatHR::kernelUD(sp::SpatialPoints(genetta),
+g_ade <- kernelUD(SpatialPoints(genetta),
   h = "href",
   grid = mask_xy_grid,
   kern = "bivnorm"
@@ -72,7 +73,7 @@ g_mass <- MASS::kde2d(genetta$V1,
 )
 
 # convert to spdf for plotting
-g_mass_spdf <- sp::SpatialPixelsDataFrame(
+g_mass_spdf <- SpatialPixelsDataFrame(
   points = mask.xy,
   data = data.frame(est = reshape2::melt(g_mass$z)$value)
 )
@@ -147,10 +148,10 @@ adehabitat
 ```{r}
 # kernel using adehabitat
 mask_xy_grid <- my_grid
-sp::coordinates(mask_xy_grid) <- ~ x + y
-sp::gridded(mask_xy_grid) <- TRUE
+coordinates(mask_xy_grid) <- ~ x + y
+gridded(mask_xy_grid) <- TRUE
 
-brock_ade <- adehabitatHR::kernelUD(sp::SpatialPoints(brock),
+brock_ade <- adehabitatHR::kernelUD(SpatialPoints(brock),
   h = "href",
   grid = mask_xy_grid,
   kern = "bivnorm"
@@ -175,7 +176,7 @@ brock_mass <- MASS::kde2d(brock$x,
 )
 
 # convert to spdf for plotting
-brock_mass_spdf <- sp::SpatialPixelsDataFrame(
+brock_mass_spdf <- SpatialPixelsDataFrame(
   points = mask.xy,
   data = data.frame(est = reshape2::melt(brock_mass$z)$value)
 )

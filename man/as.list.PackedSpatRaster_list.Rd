@@ -6,6 +6,11 @@
 \usage{
 \method{as.list}{PackedSpatRaster_list}(x, ...)
 }
+\arguments{
+\item{x}{PackedSpatRaster_list to convert}
+
+\item{...}{Not used.}
+}
 \description{
 Unpack all rasters into a plain list of live SpatRasters
 }

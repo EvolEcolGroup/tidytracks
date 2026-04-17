@@ -6,12 +6,11 @@
 #' (UDs) using various methods.
 #' @param x A SpatRaster of the utilisation distribution (with a layer `ud`),
 #' or a tibble of UDs of class `hr_ud_tbl` (e.g. as created with [tt_hr_kde()].
-#' @param y A SpatRaster of the utilisation distribution, if `x` is a single UD. Else, if
-#' `x` is tibble of UDs, `y` is not used.
 #' @param method A character string specifying the method to use for overlap
 #'   calculation. Options will include "ba" (Bhattacharyya's Affinity), "vi" (Volume
 #'   of Intersection), and "udoi" (Utilisation Distribution Overlap Index).
 #'   Currently only "ba" is implemented. Default is "ba".
+#' @param ... Additional arguments (not currently used)
 #' @return A numeric value representing the overlap between the two UDs
 #'   according to the specified method, or a matrix of such values if `x` is
 #'   a tibble of multiple UDs.
@@ -22,7 +21,10 @@ hr_ud_overlap <- function(x, ..., method = c("ba", "vi", "udoi")) {
 }
 
 #' @export
-hr_ud_overlap.SpatRaster <- function(x, y, method = c("ba", "vi", "udoi")) {
+#' @rdname hr_ud_overlap
+#' @param y A SpatRaster of the utilisation distribution, if `x` is a single UD. Else, if
+#' `x` is tibble of UDs, `y` is not used.
+hr_ud_overlap.SpatRaster <- function(x, y, ..., method = c("ba", "vi", "udoi")) {
   method <- match.arg(method)
   if (method == "ba") {
     return(sum(sqrt(x[])* sqrt(y[])))
@@ -34,6 +36,7 @@ hr_ud_overlap.SpatRaster <- function(x, y, method = c("ba", "vi", "udoi")) {
 }
 
 #' @export
+#' @rdname hr_ud_overlap
 hr_ud_overlap.hr_ud_tbl <- function(x, ..., method = c("ba", "vi", "udoi")) {
   # check that ... are empty
   if (length(list(...)) > 0) {

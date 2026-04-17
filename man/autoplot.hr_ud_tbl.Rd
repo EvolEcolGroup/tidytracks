@@ -19,9 +19,6 @@ column.}
 plot layout. If \code{NULL}, the layout is determined automatically.}
 
 \item{...}{Not used.}
-
-\item{standardise}{Logical. If \code{TRUE} (the default), the utilisation
-distributions are standardised to sum to 1.}
 }
 \value{
 A ggplot object.

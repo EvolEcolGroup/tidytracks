@@ -1,7 +1,9 @@
 skip_if_not_installed("adehabitatHR")
+skip_if_not_installed("sp")
 test_that("tt_hr_kde is equivalent to adehabitatHR", {
   library(adehabitatHR)
   library(terra)
+  library(sp)
   data(puechabonsp)
 
   brock <- as.data.frame(puechabonsp$relocs) %>%
@@ -19,7 +21,7 @@ test_that("tt_hr_kde is equivalent to adehabitatHR", {
   sp::coordinates(mask_xy_grid) <- ~ x + y
   sp::gridded(mask_xy_grid) <- TRUE
 
-  brock_ade <- adehabitatHR::kernelUD(sp::SpatialPoints(brock),
+  brock_ade <- kernelUD(SpatialPoints(brock),
     h = "href",
     grid = mask_xy_grid,
     kern = "bivnorm"

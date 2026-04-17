@@ -2,12 +2,9 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{PackedSpatRaster_list}
 \alias{PackedSpatRaster_list}
-\alias{as_PackedSpatRaster_list}
 \title{Create a PackedSpatRaster_list}
 \usage{
 PackedSpatRaster_list(...)
-
-as_PackedSpatRaster_list(x)
 }
 \arguments{
 \item{...}{SpatRaster / PackedSpatRaster objects, optionally named.

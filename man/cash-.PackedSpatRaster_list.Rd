@@ -2,10 +2,18 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{$.PackedSpatRaster_list}
 \alias{$.PackedSpatRaster_list}
-\title{$ unwraps and returns a single live SpatRaster by name}
+\title{Returns Sparaster by name from PackedSpatRaster_list}
 \usage{
 \method{$}{PackedSpatRaster_list}(x, name)
 }
+\arguments{
+\item{x}{A PackedSpatRaster_list.}
+
+\item{name}{The name of the element to return.}
+}
+\value{
+A SpatRaster object, unwrapped from the PackedSpatRaster.
+}
 \description{
-$ unwraps and returns a single live SpatRaster by name
+\code{$} returns a SpatRaster by position or name (unwrapping it automatically)
 }

@@ -2,10 +2,20 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{[[.PackedSpatRaster_list}
 \alias{[[.PackedSpatRaster_list}
-\title{[[ unwraps and returns a single live SpatRaster}
+\title{Returns Sparaster by position or name from PackedSpatRaster_list}
 \usage{
 \method{[[}{PackedSpatRaster_list}(x, i, ...)
 }
+\arguments{
+\item{x}{A PackedSpatRaster_list.}
+
+\item{i}{The index or name of the element to return.}
+
+\item{...}{unused, for compatibility with generic. Additional arguments are ignored.}
+}
+\value{
+A SpatRaster object, unwrapped from the PackedSpatRaster.
+}
 \description{
-[[ unwraps and returns a single live SpatRaster
+\code{[[} returns a SpatRaster by position or name (unwrapping it automatically)
 }
