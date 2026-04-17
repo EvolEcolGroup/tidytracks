@@ -9,6 +9,7 @@
 #' @param ... SpatRaster / PackedSpatRaster objects, optionally named.
 #'            A single plain list is also accepted.
 #' @return A `PackedSpatRaster_list`.
+#' @export
 #' @examples
 #' r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
 #' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
@@ -83,14 +84,17 @@ new_PackedSpatRaster_list <- function(packed) {
 #' @export
 `[[<-.PackedSpatRaster_list` <- function(x, i, value) {
   if (!is.null(value)) {
-    if (!inherits(value, "SpatRaster") && !inherits(value, "PackedSpatRaster")) {
-      # this is a strange special case raised every so often by terra
-      if (value == "<S4 class ‘SpatRaster’ [package “terra”] with 1 slot>"){
-        NextMethod()
-      }
-      stop("value must be a SpatRaster or PackedSpatRaster.", call. = FALSE)
+    # browser()
+    # if (!inherits(value, "SpatRaster") && !inherits(value, "PackedSpatRaster")) {
+    #   # this is a strange special case raised every so often by terra
+    #   if (value == "<S4 class ‘SpatRaster’ [package “terra”] with 1 slot>"){
+    #     NextMethod()
+    #   }
+    #   stop("value must be a SpatRaster or PackedSpatRaster.", call. = FALSE)
+    # }
+    if (inherits(value, "SpatRaster")){
+      value <- terra::wrap(value)
     }
-    value <- if (inherits(value, "PackedSpatRaster")) value else terra::wrap(value)
   }
   new_PackedSpatRaster_list(NextMethod())
 }
@@ -136,13 +140,14 @@ as.list.PackedSpatRaster_list <- function(x, ...) {
 }
 
 #' Coerce a plain list of SpatRasters to PackedSpatRaster_list
+#' @rdname PackedSpatRaster_list
 #' @export
-as_PackedSpatRaster_list <- function(x, ...) UseMethod("as_PackedSpatRaster_list")
+as_PackedSpatRaster_list <- function(x) UseMethod("as_PackedSpatRaster_list")
 
 #' @export
-as_PackedSpatRaster_list.list <- function(x, ...) PackedSpatRaster_list(x)
+as_PackedSpatRaster_list.list <- function(x) PackedSpatRaster_list(x)
 
 #' @export
-as_PackedSpatRaster_list.PackedSpatRaster_list <- function(x, ...) x
+as_PackedSpatRaster_list.PackedSpatRaster_list <- function(x) x
 
 

@@ -4,7 +4,7 @@
 \alias{kde_one_group}
 \title{Compute the kde for a given group}
 \usage{
-kde_one_group(xy, levels, crs, bbox, res, h)
+kde_one_group(xy, levels, crs, bbox, res, h, id)
 }
 \arguments{
 \item{xy}{a matrix of coordinates}
@@ -19,8 +19,7 @@ the bounding box of the grid over which to compute the KDE.}
 \item{h}{The bandwidth for the kernel density estimation.}
 }
 \value{
-A list containing the x, y and z elements of the kde, as returned by
-MASS::kde2d.
+A PackedSpatRaster.
 }
 \description{
 This is the internal function that is called by \code{tt_hr_kde} to compute the

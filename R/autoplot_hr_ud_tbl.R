@@ -1,4 +1,4 @@
-#' Autoplot a tibble of utilisation distributions created by kde
+#' Autoplot a tibble of utilisation distributions
 #'
 #' This autoplot function can be used to plot all or a subset of UDs from a
 #' tibble of UDs created by [tt_hr_kde()]. The first column of the tibble is
@@ -21,8 +21,7 @@
 #' @importFrom ggplot2 autoplot
 #' @export
 
-autoplot.hr_kde_tbl <- function(object, id_to_plot = NULL, layout = NULL,...) {
-  
+autoplot.hr_ud_tbl <- function(object, id_to_plot = NULL, layout = NULL,...) {
   
   ## Get appropriate ids to plot
   # check that the first column has unique values (which can be used as ids)
@@ -62,8 +61,17 @@ autoplot.hr_kde_tbl <- function(object, id_to_plot = NULL, layout = NULL,...) {
   }
   
   # create a list of plots
-  plot_list <- lapply(object$kde, autoplot, standardise = standardise)
+  plot_list <- lapply(object$ud, plot_raster)
   p <- patchwork::wrap_plots(plot_list, nrow = layout[1], ncol = layout[2])
 
+  return(p)
+}
+
+plot_raster <- function(r){  # Create the ggplot object using tidyterra
+  p <- ggplot2::ggplot() +
+    tidyterra::geom_spatraster(data = r) +
+    ggplot2::labs(x = "longitude",
+                  y = "latitude") +
+    ggplot2::theme_minimal()
   return(p)
 }

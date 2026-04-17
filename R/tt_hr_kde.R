@@ -188,10 +188,6 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
       )
   }
   
-  # add a class
-  class(kde_results) <- c("hr_kde_iso_tbl", class(kde_results))
-  
-  
   return(kde_results)
 }
 
@@ -227,8 +223,11 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h, id) {
     )
   )
   
+  # estimate the sum of the density
+  sum_density <- sum(kde$z, na.rm = TRUE)
+  
   # standardise the density values to sum to 1
-  kde$z <- kde$z / sum(kde$z, na.rm = TRUE)
+  kde$z <- kde$z / sum_density
   
 
   # turn it into a raster (flipping the x axis appropriately)
@@ -238,10 +237,9 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h, id) {
                                       bbox$ymin, bbox$ymax)
   )
   names(r) <- "ud"
-  #terra::metags(r) <- list(method = "kde", h = h, id = id)
-  
-  # TODO mass uses centroids, but what does terra use? Do we need to shift
-  # to corners???
+  terra::metags(r) <- c(paste0("id = ", id),"method = kde", paste0("h = ",h),
+                        paste0("density_sum" = sum_density))
+
   # return it wrapped (so that it can be put in a list)
   return(terra::wrap(r))
 }

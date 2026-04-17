@@ -3,8 +3,8 @@
 #' This method can be applied to a whole tibble of UDs, or to an individual
 #' UD.
 #' 
-#' @param x either a tibble of class `hr_ud_tbl`, as created by [tt_hr_ud()],
-#' or a `hr_ud` object from the `ud` column of a `hr_ud_tbl` tibble.
+#' @param x either a tibble of class `hr_ud_tbl`, as created by [tt_hr_kde()],
+#' or a `SpatRaster` object from the `ud` column of a `hr_ud_tbl` tibble.
 #' @param levels numeric vector of isopleth levels to create. Default is
 #' `c(0.50, 0.95)`, which will create 50% and 95% isopleths. Levels should be between
 #' 0 and 1.
@@ -35,35 +35,38 @@ hr_ud_iso.hr_ud_tbl <- function(x, levels = c(0.50, 0.95)) {
     dplyr::mutate(area = sf::st_area(iso_list)) %>%
     dplyr::mutate(geometry = iso_list) %>%
     sf::st_as_sf()
-  class(res_tbl) <- c("hr_ud_iso_tbl", class(res_tbl))
+  class(res_tbl) <- c("hr_poly_tbl", class(res_tbl))
   return(res_tbl)
 }
 
 #' @export
 #' @rdname hr_ud_iso
-hr_ud_iso.SpatRaster <- function(x, levels) {
+hr_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
   # check that levels are between 0 and 1
   if (any(levels < 0 | levels > 1)) {
     stop("levels should be between 0 and 1")
   }
+  levels = sort(levels)
   # compute the cumulative utilisation distribution
-  ud_cud <- hr_cud(x$z)
+  ud_cud <- hr_cud(x)
   
   # create a list of sf polygons for each level
   ud_polys <- lapply(levels, function(level) {
     # get the contour lines for this level
-    contour_lines <- grDevices::contourLines(x$x, x$y, ud_cud,
-                                             level = level
+    contour_lines <- grDevices::contourLines(
+      x = ud_cud$x,
+      y = ud_cud$y,
+      z = ud_cud$z,
+      level = level
     )
     # convert to sf polygons
     sf_polys <- lapply(contour_lines, function(line) {
       sf::st_polygon(list(cbind(line$x, line$y)))
     })
     # combine into a single sf multipolygon
-    sf::st_combine(sf::st_sfc(sf_polys, crs = x$crs))
+    sf::st_combine(sf::st_sfc(sf_polys, crs = terra::crs(x)))
   })
   # create a geometry set with one feature per level
-  ud_polys <- sf::st_sfc(do.call(rbind, ud_polys), crs = x$crs)
-  
+  ud_polys <- sf::st_sfc(do.call(rbind, ud_polys), crs = terra::crs(x))
   return(ud_polys)
 }
