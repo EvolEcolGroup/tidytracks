@@ -1,3 +1,4 @@
+skip_if_not_installed("adehabitatHR")
 test_that("tt_hr_kde is equivalent to adehabitatHR", {
   library(adehabitatHR)
   library(terra)

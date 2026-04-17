@@ -150,35 +150,23 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
       ymin = bbox["ymin"],
       xmax = bbox["xmax"],
       ymax = bbox["ymax"],
-      res = res,
-      level = levels
+      res = res
     )
 
     # if returning the full kde object, we simply add it to the kde column
-    if (is.null(levels)) {
       # add the kde to the tibble as a list column
-      res_tbl$ud <- list(kde)
+      res_tbl$ud <- PackedSpatRaster_list(kde)
+      names(res_tbl$ud) <- group_labels[group_id]
       # add a class to the tibble
       class(res_tbl) <- c("hr_ud_tbl", class(res_tbl))
-      res_tbl
-    } else { # with multiple levels, we create the area and geometry columns
-      # create the isopleths for each level
-      geometry_set <- hr_kde_iso(kde, levels)
-      # Calculate area
-      area <- sf::st_area(geometry_set)
-      # Create a tibble with the results
-      res_tbl <- res_tbl %>%
-        dplyr::mutate(area = area, geometry = geometry_set)
-      # now cast the results to an sf object
-      res_tbl <- sf::st_as_sf(res_tbl)
-      # add a class
-      class(res_tbl) <- c("hr_poly_tbl", class(res_tbl))
+    if (!is.null(levels)) {
+      res_tbl <- hr_ud_iso(res_tbl, levels)
     }
     res_tbl
   }
-  # change class of ud column to PackedSpatRaster_list
-  names(kde_results$ud) <- group_labels
-  kde_results$ud <- as_PackedSpatRaster_list(kde_results$ud)
+  # # change class of ud column to PackedSpatRaster_list
+  # names(kde_results$ud) <- group_labels
+  # kde_results$ud <- as_PackedSpatRaster_list(kde_results$ud)
   
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {

@@ -4,52 +4,57 @@
 #' If x is a data.frame, it computes the overlap for all unique pairs of
 #' UDs in the columns specified (kde by default).
 #' (UDs) using various methods.
-#' @param x A utilisation distribution object (a list of 3 elements, x, y and z),
-#' or a data.frame containing multiple UDs in a specified column.
-#' @param y A utilisation distribution object, if `x` is a single UD. Else, if
-#' `x` is a data.frame, `y` should be NULL (the default).
-#' @param ud_col A character string specifying the column name in `x` that
-#'   contains the UDs. Default is "kde".
+#' @param x A SpatRaster of the utilisation distribution (with a layer `ud`),
+#' or a tibble of UDs of class `hr_ud_tbl` (e.g. as created with [tt_hr_kde()].
+#' @param y A SpatRaster of the utilisation distribution, if `x` is a single UD. Else, if
+#' `x` is tibble of UDs, `y` is not used.
 #' @param method A character string specifying the method to use for overlap
-#'   calculation. Options will include "BA" (Bhattacharyya's Affinity), "VI" (Volume
-#'   of Intersection), and "UDOI" (Utilisation Distribution Overlap Index).
-#'   Currently only "BA" is implemented. Default is "BA".
+#'   calculation. Options will include "ba" (Bhattacharyya's Affinity), "vi" (Volume
+#'   of Intersection), and "udoi" (Utilisation Distribution Overlap Index).
+#'   Currently only "ba" is implemented. Default is "ba".
 #' @return A numeric value representing the overlap between the two UDs
 #'   according to the specified method, or a matrix of such values if `x` is
-#'   a data.frame with multiple UDs.
+#'   a tibble of multiple UDs.
 #' @export
 
-hr_ud_overlap <- function(x, y = NULL, method = "BA") {
-  warning("this function has not been fully tested yet")
-  if (is.data.frame(x)) {
-    if (!is.null(y)) {
-      stop("If 'x' is a data.frame, 'y' must be NULL.")
-    }
-    ud_list <- x$ud
-    n <- length(ud_list)
-    overlap_matrix <- matrix(NA, nrow = n, ncol = n)
-    colnames(overlap_matrix) <- rownames(overlap_matrix) <- rownames(x)
+hr_ud_overlap <- function(x, ..., method = c("ba", "vi", "udoi")) {
+  UseMethod("hr_ud_overlap")
+}
+
+#' @export
+hr_ud_overlap.SpatRaster <- function(x, y, method = c("ba", "vi", "udoi")) {
+  method <- match.arg(method)
+  if (method == "ba") {
+    return(sum(sqrt(x[])* sqrt(y[])))
+  } else if (method == "vi") {
+    return(sum(pmin(x[], y[])))
+  } else if (method == "udoi") {
+    return(sum(x[] * y[]))
+  }
+}
+
+#' @export
+hr_ud_overlap.hr_ud_tbl <- function(x, ..., method = c("ba", "vi", "udoi")) {
+  # check that ... are empty
+  if (length(list(...)) > 0) {
+    stop("additional arguments ... are not used")
+  }
+  n <- nrow(x)
+  overlap_matrix <- matrix(NA, nrow = n, ncol = n)
+  # assume that the first column of x is an id column (check that it is
+  # character and unique)
+   if (is.character(x[[1]]) && length(unique(x[[1]])) == n) {
+     rownames(overlap_matrix) <- colnames(overlap_matrix) <- x[[1]]
+   } else {
+     stop("the first column of x must be a character vector with unique values")
+   }
     for (i in 1:(n - 1)) {
       for (j in (i + 1):n) {
-        overlap_matrix[i, j] <- ud_overlap(ud_list[[i]], ud_list[[j]],
+        overlap_matrix[i, j] <- hr_ud_overlap(x$ud[[i]], x$ud[[j]],
                                            method = method)
         overlap_matrix[j, i] <- overlap_matrix[i, j]
       }
     }
     diag(overlap_matrix) <- 1
     return(overlap_matrix)
-  } else {
-    if (is.null(y)) {
-      stop("If 'x' is a single UD, 'y' must be provided.")
-    }
-    if (method == "BA") {
-      # Bhattacharyya's Affinity
-      z1 <- x$z / sum(x$z)
-      z2 <- y$z / sum(y$z)
-      ba <- sum(sqrt(z1 * z2))
-      return(ba)
-    } else {
-      stop(paste("Method", method, "not implemented."))
-    }
-  }
 }

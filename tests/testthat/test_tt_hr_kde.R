@@ -13,7 +13,7 @@ test_that("tt_hr_kde works with multiple tracks", {
   # the group_id column should have been renamed to Name
   expect_true("Name" %in% names(boar_kde))
   # create isopleths at 50 and 95% levels
-  boar_iso <- hr_kde_iso(boar_kde, levels = c(0.50, 0.95))
+  boar_iso <- hr_ud_iso(boar_kde, levels = c(0.50, 0.95))
   # this should be an sf object with 8 rows (4 groups x 2 levels)
   expect_equal(nrow(boar_iso), 8)
   expect_true(inherits(boar_iso, "sf"))

@@ -31,7 +31,8 @@ hr_ud_iso.hr_ud_tbl <- function(x, levels = c(0.50, 0.95)) {
   res_tbl <- x %>%
     dplyr::select(-dplyr::any_of("ud")) %>%
     tidyr::uncount(length(levels)) %>%
-    dplyr::bind_cols(iso_list)
+    dplyr::bind_cols(iso_list) %>%
+    sf::st_as_sf()
   # TODO verify if this class is sticky (I think we need to create methods to
   # avoid it being dropped by the sf methods)
   class(res_tbl) <- c("hr_poly_tbl", class(res_tbl))
@@ -75,7 +76,8 @@ hr_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
   # rename the geometry column, add the level column, and calculate area
   contours <- sf::st_as_sf(contours) %>% 
     dplyr::rename(geometry = x) %>%
-    dplyr::mutate(level = levels, area = sf::st_area(geometry), .before = geometry)
+    dplyr::mutate(level = levels, area = sf::st_area(geometry),
+                  .before = geometry)
    return(contours)
   
 }

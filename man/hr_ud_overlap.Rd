@@ -4,27 +4,24 @@
 \alias{hr_ud_overlap}
 \title{Compute overlap for utilisation distributions}
 \usage{
-hr_ud_overlap(x, y = NULL, method = "BA")
+hr_ud_overlap(x, ..., method = c("BA"))
 }
 \arguments{
-\item{x}{A utilisation distribution object (a list of 3 elements, x, y and z),
-or a data.frame containing multiple UDs in a specified column.}
-
-\item{y}{A utilisation distribution object, if \code{x} is a single UD. Else, if
-\code{x} is a data.frame, \code{y} should be NULL (the default).}
+\item{x}{A SpatRaster of the utilisation distribution (with a layer \code{ud}),
+or a tibble of UDs of class \code{hr_ud_tbl} (e.g. as created with \code{\link[=tt_hr_kde]{tt_hr_kde()}}.}
 
 \item{method}{A character string specifying the method to use for overlap
-calculation. Options will include "BA" (Bhattacharyya's Affinity), "VI" (Volume
-of Intersection), and "UDOI" (Utilisation Distribution Overlap Index).
-Currently only "BA" is implemented. Default is "BA".}
+calculation. Options will include "ba" (Bhattacharyya's Affinity), "vi" (Volume
+of Intersection), and "udoi" (Utilisation Distribution Overlap Index).
+Currently only "ba" is implemented. Default is "ba".}
 
-\item{ud_col}{A character string specifying the column name in \code{x} that
-contains the UDs. Default is "kde".}
+\item{y}{A SpatRaster of the utilisation distribution, if \code{x} is a single UD. Else, if
+\code{x} is tibble of UDs, \code{y} is not used.}
 }
 \value{
 A numeric value representing the overlap between the two UDs
 according to the specified method, or a matrix of such values if \code{x} is
-a data.frame with multiple UDs.
+a tibble of multiple UDs.
 }
 \description{
 This function computes the overlap between pairs of utilisation distributions.
