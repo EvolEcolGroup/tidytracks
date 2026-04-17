@@ -15,12 +15,18 @@ show_meta(x) <- value
 \item{value}{A data frame with metadata to set for the \code{move2} object}
 }
 \value{
-The metadata table from the input \code{move2} object
-
-The modified \code{move2} object with updated metadata
+The metadata table from the input \code{move2} object (nothing is
+returned if using the setter function).
 }
 \description{
-Show or set the track metadata of a \code{move2} object
+The track metadata is stored as a data frame within the \code{move2} object. This
+function allows you to view or modify this metadata. When retrieving the
+metadata, it returns a tibble containing the metadata for each track. When
+setting the metadata, you can provide a new data frame with the updated
+metadata, or modify or remove specific columns, as you would normally do with
+a data.frame/tibble. If providing a new metadata table, make sure that
+the number of rows matches the number of tracks in the \code{move2} object, and
+that the track IDs correspond to those in the \code{move2} object.
 }
 \examples{
 show_meta(shags_tt)

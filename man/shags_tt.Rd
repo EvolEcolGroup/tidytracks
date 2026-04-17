@@ -13,6 +13,21 @@ We have 3 columns
 \item{geometry}{longitudes and latitudes, as an \code{sf} geometry
 for each event}
 }
+And a metadata table with 9 rows (one per individual) and 11 columns
+\describe{
+\item{bird_id}{ids of each bird}
+\item{sex}{sex of each bird}
+\item{colony}{name of the colony from which each bird was tracked}
+\item{year}{year of tracking}
+\item{species}{species name}
+\item{deployment_date}{date of deployment of the GPS device}
+\item{deployment_time_gmt}{time of deployment of the GPS device (GMT)}
+\item{colony_lat}{latitude of the colony}
+\item{colony_lon}{longitude of the colony}
+\item{status}{a description of the quality of the data (e.g. good,
+unusable, left colony)}
+\item{colony_coord}{an \code{sf} geometry point of the colony location}
+}
 }
 \usage{
 shags_tt

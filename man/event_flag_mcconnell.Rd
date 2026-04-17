@@ -13,7 +13,8 @@ event_flag_mcconnell(x, max_speed = NULL)
 \code{as_units(50, 'm/s')}.}
 }
 \value{
-A logical vector indicating which points are valid
+A logical vector of the same length as the number of events in \code{x},
+indicating which points are valid.
 }
 \description{
 This function uses the algorithm by McConnell et al. (2012) to clean data

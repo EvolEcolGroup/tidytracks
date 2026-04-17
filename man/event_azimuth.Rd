@@ -9,14 +9,18 @@ event_azimuth(x, units)
 \arguments{
 \item{x}{A move2 object}
 
-\item{units}{Optional, the units to use for the azimuth. The default is "m".}
+\item{units}{Optional, the units to use for the azimuth (e.g., "degrees" or
+"radians"). The default is "degrees".}
 }
 \value{
 a vector of azimuths of the same length as the number of events in
-\code{x}
+\code{x}, with the last value set to NA for each track.
 }
 \description{
 This function measures the azimuth between two events. It returns a vector of
 azimuths of the same length as the number of events in \code{x}, with the azimuth
 for the last event of each track padded with an NA.
+}
+\examples{
+event_azimuth(example_tt)
 }
