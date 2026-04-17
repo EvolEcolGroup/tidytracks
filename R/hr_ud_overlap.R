@@ -6,7 +6,7 @@
 #' If `x` is an `hr_ud_tbl`, it computes the overlap for all unique pairs of
 #' UDs in the table.
 #' @param x A SpatRaster of the utilisation distribution (with a layer `ud`),
-#' or a tibble of UDs of class `hr_ud_tbl` (e.g. as created with [tt_hr_kde()].
+#' or a tibble of UDs of class `hr_ud_tbl` (e.g. as created with [tt_hr_kde()]).
 #' @param method A character string specifying the method to use for overlap
 #'   calculation. Options are `"ba"` (Bhattacharyya's Affinity), `"vi"` (Volume
 #'   of Intersection), and `"udoi"` (Utilisation Distribution Overlap Index).
