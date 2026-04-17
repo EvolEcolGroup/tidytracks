@@ -7,7 +7,7 @@
 #' assembled with `patchwork`.
 #'
 #' @param object A tibble of utilisation distributions created by kde of class
-#'   `hd_kde_tbl` as created with [tt_hr_kde()].
+#'   `hr_ud_tbl` as created with [tt_hr_kde()].
 #' @param id_to_plot Integer or character, the id of the utilisation
 #'   distribution to plot. If `NULL`, all utilisation distributions in the
 #'   tibble are plotted. The first column of the tibble is assumed to be the id
