@@ -25,16 +25,15 @@ hr_ud_iso.hr_ud_tbl <- function(x, levels = c(0.50, 0.95)) {
   iso_list <- x %>%
     dplyr::reframe(iso = purrr::map(.data$ud, ~ hr_ud_iso(.x, levels))) %>%
     dplyr::pull(dplyr::any_of("iso")) %>%
-    unlist(recursive = FALSE) %>%
-    sf::st_sfc(crs = x$ud[[1]]$crs)
+    as.list() %>%
+    do.call(rbind, .)
   # double each line of the tibble for each level
   res_tbl <- x %>%
     dplyr::select(-dplyr::any_of("ud")) %>%
     tidyr::uncount(length(levels)) %>%
-    dplyr::mutate(level = rep(levels, times = nrow(x))) %>%
-    dplyr::mutate(area = sf::st_area(iso_list)) %>%
-    dplyr::mutate(geometry = iso_list) %>%
-    sf::st_as_sf()
+    dplyr::bind_cols(iso_list)
+  # TODO verify if this class is sticky (I think we need to create methods to
+  # avoid it being dropped by the sf methods)
   class(res_tbl) <- c("hr_poly_tbl", class(res_tbl))
   return(res_tbl)
 }
@@ -47,26 +46,36 @@ hr_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
     stop("levels should be between 0 and 1")
   }
   levels = sort(levels)
-  # compute the cumulative utilisation distribution
-  ud_cud <- hr_cud(x)
-  
-  # create a list of sf polygons for each level
-  ud_polys <- lapply(levels, function(level) {
-    # get the contour lines for this level
-    contour_lines <- grDevices::contourLines(
-      x = ud_cud$x,
-      y = ud_cud$y,
-      z = ud_cud$z,
-      level = level
+
+  # contours for the cumulative utilisation distribution
+  contours <- terra::as.contour(hr_cud(x), levels = levels)
+  # cast to an sf object, and union the contours for each level to create
+  # polygons
+  contours <- sf::st_as_sf(contours)
+  # avoid warnings during casting
+  suppressWarnings(
+    contours <- lapply(
+      split(contours, contours$level),
+      function(cont_lines) {
+        cont_lines %>%
+          sf::st_cast("LINESTRING") %>%
+          # cast to polygon to create a close contour
+          sf::st_cast("POLYGON") %>%
+          # union the polygons for this level to create a single polygon (or
+          # multipolygon)
+          sf::st_union() %>%
+          # even if we have a single polygon, recast to multipolygon to ensure
+          # we have a consistent geometry type
+          sf::st_cast("MULTIPOLYGON")
+      }
     )
-    # convert to sf polygons
-    sf_polys <- lapply(contour_lines, function(line) {
-      sf::st_polygon(list(cbind(line$x, line$y)))
-    })
-    # combine into a single sf multipolygon
-    sf::st_combine(sf::st_sfc(sf_polys, crs = terra::crs(x)))
-  })
-  # create a geometry set with one feature per level
-  ud_polys <- sf::st_sfc(do.call(rbind, ud_polys), crs = terra::crs(x))
-  return(ud_polys)
+  )
+  # recast list back to a single geometry set
+  contours <- do.call(c, contours)
+  # rename the geometry column, add the level column, and calculate area
+  contours <- sf::st_as_sf(contours) %>% 
+    dplyr::rename(geometry = x) %>%
+    dplyr::mutate(level = levels, area = sf::st_area(geometry), .before = geometry)
+   return(contours)
+  
 }
