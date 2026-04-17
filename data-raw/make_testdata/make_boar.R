@@ -5,7 +5,7 @@ boar_sf <- sf::st_as_sf(puechabonsp$relocs)
 
 # There is no CRS defined in the object some trial and error suggests that the
 # correct CRS is 27573 (Lambert 93 / France III)
-st_crs(boar_sf) <- 27573
+sf::st_crs(boar_sf) <- 27573
 
 # # To verify it, we first convert the coordinates to WGS84 and then check the
 # # coordinates
