@@ -1,10 +1,11 @@
 #' Quantify the home range using kernel density estimation
 #'
 #' This function estimates the home range of an animal using kernel density
-#' estimation (KDE). #' The home range is estimated for each group in `x`, which
-#' can be defined by grouping `x` by one or more variables. If `x` is not
-#' grouped, the track ID is used as grouping variable, and the home range is
-#' estimated for each track separately.
+#' estimation (KDE).
+#' The home range is estimated for each group in `x`, which can be defined by
+#' grouping `x` by one or more variables. If `x` is not grouped, the track ID
+#' is used as grouping variable, and the home range is estimated for each track
+#' separately.
 #'
 #' @details By default, the full UD is returned. If `levels` is set, the
 #' isopleths for the specified levels are returned instead, along with their
