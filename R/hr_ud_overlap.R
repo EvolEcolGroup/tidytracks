@@ -1,9 +1,10 @@
 #' Compute overlap for utilisation distributions
 #'
-#' This function computes the overlap between pairs of utilisation distributions.
-#' If x is a data.frame, it computes the overlap for all unique pairs of
-#' UDs in the columns specified (kde by default).
+#' This function computes the overlap between pairs of utilisation distributions
 #' (UDs) using various methods.
+#' If `x` is a `SpatRaster`, it computes the overlap between `x` and `y`.
+#' If `x` is an `hr_ud_tbl`, it computes the overlap for all unique pairs of
+#' UDs in the table.
 #' @param x A SpatRaster of the utilisation distribution (with a layer `ud`),
 #' or a tibble of UDs of class `hr_ud_tbl` (e.g. as created with [tt_hr_kde()].
 #' @param method A character string specifying the method to use for overlap
