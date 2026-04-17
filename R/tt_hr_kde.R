@@ -225,8 +225,8 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h, id) {
                                       bbox$ymin, bbox$ymax)
   )
   names(r) <- "ud"
-  terra::metags(r) <- c(paste0("id = ", id),"method = kde", paste0("h = ",h),
-                        paste0("density_sum" = sum_density))
+  terra::metags(r) <- c(paste0("id = ", id), "method = kde", paste0("h = ", h),
+                        paste0("density_sum = ", sum_density))
 
   # return it wrapped (so that it can be put in a list)
   return(terra::wrap(r))
