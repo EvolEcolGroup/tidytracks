@@ -8,9 +8,9 @@
 #' @param x A SpatRaster of the utilisation distribution (with a layer `ud`),
 #' or a tibble of UDs of class `hr_ud_tbl` (e.g. as created with [tt_hr_kde()].
 #' @param method A character string specifying the method to use for overlap
-#'   calculation. Options will include "ba" (Bhattacharyya's Affinity), "vi" (Volume
-#'   of Intersection), and "udoi" (Utilisation Distribution Overlap Index).
-#'   Currently only "ba" is implemented. Default is "ba".
+#'   calculation. Options are `"ba"` (Bhattacharyya's Affinity), `"vi"` (Volume
+#'   of Intersection), and `"udoi"` (Utilisation Distribution Overlap Index).
+#'   Default is `"ba"`.
 #' @param ... Additional arguments (not currently used)
 #' @return A numeric value representing the overlap between the two UDs
 #'   according to the specified method, or a matrix of such values if `x` is
