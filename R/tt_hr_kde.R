@@ -27,7 +27,8 @@
 #'   default).
 #' @param bbox a name vector of four elements: xmin, ymin, xmax, ymax to define
 #'   the bounding box of the grid over which to compute the KDE. If NULL, the
-#'   extent is taken by combining all points in `x` (expanded by 10%).
+#'   extent is taken by combining all points in `x` (expanded by 100% of the
+#'   range on each side).
 #' @param res The resolution of the grid (in the units of the projection of x).
 #'   If NULL, res is set to obtained ~ 1000 cells.
 #' @param levels A vector of levels for the isopleths (i.e. contour lines), as
