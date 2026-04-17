@@ -159,7 +159,7 @@ print.PackedSpatRaster_list <- function(x, ...) {
   
   if (n > 0L) {
     for (i in seq_len(n)) {
-      r     <- terra::unwrap(x[[i]])
+      r     <- x[[i]]
       dims  <- paste0(nrow(r), "x", ncol(r), "x", terra::nlyr(r))
       crs   <- terra::crs(r, describe = TRUE)$name
       label <- if (!is.na(crs) && nzchar(crs)) crs else "no CRS"

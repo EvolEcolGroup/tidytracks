@@ -8,7 +8,7 @@
 #' @param levels numeric vector of isopleth levels to create. Default is
 #' `c(0.50, 0.95)`, which will create 50% and 95% isopleths. Levels should be between
 #' 0 and 1.
-#' @return If `x` is a tibble, a tibble of class `hr_ud_iso_tbl` with columns
+#' @return If `x` is a tibble, a tibble of class `hr_poly_tbl` with columns
 #' `id`, `level`, and `geometry`. If `x` is a `hr_ud` object, 
 #' a `sfc_GEOMETRYCOLLECTION` object.
 #' @export
