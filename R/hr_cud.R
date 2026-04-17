@@ -1,11 +1,11 @@
 #' Compute the cumulative Utilisation Distribution (UD)
 #'
 #' @description
-#' This function takes a matrix representing the UD and returns
-#' the cumulative utilisation distribution (UD).
+#' This function takes a SpatRaster representing the UD and returns
+#' a SpatRaster containing the cumulative utilisation distribution (UD).
 #'
 #' @param x A SpatRaster of the UD.
-#' @return A matrix representing the cumulative utilisation distribution (UD).
+#' @return A `terra::SpatRaster` representing the cumulative utilisation distribution (UD).
 #' @keywords internal
 
 hr_cud <- function(x) {
