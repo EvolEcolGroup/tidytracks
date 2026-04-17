@@ -46,24 +46,26 @@ test_that("PackedSpatRaster_list works with different inputs", {
   expect_true(length(pl2) == 0)
   # check error if we use a non-raster element
   expect_error(PackedSpatRaster_list(r1, "not a raster"))
-  
+
   # access with null
   pl3 <- PackedSpatRaster_list(a = r1, b = r2)
   expect_null(pl3$nonexistent)
   expect_null(pl3[["blah"]])
-  
+
   # test printing
-    expect_output(print(pl3), "PackedSpatRaster_list\\[2\\]")
-    expect_output(print(pl3), "\\$a <SpatRaster")
-    expect_output(print(pl3), "\\$b <SpatRaster")
-    
+  expect_output(print(pl3), "PackedSpatRaster_list\\[2\\]")
+  expect_output(print(pl3), "\\$a <SpatRaster")
+  expect_output(print(pl3), "\\$b <SpatRaster")
+  # ingore additional arguments to print
+  expect_warning(print(pl3, extra_arg = TRUE), "additional arg")
+
   # covert to a plain list
   lst <- as.list(pl3)
   expect_false(inherits(lst, "PackedSpatRaster_list"))
   expect_true(all(vapply(lst, class, character(1)) == "SpatRaster"))
   # warning if we use an additional argument to as.list
   expect_warning(as.list(pl3, extra_arg = TRUE), "additional arg")
-  
+
   # test as_PackedSpatRaster_list
   pl4 <- as_PackedSpatRaster_list(lst)
   expect_true(inherits(pl4, "PackedSpatRaster_list"))
@@ -74,4 +76,3 @@ test_that("PackedSpatRaster_list works with different inputs", {
   # if we give it a list with non-SpatRaster elements, it should error
   expect_error(as_PackedSpatRaster_list(list(r1, "not a raster")))
 })
-  

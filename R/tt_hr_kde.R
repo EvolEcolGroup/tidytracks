@@ -146,6 +146,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     # row for the table to integrate the results
     res_tbl <- tibble::tibble(
       group_id = group_labels[group_id],
+      method = "kde",
       h = h_val,
       xmin = bbox["xmin"],
       ymin = bbox["ymin"],

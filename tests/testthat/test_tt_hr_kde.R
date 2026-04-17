@@ -25,6 +25,23 @@ test_that("tt_hr_kde works with multiple tracks", {
   # expect a 4x4 matrix
   expect_equal(dim(boar_overlap), c(4, 4))
   
+  # test autoplot for the hr_ud_tbl object
+  p <- autoplot(boar_kde)
+  expect_true(inherits(p, "ggplot"))
+  expect_true(inherits(p, "patchwork"))
+  # it should have 4 elements
+  expect_equal(length(p), 4)
+  # plot just two plots
+  p2 <- autoplot(boar_kde, id_to_plot = c(1,3))
+  # it should have 2 elements
+  expect_equal(length(p2), 2)
+  # now plot just one
+  p3 <- autoplot(boar_kde, id_to_plot = 2)
+  # it should have 1 element
+  expect_equal(length(p3), 1)
+  
+  
+  
   # simple plotting example to check the geometry
   #  ggplot(boar_kde) +
   #    geom_sf(aes(fill=group_id), alpha = 0.7)
