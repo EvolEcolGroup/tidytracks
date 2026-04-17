@@ -34,15 +34,6 @@
 #'   proportion of the total length of the animation (only for `type = "points"`).
 #' @param path_alpha Numeric, the alpha to use for the path (only for 
 #'   `type ="path"`).
-#' @param pad_start Logical, whether to add synthetic rows at the start of each
-#'   track so that the wake is visible from the first frame of the animation
-#'   (only for `type = "points"`). If `FALSE`, the wake will only start to
-#'   appear after `wake_length * n_frames` frames. If `TRUE`, the function will
-#'   add synthetic rows at the start of each track with timestamps before the
-#'   first timestamp in the data, so that the wake is visible from the first
-#'   frame. This is useful if you want to see the wake from the beginning of the
-#'   animation, but it will increase the number of frames and may not be
-#'   appropriate if your data have a long time gap at the start of each track.
 #' @param plot_lims A numeric vector of length 4 giving the limits of the plot
 #'   (`xmin`, `ymin`, `xmax`, `ymax`), default is `NULL` which uses the full
 #'   extent of the data, but you may wish to add a buffer around the bounding
@@ -58,7 +49,6 @@ tt_animate <- function(x,
                        basemap = NULL, 
                        wake_length = 0.5, # only for type = "points"
                        path_alpha = 0.5, # only for type = "paths"
-                       pad_start = FALSE, # only for type = "points"
                        plot_lims = NULL,
                        label_format = "%Y-%m-%d %H:%M:%S") {
  
@@ -110,27 +100,6 @@ tt_animate <- function(x,
   # get number of frames
   n_frames <- length(unique(x$date_time))
   
-  # For type = "points": prepend synthetic rows at the first position of each
-  # track so shadow_wake has history from frame 1. Without this, the wake is
-  # absent for the first wake_length * n_frames frames when wrap = FALSE.
-  if (type == "points" & pad_start == TRUE) {
-    n_wake_frames <- ceiling(wake_length * n_frames)
-    dt <- as.numeric(diff(sort(unique(x_plot$date_time)))[1], units = "secs")
-    
-    pad <- do.call(rbind, lapply(split(x_plot, x_plot$track_id), function(df) {
-      first <- df[which.min(df$date_time), ]
-      data.frame(
-        track_id = rep(first$track_id, n_wake_frames),
-        date_time = first$date_time - seq(n_wake_frames, 1) * dt,
-        X = first$X,
-        Y = first$Y
-      )
-    }))
-    
-    x_plot <- rbind(pad, x_plot)
-    n_frames <- length(unique(x_plot$date_time))
-  }
-  
   # start building plot ----
   # with layers that are relevant for both points and paths plots
   
@@ -164,7 +133,8 @@ tt_animate <- function(x,
     # animation logic for points
     p_anim <- p +
       gganimate::transition_time(date_time) +
-      gganimate::shadow_wake(
+      # gganimate::shadow_wake(
+      shadow_wake_build(
         wake_length = wake_length,
         size = TRUE,
         alpha = TRUE,
