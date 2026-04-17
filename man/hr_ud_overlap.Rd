@@ -4,7 +4,7 @@
 \alias{hr_ud_overlap}
 \title{Compute overlap for utilisation distributions}
 \usage{
-hr_ud_overlap(x, ..., method = c("BA"))
+hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi"))
 }
 \arguments{
 \item{x}{A SpatRaster of the utilisation distribution (with a layer \code{ud}),

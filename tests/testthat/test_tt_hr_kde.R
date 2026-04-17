@@ -1,7 +1,6 @@
 test_that("tt_hr_kde works with multiple tracks", {
   # load a simple dataset originally from adehabitat
   boar_tt <- readRDS(file.path( test_path("testdata"),"wildboar_tt.rds"))
-
   # group by name
   boar_tt <- boar_tt %>%
     dplyr::group_by(Name)
@@ -21,6 +20,10 @@ test_that("tt_hr_kde works with multiple tracks", {
   boar_iso2 <- tt_hr_kde(boar_tt, levels = c(0.50, 0.95), res = 50)
   # this should be the same as the previous one
   expect_equal(boar_iso, boar_iso2, ignore_attr = TRUE)
+  # create the overlap
+  boar_overlap <- hr_ud_overlap(boar_kde)
+  # expect a 4x4 matrix
+  expect_equal(dim(boar_overlap), c(4, 4))
   
   # simple plotting example to check the geometry
   #  ggplot(boar_kde) +
