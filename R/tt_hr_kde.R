@@ -25,7 +25,7 @@
 #'   "h_ref_indiv" for using the reference bandwidth for each individual, or
 #'   "h_ref_mean" for using the mean bandwidth for all individuals (the
 #'   default).
-#' @param bbox a name vector of four elements: xmin, ymin, xmax, ymax to define
+#' @param bbox a named vector of four elements: xmin, ymin, xmax, ymax to define
 #'   the bounding box of the grid over which to compute the KDE. If NULL, the
 #'   extent is taken by combining all points in `x` (expanded by 100% of the
 #'   range on each side).
