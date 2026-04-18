@@ -43,8 +43,8 @@ hr_ud_overlap.SpatRaster <- function(x, y, ..., method = c("ba", "vi", "udoi"),
   }
   # compare the two geometries
   if (!terra::compareGeom(x, y, stopOnError = FALSE)) {
-    stop("x and y must have the same geometry (i.e. same extent,",
-    "resolution, and CRS)")
+    stop("x and y must have the same geometry (i.e. same extent, ",
+      "resolution, and CRS)")
   }
   # get x values as a matrix
   x_vals <- as.matrix(x$ud)
