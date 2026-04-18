@@ -15,7 +15,10 @@
 #' @param layout A vector of length 2, the number of rows and columns in the
 #'   plot layout. If `NULL`, the layout is determined automatically.
 #' @param ... Not used.
-#' @return A ggplot object.
+#' @return A patchwork plot object created with [patchwork::wrap_plots()]. When
+#'   one utilisation distribution is selected, the result is a single-panel
+#'   plot composition; when multiple utilisation distributions are selected,
+#'   the result is a multi-panel plot composition.
 #' @importFrom ggplot2 autoplot
 #' @export
 
