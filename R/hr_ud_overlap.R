@@ -45,6 +45,10 @@ hr_ud_overlap.SpatRaster <- function(x, y, ..., method = c("ba", "vi", "udoi")) 
   # get y values as a matrix
   y_vals <- as.matrix(y$ud)
   
+  # missing values should be set to zero
+  x_vals[is.na(x_vals)] <- 0
+  y_vals[is.na(y_vals)] <- 0
+  
   if (method == "ba") {
     return(sum(sqrt(x_vals)* sqrt(y_vals)))
   } else if (method == "vi") {

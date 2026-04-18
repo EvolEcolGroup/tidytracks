@@ -28,4 +28,16 @@ test_that("hr_ud_overlap works", {
   names(boar_kde_1_extra_layer) <- c("extra_layer", "not_ud")
   expect_error(hr_ud_overlap(boar_kde_1_extra_layer, boar_kde$ud[[2]]),
                "x must have a layer named 'ud'")
+  # check what happens if some cells are NA in one of the rasters
+  boar_kde_na <- boar_kde$ud[[1]]
+  # set some cells to NA
+  boar_kde_na[1:10] <- NA
+  boar_overlap_na <- hr_ud_overlap(boar_kde_na, boar_kde$ud[[2]])
+  # the overlap should still be a number between 0 and 1
+  expect_false(is.na(boar_overlap_na))
+  expect_true(boar_overlap_na >= 0 && boar_overlap_na <= 1)
+  
+  
+  
 })
+  
