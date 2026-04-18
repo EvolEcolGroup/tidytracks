@@ -136,7 +136,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     xy_sub <- xy[group_index == group_id, ]
     h_val <- h[group_id]
     # Create kernel for each level
-    kde <- kde_one_group(xy_sub, levels,
+    kde <- kde_one_group(xy_sub,
       crs = sf::st_crs(x),
       bbox = bbox,
       res = res,
@@ -193,9 +193,10 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
 #'   the bounding box of the grid over which to compute the KDE.
 #' @param res The resolution of the grid (in the units of the projection of x).
 #' @param h The bandwidth for the kernel density estimation.
+#' @param id The identifier for the group (used in raster metadata).
 #' @return A PackedSpatRaster.
 #' @keywords internal
-kde_one_group <- function(xy, levels, crs, bbox, res, h, id) {
+kde_one_group <- function(xy, crs, bbox, res, h, id) {
   kde <- MASS::kde2d(xy[, 1],
     xy[, 2],
     n = round(c(
