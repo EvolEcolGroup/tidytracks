@@ -100,13 +100,13 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     # extend the grid by a fixed factor
     # TODO compare to amt (extending by 50%), adehabitatHR (extending by 1)
     # and track2kba (extending by 0.05 or h*2000, whichever is larger))
-    extend_x <- (bbox$xmax - bbox$xmin) * 1
-    extend_y <- (bbox$ymax - bbox$ymin) * 1
+    extend_x <- (bbox[["xmax"]] - bbox[["xmin"]]) * 1
+    extend_y <- (bbox[["ymax"]] - bbox[["ymin"]]) * 1
 
-    bbox["xmin"] <- bbox$xmin - extend_x
-    bbox["ymin"] <- bbox$ymin - extend_y
-    bbox["xmax"] <- bbox$xmax + extend_x
-    bbox["ymax"] <- bbox$ymax + extend_y
+    bbox["xmin"] <- bbox[["xmin"]] - extend_x
+    bbox["ymin"] <- bbox[["ymin"]] - extend_y
+    bbox["xmax"] <- bbox[["xmax"]] + extend_x
+    bbox["ymax"] <- bbox[["ymax"]] + extend_y
   }
   # check that bbox is a vector of four correctly named elements
   if (length(bbox) != 4 ||
@@ -123,10 +123,10 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
   }
 
   # update the max to be an exact multiple of res
-  bbox["xmax"] <- bbox$xmin +
-    ceiling((bbox$xmax - bbox$xmin) / res) * res
-  bbox["ymax"] <- bbox$ymin +
-    ceiling((bbox$ymax - bbox$ymin) / res) * res
+  bbox["xmax"] <- bbox[["xmin"]] +
+    ceiling((bbox[["xmax"]] - bbox[["xmin"]]) / res) * res
+  bbox["ymax"] <- bbox[["ymin"]] +
+    ceiling((bbox[["ymax"]] - bbox[["ymin"]]) / res) * res
   group_id <- NULL # hack to avoid it being flagged as global in checks
   kde_results <- foreach::foreach(
     group_id = group_unique,
@@ -199,8 +199,8 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h, id) {
   kde <- MASS::kde2d(xy[, 1],
     xy[, 2],
     n = round(c(
-      (bbox$xmax - bbox$xmin) / res,
-      (bbox$ymax - bbox$ymin) / res
+      (bbox[["xmax"]] - bbox[["xmin"]]) / res,
+      (bbox[["ymax"]] - bbox[["ymin"]]) / res
     )),
     # note that MASS needs h multiplied by 4 to be comparable with other kde
     # approaches (e.g. adehabitatHR or KernSmooth)
@@ -208,8 +208,8 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h, id) {
     lims = c(
       # note that the limits in MASS refer to the centroids of the cells, so we
       # need to add res/2 to the min and subtract res/2 from the max
-      bbox$xmin+res/2, bbox$xmax-res/2,
-      bbox$ymin+res/2, bbox$ymax-res/2
+      bbox[["xmin"]]+res/2, bbox[["xmax"]]-res/2,
+      bbox[["ymin"]]+res/2, bbox[["ymax"]]-res/2
     )
   )
   
@@ -223,8 +223,8 @@ kde_one_group <- function(xy, levels, crs, bbox, res, h, id) {
   kde$z <- t(kde$z)
   r <- terra::rast(kde$z[nrow(kde$z):1,],
                    crs = crs$wkt,
-                   extent =terra::ext(bbox$xmin, bbox$xmax, 
-                                      bbox$ymin, bbox$ymax)
+                   extent =terra::ext(bbox[["xmin"]], bbox[["xmax"]], 
+                                      bbox[["ymin"]], bbox[["ymax"]])
   )
   names(r) <- "ud"
   terra::metags(r) <- c(paste0("id = ", id), "method = kde", paste0("h = ", h),
