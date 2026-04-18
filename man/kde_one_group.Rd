@@ -2,32 +2,29 @@
 % Please edit documentation in R/tt_hr_kde.R
 \name{kde_one_group}
 \alias{kde_one_group}
-\title{Create kde isopleths at multiple levels for a given group}
+\title{Compute the kde for a given group}
 \usage{
-kde_one_group(xy, levels, crs, grid, h, keep_object = FALSE)
+kde_one_group(xy, crs, bbox, res, h, id)
 }
 \arguments{
 \item{xy}{a matrix of coordinates}
 
-\item{levels}{A vector of levels for the contour lines}
-
 \item{crs}{the crs of the coordinates (to use in the geometry)}
 
-\item{grid}{A list of length 5, with values xmin, ymin,
-xmax, ymax and res (all in the units of the projection of x).}
+\item{bbox}{A named vector of four elements: xmin, ymin, xmax, ymax to define
+the bounding box of the grid over which to compute the KDE.}
+
+\item{res}{The resolution of the grid (in the units of the projection of x).}
 
 \item{h}{The bandwidth for the kernel density estimation.}
 
-\item{keep_object}{whether the individual KDE object should be kept. If so,
-the function returns a list of sf polygons and the kde object.}
+\item{id}{The identifier for the group (used in raster metadata).}
 }
 \value{
-A list of sf polygons representing the kde isopleths at each level
+A PackedSpatRaster.
 }
 \description{
-This is the internal function that is called by \code{tt_hr_kde} to create the
-kde isopleths
-at multiple levels for a given group. It is not intended to be called
-directly by the user.
+This is the internal function that is called by \code{tt_hr_kde} to compute the
+kde for a given group. It is not intended to be called directly by the user.
 }
 \keyword{internal}

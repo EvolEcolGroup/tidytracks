@@ -4,45 +4,69 @@
 \alias{tt_hr_kde}
 \title{Quantify the home range using kernel density estimation}
 \usage{
-tt_hr_kde(
-  x,
-  h = "h_ref_mean",
-  grid = NULL,
-  levels = c(0.5, 0.95),
-  keep_objects = FALSE
-)
+tt_hr_kde(x, h = "h_ref_mean", bbox = NULL, res = NULL, levels = NULL)
 }
 \arguments{
-\item{x}{A grouped move2 object}
+\item{x}{A move2 object; if explicitely grouped, the home range is estimated
+for each group, combining all tracks within each group. Otherwise, the
+track id is used as grouping variable.}
 
 \item{h}{The bandwidth for the kernel density estimation. Either a number, or
 "h_ref_indiv" for using the reference bandwidth for each individual, or
 "h_ref_mean" for using the mean bandwidth for all individuals (the
 default).}
 
-\item{grid}{A list of length 5, with values xmin, ymin, xmax, ymax and res
-(all in the units of the projection of x). If null, the extent is taken by
-combining all points in \code{x} (expanded by 10\%), and the number of cells is
-set to 1000.}
+\item{bbox}{a named vector of four elements: xmin, ymin, xmax, ymax to define
+the bounding box of the grid over which to compute the KDE. If NULL, the
+extent is taken by combining all points in \code{x} (expanded by 100\% of the
+range on each side).}
 
-\item{levels}{A vector of levels for the contour lines. The default is
-\code{c(0.5, 0.95)}, which corresponds to the 50\% and 95\% home ranges.}
+\item{res}{The resolution of the grid (in the units of the projection of x).
+If NULL, res is set to obtained ~ 1000 cells.}
 
-\item{keep_objects}{whether the individual KDE objects should be kept as a
-column in the output object. This is useful for debugging, but will
-increase the size of the object.}
+\item{levels}{A vector of levels for the isopleths (i.e. contour lines), as
+numbers between 0 and 1. If set to NULL (the default), the full utilisation
+distribution is returned; otherwise just the isopleths are returned. It is
+possible to specify more than two levels, e.g.  \code{c(0.5, 0.95)} corresponds
+to the 50\% and 95\% home ranges.}
 }
 \value{
-A tibble of subclass \code{tt_hr_tbl} of results, with columns:
+Either a \code{tibble}, or, if \code{levels} is not NULL, an \code{sf} tibble ,
+with columns:
 \itemize{
-\item \code{group_id}: the ids from the groping of \code{x}
-\item \code{.level_XX}: the sf polygons for level XX; the number of this type of
-column depends on the length of \code{levels}
-\item \code{kde}: the KDE object used to create the polygons (if
-\code{keep_objects = TRUE})
+\item the grouping variable (as named in \code{x}; if \code{x} is grouped by
+multiple variables, this column is named \code{group_id}): the ids from the
+grouping of \code{x}
+\item \code{level}: the level of the isopleth
+\item \code{h}: the bandwidth used for the KDE
+\item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}: the bounding box used for the KDE
+\item \code{res}: the resolution used for the KDE
+If \code{levels} is NULL:
+\item \code{kde}: the full KDE object is returned in a list column
+Else, if \code{levels} is not NULL, the following columns are added:
+\item \code{area}: the area of the home range at this level (in the units
+of the projection of \code{x}, e.g. m^2 for a UTM projection)
+\item \code{geometry}:  an \code{sfc} column containing the multipolygons representing
+the isopleth for the appropriate level
 }
 }
 \description{
 This function estimates the home range of an animal using kernel density
 estimation (KDE).
+The home range is estimated for each group in \code{x}, which can be defined by
+grouping \code{x} by one or more variables. If \code{x} is not grouped, the track ID
+is used as grouping variable, and the home range is estimated for each track
+separately.
+}
+\details{
+By default, the full UD is returned. If \code{levels} is set, the
+isopleths for the specified levels are returned instead, along with their
+area. This option is useful to reduce memory use, but has the drawback that
+the full UD is not returned, which can be useful for some applications (e.g.
+to compute overlap between home ranges). If \code{levels} is set, the area of the
+isopleths is computed using \code{sf::st_area()}, which returns the area in the
+units of the projection of \code{x} (e.g. m^2 for a UTM projection). If \code{x} is
+unprojected, the area is computed in degrees^2, which is not a meaningful
+unit for area. In this case, it is recommended to project \code{x} to an
+appropriate projection before using this function.
 }
