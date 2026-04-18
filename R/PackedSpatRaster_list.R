@@ -60,7 +60,8 @@ new_PackedSpatRaster_list <- function(packed) {
 #' `[[` returns a SpatRaster by position or name (unwrapping it automatically)
 #' @param x A PackedSpatRaster_list.
 #' @param i The index or name of the element to return.
-#' @param ... unused, for compatibility with generic. Additional arguments are ignored.
+#' @param ... unused, for compatibility with generic. Additional arguments are
+#'   ignored.
 #' @returns A SpatRaster object, unwrapped from the PackedSpatRaster.
 #' @export
 `[[.PackedSpatRaster_list` <- function(x, i, ...) {
@@ -141,8 +142,9 @@ new_PackedSpatRaster_list <- function(packed) {
 
 #' Print a summary of the PackedSpatRaster_list
 #'
-#' Print a summary of the PackedSpatRaster_list, showing dimensions and CRS of each element 
-#' without unwrapping the rasters. This provides a quick overview of the contents of the list without the overhead of unwrapping all rasters.
+#' Print a summary of the PackedSpatRaster_list, showing dimensions and CRS of
+#' each element. This provides a quick overview of the contents of the list
+#' without the overhead of unwrapping all rasters.
 #' @param x A PackedSpatRaster_list to print.
 #' @param ... Not used.
 #' @return The original PackedSpatRaster_list, invisibly.
@@ -163,7 +165,8 @@ print.PackedSpatRaster_list <- function(x, ...) {
       dims  <- paste0(nrow(r), "x", ncol(r), "x", terra::nlyr(r))
       crs   <- terra::crs(r, describe = TRUE)$name
       label <- if (!is.na(crs) && nzchar(crs)) crs else "no CRS"
-      tag   <- if (!is.null(nms) && nzchar(nms[i])) paste0("$", nms[i]) else paste0("[[", i, "]]")
+      tag   <- if (!is.null(nms) && nzchar(nms[i])) paste0("$", nms[i]) else 
+        paste0("[[", i, "]]")
       cat(sprintf("  %s <SpatRaster [%s] %s>\n", tag, dims, label))
     }
   }
@@ -192,8 +195,8 @@ as.list.PackedSpatRaster_list <- function(x, ...) {
 #' This is a convenience function that allows users to easily convert a plain
 #' list of SpatRasters to a PackedSpatRaster_list. It will check that all
 #' elements of the list are SpatRasters and then wrap them as PackedSpatRasters
-#' before creating the PackedSpatRaster_list.
-#' If the input is already a PackedSpatRaster_list, it will simply return it unchanged.
+#' before creating the PackedSpatRaster_list. If the input is already a
+#' PackedSpatRaster_list, it will simply return it unchanged.
 #' @param x A list of SpatRasters or a PackedSpatRaster_list.
 #' @return A PackedSpatRaster_list.
 #' @export

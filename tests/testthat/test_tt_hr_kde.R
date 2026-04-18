@@ -40,7 +40,11 @@ test_that("tt_hr_kde works with multiple tracks", {
   # it should have 1 element
   expect_equal(length(p3), 1)
   
-  
+  # use a tt that is not grouped
+  boar_tt2 <- readRDS(file.path( test_path("testdata"),"wildboar_tt.rds"))
+  boar_kde2 <- tt_hr_kde(boar_tt2, res = 50)
+  # this should be the same as the previous one
+  expect_equal(boar_kde, boar_kde2, ignore_attr = TRUE)
   
   # simple plotting example to check the geometry
   #  ggplot(boar_kde) +
