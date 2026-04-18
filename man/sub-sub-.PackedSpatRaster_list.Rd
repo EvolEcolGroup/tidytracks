@@ -2,7 +2,7 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{[[.PackedSpatRaster_list}
 \alias{[[.PackedSpatRaster_list}
-\title{Returns Sparaster by position or name from PackedSpatRaster_list}
+\title{Returns SpatRaster by position or name from PackedSpatRaster_list}
 \usage{
 \method{[[}{PackedSpatRaster_list}(x, i, ...)
 }

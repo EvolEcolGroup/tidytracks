@@ -2,7 +2,7 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{[[<-.PackedSpatRaster_list}
 \alias{[[<-.PackedSpatRaster_list}
-\title{Add Sparaster by position or name to PackedSpatRaster_list}
+\title{Add SpatRaster by position or name to PackedSpatRaster_list}
 \usage{
 \method{[[}{PackedSpatRaster_list}(x, i) <- value
 }

@@ -21,7 +21,10 @@ plot layout. If \code{NULL}, the layout is determined automatically.}
 \item{...}{Not used.}
 }
 \value{
-A ggplot object.
+A patchwork plot object created with \code{\link[patchwork:wrap_plots]{patchwork::wrap_plots()}}. When
+one utilisation distribution is selected, the result is a single-panel
+plot composition; when multiple utilisation distributions are selected,
+the result is a multi-panel plot composition.
 }
 \description{
 This autoplot function can be used to plot all or a subset of UDs from a

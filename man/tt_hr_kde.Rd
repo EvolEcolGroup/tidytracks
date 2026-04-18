@@ -16,7 +16,7 @@ track id is used as grouping variable.}
 "h_ref_mean" for using the mean bandwidth for all individuals (the
 default).}
 
-\item{bbox}{a name vector of four elements: xmin, ymin, xmax, ymax to define
+\item{bbox}{a named vector of four elements: xmin, ymin, xmax, ymax to define
 the bounding box of the grid over which to compute the KDE. If NULL, the
 extent is taken by combining all points in \code{x} (expanded by 100\% of the
 range on each side).}
@@ -25,7 +25,7 @@ range on each side).}
 If NULL, res is set to obtained ~ 1000 cells.}
 
 \item{levels}{A vector of levels for the isopleths (i.e. contour lines), as
-numbers between 0 and 1.If set to NULL (the defaul), the full utilisation
+numbers between 0 and 1. If set to NULL (the default), the full utilisation
 distribution is returned; otherwise just the isopleths are returned. It is
 possible to specify more than two levels, e.g.  \code{c(0.5, 0.95)} corresponds
 to the 50\% and 95\% home ranges.}
