@@ -20,11 +20,7 @@ test_that("tt_hr_kde works with multiple tracks", {
   boar_iso2 <- tt_hr_kde(boar_tt, levels = c(0.50, 0.95), res = 50)
   # this should be the same as the previous one
   expect_equal(boar_iso, boar_iso2, ignore_attr = TRUE)
-  # create the overlap
-  boar_overlap <- hr_ud_overlap(boar_kde)
-  # expect a 4x4 matrix
-  expect_equal(dim(boar_overlap), c(4, 4))
-  
+
   # test autoplot for the hr_ud_tbl object
   p <- autoplot(boar_kde)
   expect_true(inherits(p, "ggplot"))

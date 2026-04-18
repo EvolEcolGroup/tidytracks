@@ -27,12 +27,30 @@ hr_ud_overlap <- function(x, ..., method = c("ba", "vi", "udoi")) {
 #' `x` is tibble of UDs, `y` is not used.
 hr_ud_overlap.SpatRaster <- function(x, y, ..., method = c("ba", "vi", "udoi")) {
   method <- match.arg(method)
+  # check that x has a layer named "ud"
+  if (!"ud" %in% names(x)) {
+    stop("x must have a layer named 'ud'")
+  }
+  # check that y is a SpatRaster and has a layer named "ud"
+  if (!inherits(y, "SpatRaster") || !"ud" %in% names(y)) {
+    stop("y must be a SpatRaster with a layer named 'ud'")
+  }
+  # compare the two geometries
+  if (!terra::compareGeom(x, y, stopOnError = FALSE)) {
+    stop("x and y must have the same geometry (i.e. same extent,",
+    "resolution, and CRS)")
+  }
+  # get x values as a matrix
+  x_vals <- as.matrix(x$ud)
+  # get y values as a matrix
+  y_vals <- as.matrix(y$ud)
+  
   if (method == "ba") {
-    return(sum(sqrt(x[])* sqrt(y[])))
+    return(sum(sqrt(x_vals)* sqrt(y_vals)))
   } else if (method == "vi") {
-    return(sum(pmin(x[], y[])))
+    return(sum(pmin(x_vals, y_vals)))
   } else if (method == "udoi") {
-    return(sum(x[] * y[]))
+    return(sum(x_vals * y_vals))
   }
 }
 
