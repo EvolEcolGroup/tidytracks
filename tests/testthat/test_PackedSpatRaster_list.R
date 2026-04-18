@@ -1,4 +1,4 @@
-test_that("PackedSpatRaster_list works with multipel rasters", {
+test_that("PackedSpatRaster_list works with multiple rasters", {
   # example rasters
   r1 <- terra::rast(nrows = 6, ncols = 6, vals = 1:36, crs = "EPSG:4326")
   r2 <- terra::rast(nrows = 6, ncols = 6, vals = rnorm(36), crs = "EPSG:4326")
