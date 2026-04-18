@@ -4,7 +4,7 @@
 \alias{kde_one_group}
 \title{Compute the kde for a given group}
 \usage{
-kde_one_group(xy, levels, crs, bbox, res, h, id)
+kde_one_group(xy, crs, bbox, res, h, id)
 }
 \arguments{
 \item{xy}{a matrix of coordinates}
@@ -17,6 +17,8 @@ the bounding box of the grid over which to compute the KDE.}
 \item{res}{The resolution of the grid (in the units of the projection of x).}
 
 \item{h}{The bandwidth for the kernel density estimation.}
+
+\item{id}{The identifier for the group (used in raster metadata).}
 }
 \value{
 A PackedSpatRaster.

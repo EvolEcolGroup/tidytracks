@@ -4,7 +4,7 @@
 \alias{sf_point_col}
 \title{Create a simple feature POINT geometry column}
 \usage{
-sf_point_col(x, y, crs = NULL)
+sf_point_col(x, y, crs = sf::NA_crs_)
 }
 \arguments{
 \item{x}{A vector of x coordinates (e.g., longitude or easting)}
@@ -13,7 +13,7 @@ sf_point_col(x, y, crs = NULL)
 
 \item{crs}{An optional coordinate reference system (CRS) to assign to
 the geometry. This can be an EPSG code (numeric) or a proj4 string (character).
-If NULL (default), no CRS is assigned.}
+If not set (default), no CRS is assigned.}
 }
 \value{
 A \code{sf} geometry set of POINT geometries

@@ -9,7 +9,7 @@
 #' @param y A vector of y coordinates (e.g., latitude or northing)
 #' @param crs An optional coordinate reference system (CRS) to assign to
 #' the geometry. This can be an EPSG code (numeric) or a proj4 string (character).
-#' If NULL (default), no CRS is assigned.
+#' If not set (default), no CRS is assigned.
 #' @return A `sf` geometry set of POINT geometries
 #' @export
 #' @examples
@@ -17,7 +17,7 @@
 #'   show_meta(shags_tt)$lat_colony,
 #'   crs = 4326)
 #' 
-sf_point_col <- function(x, y, crs = NULL) {
+sf_point_col <- function(x, y, crs = sf::NA_crs_) {
   if (length(x) != length(y)) {
     stop("x and y must have the same length")
   }
