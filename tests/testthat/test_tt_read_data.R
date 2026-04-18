@@ -556,6 +556,6 @@ test_that("tt_read_data gives errors for wrong input types", {
       col_coords = c("lon", "lat"),
       col_date_time = "date_time"
     ),
-    "meta must be either Null, a data frame or a path to a csv file."
+    "meta must be either NULL, a data frame or a path to a csv file."
   )
 })

@@ -235,7 +235,7 @@ tt_read_data <- function(events,
 
     # Ensure meta is a data frame
     if (!inherits(meta, "data.frame")) {
-      stop("meta must be either Null, a data frame or a path to a csv file.")
+      stop("meta must be either NULL, a data frame or a path to a csv file.")
     }
 
     # check meta has the track ID field
