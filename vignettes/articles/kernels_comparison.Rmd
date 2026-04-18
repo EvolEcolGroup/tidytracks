@@ -242,28 +242,32 @@ brock_ade@h$h == wildboars_kde$h[1]
 
 Check that the grid is the same
 ```{r}
-all.equal(wildboars_kde$kde[[1]]$x, brock_mass$x)
-all.equal(wildboars_kde$kde[[1]]$y, brock_mass$y)
-all.equal(wildboars_kde$kde[[1]]$x, mask.xy$x[1:100])
+ud1 <- wildboars_kde$ud[[1]]
+all.equal(terra::xFromCol(ud1, 1:terra::ncol(ud1)), brock_mass$x)
+all.equal(rev(terra::yFromRow(ud1, 1:terra::nrow(ud1))), brock_mass$y)
+all.equal(terra::xFromCol(ud1, 1:terra::ncol(ud1)), mask.xy$x[1:100])
 
 ```
 
 ```{r}
-mean(abs(brock_ade$ud - flip_mass_to_ade(wildboars_kde$kde[[1]])))
-mean(abs(brock_ade$ud - flip_mass_to_ade(wildboars_kde$kde[[1]]))) < 0.001
+# terra::values returns in the same cell ordering as adehabitat UD
+# Note: tidytracks normalizes values to sum to 1
+ud1_vals <- as.vector(terra::values(ud1))
+mean(abs(brock_ade$ud - ud1_vals))
+mean(abs(brock_ade$ud - ud1_vals)) < 0.001
 
-# this should be zero as we are comparing mass with mass 
-# (just check that we are using the correct grid)
-abs(mean(wildboars_kde$kde[[1]]$z - brock_mass_spdf$est))
+# compare with normalized MASS values (tidytracks normalizes to sum to 1)
+brock_mass_norm <- brock_mass_spdf$est / sum(brock_mass$z)
+abs(mean(ud1_vals - brock_mass_norm))
 ```
 
 Now transfer values from the tidytracks kernel to the adehabitatHR object, so
 that we can check various operations
 
 ```{r}
-brock_ade$ud <- flip_mass_to_ade(wildboars_kde$kde[[1]])
+brock_ade$ud <- as.vector(terra::values(wildboars_kde$ud[[1]]))
 # and confirm that now the values are identical
-mean(abs(brock_ade$ud - flip_mass_to_ade(wildboars_kde$kde[[1]])))
+mean(abs(brock_ade$ud - as.vector(terra::values(wildboars_kde$ud[[1]]))))
 # plot it to check that it works visually
 plot(brock_ade)
 ```
@@ -278,8 +282,8 @@ vud
 
 Get the standardise cud from the tidytracks kernel and check that it is the same as the one from adehabitatHR
 ```{r}
-kde_cud$z <- hr_kde_cud(wildboars_kde$kde[[1]]$z)
-mean(abs(vud@data)$n -100 * flip_mass_to_ade(kde_cud))
+brock_cud <- hr_cud(wildboars_kde$ud[[1]])
+mean(abs(vud@data$n - 100 * as.vector(terra::values(brock_cud))))
 
 ```
 
