@@ -59,7 +59,7 @@ test_that("PackedSpatRaster_list works with different inputs", {
   # ignore additional arguments to print
   expect_warning(capture.output(print(pl3, extra_arg = TRUE)), "additional arg")
 
-  # covert to a plain list
+  # convert to a plain list
   lst <- as.list(pl3)
   expect_false(inherits(lst, "PackedSpatRaster_list"))
   expect_true(all(vapply(lst, class, character(1)) == "SpatRaster"))
