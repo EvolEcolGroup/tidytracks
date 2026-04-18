@@ -50,6 +50,7 @@ tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
     # Create a tibble with the results
     tibble::tibble(
       group_id = group_labels[group_id],
+      method = "mcp",
       level = levels,
       area = area,
       geometry = geometry
@@ -60,6 +61,7 @@ tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
   mcp_results <- sf::st_as_sf(mcp_results, crs = sf::st_crs(x))
   # add a method attribute
   attr(mcp_results, "hr_method") <- c("mcp")
+  class(mcp_results) <- c("hr_poly_tbl", class(mcp_results))
 
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {

@@ -596,7 +596,7 @@ ggplot() +
   facet_wrap(~bird_id)
 ```
 
-To get a minimum convex polygon covering 90% of the data, we can use:
+To get a minimum convex polygon covering 95% of the data, we can use:
 ```{r}
 shags_mcp <- shags_trips_sub %>%
   group_by(bird_id) %>%
