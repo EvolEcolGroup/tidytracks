@@ -8,13 +8,13 @@
 \usage{
 hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi"))
 
-\method{hr_ud_overlap}{SpatRaster}(x, y, ..., method = c("ba", "vi", "udoi"))
+\method{hr_ud_overlap}{SpatRaster}(x, y, ..., method = c("ba", "vi", "udoi"), cond_level = NULL)
 
-\method{hr_ud_overlap}{hr_ud_tbl}(x, ..., method = c("ba", "vi", "udoi"))
+\method{hr_ud_overlap}{hr_ud_tbl}(x, ..., method = c("ba", "vi", "udoi"), cond_level = NULL)
 }
 \arguments{
-\item{x}{A SpatRaster of the utilisation distribution (with a layer \code{ud}),
-or a tibble of UDs of class \code{hr_ud_tbl} (e.g. as created with \code{\link[=tt_hr_kde]{tt_hr_kde()}}).}
+\item{x}{A SpatRaster of the utilisation distribution (with a layer \code{ud}), or
+a tibble of UDs of class \code{hr_ud_tbl} (e.g. as created with \code{\link[=tt_hr_kde]{tt_hr_kde()}}).}
 
 \item{...}{Additional arguments (not currently used)}
 
@@ -25,16 +25,22 @@ Default is \code{"ba"}.}
 
 \item{y}{A SpatRaster of the utilisation distribution, if \code{x} is a single UD. Else, if
 \code{x} is tibble of UDs, \code{y} is not used.}
+
+\item{cond_level}{Optional, the level for which the the conditional overlap
+is computed.}
 }
 \value{
 A numeric value representing the overlap between the two UDs
-according to the specified method, or a matrix of such values if \code{x} is
-a tibble of multiple UDs.
+according to the specified method, or a matrix of such values if \code{x} is a
+tibble of multiple UDs.
 }
 \description{
 This function computes the overlap between pairs of utilisation distributions
-(UDs) using various methods.
-If \code{x} is a \code{SpatRaster}, it computes the overlap between \code{x} and \code{y}.
-If \code{x} is an \code{hr_ud_tbl}, it computes the overlap for all unique pairs of
-UDs in the table.
+(UDs) using various methods. If \code{x} is a \code{SpatRaster}, it computes the
+overlap between \code{x} and \code{y}. If \code{x} is an \code{hr_ud_tbl}, it computes the
+overlap for all unique pairs of UDs in the table. If \code{cond_level} is set, it
+computes the conditional overlap for the specified level, which is the
+overlap between the UDs estimated within a given isopleth level (e.g. 50\%) of
+the UD, rather than the full UD. This can be useful for comparing the core
+areas of the UDs.
 }

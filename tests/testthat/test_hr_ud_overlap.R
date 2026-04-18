@@ -37,7 +37,18 @@ test_that("hr_ud_overlap works", {
   expect_false(is.na(boar_overlap_na))
   expect_true(boar_overlap_na >= 0 && boar_overlap_na <= 1)
   
-  
+  # get error if we set cond_level to a value outside of 0 and 1
+  expect_error(hr_ud_overlap(boar_kde$ud[[1]], boar_kde$ud[[2]],
+                             cond_level = 1.5),
+               "cond_level must be a single numeric value between 0 and 1")
+  # error if we have more than one value for cond_level
+  expect_error(hr_ud_overlap(boar_kde$ud[[1]], boar_kde$ud[[2]],
+                             cond_level = c(0.5, 0.95)),
+               "cond_level must be a single numeric value between 0 and 1")
+  # check that the overlap is smaller when we set a cond_level
+  boar_overlap_cond <- hr_ud_overlap(boar_kde$ud[[1]], boar_kde$ud[[2]],
+                                     cond_level = 0.5)
+  expect_true(boar_overlap_cond < boar_overlap[1, 2])
   
 })
   
