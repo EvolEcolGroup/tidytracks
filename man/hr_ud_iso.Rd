@@ -21,9 +21,11 @@ or a \code{SpatRaster} object from the \code{ud} column of a \code{hr_ud_tbl} ti
 0 and 1.}
 }
 \value{
-If \code{x} is a tibble, a tibble of class \code{hr_ud_iso_tbl} with columns
-\code{id}, \code{level}, and \code{geometry}. If \code{x} is a \code{hr_ud} object,
-a \code{sfc_GEOMETRYCOLLECTION} object.
+If \code{x} is a tibble, an \code{sf} tibble of class \code{hr_poly_tbl}
+containing a \code{level} column, a \code{geometry} column, the original ID
+column from \code{x}, and any additional columns carried through from the input
+(for example, UD metadata such as bandwidth or resolution columns). If \code{x}
+is a \code{hr_ud} object, a \code{sfc_GEOMETRYCOLLECTION} object.
 }
 \description{
 This method can be applied to a whole tibble of UDs, or to an individual
