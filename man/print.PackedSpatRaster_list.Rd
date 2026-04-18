@@ -15,6 +15,7 @@
 The original PackedSpatRaster_list, invisibly.
 }
 \description{
-Print a summary of the PackedSpatRaster_list, showing dimensions and CRS of each element
-without unwrapping the rasters. This provides a quick overview of the contents of the list without the overhead of unwrapping all rasters.
+Print a summary of the PackedSpatRaster_list, showing dimensions and CRS of
+each element. This provides a quick overview of the contents of the list
+without the overhead of unwrapping all rasters.
 }

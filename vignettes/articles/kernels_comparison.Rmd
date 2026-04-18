@@ -224,7 +224,7 @@ yes, it looks like the bbox of the grid is the same as the extent of the grid, s
 
 Note that the limits in the MASS kde function refer to centroids (i.e. the determine the actual values of x and y)
 ```{r}
-wildboars_tt <- wildboars_tt %>% dplyr::group_by(Name)
+wildboars_tt <- wildboars_tt %>% dplyr::group_by(name)
 wildboars_kde <- tt_hr_kde(wildboars_tt, levels = NULL,
                            h = "h_ref_indiv",
                            res = 50,

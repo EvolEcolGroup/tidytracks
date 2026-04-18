@@ -14,14 +14,14 @@ hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi"))
 }
 \arguments{
 \item{x}{A SpatRaster of the utilisation distribution (with a layer \code{ud}),
-or a tibble of UDs of class \code{hr_ud_tbl} (e.g. as created with \code{\link[=tt_hr_kde]{tt_hr_kde()}}.}
+or a tibble of UDs of class \code{hr_ud_tbl} (e.g. as created with \code{\link[=tt_hr_kde]{tt_hr_kde()}}).}
 
 \item{...}{Additional arguments (not currently used)}
 
 \item{method}{A character string specifying the method to use for overlap
-calculation. Options will include "ba" (Bhattacharyya's Affinity), "vi" (Volume
-of Intersection), and "udoi" (Utilisation Distribution Overlap Index).
-Currently only "ba" is implemented. Default is "ba".}
+calculation. Options are \code{"ba"} (Bhattacharyya's Affinity), \code{"vi"} (Volume
+of Intersection), and \code{"udoi"} (Utilisation Distribution Overlap Index).
+Default is \code{"ba"}.}
 
 \item{y}{A SpatRaster of the utilisation distribution, if \code{x} is a single UD. Else, if
 \code{x} is tibble of UDs, \code{y} is not used.}
@@ -32,8 +32,9 @@ according to the specified method, or a matrix of such values if \code{x} is
 a tibble of multiple UDs.
 }
 \description{
-This function computes the overlap between pairs of utilisation distributions.
-If x is a data.frame, it computes the overlap for all unique pairs of
-UDs in the columns specified (kde by default).
+This function computes the overlap between pairs of utilisation distributions
 (UDs) using various methods.
+If \code{x} is a \code{SpatRaster}, it computes the overlap between \code{x} and \code{y}.
+If \code{x} is an \code{hr_ud_tbl}, it computes the overlap for all unique pairs of
+UDs in the table.
 }

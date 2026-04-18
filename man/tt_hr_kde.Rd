@@ -18,7 +18,8 @@ default).}
 
 \item{bbox}{a name vector of four elements: xmin, ymin, xmax, ymax to define
 the bounding box of the grid over which to compute the KDE. If NULL, the
-extent is taken by combining all points in \code{x} (expanded by 10\%).}
+extent is taken by combining all points in \code{x} (expanded by 100\% of the
+range on each side).}
 
 \item{res}{The resolution of the grid (in the units of the projection of x).
 If NULL, res is set to obtained ~ 1000 cells.}
@@ -51,10 +52,11 @@ the isopleth for the appropriate level
 }
 \description{
 This function estimates the home range of an animal using kernel density
-estimation (KDE). #' The home range is estimated for each group in \code{x}, which
-can be defined by grouping \code{x} by one or more variables. If \code{x} is not
-grouped, the track ID is used as grouping variable, and the home range is
-estimated for each track separately.
+estimation (KDE).
+The home range is estimated for each group in \code{x}, which can be defined by
+grouping \code{x} by one or more variables. If \code{x} is not grouped, the track ID
+is used as grouping variable, and the home range is estimated for each track
+separately.
 }
 \details{
 By default, the full UD is returned. If \code{levels} is set, the

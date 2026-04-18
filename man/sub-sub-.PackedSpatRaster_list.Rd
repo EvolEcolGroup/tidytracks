@@ -11,7 +11,8 @@
 
 \item{i}{The index or name of the element to return.}
 
-\item{...}{unused, for compatibility with generic. Additional arguments are ignored.}
+\item{...}{unused, for compatibility with generic. Additional arguments are
+ignored.}
 }
 \value{
 A SpatRaster object, unwrapped from the PackedSpatRaster.

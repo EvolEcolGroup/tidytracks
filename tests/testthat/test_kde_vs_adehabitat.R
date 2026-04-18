@@ -1,9 +1,10 @@
 skip_if_not_installed("adehabitatHR")
 skip_if_not_installed("sp")
 test_that("tt_hr_kde is equivalent to adehabitatHR", {
-  library(adehabitatHR)
-  library(terra)
-  library(sp)
+  suppressPackageStartupMessages({
+    library(sp)
+    suppressMessages(library(adehabitatHR))
+    library(terra)})
   data(puechabonsp)
 
   brock <- as.data.frame(puechabonsp$relocs) %>%
@@ -30,7 +31,7 @@ test_that("tt_hr_kde is equivalent to adehabitatHR", {
   # plot(brock_ade)
   ## now with tidytrack
   wildboars_tt <- readRDS(file.path( test_path("testdata"),"wildboar_tt.rds"))
-  wildboars_tt <- wildboars_tt %>% dplyr::group_by(Name)
+  wildboars_tt <- wildboars_tt %>% dplyr::group_by(name)
   mask.xy <- as.data.frame(my_grid)
   wildboars_kde <- tt_hr_kde(wildboars_tt,
     levels = NULL,

@@ -16,8 +16,8 @@ A PackedSpatRaster_list.
 This is a convenience function that allows users to easily convert a plain
 list of SpatRasters to a PackedSpatRaster_list. It will check that all
 elements of the list are SpatRasters and then wrap them as PackedSpatRasters
-before creating the PackedSpatRaster_list.
-If the input is already a PackedSpatRaster_list, it will simply return it unchanged.
+before creating the PackedSpatRaster_list. If the input is already a
+PackedSpatRaster_list, it will simply return it unchanged.
 }
 \examples{
 r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")

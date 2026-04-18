@@ -10,10 +10,10 @@ hr_cud(x)
 \item{x}{A SpatRaster of the UD.}
 }
 \value{
-A matrix representing the cumulative utilisation distribution (UD).
+A \code{terra::SpatRaster} representing the cumulative utilisation distribution (UD).
 }
 \description{
-This function takes a matrix representing the UD and returns
-the cumulative utilisation distribution (UD).
+This function takes a SpatRaster representing the UD and returns
+a SpatRaster containing the cumulative utilisation distribution (UD).
 }
 \keyword{internal}

@@ -12,8 +12,12 @@ hr_cud <- function(x) {
   # create a copy of the input SpatRaster to store the cumulative UD values
   cud <- x
   names(cud) <- "cud"
+  # check that x has a layer named "ud"
+  if (!"ud" %in% names(x)) {
+    stop("x must have a layer named 'ud'")
+  }
   # compute the cumulative sum of the UD values, ordered from highest to lowest
-  cud_vals <- terra::values(x)
+  cud_vals <- terra::values(x$ud)
   cud_vals <- cumsum(cud_vals[order(-cud_vals)])[order(order(-cud_vals))]
   terra::values(cud) <- cud_vals
   return(cud)

@@ -57,7 +57,7 @@ test_that("PackedSpatRaster_list works with different inputs", {
   expect_output(print(pl3), "\\$a <SpatRaster")
   expect_output(print(pl3), "\\$b <SpatRaster")
   # ingore additional arguments to print
-  expect_warning(print(pl3, extra_arg = TRUE), "additional arg")
+  expect_warning(capture.output(print(pl3, extra_arg = TRUE)), "additional arg")
 
   # covert to a plain list
   lst <- as.list(pl3)

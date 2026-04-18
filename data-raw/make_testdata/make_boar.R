@@ -21,12 +21,13 @@ sf::st_crs(boar_sf) <- 27573
 
 
 boar_sf$Date <- as.POSIXct((boar_sf$Date - max(boar_sf$Date)) * 8640, tz = "UTC")
-
+names(boar_sf) <- tolower(names(boar_sf))
 # Create a move2 object with the relocations
 
 wildboar_tt <- move2::mt_as_move2(boar_sf,
-  track_id_column = "Name",
-  time_column = "Date"
+  track_id_column = "name",
+  time_column = "date"
 )
 # save it as an RDS object in the testthat  directory
 saveRDS(wildboar_tt, file = "./tests/testthat/testdata/wildboar_tt.rds")
+saveRDS(boar_sf, file = "./vignettes/articles/articles_data/wildboar_tt.rds")
