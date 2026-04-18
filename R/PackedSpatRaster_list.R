@@ -55,7 +55,7 @@ new_PackedSpatRaster_list <- function(packed) {
 
 # Accessors
 
-#' Returns Sparaster by position or name from PackedSpatRaster_list
+#' Returns SpatRaster by position or name from PackedSpatRaster_list
 #'
 #' `[[` returns a SpatRaster by position or name (unwrapping it automatically)
 #' @param x A PackedSpatRaster_list.
@@ -70,7 +70,7 @@ new_PackedSpatRaster_list <- function(packed) {
   terra::unwrap(item)
 }
 
-#' Returns Sparaster by name from PackedSpatRaster_list
+#' Returns SpatRaster by name from PackedSpatRaster_list
 #'
 #' `$` returns a SpatRaster by position or name (unwrapping it automatically)
 #' @param x A PackedSpatRaster_list.
@@ -99,7 +99,7 @@ new_PackedSpatRaster_list <- function(packed) {
 # Replacement operators
 #####################################
 
-#' Add Sparaster by position or name to PackedSpatRaster_list
+#' Add SpatRaster by position or name to PackedSpatRaster_list
 #'
 #' `[[<-` stores a SpatRaster by position or name (wrapping it automatically)
 #' @param x A PackedSpatRaster_list to modify.
@@ -126,7 +126,7 @@ new_PackedSpatRaster_list <- function(packed) {
 }
 
 
-#' Add Sparaster by name to PackedSpatRaster_list
+#' Add SpatRaster by name to PackedSpatRaster_list
 #'
 #' `$<-` stores a SpatRaster by name (wrapping it automatically)
 #' @param x A PackedSpatRaster_list to modify.
