@@ -57,9 +57,9 @@
 
 tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
                       res = NULL, levels = NULL) {
-  # if x is not grouped, used the track ID as grouping variable
+  # if x is not grouped, use the track ID column as grouping variable
   if (!inherits(x, "grouped_df")) {
-    x <- dplyr::group_by(x, event_track_id(x))
+    x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
 
   # Check if levels are valid
