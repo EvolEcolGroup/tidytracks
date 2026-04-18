@@ -42,3 +42,29 @@ test_that("tt_hr_kde works with multiple tracks", {
 
   
 })
+
+test_that("tt_hr_kde bbox columns are always numeric (not list-cols)", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_tt <- boar_tt %>% dplyr::group_by(name)
+
+  # Call with default (NULL) bbox — internally uses sf::st_bbox()
+  boar_kde <- tt_hr_kde(boar_tt, res = 50)
+  expect_true(is.numeric(boar_kde$xmin))
+  expect_true(is.numeric(boar_kde$xmax))
+  expect_true(is.numeric(boar_kde$ymin))
+  expect_true(is.numeric(boar_kde$ymax))
+
+  # Call with bbox supplied as a named list
+  ext <- sf::st_bbox(boar_tt)
+  bbox_list <- list(
+    xmin = unname(ext["xmin"]) - 1000,
+    ymin = unname(ext["ymin"]) - 1000,
+    xmax = unname(ext["xmax"]) + 1000,
+    ymax = unname(ext["ymax"]) + 1000
+  )
+  boar_kde_list <- tt_hr_kde(boar_tt, res = 50, bbox = bbox_list)
+  expect_true(is.numeric(boar_kde_list$xmin))
+  expect_true(is.numeric(boar_kde_list$xmax))
+  expect_true(is.numeric(boar_kde_list$ymin))
+  expect_true(is.numeric(boar_kde_list$ymax))
+})

@@ -18,6 +18,9 @@
 #'   crs = 4326)
 #' 
 sf_point_col <- function(x, y, crs = NULL) {
+  if (length(x) != length(y)) {
+    stop("x and y must have the same length")
+  }
   sf::st_sfc(
     mapply(
       function(x, y) sf::st_point(c(x, y)),

@@ -114,6 +114,8 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     %in% names(bbox))) {
     stop("bbox must be a named vector of length 4")
   }
+  # coerce to plain numeric named vector (handles list inputs gracefully)
+  bbox <- unlist(bbox)
 
 
   if (is.null(res)) {
@@ -148,10 +150,10 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
       group_id = group_labels[group_id],
       method = "kde",
       h = h_val,
-      xmin = bbox["xmin"],
-      ymin = bbox["ymin"],
-      xmax = bbox["xmax"],
-      ymax = bbox["ymax"],
+      xmin = bbox[["xmin"]],
+      ymin = bbox[["ymin"]],
+      xmax = bbox[["xmax"]],
+      ymax = bbox[["ymax"]],
       res = res
     )
 
