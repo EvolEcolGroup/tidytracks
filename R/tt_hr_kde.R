@@ -32,7 +32,7 @@
 #' @param res The resolution of the grid (in the units of the projection of x).
 #'   If NULL, res is set to obtained ~ 1000 cells.
 #' @param levels A vector of levels for the isopleths (i.e. contour lines), as
-#'   numbers between 0 and 1.If set to NULL (the defaul), the full utilisation
+#'   numbers between 0 and 1. If set to NULL (the default), the full utilisation
 #'   distribution is returned; otherwise just the isopleths are returned. It is
 #'   possible to specify more than two levels, e.g.  `c(0.5, 0.95)` corresponds
 #'   to the 50% and 95% home ranges.
