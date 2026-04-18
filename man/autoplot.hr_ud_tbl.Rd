@@ -8,7 +8,7 @@
 }
 \arguments{
 \item{object}{A tibble of utilisation distributions created by kde of class
-\code{hd_kde_tbl} as created with \code{\link[=tt_hr_kde]{tt_hr_kde()}}.}
+\code{hr_ud_tbl} as created with \code{\link[=tt_hr_kde]{tt_hr_kde()}}.}
 
 \item{id_to_plot}{Integer or character, the id of the utilisation
 distribution to plot. If \code{NULL}, all utilisation distributions in the
