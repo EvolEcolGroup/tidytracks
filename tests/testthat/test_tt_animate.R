@@ -81,6 +81,8 @@ test_that("tt_animate embeds label_format in the title for type=paths", {
 
 # for manual testing only: animate the gganim using av_renderer()
 # gganimate::animate(plot = result$p_anim,
-#                    n_frames = result$n_frames,
+#                    nframes = result$n_frames,
 #                    fps = 10,
-#                    renderer = gganimate::av_renderer())
+#                    # renderer = gganimate::av_renderer()
+#                    renderer = gganimate::gifski_renderer()
+#                    )
