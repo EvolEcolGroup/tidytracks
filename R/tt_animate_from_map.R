@@ -11,20 +11,18 @@
 #' a bathymetry raster or land polygons) are automatically kept static across
 #' all frames by gganimate.
 #'
-#' The track data layer must be added with
-#' \code{geom_sf(data = \link{tt_event_segments}(x), aes(...))}.
-#' \code{\link{tt_event_segments}} builds one LINESTRING per step with all
-#' event-table columns preserved, which is required because gganimate's
-#' \code{transition_time} needs a homogeneous geometry type (the mixed
-#' POINT + LINESTRING output of \code{\link{geom_event_path}} will error).
-#' \code{\link{geom_track_path}} is also not suitable as it aggregates to
-#' per-track metadata, discarding event timestamps.
+#' The track data layer must be added with \code{\link{geom_event_segments}},
+#' which builds one LINESTRING per step with all event-table columns preserved.
+#' This is required because gganimate's \code{transition_time} needs a
+#' homogeneous geometry type — the mixed POINT + LINESTRING output of
+#' \code{\link{geom_event_path}} will error, and \code{\link{geom_track_path}}
+#' aggregates to per-track metadata discarding event timestamps.
 #'
 #' All aesthetic choices (colour, linewidth, alpha, etc.) are set by the user
-#' in their \code{geom_sf()} call.
+#' in their \code{\link{geom_event_segments}()} call.
 #'
 #' @param p A \code{ggplot} object containing the fully styled map, with the
-#'   track layer added using \code{geom_sf(data = tt_event_segments(x), ...)}.
+#'   track layer added using \code{\link{geom_event_segments}}.
 #' @param x A \code{move2} object. Used to identify the datetime column name
 #'   and compute the number of animation frames.
 #' @param fade Logical. If \code{TRUE} (default), previous segments fade out
@@ -51,14 +49,14 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Build your map using tt_event_segments(), then pipe into tt_animate_paths()
+#' # Build your map using geom_event_segments(), then pipe into tt_animate_paths()
 #'
 #' # Fading trail (default)
 #' result <- ggplot() +
 #'   geom_spatraster(data = bathy_p) +
 #'   scale_fill_gradientn(colours = c("#08195e", "#85c1e9")) +
-#'   geom_sf(data = tt_event_segments(df_p),
-#'           aes(colour = track_id), linewidth = 1, alpha = 0.8) +
+#'   geom_event_segments(data = df_p,
+#'                       aes(colour = track_id), linewidth = 1, alpha = 0.8) +
 #'   scale_colour_manual(values = track_colours) +
 #'   geom_spatvector(data = land_p, fill = land_colour, colour = land_colour) +
 #'   theme_void() +

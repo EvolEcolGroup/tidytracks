@@ -23,8 +23,7 @@ x <- make_test_tracks()
 # helpers: minimal ggplots using the tt geoms ----
 make_paths_map <- function(x) {
   ggplot2::ggplot() +
-    ggplot2::geom_sf(data = tt_event_segments(x),
-                     ggplot2::aes(colour = bird_id), linewidth = 1)
+    geom_event_segments(data = x, ggplot2::aes(colour = bird_id), linewidth = 1)
 }
 
 make_points_map <- function(x) {
@@ -33,34 +32,45 @@ make_points_map <- function(x) {
 }
 
 # ===========================================================================
-# tt_event_segments
+# geom_event_segments
 # ===========================================================================
 
-test_that("tt_event_segments errors if x is not a move2 object", {
-  expect_error(tt_event_segments(data.frame()), "move2")
+test_that("geom_event_segments errors if data is NULL", {
+  expect_error(geom_event_segments(), "data must be specified")
 })
 
-test_that("tt_event_segments returns an sf object", {
-  segs <- tt_event_segments(x)
-  expect_true(inherits(segs, "sf"))
+test_that("geom_event_segments errors if data is not a move2 object", {
+  expect_error(geom_event_segments(data = data.frame()), "move2")
 })
 
-test_that("tt_event_segments returns only LINESTRING geometries", {
-  segs <- tt_event_segments(x)
-  geom_types <- unique(as.character(sf::st_geometry_type(segs)))
+test_that("geom_event_segments can be added to a ggplot without error", {
+  expect_no_error(
+    ggplot2::ggplot() + geom_event_segments(data = x, ggplot2::aes(colour = bird_id))
+  )
+})
+
+test_that("geom_event_segments layer data contains only LINESTRING geometries", {
+  p <- ggplot2::ggplot() +
+    geom_event_segments(data = x, ggplot2::aes(colour = bird_id))
+  layer_data <- p$layers[[1]]$data
+  geom_types <- unique(as.character(sf::st_geometry_type(layer_data)))
   expect_equal(geom_types, "LINESTRING")
 })
 
-test_that("tt_event_segments returns n_events - n_tracks rows", {
-  segs <- tt_event_segments(x)
+test_that("geom_event_segments layer data has n_events - n_tracks rows", {
+  p <- ggplot2::ggplot() +
+    geom_event_segments(data = x, ggplot2::aes(colour = bird_id))
+  layer_data <- p$layers[[1]]$data
   n_tracks <- length(unique(x[[move2::mt_track_id_column(x)]]))
-  expect_equal(nrow(segs), nrow(x) - n_tracks)
+  expect_equal(nrow(layer_data), nrow(x) - n_tracks)
 })
 
-test_that("tt_event_segments preserves track ID and datetime columns", {
-  segs <- tt_event_segments(x)
-  expect_true(move2::mt_track_id_column(x) %in% names(segs))
-  expect_true(move2::mt_time_column(x) %in% names(segs))
+test_that("geom_event_segments layer data preserves track ID and datetime columns", {
+  p <- ggplot2::ggplot() +
+    geom_event_segments(data = x, ggplot2::aes(colour = bird_id))
+  layer_data <- p$layers[[1]]$data
+  expect_true(move2::mt_track_id_column(x) %in% names(layer_data))
+  expect_true(move2::mt_time_column(x) %in% names(layer_data))
 })
 
 # ===========================================================================
