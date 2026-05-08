@@ -18,6 +18,10 @@
 #'   used, as it is the case for `ggplot2::geom_sf()`.
 #' @param data The `move2` object to be displayed. For this geometry, there is
 #'   no inheritance from the main `ggplot()` call, and data has to be specified.
+#' @param drop_final_point Logical, default is `TRUE`. The `move2::mt_segments`
+#'   function cannot create a segment for the final point in each track, so it 
+#'   is left as a `POINT` geometry. If `TRUE`, we filter to `LINESTRING`
+#'   geometries only (this is necessary for the animation function to work).
 #' @param stat The statistical transformation to use on the data for this layer.
 #'   The default is "sf", which should normally be left unchanged.
 #' @param position The position adjustment to use for overlapping points on this
@@ -32,9 +36,13 @@
 #' @returns A `ggplot2` layer object.
 #' @export
 
-geom_event_path <- function(mapping = ggplot2::aes(), data = NULL, stat = "sf",
+geom_event_path <- function(mapping = ggplot2::aes(), 
+                            data = NULL, 
+                            drop_final_point = TRUE,
+                            stat = "sf",
                             position = "identity",
-                            na.rm = FALSE, show.legend = NA,
+                            na.rm = FALSE, 
+                            show.legend = NA,
                             ...) {
   # check that data is not NULL
   if (is.null(data)) {
@@ -44,18 +52,26 @@ geom_event_path <- function(mapping = ggplot2::aes(), data = NULL, stat = "sf",
   if (!inherits(data, "move2")) {
     stop("data must be a move2 object")
   }
-  # TODO check if geom_steps already exists, and if so, use it
-  # to speed up the plotting
   
+  # make segments between each pair of points using move2::mt_segments
   data_steps <- data %>%
     dplyr::mutate(geom_steps = move2::mt_segments(data))
+  
   # change the geometry column
   data_steps <- data_steps %>%
     dplyr::mutate(geometry = .data$geom_steps) %>%
     dplyr::select(-dplyr::all_of("geom_steps"))
+  
   # drop all units
   data_steps <- tt_drop_units(data_steps)
-
+  
+  # mt_segments() returns a POINT geometry for the final event of each track
+  # (no outgoing step). IF drop_final_point - TRUE, filter to LINESTRING only: 
+  # mixed geometry types break gganimate's transition_time.
+  if (drop_final_point){
+    data_steps <- data_steps[sf::st_geometry_type(data_steps) == "LINESTRING", ]
+  }
+  
   ggplot2::geom_sf(
     mapping = mapping, data = data_steps, stat = stat,
     position = position, na.rm = na.rm, show.legend = show.legend,
