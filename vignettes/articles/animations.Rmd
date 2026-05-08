@@ -1,0 +1,146 @@
+---
+title: "Animations with tidytracks"
+output: html_document
+date: "2026-05-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_packages, message=FALSE, warning=FALSE}
+library(tidytracks)
+library(ggplot2)
+library(sf)
+library(terra)
+library(tidyterra)
+library(rnaturalearth)
+library(gganimate)
+```
+
+
+`tidytracks` makes creating animated maps of your animal movement data easy.
+
+First, load your data. Here we are using 10 wandering albatross tracks from 
+Bird Island, South Georgia, each lasting approximately 1 year.
+
+```{r load_data}
+# load data from CSV file into tidytracks
+df <- tt_read_data(events = "wanderer_example_tracks.csv",
+                   col_track_id = "bird_id",
+                   col_coords = c("lon", "lat"),
+                   col_date_time = "date_time")
+
+# inspect the data
+df
+```
+
+You need regular timestamps to animate, so regularise your timestamps.
+
+```{r interpolate}
+df <- move2::mt_interpolate(x = df,
+                            time = "12 hours",
+                            omit = TRUE)
+
+df
+```
+
+
+Read in any other layers you want to include in your map, e.g.
+
+* raster file such as bathymetry to use as a basemap
+* polygons e.g. countries, national park boundaries
+* points e.g. colony or tagging location
+
+```{r load_extra_layers}
+# # load bathymetry raster using terra package
+# bathy <- terra::rast("bathy_capped.nc")
+# # transform it to WGS84 to match df
+# bathy <- terra::project(bathy, "EPSG:4326")
+# bathy
+
+# make colony dataframe, make it spatial and add CRS using sf package
+colony <- data.frame(colony = "Bird Island", lon = -38.03, lat = -54) %>%
+  sf::st_as_sf(coords = c("lon", "lat")) %>%
+  sf::st_set_crs(4326)
+
+# read countries from rnaturalearth at medium res
+land <- rnaturalearth::ne_countries(scale = "medium",
+                                    returnclass = "sf") %>%
+  dplyr::select(name, continent)
+```
+
+Sort out your projections: check that the CRS of all your layers match, and if 
+needed, transform every object to your desired projection for plotting.
+
+```{r sort_projections}
+# check CRS of df matches the other layers for the plot
+st_crs(df) == st_crs(colony)
+# st_crs(df) == st_crs(bathy)
+st_crs(df) == st_crs(land)
+
+# define south polar LAEA projection for plotting
+crs_laea_south <- "+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
+
+# transform all my layers into the new projection
+df_p <- sf::st_transform(df, crs_laea_south)
+colony_p <- sf::st_transform(colony, crs_laea_south)
+land_p <- sf::st_transform(land, crs_laea_south)
+# bathy_p <- terra::project(bathy, crs_laea_south)
+```
+
+Next, assemble your map using `ggplot2`. Add `sf` layers using `geom_sf`, 
+`terra` layers using `tidyterra`'s functions `geom_spatraster` (for rasters) or 
+`geom_spatvector` (for vectors), and add your `tidytracks` layer using 
+`geom_event_path` for paths or `geom_event_point` for points.
+
+```{r assemble_map}
+
+map <- ggplot() +
+  # add land polygons
+  geom_sf(data = land_p, fill = "grey50", col = NA) +
+  # add tidytracks layer
+  # geom_event_point(data = df_p, aes(col = bird_id), size = 1.5) +
+  geom_event_path(data = df_p, aes(col = bird_id), size = 1.5) +
+  # add colony layer
+  geom_sf(data = colony_p, pch = 24, fill = "yellow") +
+  # update extent of map using extent of tracking data
+  coord_sf(xlim = c(min(st_coordinates(df_p)[, 1]),
+                    max(st_coordinates(df_p)[, 1])),
+           ylim = c(min(st_coordinates(df_p)[, 2]),
+                    max(st_coordinates(df_p)[, 2]))
+  )
+
+map
+```
+
+Animate the map. This produces a list of 2 elements. The first is the 
+
+```{r animate_map}
+list_anim <- tt_animate_map(p = map, 
+                            x = df_p,
+                            wake_length = 0.1,
+                            label_format = "%B %Y")
+
+class(list_anim)
+names(list_anim)
+class(list_anim$p_anim)
+class(list_anim$n_timesteps)
+list_anim$n_timesteps
+```
+
+Render the animation. By default, gganimate uses 100 frames. If you want one 
+frame of the animation per timestep in your original dataframe, use 
+`nframes = list_anim$n_timesteps`.
+
+TODO I think nframes needs to be at least as many as, if not more than, the 
+number of timesteps in your data, for animating PATHS to work.
+
+```{r animate_map_2}
+
+animate(plot = list_anim$p_anim,
+        nframes = list_anim$n_timesteps,
+        duration = 20)
+
+```
+
