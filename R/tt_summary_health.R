@@ -2,7 +2,7 @@
 #'
 #' This function creates a summary of the quality of each track in a `move2`
 #' object. It calculates the median sampling interval, track duration, expected
-#' number of points, actual number of points, and the percentage of expected
+#' number of points, actual number of points, and the proportion of expected
 #' points that are missing (due to gaps in track).
 #' @param x A `move2` object
 #' @return A tibble with one row per track and the following columns:
@@ -34,6 +34,9 @@ tt_summary_health <- function(x) {
     actual_points = NA_integer_,
     proportion_missing = NA_real_
   )
+  
+  # Ensure the move2 object is ordered by time within each track
+  x <- tt_order_time(x)
 
   # Loop through each track and calculate the summary statistics
   for (i in seq_along(track_ids)) {
@@ -64,6 +67,9 @@ tt_summary_health <- function(x) {
     results$actual_points[i] <- actual_points
     results$proportion_missing[i] <- proportion_missing
   }
+  
+  # rename track_id field to the "track_id_column" in the original move2 object
+  colnames(results)[which(colnames(results) == "track_id")] <- move2::mt_track_id_column(x)
 
   return(results)
 }
