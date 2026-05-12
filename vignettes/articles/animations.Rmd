@@ -195,7 +195,7 @@ This animation included the tracking data as paths using `geom_event_path()`.
 Let's illustrate the difference between paths and points by re-creating it 
 using `geom_event_point()`.
 
-```{r full_anim_points}
+```{r full_anim_points, message=FALSE, warning=FALSE}
 # first, make the map and print it to check
 map <- ggplot() +
   geom_event_point(data = df_p, aes(col = bird_id), size = 1.5) + # tracks layer
@@ -331,7 +331,7 @@ suggested number of frames.
 This time we'll add the animation by piping the `ggplot` to `animate_map` - 
 both ways of using the function work.
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # add animation to the map, this time with pipe 
 list_anim <- map %>%
   animate_map(.,
