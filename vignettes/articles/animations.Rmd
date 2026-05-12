@@ -113,7 +113,7 @@ map <- ggplot() +
   geom_event_path(data = df_p, aes(col = bird_id), size = 1.5) + # tracks layer
   geom_sf(data = land_p, fill = "grey50", col = NA) + # land polygons
   geom_sf(data = colony_p, pch = 24, fill = "yellow") # add colony layer
-  
+
 map
 ```
 
@@ -137,22 +137,22 @@ map
 
 ### animate map
 
-Animate the map using `tt_animate_map()`. This produces a `list` of 2 elements.
+Animate the map using `animate_map()`. This produces a `list` of 2 elements.
 
 * `p_anim` is the `gganim` object (a `ggplot2` object with extra animation 
-  logic). We will use the `animate` function from the `gganimate` package to 
-  render the animation from this object.
+logic). We will use the `animate` function from the `gganimate` package to 
+render the animation from this object.
 * `n_timesteps` is the number of unique timestamps in the tracking data used to
-  make the plot. To ensure a smooth animation, we need to render it with **at
-  least as many frames as there are timesteps** in the tracking data.
+make the plot. To ensure a smooth animation, we need to render it with **at
+least as many frames as there are timesteps** in the tracking data.
 
 ```{r animate_map, collapse=TRUE}
-list_anim <- tt_animate_map(p = map, 
-                            x = df_p,
-                            wake_length = 0.1,
-                            label_format = "%B %Y")
+list_anim <- animate_map(p = map, 
+                         x = df_p,
+                         wake_length = 0.1,
+                         label_format = "%B %Y")
 
-class(list_anim) # the output of tt_animate_map is a list
+class(list_anim) # the output of animate_map is a list
 names(list_anim) # what are the elements in the list?
 class(list_anim$p_anim) # this is the gganim object
 list_anim$n_timesteps # this is the number of unique timesteps
@@ -208,10 +208,10 @@ map <- ggplot() +
 # print to check
 map
 # add animation
-list_anim <- tt_animate_map(p = map, 
-                            x = df_p,
-                            wake_length = 0.1,
-                            label_format = "%B %Y")
+list_anim <- animate_map(p = map, 
+                         x = df_p,
+                         wake_length = 0.1,
+                         label_format = "%B %Y")
 # render the animation
 gganimate::animate(
   plot = list_anim$p_anim,
@@ -328,13 +328,16 @@ map
 Now add the animation logic to the map and render the animation with the 
 suggested number of frames.
 
+This time we'll add the animation by piping the `ggplot` to `animate_map` - 
+both ways of using the function work.
+
 ```{r}
 # add animation to the map, this time with pipe 
 list_anim <- map %>%
-  tt_animate_map(.,
-                 x = df_p,
-                 wake_length = 0.1,
-                 label_format = "%B %Y")
+  animate_map(.,
+              x = df_p,
+              wake_length = 0.1,
+              label_format = "%B %Y")
 
 # render the animation
 gganimate::animate(
