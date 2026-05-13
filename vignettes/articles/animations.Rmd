@@ -1,7 +1,8 @@
 ---
 title: "Animations with tidytracks"
 output: 
-  html_document:
+  github_document:
+  # html_document:
     toc: true
     toc_depth: 3
 ---
@@ -88,8 +89,7 @@ needed, transform every object to your desired projection for plotting.
 
 ```{r sort_projections, collapse=TRUE}
 # check CRS of df matches the other layers for the plot
-st_crs(df) == st_crs(colony)
-st_crs(df) == st_crs(land)
+all.equal(st_crs(df), st_crs(colony), st_crs(land))
 
 # define south polar LAEA projection for plotting
 my_crs <- "+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
@@ -98,6 +98,10 @@ my_crs <- "+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +n
 df_p <- sf::st_transform(df, my_crs)
 colony_p <- sf::st_transform(colony, my_crs)
 land_p <- sf::st_transform(land, my_crs)
+
+# subset the tracking data to the first month, to test our animation
+df_p_sub <- df_p %>%
+  dplyr::filter(date_time <= (min(df_p$date_time) + lubridate::days(30)))
 ```
 
 ### make map
@@ -109,8 +113,7 @@ Next, assemble your map using `ggplot2`. Add `sf` layers using `geom_sf`,
 
 ```{r assemble_map}
 map <- ggplot() +
-  # geom_event_point(data = df_p, aes(col = bird_id), size = 1.5) +
-  geom_event_path(data = df_p, aes(col = bird_id), size = 1.5) + # tracks layer
+  geom_event_path(data = df_p_sub, aes(col = bird_id), size = 1.5) + # tracks layer
   geom_sf(data = land_p, fill = "grey50", col = NA) + # land polygons
   geom_sf(data = colony_p, pch = 24, fill = "yellow") # add colony layer
 
@@ -147,10 +150,11 @@ make the plot. To ensure a smooth animation, we need to render it with **at
 least as many frames as there are timesteps** in the tracking data.
 
 ```{r animate_map, collapse=TRUE}
-list_anim <- animate_map(p = map, 
-                         x = df_p,
-                         wake_length = 0.1,
-                         label_format = "%B %Y")
+list_anim <- animate_map(p = map,           # our ggplot map
+                         x = df_p_sub,      # the tidytracks layer
+                         wake_length = 0.3, # proportion of total animation time
+                         label_format = "%B %Y" # Month Year
+                         ) 
 
 class(list_anim) # the output of animate_map is a list
 names(list_anim) # what are the elements in the list?
@@ -174,11 +178,17 @@ parameters:
 Here we use the suggested number of frames, and a duration of 20 seconds. 
 Depending on the number of frames, this may take a few minutes or longer.
 
+See the [gganimate documentation](https://gganimate.com/reference/animate.html)
+for more information on the different renderer options for making your
+animation. You can also save each frame as an image file and use your own
+software to bind them into a video.
+
 ```{r animate_map_2, message=FALSE, warning=FALSE}
 gganimate::animate(
-  plot = list_anim$p_anim,
-  nframes = list_anim$n_timesteps,
-  duration = 20
+  plot = list_anim$p_anim,         # our ggplot with added animation
+  nframes = list_anim$n_timesteps, # same number of frames as timesteps in data
+  duration = 5,                    # video duration in seconds
+  renderer = av_renderer()         # default is gifski_renderer()
 )
 ```
 
@@ -186,7 +196,7 @@ To save the animation to file, use `gganimate`'s `anim_save()` function which
 by default saves the most recent animation, similarly to `ggsave()`.
 
 ```{r eval=FALSE}
-anim_save("example_animation.gif")
+anim_save("example_animation.mp4") # add appropriate file extension
 ```
 
 ### points vs paths
@@ -195,10 +205,10 @@ This animation included the tracking data as paths using `geom_event_path()`.
 Let's illustrate the difference between paths and points by re-creating it 
 using `geom_event_point()`.
 
-```{r full_anim_points, message=FALSE, warning=FALSE}
+```{r anim_points, message=FALSE, warning=FALSE}
 # first, make the map and print it to check
 map <- ggplot() +
-  geom_event_point(data = df_p, aes(col = bird_id), size = 1.5) + # tracks layer
+  geom_event_point(data = df_p_sub, aes(col = bird_id), size = 3) + # tracks layer
   geom_sf(data = land_p, fill = "grey50", col = NA) + # land polygons
   geom_sf(data = colony_p, pch = 24, fill = "yellow") + # add colony layer
   coord_sf(xlim = c(min(st_coordinates(df_p)[, 1]), # define extents
@@ -209,14 +219,15 @@ map <- ggplot() +
 map
 # add animation
 list_anim <- animate_map(p = map, 
-                         x = df_p,
-                         wake_length = 0.1,
+                         x = df_p_sub,
+                         wake_length = 0.3,
                          label_format = "%B %Y")
 # render the animation
 gganimate::animate(
   plot = list_anim$p_anim,
   nframes = list_anim$n_timesteps,
-  duration = 20
+  duration = 5,
+  renderer = av_renderer()
 )
 ```
 
@@ -254,13 +265,12 @@ To download using `basemaps`, you need to ask for a defined spatial extent
 can define the extent programmatically, but sometimes you may want to define 
 it manually, or add a buffer around your data.
 
-```{r, collapse=TRUE}
-# make a rectangle as the bounding box of all the data (in lon/lat)
+```{r make_bbox, collapse=TRUE}
+# option 1: make a rectangle as the bounding box of all the data (in lon/lat)
 rect <- st_as_sfc(st_bbox(df))
-rect
 
-# I actually want to extend my rectangle to the whole Southern Ocean
-# and up to the northern extent of my data, plus a 15 degree buffer
+# option 2: specify the rectangly manually. I want the whole Southern Ocean
+# and up to the northern extent of my data (plus a 15 degree buffer)
 rect_coords <- c(xmin = -180, # define the corners
                  xmax = 180,
                  ymin = -90,
@@ -275,7 +285,7 @@ rect
 Now we have the extent `rect`, let's download the basemap, check its CRS, and 
 project it to the projection we're using for our map.
 
-```{r warning=FALSE, collapse=TRUE}
+```{r download_bmap, warning=FALSE, collapse=TRUE}
 # download basemap as a terra spatRaster
 bmap <- basemap_terra(rect, map_service = "esri", map_type = "world_ocean_base")
 # check the CRS it comes in
@@ -294,8 +304,8 @@ functions `geom_spatraster` (for single layer e.g. bathymetry raster) or
 `geom_spatraster_rgb` (for RGB rasters with a layer for each of red, gree,
 blue).
 
-```{r}
-# use different colour scale on top of RGB raster
+```{r make_raster_map}
+# define new track colours to show up better on a blue background
 track_colours <- c(
   "#FFD700", # Gold
   "#FF6B35", # Orange
@@ -312,12 +322,11 @@ track_colours <- c(
 # assemble map
 map <- ggplot() +
   geom_spatraster_rgb(data = bmap_p) + # basemap layer first
-  geom_event_path(data = df_p, aes(col = bird_id), size = 1.5) + # tracks layer
+  geom_event_path(data = df_p, aes(col = bird_id), size = 2) + # tracks layer
   scale_colour_manual(values = track_colours) + # change track colours
   geom_sf(data = colony_p, pch = 24, fill = "yellow") # add colony layer
-map
 
-# remove axes and gridlines - looks neater
+# remove axes and gridlines so it looks neater
 map <- map +
   ggplot2::theme_void()
 map
@@ -331,7 +340,7 @@ suggested number of frames.
 This time we'll add the animation by piping the `ggplot` to `animate_map` - 
 both ways of using the function work.
 
-```{r, message=FALSE, warning=FALSE}
+```{r animate_raster_map, message=FALSE, warning=FALSE}
 # add animation to the map, this time with pipe 
 list_anim <- map %>%
   animate_map(.,
@@ -343,7 +352,8 @@ list_anim <- map %>%
 gganimate::animate(
   plot = list_anim$p_anim,
   nframes = list_anim$n_timesteps,
-  duration = 20
+  duration = 20,
+  renderer = av_renderer()
 )
 ```
 
