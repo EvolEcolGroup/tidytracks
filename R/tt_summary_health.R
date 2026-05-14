@@ -7,7 +7,7 @@
 #' @param x A `move2` object
 #' @return A tibble with one row per track and the following columns:
 #' \itemize{
-#'  \item track_id: The track ID
+#'  \item \code{move2::mt_track_id_column(x)}: The track ID column from \code{x}
 #'  \item median_sampling_interval: The median sampling interval in seconds
 #'  \item track_duration: The duration of the track in seconds
 #'  \item expected_points: The expected number of points based on the median sampling interval
@@ -44,21 +44,38 @@ tt_summary_health <- function(x) {
     track_data <- x[event_track_id(x) == track_id, ]
 
     # Calculate the median sampling interval
-    sampling_intervals <- diff(event_time(track_data), units = "secs")
-    median_sampling_interval <- as.numeric(median(sampling_intervals))
+    sampling_intervals <- as.numeric(diff(event_time(track_data), units = "secs"))
+    sampling_intervals <- sampling_intervals[is.finite(sampling_intervals) &
+                                               sampling_intervals > 0]
+    median_sampling_interval <- if (length(sampling_intervals) == 0) {
+      NA_real_
+    } else {
+      stats::median(sampling_intervals)
+    }
 
     # Calculate the track duration
     track_duration <- as.numeric(difftime(max(event_time(track_data)), 
                                min(event_time(track_data)), units = "secs"))
 
     # Calculate the expected number of points
-    expected_points <- round(track_duration / median_sampling_interval) + 1
-
     # Calculate the actual number of points
     actual_points <- nrow(track_data)
 
-    # Calculate the percentage of expected points that are missing
-    proportion_missing <- (expected_points - actual_points) / expected_points
+    # Calculate the expected number of points
+    if (is.finite(median_sampling_interval) && median_sampling_interval > 0) {
+      expected_points <- round(track_duration / median_sampling_interval) + 1
+      expected_points <- max(expected_points, actual_points)
+    } else {
+      expected_points <- actual_points
+    }
+    expected_points <- as.integer(expected_points)
+
+    # Calculate the proportion of expected points that are missing
+    if (expected_points > 0) {
+      proportion_missing <- max(expected_points - actual_points, 0) / expected_points
+    } else {
+      proportion_missing <- 0
+    }
 
     # Store the results in the tibble
     results$median_sampling_interval[i] <- median_sampling_interval
