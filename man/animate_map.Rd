@@ -68,30 +68,3 @@ time with a fading, shrinking wake regardless of \code{fade}.}
 All aesthetic choices (colour, size, linewidth, alpha, etc.) are set by the
 user in their \code{geom_event_path()} or \code{geom_event_point()} call.
 }
-\examples{
-\dontrun{
-# Path animation: fading trail (default)
-result <- ggplot() +
-  geom_event_path(data = my_tracks, aes(colour = track_id)) \%>\%
-  animate_map(x = my_tracks, fade = TRUE, wake_length = 0.4,
-                 label_format = "\%Y-\%m-\%d \%H:\%M")
-
-# Path animation: permanently growing path
-result <- ggplot() + ... \%>\%
-  animate_map(x = my_tracks, fade = FALSE, 
-                 label_format = "\%Y-\%m-\%d \%H:\%M")
-
-# Point animation: moving points with fading wake
-result <- ggplot() +
-  geom_event_point(data = my_tracks, aes(colour = track_id), size = 2) +
-  animate_map(x = my_tracks, wake_length = 0.4,
-                 label_format = "\%Y-\%m-\%d \%H:\%M")
-
-# Render: one frame per timestep
-gganimate::animate(result$p_anim, nframes = result$n_timesteps, fps = 10)
-
-# Render: smoother interpolated animation
-gganimate::animate(result$p_anim, nframes = result$n_timesteps * 5, fps = 25)
-}
-
-}

@@ -47,33 +47,6 @@
 #' @return A named list with: `p_anim` (a `gganim` object ready to pass to
 #'   `gganimate::animate()`) and `n_timesteps` (the number of unique time steps
 #'   in the layer data).
-#' 
-#' @examples
-#' \dontrun{
-#' # Path animation: fading trail (default)
-#' result <- ggplot() +
-#'   geom_event_path(data = my_tracks, aes(colour = track_id)) %>%
-#'   animate_map(x = my_tracks, fade = TRUE, wake_length = 0.4,
-#'                  label_format = "%Y-%m-%d %H:%M")
-#'
-#' # Path animation: permanently growing path
-#' result <- ggplot() + ... %>%
-#'   animate_map(x = my_tracks, fade = FALSE, 
-#'                  label_format = "%Y-%m-%d %H:%M")
-#'
-#' # Point animation: moving points with fading wake
-#' result <- ggplot() +
-#'   geom_event_point(data = my_tracks, aes(colour = track_id), size = 2) +
-#'   animate_map(x = my_tracks, wake_length = 0.4,
-#'                  label_format = "%Y-%m-%d %H:%M")
-#'
-#' # Render: one frame per timestep
-#' gganimate::animate(result$p_anim, nframes = result$n_timesteps, fps = 10)
-#'
-#' # Render: smoother interpolated animation
-#' gganimate::animate(result$p_anim, nframes = result$n_timesteps * 5, fps = 25)
-#' }
-#'
 #' @export
 animate_map <- function(p,
                            x,
