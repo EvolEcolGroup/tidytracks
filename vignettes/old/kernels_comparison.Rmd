@@ -1,0 +1,367 @@
+---
+title: "Comparing kernels: adehabitatHR and tidytracks"
+author: "Lizzie Pearmain"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load packages
+library(adehabitatHR)
+library(MASS)
+library(reshape2)
+library(dplyr)
+library(sp)
+```
+
+## genetta data
+
+```{r}
+genetta <- as.data.frame(matrix(
+  c(
+    0.5519758, 0.27524548,
+    0.5725632, 0.12309273,
+    0.5547747, 0.06100429,
+    0.6110925, 0.16211416,
+    0.5951087, 0.09316814,
+    0.5333567, 0.11673812,
+    0.5855461, 0.11170616,
+    0.5221387, 0.11061583,
+    0.5848452, 0.17213175
+  ),
+  ncol = 2, byrow = TRUE
+))
+```
+
+adehabitatHR
+
+```{r}
+# this grid to be used in both
+my_grid <- expand.grid(x = seq(0.01, 1, by = 0.01), 
+                            y = seq(-0.4, 0.59, by = 0.01))
+
+# kernel using adehabitat
+mask_xy_grid <- my_grid
+coordinates(mask_xy_grid) <- ~ x + y
+gridded(mask_xy_grid) <- TRUE
+
+g_ade <- kernelUD(SpatialPoints(genetta),
+  h = "href",
+  grid = mask_xy_grid,
+  kern = "bivnorm"
+)
+
+plot(g_ade)
+
+```
+
+MASS
+
+```{r}
+# kernel using MASS
+mask.xy <- as.data.frame(my_grid)
+
+H <- (sqrt(0.5 * (var(genetta[[1]]) + var(genetta[[2]])))) * (nrow(genetta)^-(1 / 6))
+
+g_mass <- MASS::kde2d(genetta$V1,
+  genetta$V2,
+  n = c(100, 100), # TODO check this is right - it's still square
+  h = c(H * 4, H * 4),
+  lims = c(range(mask.xy$x), range(mask.xy$y))
+)
+
+# convert to spdf for plotting
+g_mass_spdf <- SpatialPixelsDataFrame(
+  points = mask.xy,
+  data = data.frame(est = reshape2::melt(g_mass$z)$value)
+)
+plot(g_mass_spdf)
+```
+create a copy of ade and reinsert the values to see whether we can make it look
+similar
+```{r}
+g_ade_copy <- g_ade
+# flip the matrix to match the orientation of the grid
+g_ade_copy$ud <- as.vector(t(g_mass$z)[100:1,]) 
+plot(g_ade_copy)
+```
+
+They look similar, but are they similar:
+```{r}
+sum(g_ade$ud)
+sum(abs(g_ade$ud - g_ade_copy$ud))#
+```
+YES!!! Out of a mean value just below 1, there is a difference of 10^-4
+
+We write a little function to flip the vector from mass to adehabitat
+```{r}
+
+flip_mass_to_ade <- function(mass_kde) {
+  # flip the matrix to match the orientation of the grid
+  return(as.vector(t(mass_kde$z)[nrow(mass_kde$z):1,]))
+}
+```
+
+and test it:
+```{r}
+mean(abs(g_ade$ud - flip_mass_to_ade(g_mass)))
+
+```
+
+
+```{r}
+# clean up
+rm(my_grid, mask_xy_grid, mask.xy, H)
+rm(genetta, g_ade, g_mass, g_mass_spdf)
+```
+
+We write a little function to flip the vector from mass to adehabitat
+```{r}
+
+flip_mass_to_ade <- function(mass_kde) {
+  # flip the matrix to match the orientation of the grid
+  return(as.vector(t(mass_kde$z)[nrow(mass_kde$z):1,]))
+}
+```
+
+
+## puechabon example
+
+```{r}
+data(puechabonsp)
+
+brock <- as.data.frame(puechabonsp$relocs) %>%
+  dplyr::filter(Name == "Brock") %>%
+  dplyr::select(x = X, y = Y)
+
+# this grid to be used in both
+my_grid <- expand.grid(x = seq(697000, 701950, by = 50), 
+                       y = seq(3158550, 3163500, by = 50))
+
+```
+
+
+adehabitat
+
+```{r}
+# kernel using adehabitat
+mask_xy_grid <- my_grid
+coordinates(mask_xy_grid) <- ~ x + y
+gridded(mask_xy_grid) <- TRUE
+
+brock_ade <- adehabitatHR::kernelUD(SpatialPoints(brock),
+  h = "href",
+  grid = mask_xy_grid,
+  kern = "bivnorm"
+)
+
+plot(brock_ade)
+```
+
+MASS
+
+```{r}
+# kernel using MASS
+mask.xy <- as.data.frame(my_grid)
+
+H <- (sqrt(0.5 * (var(brock[[1]]) + var(brock[[2]])))) * (nrow(brock)^-(1 / 6))
+
+brock_mass <- MASS::kde2d(brock$x,
+  brock$y,
+  n = c(100, 100), # TODO check this is right - it's still square
+  h = c(H * 4, H * 4),
+  lims = c(range(mask.xy$x), range(mask.xy$y))
+)
+
+# convert to spdf for plotting
+brock_mass_spdf <- SpatialPixelsDataFrame(
+  points = mask.xy,
+  data = data.frame(est = reshape2::melt(brock_mass$z)$value)
+)
+plot(brock_mass_spdf)
+```
+
+Are they equal?
+We use a function to flip the vector from mass to adehabitat
+```{r}
+
+flip_mass_to_ade <- function(mass_kde) {
+  # flip the matrix to match the orientation of the grid
+  return(as.vector(t(mass_kde$z)[nrow(mass_kde$z):1,]))
+}
+```
+
+
+```{r}
+
+mean(abs(brock_ade$ud - flip_mass_to_ade(brock_mass)))
+mean(abs(brock_ade$ud - flip_mass_to_ade(brock_mass))) < 0.001
+
+```
+
+# Fit kernel with tidytracks
+
+# load the boar data
+```{r}
+library(tidytracks)
+wildboars_tt <- readRDS("./articles_data/wildboar_tt.rds")
+wildboars_tt
+```
+
+Check the metadata
+```{r}
+show_meta(wildboars_tt)
+```
+
+Compute the kde with tidytracks. We need to be careful how we set the bounding box.
+In terra, the extent is the corners, but kde works on centroids of cells.
+TODO we need to check what ade habitat is doing, is the bbox same as a terra extent.
+Are the individual coordinates the centroids (do we have individual coordinates?!?)
+
+yes, it looks like the bbox of the grid is the same as the extent of the grid, so we can use the same values for both. We just need to make sure we are using the same resolution (we have 50 here, but we need to check what adehabitat is doing).
+
+Note that the limits in the MASS kde function refer to centroids (i.e. the determine the actual values of x and y)
+```{r}
+wildboars_tt <- wildboars_tt %>% dplyr::group_by(name)
+wildboars_kde <- tt_hr_kde(wildboars_tt, levels = NULL,
+                           h = "h_ref_indiv",
+                           res = 50,
+                           bbox = list(xmin = min(mask.xy$x)-25, ymin = min(mask.xy$y)-25,
+                                    xmax = max(mask.xy$x)+25, ymax = max(mask.xy$y)+25))
+
+```
+
+
+check that we have the same h values (we do)
+```{r}
+brock_ade@h$h == wildboars_kde$h[1]
+
+```
+
+Check that the grid is the same
+```{r}
+ud1 <- wildboars_kde$ud[[1]]
+all.equal(terra::xFromCol(ud1, 1:terra::ncol(ud1)), brock_mass$x)
+all.equal(rev(terra::yFromRow(ud1, 1:terra::nrow(ud1))), brock_mass$y)
+all.equal(terra::xFromCol(ud1, 1:terra::ncol(ud1)), mask.xy$x[1:100])
+
+```
+
+```{r}
+# terra::values returns in the same cell ordering as adehabitat UD
+# Note: tidytracks normalizes values to sum to 1
+ud1_vals <- as.vector(terra::values(ud1))
+mean(abs(brock_ade$ud - ud1_vals))
+mean(abs(brock_ade$ud - ud1_vals)) < 0.001
+
+# compare with normalized MASS values (tidytracks normalizes to sum to 1)
+brock_mass_norm <- brock_mass_spdf$est / sum(brock_mass$z)
+abs(mean(ud1_vals - brock_mass_norm))
+```
+
+Now transfer values from the tidytracks kernel to the adehabitatHR object, so
+that we can check various operations
+
+```{r}
+brock_ade$ud <- as.vector(terra::values(wildboars_kde$ud[[1]]))
+# and confirm that now the values are identical
+mean(abs(brock_ade$ud - as.vector(terra::values(wildboars_kde$ud[[1]]))))
+# plot it to check that it works visually
+plot(brock_ade)
+```
+
+
+
+```{r cumulative_ud}
+
+vud <-  getvolumeUD(brock_ade, standardize = TRUE)
+vud
+```
+
+Get the standardise cud from the tidytracks kernel and check that it is the same as the one from adehabitatHR
+```{r}
+brock_cud <- hr_cud(wildboars_kde$ud[[1]])
+mean(abs(vud@data$n - 100 * as.vector(terra::values(brock_cud))))
+
+```
+
+These are identical, with the exception that the volume has been multiplied by 100 to
+turn it into percentages
+
+
+
+```{r}
+class(vud)
+
+sum(vud@vol)
+
+vud_std <- getvolumeUD(brock_ade, standardize = TRUE)
+sum(vud_std@vol)
+
+x <- brock_ade
+        sg <- as(x, "SpatialPixelsDataFrame")
+        sg <- as(sg, "SpatialGridDataFrame")
+        gr <- gridparameters(sg)
+        uu <- names(sg)
+        gri <- as.image.SpatialGridDataFrame(sg)
+  asc <- gri$z
+
+just_std <- asc/(sum(asc))
+
+
+```
+
+
+
+
+
+No create isopleths
+```{r}
+iso_90 <- getverticeshr(x = brock_ade,
+                        percent = 90)
+class(iso_90)
+plot(iso_90, col=1:4)
+```
+
+
+## next steps
+
+- try with `tidytracks::tt_hr_kde()` - getting the exact same grid etc. will be 
+   difficult.
+- check the differences are still <0.1%
+- replace the `adehabitatHR` object's values (in `@data`) with the values from 
+   the tidytracks kernel so they are exactly identical, just in different data
+   formats from the different packages
+- use this to test that the downstream functions work identically to the 
+    `adehabitatHR` equivalents.
+- we need to assign a projection to this dataset. I think it is 
+  Lambert II Étendu (EPSG:27572).
+  for the original dataset, it is something like:
+proj4string(wildboar$relocations) <- CRS("+init=epsg:27572")
+
+
+
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

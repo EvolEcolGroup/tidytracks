@@ -1,8 +1,12 @@
 Package: tidytracks
 Title: Functions to Analyse Tracking Data
-Version: 0.0.0.9002
-Authors@R: 
-    person("Andrea", "Manica", , "am315@cam.ac.uk", role = c("aut", "cre"))
+Version: 0.0.0.9004
+Authors@R: c(
+    person("Andrea", "Manica", , "am315@cam.ac.uk", role = c("aut", "cre")),
+    person("Lizzie", "Pearmain", role = c("aut")),
+    person("Paul","Whitelow", role = c("aut")),
+    person("Holly", "Pickett", role = c("aut"))
+    )
 Description: Tidy functions to analyse tracking data, based on the move2 objects.
 License: GPL (>= 3)
 Encoding: UTF-8
@@ -17,20 +21,25 @@ Imports:
   dplyr,
   foreach,
   geodist,
+  ggplot2,
   methods,
   MASS,
+  patchwork,
   purrr,
   rlang,
   sf,
   stats,
+  terra,
   tibble,
-  tidyr
+  tidyr,
+  tidyterra
 Suggests:
-    ggplot2,
-    lubridate,
-    lwgeom,
+    adehabitatHR,
+    sp,
     knitr,
     rmarkdown,
+    reshape2,
+    lwgeom,
     testthat (>= 3.0.0),
     trip,
     track2KBA

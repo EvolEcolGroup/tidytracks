@@ -2,56 +2,85 @@
 #'
 #' This function estimates the home range of an animal using kernel density
 #' estimation (KDE).
+#' The home range is estimated for each group in `x`, which can be defined by
+#' grouping `x` by one or more variables. If `x` is not grouped, the track ID
+#' is used as grouping variable, and the home range is estimated for each track
+#' separately.
 #'
-#' @param x A grouped move2 object
+#' @details By default, the full UD is returned. If `levels` is set, the
+#' isopleths for the specified levels are returned instead, along with their
+#' area. This option is useful to reduce memory use, but has the drawback that
+#' the full UD is not returned, which can be useful for some applications (e.g.
+#' to compute overlap between home ranges). If `levels` is set, the area of the
+#' isopleths is computed using `sf::st_area()`, which returns the area in the
+#' units of the projection of `x` (e.g. m^2 for a UTM projection). If `x` is
+#' unprojected, the area is computed in degrees^2, which is not a meaningful
+#' unit for area. In this case, it is recommended to project `x` to an
+#' appropriate projection before using this function. 
+#'
+#' @param x A move2 object; if explicitely grouped, the home range is estimated
+#'   for each group, combining all tracks within each group. Otherwise, the
+#'   track id is used as grouping variable.
 #' @param h The bandwidth for the kernel density estimation. Either a number, or
 #'   "h_ref_indiv" for using the reference bandwidth for each individual, or
 #'   "h_ref_mean" for using the mean bandwidth for all individuals (the
 #'   default).
-#' @param grid A list of length 5, with values xmin, ymin, xmax, ymax and res
-#'   (all in the units of the projection of x). If null, the extent is taken by
-#'   combining all points in `x` (expanded by 10%), and the number of cells is
-#'   set to 1000.
-#' @param levels A vector of levels for the contour lines. The default is
-#'   `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
-#' @param keep_objects whether the individual KDE objects should be kept as a
-#'   column in the output object. This is useful for debugging, but will
-#'   increase the size of the object.
-#' @returns A tibble of subclass `tt_hr_tbl` of results, with columns:
-#' - `group_id`: the ids from the groping of `x`
-#' - `.level_XX`: the sf polygons for level XX; the number of this type of
-#'   column depends on the length of `levels`
-#' - `kde`: the KDE object used to create the polygons (if
-#'   `keep_objects = TRUE`)
+#' @param bbox a named vector of four elements: xmin, ymin, xmax, ymax to define
+#'   the bounding box of the grid over which to compute the KDE. If NULL, the
+#'   extent is taken by combining all points in `x` (expanded by 100% of the
+#'   range on each side).
+#' @param res The resolution of the grid (in the units of the projection of x).
+#'   If NULL, res is set to obtained ~ 1000 cells.
+#' @param levels A vector of levels for the isopleths (i.e. contour lines), as
+#'   numbers between 0 and 1. If set to NULL (the default), the full utilisation
+#'   distribution is returned; otherwise just the isopleths are returned. It is
+#'   possible to specify more than two levels, e.g.  `c(0.5, 0.95)` corresponds
+#'   to the 50% and 95% home ranges.
+#' @returns Either a `tibble`, or, if `levels` is not NULL, an `sf` tibble , 
+#' with columns:
+#' - the grouping variable (as named in `x`; if `x` is grouped by
+#'   multiple variables, this column is named `group_id`): the ids from the
+#'   grouping of `x`
+#' - `level`: the level of the isopleth
+#' - `h`: the bandwidth used for the KDE
+#' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
+#' - `res`: the resolution used for the KDE
+#' If `levels` is NULL:
+#' - `kde`: the full KDE object is returned in a list column
+#' Else, if `levels` is not NULL, the following columns are added:
+#' - `area`: the area of the home range at this level (in the units
+#'   of the projection of `x`, e.g. m^2 for a UTM projection)
+#'  - `geometry`:  an `sfc` column containing the multipolygons representing
+#'   the isopleth for the appropriate level
+#'
 #' @export
 
-tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
-                      keep_objects = FALSE) {
-  # Check if x is a grouped move2 object
-  if (!inherits(x, "move2") || !inherits(x, "grouped_df")) {
-    stop("x must be a grouped move2 object")
+tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
+                      res = NULL, levels = NULL) {
+  # if x is not grouped, use the track ID column as grouping variable
+  if (!inherits(x, "grouped_df")) {
+    x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
 
   # Check if levels are valid
-  if (any(levels < 0 | levels > 1)) {
+  if (!is.null(levels) && (any(levels < 0 | levels > 1))) {
     stop("levels must be between 0 and 1")
   }
-  # reorder levels from big to small
-  levels <- sort(levels, decreasing = TRUE)
+  # reorder levels from small to big
+  levels <- sort(levels)
 
   # get the group indices
   group_index <- dplyr::group_indices(x)
   group_unique <- unique(group_index)
   group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
-  # Compute the minimum convex polygon for each group and level
-
-
+  # extract coordinates
   xy <- sf::st_coordinates(x)
   # check h
   if (!is.numeric(h)) {
     h <- match.arg(h, c(
-      "h_ref_mean", "h_ref_indiv"))
+      "h_ref_mean", "h_ref_indiv"
+    ))
     h_fun <- get(h) # assign the function to h_fun
     h <- h_fun(xy, group_index) # compute h
   }
@@ -65,38 +94,41 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
   }
 
   # Check if grid is provided
-  if (is.null(grid)) {
+  if (is.null(bbox)) {
     # get extend of x, which is an sf object
-    grid_bbox <- sf::st_bbox(x)
+    bbox <- sf::st_bbox(x)
     # extend the grid by a fixed factor
     # TODO compare to amt (extending by 50%), adehabitatHR (extending by 1)
     # and track2kba (extending by 0.05 or h*2000, whichever is larger))
-    extend_x <- (grid_bbox$xmax - grid_bbox$xmin) * 1
-    extend_y <- (grid_bbox$ymax - grid_bbox$ymin) * 1
+    extend_x <- (bbox[["xmax"]] - bbox[["xmin"]]) * 1
+    extend_y <- (bbox[["ymax"]] - bbox[["ymin"]]) * 1
 
-    grid <- list(
-      xmin = grid_bbox$xmin - extend_x,
-      ymin = grid_bbox$ymin - extend_y,
-      xmax = grid_bbox$xmax + extend_x,
-      ymax = grid_bbox$ymax + extend_y
-    )
+    bbox["xmin"] <- bbox[["xmin"]] - extend_x
+    bbox["ymin"] <- bbox[["ymin"]] - extend_y
+    bbox["xmax"] <- bbox[["xmax"]] + extend_x
+    bbox["ymax"] <- bbox[["ymax"]] + extend_y
+  }
+  # check that bbox is a vector of four correctly named elements
+  if (length(bbox) != 4 ||
+    !all(c("xmin", "ymin", "xmax", "ymax")
+    %in% names(bbox))) {
+    stop("bbox must be a named vector of length 4")
+  }
+  # coerce to plain numeric named vector (handles list inputs gracefully)
+  bbox <- unlist(bbox)
+
+
+  if (is.null(res)) {
     # set resolution to get a 1000 cells
-    grid[["res"]] <- sqrt((grid$xmax - grid$xmin) *
-      (grid$ymax - grid$ymin) / 1500)
-    # update the max to be an exact multiple of res
-    grid[["xmax"]] <- grid$xmin +
-      ceiling((grid$xmax - grid$xmin) / grid$res) * grid$res
-    grid[["ymax"]] <- grid$ymin +
-      ceiling((grid$ymax - grid$ymin) / grid$res) * grid$res
-  } else if (length(grid) != 5) {
-    stop("grid must be a named vector of length 5")
-  } else if (!all(c("xmin", "ymin", "xmax", "ymax", "res") %in% names(grid))) {
-    stop(
-      "grid must be a list of length 5 with names xmin, ymin, ",
-      "xmax, ymax, and res"
-    )
+    res <- sqrt((bbox[["xmax"]] - bbox[["xmin"]]) *
+      (bbox[["ymax"]] - bbox[["ymin"]]) / 1000)
   }
 
+  # update the max to be an exact multiple of res
+  bbox["xmax"] <- bbox[["xmin"]] +
+    ceiling((bbox[["xmax"]] - bbox[["xmin"]]) / res) * res
+  bbox["ymax"] <- bbox[["ymin"]] +
+    ceiling((bbox[["ymax"]] - bbox[["ymin"]]) / res) * res
   group_id <- NULL # hack to avoid it being flagged as global in checks
   kde_results <- foreach::foreach(
     group_id = group_unique,
@@ -106,28 +138,40 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
     xy_sub <- xy[group_index == group_id, ]
     h_val <- h[group_id]
     # Create kernel for each level
-    geometry <- kde_one_group(xy_sub, levels,
+    kde <- kde_one_group(xy_sub,
       crs = sf::st_crs(x),
-      grid = grid,
+      bbox = bbox,
+      res = res,
       h = h_val,
-      keep_object = keep_objects
+      id = group_id
     )
-    # Calculate area
-    area <- sf::st_area(geometry)
-    # Create a tibble with the results
-    cbind(tibble::tibble(
+    # row for the table to integrate the results
+    res_tbl <- tibble::tibble(
       group_id = group_labels[group_id],
-      level = levels,
+      method = "kde",
       h = h_val,
-      area = area
-    ), geometry)
+      xmin = bbox[["xmin"]],
+      ymin = bbox[["ymin"]],
+      xmax = bbox[["xmax"]],
+      ymax = bbox[["ymax"]],
+      res = res
+    )
+
+    # if returning the full kde object, we simply add it to the kde column
+      # add the kde to the tibble as a list column
+      res_tbl$ud <- PackedSpatRaster_list(kde)
+      names(res_tbl$ud) <- group_labels[group_id]
+      # add a class to the tibble
+      class(res_tbl) <- c("hr_ud_tbl", class(res_tbl))
+    if (!is.null(levels)) {
+      res_tbl <- hr_ud_iso(res_tbl, levels)
+    }
+    res_tbl
   }
-
-  # now cast the results to an sf object
-  kde_results <- sf::st_as_sf(kde_results, crs = sf::st_crs(x))
-  # add a method attribute
-  attr(kde_results, "hr_method") <- c("kde")
-
+  # # change class of ud column to PackedSpatRaster_list
+  # names(kde_results$ud) <- group_labels
+  # kde_results$ud <- as_PackedSpatRaster_list(kde_results$ud)
+  
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
     kde_results <- kde_results %>%
@@ -135,62 +179,61 @@ tt_hr_kde <- function(x, h = "h_ref_mean", grid = NULL, levels = c(0.5, 0.95),
         ~ dplyr::group_vars(x), dplyr::all_of("group_id")
       )
   }
-
-
+  
   return(kde_results)
 }
 
-#' Create kde isopleths at multiple levels for a given group
+
+#' Compute the kde for a given group
 #'
-#' This is the internal function that is called by `tt_hr_kde` to create the
-#' kde isopleths
-#' at multiple levels for a given group. It is not intended to be called
-#' directly by the user.
+#' This is the internal function that is called by `tt_hr_kde` to compute the
+#' kde for a given group. It is not intended to be called directly by the user.
 #'
 #' @param xy a matrix of coordinates
-#' @param levels A vector of levels for the contour lines
 #' @param crs the crs of the coordinates (to use in the geometry)
-#' @param grid A list of length 5, with values xmin, ymin,
-#' xmax, ymax and res (all in the units of the projection of x).
+#' @param bbox A named vector of four elements: xmin, ymin, xmax, ymax to define
+#'   the bounding box of the grid over which to compute the KDE.
+#' @param res The resolution of the grid (in the units of the projection of x).
 #' @param h The bandwidth for the kernel density estimation.
-#' @param keep_object whether the individual KDE object should be kept. If so,
-#' the function returns a list of sf polygons and the kde object.
-#' @returns A list of sf polygons representing the kde isopleths at each level
+#' @param id The identifier for the group (used in raster metadata).
+#' @return A PackedSpatRaster.
 #' @keywords internal
-
-kde_one_group <- function(xy, levels, crs, grid, h, keep_object = FALSE) {
-  # Create a kde object
+kde_one_group <- function(xy, crs, bbox, res, h, id) {
   kde <- MASS::kde2d(xy[, 1],
     xy[, 2],
     n = round(c(
-      (grid$xmax - grid$xmin) / grid$res,
-      (grid$ymax - grid$ymin) / grid$res
+      (bbox[["xmax"]] - bbox[["xmin"]]) / res,
+      (bbox[["ymax"]] - bbox[["ymin"]]) / res
     )),
     # note that MASS needs h multiplied by 4 to be comparable with other kde
     # approaches (e.g. adehabitatHR or KernSmooth)
     h = h * 4,
     lims = c(
-      grid$xmin, grid$xmax,
-      grid$ymin, grid$ymax
+      # note that the limits in MASS refer to the centroids of the cells, so we
+      # need to add res/2 to the min and subtract res/2 from the max
+      bbox[["xmin"]]+res/2, bbox[["xmax"]]-res/2,
+      bbox[["ymin"]]+res/2, bbox[["ymax"]]-res/2
     )
   )
-  #
-  kde_cud <- hr_kde_cud(kde$z)
+  
+  # estimate the sum of the density
+  sum_density <- sum(kde$z, na.rm = TRUE)
+  
+  # standardise the density values to sum to 1
+  kde$z <- kde$z / sum_density
+  
+  # turn it into a raster (flipping the x axis appropriately)
+  kde$z <- t(kde$z)
+  r <- terra::rast(kde$z[nrow(kde$z):1,],
+                   crs = crs$wkt,
+                   extent =terra::ext(bbox[["xmin"]], bbox[["xmax"]], 
+                                      bbox[["ymin"]], bbox[["ymax"]])
+  )
+  names(r) <- "ud"
+  terra::metags(r) <- c(paste0("id = ", id), "method = kde", paste0("h = ", h),
+                        paste0("density_sum = ", sum_density))
 
-  # create a list of sf polygons for each level
-  kde_polys <- lapply(levels, function(level) {
-    # get the contour lines for this level
-    contour_lines <- grDevices::contourLines(kde$x, kde$y, kde_cud,
-      level = level
-    )
-    # convert to sf polygons
-    sf_polys <- lapply(contour_lines, function(line) {
-      sf::st_polygon(list(cbind(line$x, line$y)))
-    })
-    # combine into a single sf multipolygon
-    sf::st_combine(sf::st_sfc(sf_polys, crs = crs))
-  })
-  # create a geometry set with one feature per level
-  kde_polys <- sf::st_sfc(do.call(rbind, kde_polys), crs = crs)
-  return(kde_polys)
+  # return it wrapped (so that it can be put in a list)
+  return(terra::wrap(r))
 }
+

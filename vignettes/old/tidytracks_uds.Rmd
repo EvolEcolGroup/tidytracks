@@ -1,0 +1,53 @@
+---
+title: "Kde in tidytracks"
+author: "Andrea"
+date: "2026-01-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# load the boar data
+```{r}
+library(tidytracks)
+wildboars_tt <- readRDS("./articles_data/wildboar_tt.rds")
+wildboars_tt
+```
+
+Check the metadata
+```{r}
+show_meta(wildboars_tt)
+```
+
+Compute the kde
+```{r}
+wildboars_tt <- wildboars_tt %>% dplyr::group_by(name)
+wildboars_kde <- tt_hr_kde(wildboars_tt, levels = NULL,
+                           h = "h_ref_indiv",
+                           res = 194.7458,
+                           bbox = list(xmin = 695842.0, ymin = 3154018.0,
+                                    xmax = 704216.0, ymax = 3165702))
+```
+
+Check the output
+```{r}
+wildboars_kde
+```
+
+The h-values are the same as those computed with adehabitatHR
+
+```{r}
+sum(wildboars_kde$kde[[1]]$z)
+sum(wildboars_kde$kde[[2]]$z)
+sum(wildboars_kde$kde[[3]]$z)
+sum(wildboars_kde$kde[[4]]$z)
+
+```
+These values are not the same as when we set same4all=TRUE in adehabitatHR 
+(we have 2.636395e-05 there). We need to check whether we are using exactly
+the same grid and resolution (we have the correct h values though).
+
+Same grid corner, but different resolution (we have 252.9354 vs 194.7458 in adehabitatHR in the `kus` object from the other vignette).
+

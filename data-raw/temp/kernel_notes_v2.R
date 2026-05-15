@@ -23,7 +23,8 @@ genetta <- as.data.frame(matrix(
 
 
 # using adehabitatHR
-mask_xy_grid <- expand.grid(x = seq(0.01, 1, by = 0.01), y = seq(0.01, 1, by = 0.01))
+mask_xy_grid <- expand.grid(x = seq(0.01, 1, by = 0.01),
+                            y = seq(-0.09, 0.9, by = 0.01))
 coordinates(mask_xy_grid) <- ~ x + y
 gridded(mask_xy_grid) <- TRUE
 
@@ -36,13 +37,14 @@ ade_genetta <- kernelUD(SpatialPoints(genetta),
 plot(ade_genetta)
 
 # using MASS
-mask.xy <- as.data.frame(expand.grid(x = seq(0.01, 1, by = 0.01), y = seq(0.01, 1, by = 0.01)))
+mask.xy <- as.data.frame(expand.grid(x = seq(0.01, 1, by = 0.01),
+                                     y = seq(-0.1, 0.9, by = 0.01)))
 
 H <- (sqrt(0.5 * (var(genetta[[1]]) + var(genetta[[2]])))) * (nrow(genetta)^-(1 / 6))
 
 mass_genetta <- kde2d(genetta$V1,
   genetta$V2,
-  n = c(100, 100),
+  n = c(length(unique(mask.xy$x)), length(unique(mask.xy$y))),
   h = c(H * 4, H * 4),
   lims = c(range(mask.xy$x), range(mask.xy$y))
 )
@@ -51,7 +53,7 @@ mass_genetta <- kde2d(genetta$V1,
 # using just one value for h
 mass_genetta <- kde2d(genetta$V1,
   genetta$V2,
-  n = c(100, 100),
+  n = c(length(unique(mask.xy$x)), length(unique(mask.xy$y))),
   h = c(H * 4),
   lims = c(range(mask.xy$x), range(mask.xy$y))
 )

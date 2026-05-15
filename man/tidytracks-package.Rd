@@ -11,5 +11,12 @@ Tidy functions to analyse tracking data, based on the move2 objects.
 \author{
 \strong{Maintainer}: Andrea Manica \email{am315@cam.ac.uk}
 
+Authors:
+\itemize{
+  \item Lizzie Pearmain
+  \item Paul Whitelow
+  \item Holly Pickett
+}
+
 }
 \keyword{internal}
