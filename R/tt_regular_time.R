@@ -1,29 +1,382 @@
-#' Resamples a tibble of tracks with a different, regular frequency
+#' Resample a `move2` track to regular time intervals by geometric interpolation
 #'
-#' This function resamples a tibble of tracks with a different, regular
-#' frequency. The new frequency is determined by the `every` argument, which
-#' takes a character string defining the interval, e.g., "1 hour", "30 mins".
-#' Valid units are: "secs", "seconds", "mins", "minutes", "hours", "days",
-#' "months", "years"
+#' Resamples one or more tracks stored in a `move2` object
+#' onto a regular time grid.  A new grid point is placed every
+#' `interval` time units, running from the first to the last observation
+#' of each track.  Tracks are processed independently, so different tracks may
+#' have different temporal extents.
 #'
-#' The function uses the `mt_interpolate` function from `move2`.
-#' @param x A tibble of tracks.
-#' @param every A character string (e.g., "1 hour", "30 mins") specifying the
-#'   new frequency. It can also take a POSIXct vector of times to interpolate
-#'   to.
-#' @return A tibble of tracks resampled at the specified frequency.
-#' @export
+#' @section Spatial interpolation:
+#' Positions are interpolated geometrically along the observed path, not by
+#' linearly mixing raw coordinate values.  The method follows the same
+#' strategy as [move2::mt_interpolate()]:
+#'
+#' \itemize{
+#'   \item \strong{No CRS} – [sf::st_line_sample()] is called on the
+#'     Euclidean linestring connecting the observations.
+#'   \item \strong{Geographic CRS (lon/lat)} – the path is treated as a
+#'     spherical polyline and [s2::s2_interpolate_normalized()] is
+#'     used, which follows great-circle arcs between consecutive points.
+#'   \item \strong{Projected CRS} – the track is temporarily transformed to
+#'     WGS 84 (EPSG:4326) for spherical interpolation via
+#'     [s2::s2_interpolate_normalized()], then the resulting points
+#'     are transformed back to the original CRS.
+#' }
+#'
+#' @section Temporal-to-spatial mapping:
+#' Raw observations are often unevenly spaced in both time and space.
+#' \code{tt_regular_time} accounts for this by first computing the normalised
+#' arc-length fraction of every input point along the path (using
+#' \code{\link[s2]{s2_distance}} for geographic CRS and Euclidean distance
+#' otherwise), then using \code{\link[stats]{approx}} to linearly interpolate
+#' those fractions at each new time step.  A stationary stretch of the track
+#' (many observations covering little distance) is therefore correctly treated
+#' as slow movement, not as a spatial shortcut.
+#'
+#' @section Attribute interpolation:
+#' Numeric event-level columns are linearly interpolated at the new time steps
+#' using \code{\link[stats]{approx}}.  Non-numeric columns receive the value
+#' of the nearest preceding observation via \code{\link[base]{findInterval}}.
+#' Track-level attributes stored in \code{\link[move2]{mt_track_data}} are
+#' preserved unchanged.
+#'
+#' @param x A \code{\link[move2]{move2}} object.  Timestamps (as returned by
+#'   \code{\link[move2]{mt_time}}) must be \code{\link[base]{POSIXct}}.
+#' @param interval Resampling interval as a \code{\link[units]{units}} object
+#'   carrying time units convertible to seconds (e.g.
+#'   \code{units::set_units(60, "s")}, \code{units::set_units(1, "min")},
+#'   \code{units::set_units(0.5, "h")}).  Every track is resampled at this
+#'   cadence between its own first and last observation.  Passing a plain
+#'   numeric value raises an error to prevent silent unit mismatches.
+#' @param max_time_lag Optional upper bound on interpolation gaps, supplied as
+#'   a \code{\link[units]{units}} object with time units convertible to seconds
+#'   (same rules as \code{interval}).  Grid points that fall strictly inside a
+#'   gap between consecutive input observations that is \emph{longer} than
+#'   \code{max_time_lag} are silently dropped from the output.  Pass
+#'   \code{NULL} (the default) to interpolate across all gaps regardless of
+#'   size.
+#'
+#' @return A `move2` object on a regular time grid.  The
+#'   CRS, time-column name, track-id column name, and track-level attributes
+#'   of \code{x} are all preserved.
+#'
+#' @seealso
+#'   \code{\link[move2]{mt_interpolate}} for the move2 implementation of the
+#'     same spatial strategy with flexible time targets;
+#'   \code{\link[units]{set_units}} for constructing the required
+#'     \code{units} objects;
+#'   \code{\link[sf]{st_line_sample}} for Euclidean path sampling;
+#'   \code{\link[s2]{s2_interpolate_normalized}} for spherical arc sampling.
+#'
 #' @examples
-#' # order time
-#' shags_ordered_tt <- tt_order_time(shags_tt)
-#' resampled_tt <- tt_regular_time (shags_ordered_tt, every = "20 mins")
-#' resampled_tt
+#' library(sf)
+#' library(move2)
+#' library(units)
+#'
+#' # Build a simple three-point track with irregular time gaps ----------------
+#' times <- as.POSIXct("2024-01-01 00:00:00", tz = "UTC") + c(0, 90, 200)
+#' geom <- sf::st_sfc(
+#'   sf::st_point(c(-0.10, 51.50)),
+#'   sf::st_point(c(-0.05, 51.52)),
+#'   sf::st_point(c(0.00, 51.54)),
+#'   crs = 4326
+#' )
+#' track <- move2::mt_as_move2(
+#'   sf::st_sf(
+#'     timestamp = times,
+#'     speed_ms  = c(2.1, 3.4, 1.8),
+#'     track_id  = "gull_01",
+#'     geometry  = geom
+#'   ),
+#'   time_column = "timestamp",
+#'   track_id_column = "track_id"
+#' )
+#'
+#' # Resample to one fix per minute -------------------------------------------
+#' resampled <- tt_regular_time(track, interval = units::set_units(1, "min"))
+#' print(resampled)
+#'
+#' # Resample to 30-second fixes, skipping gaps > 2 minutes ------------------
+#' resampled_gapped <- tt_regular_time(
+#'   track,
+#'   interval     = units::set_units(30, "s"),
+#'   max_time_lag = units::set_units(2, "min")
+#' )
+#'
+#' @export
+tt_regular_time <- function(x, interval, max_time_lag = NULL) {
+  # Validate inputs
+  if (!move2::mt_is_move2(x)) {
+    stop("`x` must be a move2 object.", call. = FALSE)
+  }
 
-tt_regular_time <- function(x, every) {
-  # replace minutes with mins in every if present
-  every <- gsub("minutes", "mins", every)
-  # same for seconds and secs
-  every <- gsub("seconds", "secs", every)
-  # now interpolate using move2
-  return(move2::mt_interpolate(x, time = every, omit = TRUE))
+  if (!inherits(move2::mt_time(x), "POSIXct")) {
+    stop("`tt_regular_time` requires POSIXct timestamps. ",
+      "Convert the time column with `mt_set_time()` before calling this function.",
+      call. = FALSE
+    )
+  }
+
+  interval_sec <- .to_seconds(interval, "interval")
+  max_lag_sec <- if (is.null(max_time_lag)) {
+    Inf
+  } else {
+    .to_seconds(max_time_lag, "max_time_lag")
+  }
+
+  # Collect move2 metadata
+  input_crs <- sf::st_crs(x)
+  has_crs <- !is.na(input_crs)
+  time_col <- move2::mt_time_column(x)
+  track_col <- move2::mt_track_id_column(x)
+  geom_col <- attr(x, "sf_column")
+  track_ids <- unique(move2::mt_track_id(x))
+  track_data <- move2::mt_track_data(x)
+
+  # Resample each track independently
+  results <- lapply(track_ids, function(tid) {
+    track <- x[as.character(move2::mt_track_id(x)) == as.character(tid), ]
+    .resample_one_track(
+      track        = track,
+      interval_sec = interval_sec,
+      max_lag_sec  = max_lag_sec,
+      has_crs      = has_crs,
+      input_crs    = input_crs,
+      time_col     = time_col,
+      track_col    = track_col,
+      geom_col     = geom_col
+    )
+  })
+
+  # Recombine and restore move2 structure
+  combined <- do.call(rbind, Filter(Negate(is.null), results))
+  out <- move2::mt_as_move2(combined,
+    time_column     = time_col,
+    track_id_column = track_col
+  )
+  move2::mt_set_track_data(out, track_data)
+}
+
+################################################################################
+# Internal functions
+################################################################################
+
+#' Validate a units object and convert it to a plain numeric in seconds
+#'
+#' @param x   The argument value to check.
+#' @param arg The argument name (used in error messages).
+#' @return A single positive finite \code{numeric} giving the duration in
+#'   seconds.
+#' @keywords internal
+#' @noRd
+.to_seconds <- function(x, arg) {
+  if (!inherits(x, "units")) {
+    stop("`", arg, "` must be a units object ",
+      "(e.g. `units::set_units(60, \"s\")` or `units::set_units(1, \"min\")`).",
+      call. = FALSE
+    )
+  }
+  out <- tryCatch(
+    as.numeric(units::set_units(x, "s")),
+    error = function(e) {
+      stop("`", arg, "` must carry time units convertible to seconds; ",
+        "got '", units::deparse_unit(x), "'.",
+        call. = FALSE
+      )
+    }
+  )
+  if (!is.finite(out) || out <= 0) {
+    stop("`", arg, "` must be a positive duration.", call. = FALSE)
+  }
+  out
+}
+
+
+#' Resample a single-track move2 slice onto a regular time grid
+#'
+#' @param track        A single-track move2/sf object (already subset).
+#' @param interval_sec Resampling interval in seconds (plain numeric).
+#' @param max_lag_sec  Maximum interpolation gap in seconds (plain numeric,
+#'   may be \code{Inf}).
+#' @param has_crs      Logical; does the object carry a CRS?
+#' @param input_crs    CRS object from \code{sf::st_crs}.
+#' @param time_col,track_col,geom_col Column name strings.
+#' @return An \code{sf} data frame, or \code{NULL} when all grid points fall
+#'   inside large gaps.
+#' @keywords internal
+#' @noRd
+.resample_one_track <- function(track, interval_sec, max_lag_sec,
+                                has_crs, input_crs,
+                                time_col, track_col, geom_col) {
+  if (nrow(track) < 2L) {
+    stop("Each track must have at least 2 observations to interpolate. ",
+      "Track '", unique(as.character(move2::mt_track_id(track))),
+      "' has only ", nrow(track), " row(s).",
+      call. = FALSE
+    )
+  }
+
+  times <- move2::mt_time(track)
+  t_sec <- as.numeric(times)
+  tz <- attr(times, "tzone") %||% "UTC"
+
+  t_new <- seq(t_sec[1L], t_sec[length(t_sec)], by = interval_sec)
+
+  seg_len <- .path_lengths(track, has_crs, input_crs)
+  cum_len <- c(0, cumsum(seg_len))
+  total_len <- cum_len[length(cum_len)]
+
+  if (total_len == 0) {
+    stop("All locations in track '",
+      unique(as.character(move2::mt_track_id(track))),
+      "' are coincident; cannot interpolate a stationary track.",
+      call. = FALSE
+    )
+  }
+
+  space_frac <- cum_len / total_len
+
+  s_norm <- stats::approx(
+    x      = t_sec,
+    y      = space_frac,
+    xout   = t_new,
+    method = "linear",
+    rule   = 1L
+  )$y
+
+  if (is.finite(max_lag_sec)) {
+    large_gaps <- which(diff(t_sec) > max_lag_sec)
+    if (length(large_gaps) > 0L) {
+      in_gap <- vapply(
+        t_new, function(t) {
+          any(t > t_sec[large_gaps] & t < t_sec[large_gaps + 1L])
+        },
+        logical(1L)
+      )
+      t_new <- t_new[!in_gap]
+      s_norm <- s_norm[!in_gap]
+    }
+  }
+
+  if (length(t_new) == 0L) {
+    return(NULL)
+  }
+
+  new_geom <- if (!has_crs) {
+    .interpolate_no_crs(track, s_norm)
+  } else if (.is_geographic(input_crs)) {
+    .interpolate_s2(track, s_norm, input_crs)
+  } else {
+    track_geo <- sf::st_transform(track, 4326L)
+    pts_geo <- .interpolate_s2(track_geo, s_norm, sf::st_crs(4326L))
+    sf::st_transform(pts_geo, input_crs)
+  }
+
+  attr_cols <- setdiff(names(track), c(time_col, track_col, geom_col))
+  new_times <- as.POSIXct(t_new, origin = "1970-01-01", tz = tz)
+  n_new <- length(t_new)
+
+  base_df <- data.frame(
+    stats::setNames(list(new_times), time_col),
+    stats::setNames(
+      list(rep(unique(as.character(move2::mt_track_id(track))), n_new)),
+      track_col
+    ),
+    stringsAsFactors = FALSE
+  )
+
+  if (length(attr_cols) > 0L) {
+    attr_df <- lapply(stats::setNames(attr_cols, attr_cols), function(col) {
+      vals <- track[[col]]
+      if (is.numeric(vals)) {
+        stats::approx(
+          x = t_sec,
+          y = vals,
+          xout = t_new,
+          method = "linear",
+          rule = 1L
+        )$y
+      } else {
+        vals[findInterval(t_new, t_sec, all.inside = TRUE)]
+      }
+    })
+    base_df <- cbind(
+      base_df,
+      as.data.frame(attr_df, stringsAsFactors = FALSE)
+    )
+  }
+
+  sf::st_sf(base_df, geometry = new_geom)
+}
+
+
+#' Compute segment lengths along a point track
+#'
+#' Uses \code{\link[s2]{s2_distance}} for geographic CRS and Euclidean
+#' distance for projected or missing CRS.
+#'
+#' @param sf_obj  A sorted sf POINT object.
+#' @param has_crs Logical; does the object carry a CRS?
+#' @param crs     CRS object returned by \code{sf::st_crs}.
+#' @return Numeric vector of length \code{nrow(sf_obj) - 1}.
+#' @noRd
+.path_lengths <- function(sf_obj, has_crs, crs) {
+  if (has_crs && .is_geographic(crs)) {
+    p1 <- s2::as_s2_geography(sf_obj[-nrow(sf_obj), ])
+    p2 <- s2::as_s2_geography(sf_obj[-1L, ])
+    as.numeric(s2::s2_distance(p1, p2))
+  } else {
+    xy <- sf::st_coordinates(sf_obj)
+    sqrt(diff(xy[, "X"])^2 + diff(xy[, "Y"])^2)
+  }
+}
+
+
+#' Interpolate along a path using \code{sf::st_line_sample} (no CRS)
+#'
+#' @param sf_obj An sf POINT object with no CRS.
+#' @param s_norm Numeric vector of normalised distances in \[0, 1\].
+#' @return An \code{sfc_POINT} with \code{length(s_norm)} points and no CRS.
+#' @noRd
+.interpolate_no_crs <- function(sf_obj, s_norm) {
+  coords <- sf::st_coordinates(sf_obj)
+  line <- sf::st_sfc(sf::st_linestring(coords[, c("X", "Y")]))
+  sampled <- sf::st_line_sample(line, sample = s_norm)
+  sf::st_cast(sampled, "POINT")
+}
+
+
+#' Interpolate along a path using \code{s2::s2_interpolate_normalized}
+#'
+#' @param sf_obj An sf POINT object with a geographic (lon/lat) CRS.
+#' @param s_norm Numeric vector of normalised arc-length fractions in \[0, 1\].
+#' @param crs    The CRS to attach to the output \code{sfc}.
+#' @return An \code{sfc_POINT} with \code{length(s_norm)} points.
+#' @noRd
+.interpolate_s2 <- function(sf_obj, s_norm, crs) {
+  xy <- sf::st_coordinates(sf_obj)
+  s2_line <- s2::s2_make_line(longitude = xy[, "X"], latitude = xy[, "Y"])
+  pts <- s2::s2_interpolate_normalized(s2_line, s_norm)
+  sf::st_as_sfc(pts, crs = crs)
+}
+
+
+#' Test whether a CRS is geographic (lon/lat)
+#'
+#' @param crs A CRS object returned by \code{sf::st_crs}.
+#' @return \code{TRUE} if the CRS uses angular (geographic) coordinates.
+#' @noRd
+.is_geographic <- function(crs) {
+  isTRUE(crs$IsGeographic) ||
+    grepl("longlat|geographic",
+      crs$proj4string %||% "",
+      ignore.case = TRUE
+    )
+}
+
+
+#' Null-coalescing operator
+#' @noRd
+`%||%` <- function(a, b) {
+  if (is.null(a) || !nzchar(as.character(a)[1L])) b else a
 }

@@ -27,6 +27,7 @@ Imports:
   patchwork,
   purrr,
   rlang,
+  s2,
   sf,
   stats,
   terra,
