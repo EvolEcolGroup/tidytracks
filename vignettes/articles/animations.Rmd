@@ -113,7 +113,8 @@ Next, assemble your map using `ggplot2`. Add `sf` layers using `geom_sf`,
 
 ```{r assemble_map}
 map <- ggplot() +
-  geom_event_path(data = df_p_sub, aes(col = bird_id), size = 1.5) + # tracks layer
+  geom_event_path(data = df_p_sub, aes(col = bird_id),  # tracks layer
+                  size = 1.5, lineend="round") + 
   geom_sf(data = land_p, fill = "grey50", col = NA) + # land polygons
   geom_sf(data = colony_p, pch = 24, fill = "yellow") # add colony layer
 
