@@ -1,31 +1,32 @@
 ---
-title: "Checking_tt_regular_time"
+title: "Checking tt_regular_time"
 author: "HP"
 date: "2026-05-20"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, echo = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
 ## Trying tt_reg_time on some example data then test same data with the old function in dev branch
-### Load a couple of packages and check the documentation of the function
 
-```{r}
+Load a couple of packages
+
+```{r, message = FALSE}
 library(dplyr)
 library(ggplot2)
+library(tidytracks)
 
-?tt_regular_time
 ```
 
 
-### Load some package example data
+## Load some package example data
 It's already a tidytracks object, can check this by inspecting metadata too
 
 ```{r}
-load("data/shags_tt.rda")
+data(shags_tt, package = "tidytracks")
 shags_tt
 
 head(show_meta(shags_tt))
@@ -40,7 +41,7 @@ ggplot() +
   geom_event_point(data = shags_tt, aes(color = bird_id))
 ```
 
- Needs filtering, remove low latitude point and plot again and project on the fly
+Needs filtering, remove low latitude point and plot again and project on the fly
  
 ``` {r}
 shags_tt <- shags_tt %>%
@@ -64,8 +65,7 @@ shags_tt %>%
   ungroup()
 ```
 
-Just pick 2 bird IDs to resample, with different frequencies and track types. 
- No. 19 has longer gaps (approx 10 mins), 45 has shorter gaps (approx 2 mins)
+Just pick 2 bird IDs to resample, with different frequencies and track types. No. 19 has longer gaps (approx 10 mins), 45 has shorter gaps (approx 2 mins)
  
 ```{r}
 shags_tt_sub <- shags_tt %>%
@@ -73,7 +73,7 @@ shags_tt_sub <- shags_tt %>%
 
 ```
 
-Now plot original tracks to compare later
+Plot original tracks to compare later
 
 ```{r}
 plot_1 <- ggplot() +
@@ -82,7 +82,10 @@ plot_1 <- ggplot() +
   ggtitle("Original")
 
 ```
-### Now resample the data using tt_regular_time
+
+
+## Resample the data using tt_regular_time
+
 
 ```{r}
 # check that timestamps are posixt - yep
@@ -94,6 +97,7 @@ class(shags_tt_sub$date_time)
 resampled_shags <- tt_regular_time(shags_tt_sub,
                                    interval = units::set_units(5, "min"),
                                    max_time_lag = NULL)
+head(resampled_shags)
 ```
 
 Plot the resampled data and compare to the original
@@ -108,7 +112,7 @@ patchwork::wrap_plots(plot_1, plot_2, guides = "collect")
 
 ```
 
-# look at time differences in resampled data
+Look at time differences in resampled data
 
 ```{r}
 resampled_shags %>%
@@ -123,7 +127,7 @@ resampled_shags %>%
 
 Good.
 
-## now trying the simple old version from dev branch
+## Old version from Dev Branch
 
 Wasn't confident of getting right version switching between branches so just 
 using function directly here, renamed as tt_regular_time_dev
@@ -148,13 +152,15 @@ resampled_shags_dev <- tt_regular_time_dev(shags_tt_sub,
 head(resampled_shags_dev)
 ```
 
-Inspect the time diffs and data. Main difference is that 
+## Inspect the time diffs and data. 
+
+Main difference is that 
 the old version snaps to the nearest 5 mins while the new version
 starts with the first point and samples every 5 mins from there. The new
 version results in a marginally higher number of observations, apparently regardless 
 of interval set (have tested on a few different)
 
-## Plot all and compare
+Plot all to compare:
 
 ```{r}
 
