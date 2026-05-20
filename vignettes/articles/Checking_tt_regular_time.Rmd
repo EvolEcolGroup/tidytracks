@@ -1,0 +1,140 @@
+---
+title: "Checking_tt_regular_time"
+author: "HP"
+date: "2026-05-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Trying tt_reg_time on some example data then test same data with the old function in dev branch
+### Load a couple of packages and check the documentation of the function
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+?tt_regular_time
+```
+
+
+### Load some package example data
+It's already a tidytracks object, can check this by inspecting metadata too
+
+```{r}
+load("data/shags_tt.rda")
+shags_tt
+
+head(show_meta(shags_tt))
+
+```
+
+Plot the data to see what it looks like
+
+```{r}
+
+ggplot() +
+  geom_event_point(data = shags_tt, aes(color = bird_id))
+```
+
+ Needs filtering, remove low latitude point and plot again and project on the fly
+ 
+``` {r}
+shags_tt <- shags_tt %>%
+  dplyr::filter(sf::st_coordinates(geometry)[,2] < -5)
+
+ggplot() +
+  geom_event_point(data = shags_tt, aes(color = bird_id)) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')
+```
+
+Get idea of intervals for each shag track before resampling
+
+```{r}
+shags_tt %>%
+  group_by(bird_id) %>%
+  sf::st_drop_geometry() %>%
+  summarise(median_dt = median(diff(date_time)),
+            mean_dt = mean(diff(date_time)),
+            min_dt = min(diff(date_time)),
+            max_dt = max(diff(date_time)))%>%
+  ungroup()
+```
+
+Just pick 2 bird IDs to resample, with different frequencies and track types. 
+ No. 19 has longer gaps (approx 10 mins), 45 has shorter gaps (approx 2 mins)
+ 
+```{r}
+shags_tt_sub <- shags_tt %>%
+  dplyr::filter(bird_id %in% c("KB_22_42657_19", "KB_23_42778_45"))
+
+```
+
+Now plot original tracks to compare later
+
+```{r}
+plot_1 <- ggplot() +
+  geom_event_point(data = shags_tt_sub, aes(color = bird_id)) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+  ggtitle("Original")
+
+```
+### Now resample the data using tt_regular_time
+
+```{r}
+# check that timestamps are posixt - yep
+
+class(shags_tt_sub$date_time)
+
+# mean intervals quite different, choose something between the both - 5 min?
+
+resampled_shags <- tt_regular_time(shags_tt_sub,
+                                   interval = units::set_units(5, "min"),
+                                   max_time_lag = NULL)
+```
+
+Plot the resampled data and compare to the original
+
+```{r}
+plot_2 <- ggplot() +
+  geom_event_point(data = resampled_shags, aes(color = bird_id)) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+  ggtitle("Resampled")#
+
+patchwork::wrap_plots(plot_1, plot_2, guides = "collect") 
+
+```
+
+# look at time differences in resampled data
+
+```{r}
+resampled_shags %>%
+  group_by(bird_id) %>%
+  sf::st_drop_geometry() %>%
+  summarise(median_dt = median(diff(date_time)),
+            mean_dt = mean(diff(date_time)),
+            min_dt = min(diff(date_time)),
+            max_dt = max(diff(date_time)))%>%
+  ungroup()
+```
+
+Good.
+
+## now trying the simple old version from dev branch
+
+Wasn't confident of getting right version switching between branches so just 
+using function directly here, renamed as tt_regular_time_dev
+
+```{r}
+tt_regular_time_dev <- function(x, every) {
+  # replace minutes with mins in every if present
+  every <- gsub("minutes", "mins", every)
+  # same for seconds and secs
+  every <- gsub("seconds", "secs", every)
+  # now interpolate using move2
+  return(move2::mt_interpolate(x, time = every, omit = TRUE))
+}
+
