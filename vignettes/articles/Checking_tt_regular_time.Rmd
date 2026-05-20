@@ -137,4 +137,35 @@ tt_regular_time_dev <- function(x, every) {
   # now interpolate using move2
   return(move2::mt_interpolate(x, time = every, omit = TRUE))
 }
+```
+
+Run on shag data
+
+```{r}
+resampled_shags_dev <- tt_regular_time_dev(shags_tt_sub,
+                                   every = "5 mins")
+
+head(resampled_shags_dev)
+```
+
+Inspect the time diffs and data. Main difference is that 
+the old version snaps to the nearest 5 mins while the new version
+starts with the first point and samples every 5 mins from there. The new
+version results in a marginally higher number of observations, apparently regardless 
+of interval set (have tested on a few different)
+
+## Plot all and compare
+
+```{r}
+
+plot_3 <- ggplot() +
+  geom_event_point(data = resampled_shags_dev, aes(color = bird_id)) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+  ggtitle("Resampled, old function")
+
+patchwork::wrap_plots(plot_1, plot_2, plot_3, guides = "collect")
+```
+
+End.
+
 
