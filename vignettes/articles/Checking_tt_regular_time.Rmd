@@ -172,6 +172,80 @@ plot_3 <- ggplot() +
 patchwork::wrap_plots(plot_1, plot_2, plot_3, guides = "collect")
 ```
 
+## Try the new function with max_time_lag set to 10 mins
+```{r}
+resampled_shags_max_lag <- tt_regular_time(shags_tt_sub,
+                                   interval = units::set_units(5, "min"),
+                                   max_time_lag = units::set_units(10,"min"))
+head(resampled_shags_max_lag)
+
+```
+
+Inspect gaps: We can see that because max time lag was set to 10 minutes, any gaps of more than 10 minutes were left and not resampled. Note, if set to 20 mins, the whole track is resampled because there are no gaps of over 20 mins.
+
+
+```{r}
+resampled_shags_max_lag %>%
+  group_by(bird_id) %>%
+  sf::st_drop_geometry() %>%
+  summarise(median_dt = median(diff(date_time)),
+            mean_dt = mean(diff(date_time)),
+            min_dt = min(diff(date_time)),
+            max_dt = max(diff(date_time)))%>%
+  ungroup()
+
+```
+
+Plot to have a look
+
+```{r}
+plot_4 <- ggplot() +
+  geom_event_point(data = resampled_shags_max_lag, aes(color = bird_id)) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+  ggtitle("Resampled, max_time_lag = 10 mins")
+
+```
+
+We can plot the original, the resampled with no max time lag and the resampled with max time lag 10min, and the development move2 version on top of eachother to compare 
+
+```{r}
+# just take bird ID 19 to make it clearer
+
+# add a thin geom event path of old route
+
+plot_5 <- ggplot() +
+  geom_event_path(data = shags_tt_sub %>%
+    dplyr::filter(bird_id == "KB_22_42657_19"),
+    aes(color = "Original"),linewidth = 0.2) +
+  geom_event_point(data = shags_tt_sub %>%
+    dplyr::filter(bird_id == "KB_22_42657_19"),
+    aes(color = "Original")) +
+  geom_event_point(data = resampled_shags %>%
+      dplyr::filter(bird_id == "KB_22_42657_19"),
+    aes(color = "Resampled, no max time lag"),alpha = 0.3) +
+  geom_event_point(data = resampled_shags_max_lag %>%
+    dplyr::filter(bird_id == "KB_22_42657_19"),
+    aes(color = "Resampled, max time lag 10 mins"),alpha = 0.3) +
+  geom_event_point(data = resampled_shags_dev %>%
+    dplyr::filter(bird_id == "KB_22_42657_19"),
+    aes(color = "Resampled, old function"),alpha = 0.3) +
+  coord_sf(
+    crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+  ggtitle("Comparing resampling methods") +
+  scale_color_manual( values = c(
+      "Original" = "black",
+      "Resampled, no max time lag" = "steelblue",
+      "Resampled, max time lag 10 mins" = "orange",
+      "Resampled, old function" = "yellow")) +
+  theme(legend.title = element_blank())
+
+plot_5
+  
+
+
+                                    
+```
+                                           
 End.
 
 
