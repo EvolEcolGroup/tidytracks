@@ -37,7 +37,7 @@
 #'   \code{\link[base]{findInterval}}. Track-level attributes stored in
 #'   \code{\link[move2]{mt_track_data}} are preserved unchanged.
 #'
-#' @param x A`move2` object.  Timestamps (as returned by [event_time()]) must be
+#' @param x A `move2` object.  Timestamps (as returned by [event_time()]) must be
 #'   [base::POSIXct].
 #' @param interval Resampling interval as a [`units::units`] object
 #'   carrying time units convertible to seconds (e.g. \code{as_units(60,
@@ -65,7 +65,7 @@
 #'
 #' @seealso \code{\link[move2]{mt_interpolate}} for the move2 implementation of
 #'   the same spatial strategy with flexible time targets (including
-#'   interpolating to specific missing timesstamps);
+#'   interpolating to specific missing timestamps);
 #'   [units::as_units()] for constructing the required \code{units}
 #'   objects; [sf::st_line_sample()] for Euclidean path sampling;
 #'   [s2::s2_interpolate_normalized()] for spherical arc sampling.
@@ -161,12 +161,24 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
   })
 
   # Recombine and restore move2 structure
-  combined <- do.call(rbind, Filter(Negate(is.null), results))
+  valid_results <- Filter(Negate(is.null), results)
+  if (length(valid_results) == 0L) {
+    empty_track_data <- track_data[0, , drop = FALSE]
+    return(move2::mt_set_track_data(x[0, , drop = FALSE], empty_track_data))
+  }
+
+  combined <- do.call(rbind, valid_results)
   out <- move2::mt_as_move2(combined,
     time_column     = time_col,
     track_id_column = track_col
   )
-  move2::mt_set_track_data(out, track_data)
+  out_track_ids <- unique(as.character(combined[[track_col]]))
+  out_track_data <- track_data[
+    as.character(track_data[[track_col]]) %in% out_track_ids,
+    ,
+    drop = FALSE
+  ]
+  move2::mt_set_track_data(out, out_track_data)
 }
 
 ################################################################################
@@ -188,6 +200,11 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
       call. = FALSE
     )
   }
+
+  if (length(x) != 1L) {
+    stop("`", arg, "` must be a length-1 units object.", call. = FALSE)
+  }
+
   out <- tryCatch(
     as.numeric(units::set_units(x, "s")),
     error = function(e) {
@@ -197,7 +214,7 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
       )
     }
   )
-  if (!is.finite(out) || out <= 0) {
+  if (length(out) != 1L || !is.finite(out) || out <= 0) {
     stop("`", arg, "` must be a positive duration.", call. = FALSE)
   }
   out
@@ -223,6 +240,8 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
                                 snap_times = FALSE,
                                 has_crs, input_crs,
                                 time_col, track_col, geom_col) {
+  track <- track[order(move2::mt_time(track)), ]
+
   if (nrow(track) < 2L) {
     stop("Each track must have at least 2 observations to interpolate. ",
       "Track '", unique(as.character(move2::mt_track_id(track))),
@@ -268,14 +287,18 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
   )$y
 
   if (is.finite(max_lag_sec)) {
-    large_gaps <- which(diff(t_sec) > max_lag_sec)
+    gap_sizes <- diff(t_sec)
+    large_gaps <- which(gap_sizes > max_lag_sec)
     if (length(large_gaps) > 0L) {
-      in_gap <- vapply(
-        t_new, function(t) {
-          any(t > t_sec[large_gaps] & t < t_sec[large_gaps + 1L])
-        },
-        logical(1L)
-      )
+      interval_idx <- findInterval(t_new, t_sec, rightmost.closed = TRUE)
+      in_gap <- rep(FALSE, length(t_new))
+      inside_segments <- interval_idx >= 1L & interval_idx < length(t_sec)
+      idx <- which(inside_segments)
+      if (length(idx) > 0L) {
+        seg_idx <- interval_idx[idx]
+        strictly_inside <- t_new[idx] > t_sec[seg_idx] & t_new[idx] < t_sec[seg_idx + 1L]
+        in_gap[idx] <- strictly_inside & gap_sizes[seg_idx] > max_lag_sec
+      }
       t_new <- t_new[!in_gap]
       s_norm <- s_norm[!in_gap]
     }
@@ -311,7 +334,16 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
   if (length(attr_cols) > 0L) {
     attr_df <- lapply(stats::setNames(attr_cols, attr_cols), function(col) {
       vals <- track[[col]]
-      if (is.numeric(vals)) {
+      if (inherits(vals, "units")) {
+        interpolated <- stats::approx(
+          x = t_sec,
+          y = as.numeric(vals),
+          xout = t_new,
+          method = "linear",
+          rule = 1L
+        )$y
+        units::set_units(interpolated, units::units(vals))
+      } else if (is.numeric(vals)) {
         stats::approx(
           x = t_sec,
           y = vals,

@@ -47,7 +47,7 @@ Important: make sure in time order!
 
 Put in time order
  
-``` {r}
+```{r}
 shags_tt <- shags_tt %>%
   dplyr::filter(sf::st_coordinates(geometry)[,2] < -5)
 ```
@@ -290,5 +290,4 @@ plot_5
 ```
                                            
 End.
-
 
