@@ -30,8 +30,6 @@
 #' @param p A `ggplot` object containing the fully styled map, with the
 #'   `move2` tracking layer added using `geom_event_path` or
 #'   `geom_event_point`.
-#' @param x The same `move2` object as used in the plot. Used to identify the
-#'   datetime column name and compute the number of animation frames.
 #' @param fade Logical. Only relevant for path animations. If `TRUE`
 #'   (default), previous segments fade out behind the current one using
 #'   `shadow_wake_build`. If `FALSE`, all previous segments
@@ -49,16 +47,12 @@
 #'   in the layer data).
 #' @export
 animate_map <- function(p,
-                           x,
                            fade = TRUE,
                            wake_length = 0.5,
                            label_format = "%Y-%m-%d %H:%M:%S") {
 
   if (!inherits(p, "ggplot")) {
     stop("p must be a ggplot object")
-  }
-  if (!inherits(x, "move2")) {
-    stop("x must be a move2 object")
   }
   if (!is.logical(fade) || length(fade) != 1 || is.na(fade)) {
     stop("fade must be TRUE or FALSE")
@@ -68,8 +62,7 @@ animate_map <- function(p,
     stop("wake_length must be a single numeric value greater than 0 and at most 1")
   }
 
-  time_col <- move2::mt_time_column(x)
-  detected  <- tt_detect_layer_type(p, time_col)
+  detected <- tt_detect_layer_type(p)
 
   if (is.null(detected)) {
     stop(
@@ -77,6 +70,8 @@ animate_map <- function(p,
       "Add a geom_event_path() or geom_event_point() layer to the plot."
     )
   }
+
+  time_col <- detected$time_col
 
   layer_type <- detected$type
   # Derive n_timesteps from the layer data itself: for path layers the final event
@@ -117,21 +112,25 @@ animate_map <- function(p,
 
 
 # Internal helper: detect whether the plot contains a path or point track layer.
-# Uses the track time column to skip static sf layers (e.g. colony points) that
-# share a geometry type with the track layer but don't carry event timestamps.
-# Returns a list(type, data) where type is "path" or "point" and data is the
-# matched layer's sf data frame, or NULL if no supported layer is found.
-tt_detect_layer_type <- function(p, time_col) {
+# Identifies the track layer by looking for an sf layer that has a POSIXct
+# column — the datetime column carried by move2-derived data. Static sf layers
+# (e.g. colony points, land polygons) that lack a timestamp are skipped.
+# Returns a list(type, data, time_col) where type is "path" or "point", data is
+# the matched layer's sf data frame, and time_col is the name of the POSIXct
+# column. Returns NULL if no supported layer is found.
+tt_detect_layer_type <- function(p) {
   for (layer in p$layers) {
     data <- layer$data
     if (!inherits(data, "sf")) next
-    if (!time_col %in% names(data)) next
+    posixct_cols <- names(data)[vapply(data, inherits, logical(1), "POSIXct")]
+    if (length(posixct_cols) == 0L) next
+    time_col  <- posixct_cols[[1L]]
     geom_types <- unique(as.character(sf::st_geometry_type(data)))
     if (all(geom_types %in% c("LINESTRING", "MULTILINESTRING"))) {
-      return(list(type = "path",  data = data))
+      return(list(type = "path",  data = data, time_col = time_col))
     }
     if (all(geom_types %in% c("POINT", "MULTIPOINT"))) {
-      return(list(type = "point", data = data))
+      return(list(type = "point", data = data, time_col = time_col))
     }
   }
   NULL
