@@ -262,6 +262,10 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
     t_sec[1L]
   }
 
+  if (t_start > t_sec[length(t_sec)]) {
+    return(NULL)
+  }
+
   t_new <- seq(t_start, t_sec[length(t_sec)], by = interval_sec)
 
   seg_len <- .path_lengths(track, has_crs, input_crs)
@@ -342,7 +346,11 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
           method = "linear",
           rule = 1L
         )$y
-        units::set_units(interpolated, units::units(vals))
+        units::set_units(
+          interpolated,
+          units::deparse_unit(vals),
+          mode = "standard"
+        )
       } else if (is.numeric(vals)) {
         stats::approx(
           x = t_sec,
