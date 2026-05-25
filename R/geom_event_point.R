@@ -39,6 +39,8 @@ geom_event_point <- function(mapping = ggplot2::aes(), data = NULL,
   }
   # drop the units, as they are not compatible with ggplot
   data <- tt_drop_units(data)
+  # Tag so animate_map() can identify this as a tidytracks track layer.
+  attr(data, "tidytracks_geom") <- "event_point"
   ggplot2::geom_sf(
     mapping = mapping, data = data, stat = stat,
     position = position, na.rm = na.rm, show.legend = show.legend,

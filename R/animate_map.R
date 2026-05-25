@@ -112,26 +112,46 @@ animate_map <- function(p,
 
 
 # Internal helper: detect whether the plot contains a path or point track layer.
-# Identifies the track layer by looking for an sf layer that has a POSIXct
-# column — the datetime column carried by move2-derived data. Static sf layers
-# (e.g. colony points, land polygons) that lack a timestamp are skipped.
+# Identifies track layers exclusively by the "tidytracks_geom" attribute set on
+# their data by geom_event_path() and geom_event_point(). This prevents false
+# matches from other sf layers (e.g. land polygons) that happen to share a
+# geometry type or carry a POSIXct column.
+# If multiple tidytracks layers are found, a warning is issued and the first one
+# in the plot's layer stack is used.
 # Returns a list(type, data, time_col) where type is "path" or "point", data is
 # the matched layer's sf data frame, and time_col is the name of the POSIXct
 # column. Returns NULL if no supported layer is found.
 tt_detect_layer_type <- function(p) {
+  matches <- list()
+
   for (layer in p$layers) {
     data <- layer$data
-    if (!inherits(data, "sf")) next
+    tag  <- attr(data, "tidytracks_geom")
+    if (is.null(tag)) next
+
     posixct_cols <- names(data)[vapply(data, inherits, logical(1), "POSIXct")]
     if (length(posixct_cols) == 0L) next
-    time_col  <- posixct_cols[[1L]]
-    geom_types <- unique(as.character(sf::st_geometry_type(data)))
-    if (all(geom_types %in% c("LINESTRING", "MULTILINESTRING"))) {
-      return(list(type = "path",  data = data, time_col = time_col))
-    }
-    if (all(geom_types %in% c("POINT", "MULTIPOINT"))) {
-      return(list(type = "point", data = data, time_col = time_col))
-    }
+    time_col <- posixct_cols[[1L]]
+
+    type <- switch(tag,
+      event_path  = "path",
+      event_point = "point",
+      NULL
+    )
+    if (is.null(type)) next
+
+    matches <- c(matches, list(list(type = type, data = data, time_col = time_col)))
   }
-  NULL
+
+  if (length(matches) == 0L) return(NULL)
+
+  if (length(matches) > 1L) {
+    warning(
+      "Multiple `move2` track layers found in the map; ",
+      "animating over the first one.",
+      call. = FALSE
+    )
+  }
+
+  matches[[1L]]
 }

@@ -71,6 +71,9 @@ geom_event_path <- function(mapping = ggplot2::aes(),
   if (drop_final_point){
     data_steps <- data_steps[sf::st_geometry_type(data_steps) == "LINESTRING", ]
   }
+
+  # Tag so animate_map() can identify this as a tidytracks track layer.
+  attr(data_steps, "tidytracks_geom") <- "event_path"
   
   ggplot2::geom_sf(
     mapping = mapping, data = data_steps, stat = stat,

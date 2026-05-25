@@ -75,53 +75,67 @@ test_that("geom_event_path layer data preserves track ID and datetime columns", 
 })
 
 # ===========================================================================
-# animate_map — input validation
+# tt_detect_layer_type — tidytracks_geom attribute retention and detection
 # ===========================================================================
 
-test_that("animate_map errors if p is not a ggplot", {
-  expect_error(animate_map("not_a_plot", x), "ggplot")
-})
-
-test_that("animate_map errors if x is not a move2 object", {
-  expect_error(animate_map(make_paths_map(x), data.frame()), "move2")
-})
-
-test_that("animate_map errors if fade is not logical", {
-  expect_error(animate_map(make_paths_map(x), x, fade = "yes"), "fade")
-})
-
-test_that("animate_map errors if wake_length is out of range", {
+test_that("geom_event_path retains tidytracks_geom attribute in layer data", {
   p <- make_paths_map(x)
-  expect_error(animate_map(p, x, wake_length = 0),    "wake_length")
-  expect_error(animate_map(p, x, wake_length = -0.1), "wake_length")
-  expect_error(animate_map(p, x, wake_length = 1.5),  "wake_length")
+  layer_data <- p$layers[[1]]$data
+  expect_equal(attr(layer_data, "tidytracks_geom"), "event_path")
 })
 
-test_that("animate_map errors if wake_length is non-numeric", {
-  expect_error(animate_map(make_paths_map(x), x, wake_length = "half"),
-               "wake_length")
+test_that("geom_event_point retains tidytracks_geom attribute in layer data", {
+  p <- make_points_map(x)
+  layer_data <- p$layers[[1]]$data
+  expect_equal(attr(layer_data, "tidytracks_geom"), "event_point")
 })
 
-test_that("animate_map errors if no supported track layer is found", {
-  p_empty <- ggplot2::ggplot()
-  expect_error(animate_map(p_empty, x), "No supported track layer")
+test_that("tt_detect_layer_type returns NULL for an empty plot", {
+  expect_null(tt_detect_layer_type(ggplot2::ggplot()))
 })
 
-test_that("animate_map ignores static sf point layers when detecting track type", {
-  # A static colony point: POINT geometry but no time column
+test_that("tt_detect_layer_type returns NULL when only static sf layers are present", {
   colony_sf <- sf::st_sf(
     name = "colony",
     geometry = sf::st_sfc(sf::st_point(c(0.5, 0.5)), crs = 4326)
   )
-  # Static POINT layer added before the path layer — must not be misdetected
+  p <- ggplot2::ggplot() + ggplot2::geom_sf(data = colony_sf)
+  expect_null(tt_detect_layer_type(p))
+})
+
+test_that("tt_detect_layer_type returns type 'path' for a geom_event_path layer", {
+  result <- tt_detect_layer_type(make_paths_map(x))
+  expect_equal(result$type, "path")
+})
+
+test_that("tt_detect_layer_type returns type 'point' for a geom_event_point layer", {
+  result <- tt_detect_layer_type(make_points_map(x))
+  expect_equal(result$type, "point")
+})
+
+test_that("tt_detect_layer_type returns the correct time_col for a path layer", {
+  result <- tt_detect_layer_type(make_paths_map(x))
+  expect_equal(result$time_col, move2::mt_time_column(x))
+})
+
+test_that("tt_detect_layer_type returns the correct time_col for a point layer", {
+  result <- tt_detect_layer_type(make_points_map(x))
+  expect_equal(result$time_col, move2::mt_time_column(x))
+})
+
+test_that("tt_detect_layer_type ignores a static sf layer before the track layer", {
+  colony_sf <- sf::st_sf(
+    name = "colony",
+    geometry = sf::st_sfc(sf::st_point(c(0.5, 0.5)), crs = 4326)
+  )
   p <- ggplot2::ggplot() +
     ggplot2::geom_sf(data = colony_sf) +
     geom_event_path(data = x, ggplot2::aes(colour = bird_id))
-  result <- animate_map(p, x)
-  expect_s3_class(result$p_anim, "gganim")
+  result <- tt_detect_layer_type(p)
+  expect_equal(result$type, "path")
 })
 
-test_that("animate_map ignores static sf point layers added after the track layer", {
+test_that("tt_detect_layer_type ignores a static sf layer after the track layer", {
   colony_sf <- sf::st_sf(
     name = "colony",
     geometry = sf::st_sfc(sf::st_point(c(0.5, 0.5)), crs = 4326)
@@ -129,8 +143,58 @@ test_that("animate_map ignores static sf point layers added after the track laye
   p <- ggplot2::ggplot() +
     geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
     ggplot2::geom_sf(data = colony_sf)
-  result <- animate_map(p, x)
-  expect_s3_class(result$p_anim, "gganim")
+  result <- tt_detect_layer_type(p)
+  expect_equal(result$type, "path")
+})
+
+test_that("tt_detect_layer_type warns when multiple track layers are present", {
+  p <- ggplot2::ggplot() +
+    geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
+    geom_event_point(data = x, ggplot2::aes(colour = bird_id))
+  expect_warning(tt_detect_layer_type(p), "Multiple")
+})
+
+test_that("tt_detect_layer_type returns the first track layer when multiple are present", {
+  # path is added first, so it should be returned despite the warning
+  p <- ggplot2::ggplot() +
+    geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
+    geom_event_point(data = x, ggplot2::aes(colour = bird_id))
+  result <- suppressWarnings(tt_detect_layer_type(p))
+  expect_equal(result$type, "path")
+})
+
+# ===========================================================================
+# animate_map — input validation
+# ===========================================================================
+
+test_that("animate_map errors if p is not a ggplot", {
+  expect_error(animate_map("not_a_plot"), "ggplot")
+})
+
+test_that("animate_map errors if fade is not logical", {
+  expect_error(animate_map(make_paths_map(x), fade = "yes"), "fade")
+})
+
+test_that("animate_map errors if wake_length is out of range", {
+  p <- make_paths_map(x)
+  expect_error(animate_map(p, wake_length = 0),    "wake_length")
+  expect_error(animate_map(p, wake_length = -0.1), "wake_length")
+  expect_error(animate_map(p, wake_length = 1.5),  "wake_length")
+})
+
+test_that("animate_map errors if wake_length is non-numeric", {
+  expect_error(animate_map(make_paths_map(x), wake_length = "half"), "wake_length")
+})
+
+test_that("animate_map errors if no supported track layer is found", {
+  expect_error(animate_map(ggplot2::ggplot()), "No supported track layer")
+})
+
+test_that("animate_map warns when multiple track layers are present", {
+  p <- ggplot2::ggplot() +
+    geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
+    geom_event_point(data = x, ggplot2::aes(colour = bird_id))
+  expect_warning(animate_map(p), "Multiple")
 })
 
 # ===========================================================================
@@ -138,18 +202,18 @@ test_that("animate_map ignores static sf point layers added after the track laye
 # ===========================================================================
 
 test_that("animate_map with path layer returns named list with p_anim and n_timesteps", {
-  result <- animate_map(make_paths_map(x), x)
+  result <- animate_map(make_paths_map(x))
   expect_type(result, "list")
   expect_named(result, c("p_anim", "n_timesteps"))
 })
 
 test_that("animate_map with path layer returns a gganim object", {
-  result <- animate_map(make_paths_map(x), x)
+  result <- animate_map(make_paths_map(x))
   expect_s3_class(result$p_anim, "gganim")
 })
 
 test_that("animate_map with path layer: n_timesteps reflects dropped final events", {
-  result <- animate_map(make_paths_map(x), x)
+  result <- animate_map(make_paths_map(x))
   # geom_event_path drops the final event of each track, so n_timesteps should
   # equal the number of unique timestamps in x minus those that only appear
   # as a final event. In the test data both tracks share the same timestamps,
@@ -158,26 +222,26 @@ test_that("animate_map with path layer: n_timesteps reflects dropped final event
 })
 
 test_that("animate_map with path layer: fade = TRUE produces a gganim object", {
-  result <- animate_map(make_paths_map(x), x, fade = TRUE, wake_length = 0.3)
+  result <- animate_map(make_paths_map(x), fade = TRUE, wake_length = 0.3)
   expect_s3_class(result$p_anim, "gganim")
   # when running these tests manually, animate this result to check it
 })
 
 test_that("animate_map with path layer: fade = FALSE produces a gganim object", {
-  result <- animate_map(make_paths_map(x), x, fade = FALSE)
+  result <- animate_map(make_paths_map(x), fade = FALSE)
   expect_s3_class(result$p_anim, "gganim")
   # when running these tests manually, animate this result to check it
 })
 
 test_that("animate_map with path layer embeds label_format in title", {
   fmt <- "%Y/%m/%d"
-  result <- animate_map(make_paths_map(x), x, label_format = fmt)
+  result <- animate_map(make_paths_map(x), label_format = fmt)
   expect_true(grepl(fmt, result$p_anim$labels$title, fixed = TRUE))
   expect_true(grepl("frame_time", result$p_anim$labels$title, fixed = TRUE))
 })
 
 test_that("animate_map with path layer works when piped from a ggplot", {
-  result <- make_paths_map(x) |> animate_map(x)
+  result <- make_paths_map(x) |> animate_map()
   expect_s3_class(result$p_anim, "gganim")
 })
 
@@ -186,42 +250,42 @@ test_that("animate_map with path layer works when piped from a ggplot", {
 # ===========================================================================
 
 test_that("animate_map with point layer returns named list with p_anim and n_timesteps", {
-  result <- animate_map(make_points_map(x), x)
+  result <- animate_map(make_points_map(x))
   expect_type(result, "list")
   expect_named(result, c("p_anim", "n_timesteps"))
 })
 
 test_that("animate_map with point layer returns a gganim object", {
-  result <- animate_map(make_points_map(x), x)
+  result <- animate_map(make_points_map(x))
   expect_s3_class(result$p_anim, "gganim")
 })
 
 test_that("animate_map with point layer: n_timesteps matches unique datetimes", {
-  result <- animate_map(make_points_map(x), x)
+  result <- animate_map(make_points_map(x))
   expect_equal(result$n_timesteps, length(unique(x$date_time)))
 })
 
 test_that("animate_map with point layer embeds label_format in title", {
   fmt <- "%b %e %H:%M"
-  result <- animate_map(make_points_map(x), x, label_format = fmt)
+  result <- animate_map(make_points_map(x), label_format = fmt)
   expect_true(grepl(fmt, result$p_anim$labels$title, fixed = TRUE))
   expect_true(grepl("frame_time", result$p_anim$labels$title, fixed = TRUE))
 })
 
 test_that("animate_map with point layer works when piped from a ggplot", {
-  result <- make_points_map(x) |> animate_map(x)
+  result <- make_points_map(x) |> animate_map()
   expect_s3_class(result$p_anim, "gganim")
 })
 
 # for manual testing only (uncomment both lines together):
-# result <- make_paths_map(x) |> animate_map(x, fade = TRUE)
+# result <- make_paths_map(x) |> animate_map(fade = TRUE)
 # gganimate::animate(result$p_anim, nframes = result$n_timesteps, fps = 2,
 #                    renderer = gganimate::gifski_renderer())
 #
-# result <- make_paths_map(x) |> animate_map(x, fade = FALSE)
+# result <- make_paths_map(x) |> animate_map(fade = FALSE)
 # gganimate::animate(result$p_anim, nframes = result$n_timesteps, fps = 2,
 #                    renderer = gganimate::gifski_renderer())
 #
-# result <- make_points_map(x) |> animate_map(x)
+# result <- make_points_map(x) |> animate_map()
 # gganimate::animate(result$p_anim, nframes = result$n_timesteps, fps = 2,
 #                    renderer = gganimate::gifski_renderer())
