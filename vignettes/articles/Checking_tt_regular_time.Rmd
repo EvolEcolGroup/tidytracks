@@ -1,0 +1,294 @@
+---
+title: "Checking tt_regular_time"
+author: "HP"
+date: "2026-05-20"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Trying tt_reg_time on some example data then test same data with the old function in dev branch
+
+Load a couple of packages
+
+```{r, message = FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidytracks)
+
+```
+
+
+## Load some package example data
+It's already a tidytracks object, can check this by inspecting metadata too
+
+```{r}
+data(shags_tt, package = "tidytracks")
+shags_tt
+
+head(show_meta(shags_tt))
+
+```
+
+Plot the data to see what it looks like
+
+```{r}
+
+ggplot() +
+  geom_event_point(data = shags_tt, aes(color = bird_id))
+```
+
+Needs filtering, remove low latitude point and plot again 
+
+Important: make sure in time order!
+
+Put in time order
+ 
+``` {r}
+shags_tt <- shags_tt %>%
+  dplyr::filter(sf::st_coordinates(geometry)[,2] < -5)
+```
+
+
+```{r}
+
+shags_tt <- shags_tt %>%
+  group_by(bird_id) %>%
+  tt_order_time()%>%
+  ungroup()
+
+
+ggplot() +
+  geom_event_point(data = shags_tt, aes(color = bird_id)) +
+  geom_event_path(data = shags_tt, aes(color = bird_id), linewidth = 0.2) 
+```
+
+Get idea of intervals for each shag track before resampling
+
+```{r}
+shags_tt %>%
+  group_by(bird_id) %>%
+  sf::st_drop_geometry() %>%
+  summarise(median_dt = median(diff(date_time)),
+            mean_dt = mean(diff(date_time)),
+            min_dt = min(diff(date_time)),
+            max_dt = max(diff(date_time)))%>%
+  ungroup()
+```
+
+Just pick 2 bird IDs to resample, with different frequencies and track types. No. 27 has longer gaps (approx 10 mins), 40 has shorter gaps (approx 2 mins)
+ 
+```{r}
+shags_tt_sub <- shags_tt %>%
+  dplyr::filter(bird_id %in% c("KB_23_44224_40", "KB_22_42718_27"))
+
+```
+
+Plot original tracks to compare later
+
+```{r}
+plot_1 <- ggplot() +
+  geom_event_point(data = shags_tt_sub, aes(color = bird_id), size = 0.6) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+  ggtitle("Original")+
+    theme(axis.text = element_text(size = 6))
+
+plot_1
+
+```
+
+
+## Resample the data using tt_regular_time
+
+
+```{r}
+# check that timestamps are posixt - yep
+
+class(shags_tt_sub$date_time)
+
+# mean intervals quite different, choose something between the both - 5 min?
+
+resampled_shags <- tt_regular_time(shags_tt_sub,
+                                   interval = units::set_units(5, "min"),
+                                   max_time_lag = NULL)
+head(resampled_shags)
+```
+
+Plot the resampled data and compare to the original
+
+```{r}
+plot_2 <- ggplot() +
+  geom_event_point(data = resampled_shags, aes(color = bird_id), size = 0.6) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+  ggtitle("Resampled")+
+  theme(axis.text = element_text(size = 6))
+
+patchwork::wrap_plots(plot_1, plot_2, guides = "collect") 
+
+```
+
+Look at time differences in resampled data
+
+```{r}
+resampled_shags %>%
+  group_by(bird_id) %>%
+  sf::st_drop_geometry() %>%
+  summarise(median_dt = median(diff(date_time)),
+            mean_dt = mean(diff(date_time)),
+            min_dt = min(diff(date_time)),
+            max_dt = max(diff(date_time)))%>%
+  ungroup()
+```
+
+Good.
+
+## Old version from Dev Branch
+
+Wasn't confident of getting right version switching between branches so just 
+using function directly here, renamed as tt_regular_time_dev
+
+```{r}
+tt_regular_time_dev <- function(x, every) {
+  # replace minutes with mins in every if present
+  every <- gsub("minutes", "mins", every)
+  # same for seconds and secs
+  every <- gsub("seconds", "secs", every)
+  # now interpolate using move2
+  return(move2::mt_interpolate(x, time = every, omit = TRUE))
+}
+```
+
+Run on shag data
+
+```{r}
+resampled_shags_dev <- tt_regular_time_dev(shags_tt_sub,
+                                   every = "5 mins")
+
+head(resampled_shags_dev)
+```
+
+## Inspect the time diffs and data. 
+
+Main difference is that 
+the old version snaps to the nearest 5 mins while the new version
+starts with the first point and samples every 5 mins from there. The new
+version results in a marginally higher number of observations, apparently regardless 
+of interval set (have tested on a few different)
+
+Plot all to compare:
+
+```{r}
+
+plot_3 <- ggplot() +
+  geom_event_point(data = resampled_shags_dev, aes(color = bird_id), size = 0.6) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+  ggtitle("Resampled, old function")+
+  theme(axis.text = element_text(size = 6))
+
+patchwork::wrap_plots(plot_1, plot_2, plot_3, guides = "collect")
+```
+
+## Try the new function with max_time_lag set to 20 mins
+```{r}
+resampled_shags_max_lag <- tt_regular_time(shags_tt_sub,
+                                   interval = units::set_units(5, "min"),
+                                   max_time_lag = units::set_units(20,"min"))
+head(resampled_shags_max_lag)
+
+```
+
+Inspect gaps: We can see that because max time lag was set to 20 minutes, any gaps of more than 20 minutes were left and not resampled. From the original tracks we saw that track 40 had a maximum gap of 22.3 mins, while 27 had a max gap of only 19.9 mins. So the whole of track 27 was re-sampled while the maximum gap of track 40 was left. If set to 30 mins, both whole tracks are resampled because there are no gaps of over 30 mins in either.
+
+Note:
+The maximum time gap is now 30 mins in track 40, because the points are interpolated then silently removed, rather than the function just skipping over the gap.
+
+
+```{r}
+resampled_shags_max_lag %>%
+  group_by(bird_id) %>%
+  sf::st_drop_geometry() %>%
+  summarise(median_dt = median(diff(date_time)),
+            mean_dt = mean(diff(date_time)),
+            min_dt = min(diff(date_time)),
+            max_dt = max(diff(date_time)))%>%
+  ungroup()
+
+```
+
+Plot to have a look
+
+```{r}
+plot_4 <- ggplot() +
+  geom_event_point(data = resampled_shags_max_lag, aes(color = bird_id)) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+  ggtitle("Resampled, max_time_lag = 20 mins")+
+  theme(axis.text = element_text(size = 6))
+plot_4
+
+```
+
+We can plot the original, the resampled with no max time lag and the resampled with max time lag 20min, and the development move2 version on top of each other to compare . We will just take track 40
+
+
+Double check that track 40 is in time order before plotting.
+```{r}
+
+
+shags_tt_sub <- shags_tt_sub %>%
+  group_by(bird_id) %>%
+  tt_order_time() %>%
+  ungroup()
+
+```
+
+Plot. Have Adjusted aspect ratio to see points more clearly. Also added a colony point (x)
+from metadata coords.
+
+```{r}
+
+colony <- sf::st_sfc(
+  sf::st_point(c(-68.06893, -67.57072)),
+  crs = 4326
+)
+
+plot_5 <- ggplot() +
+  geom_event_path(data = shags_tt_sub %>%
+    dplyr::filter(bird_id == "KB_23_44224_40"),
+    aes(color = "Original"),linewidth = 0.2) +
+  geom_event_point(data = shags_tt_sub %>%
+    dplyr::filter(bird_id == "KB_23_44224_40"),
+    aes(color = "Original")) +
+  geom_event_point(data = resampled_shags %>%
+      dplyr::filter(bird_id == "KB_23_44224_40"),
+    aes(color = "Resampled, no max time lag"), shape = 1, size = 3) +
+  geom_event_point(data = resampled_shags_max_lag %>%
+    dplyr::filter(bird_id == "KB_23_44224_40"),
+    aes(color = "Resampled, max time lag 20 mins")) +
+  geom_event_point(data = resampled_shags_dev %>%
+    dplyr::filter(bird_id == "KB_23_44224_40"),
+    aes(color = "Resampled, old function"), alpha = 0.3) +
+  geom_sf(data = colony,shape = 4,  size = 3, color = "red", stroke = 1) +
+  coord_sf(
+    crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+  ggtitle("Comparing resampling methods") +
+  scale_color_manual( values = c(
+      "Original" = "black",
+      "Resampled, no max time lag" = "steelblue",
+      "Resampled, max time lag 20 mins" = "orange",
+      "Resampled, old function" = "green")) +
+  theme(legend.title = element_blank(),
+        axis.text = element_text(size = 6),
+        aspect.ratio = 1.4) 
+  
+
+plot_5
+  
+                                    
+```
+                                           
+End.
+
+
