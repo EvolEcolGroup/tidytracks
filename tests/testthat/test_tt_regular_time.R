@@ -1,8 +1,4 @@
-# library(testthat)
 library(sf)
-# library(s2)
-# library(units)
-# library(move2)
 
 # tolerances for coordinate and attribute comparison
 TOL_COORD <- 1e-6
@@ -367,4 +363,105 @@ test_that("non-POSIXct timestamps raise an error mentioning 'POSIXct'", {
 
 test_that("single-point track raises an error mentioning 'at least 2'", {
   expect_error(tt_regular_time(make_track()[1L, ], interval = s(100)), "at least 2")
+})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 12. snap_times BEHAVIOUR
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Helper: make a track starting at a fractional offset within the interval.
+# track "a" starts at t=+40 s, track "b" starts at t=+70 s.
+# With interval = 100 s, both should snap to t=+100 s as their first point.
+make_offset_mv <- function(id, t_start, t_end = 300) {
+  times <- as.POSIXct("2024-01-01", tz = "UTC") + c(t_start, t_end)
+  coords <- list(sf::st_point(c(0, 0)), sf::st_point(c(3, 0)))
+  move2::mt_as_move2(
+    sf::st_sf(
+      timestamp = times, track_id = id,
+      geometry = sf::st_sfc(coords)
+    ),
+    time_column = "timestamp", track_id_column = "track_id"
+  )
+}
+
+test_that("snap_times=TRUE: first grid point is the next whole-interval boundary", {
+  set.seed(123)
+  # Track starts at t = 40 s; interval = 100 s → first snapped point at t = 100 s
+  track <- make_offset_mv("a", t_start = 40, t_end = 300)
+  out <- tt_regular_time(track, interval = s(100), snap_times = TRUE)
+  t_out <- sort(as.numeric(move2::mt_time(out)))
+  epoch <- as.numeric(as.POSIXct("2024-01-01", tz = "UTC"))
+  # First point must be exactly 100 s after epoch (the next whole-100s boundary)
+  expect_equal(t_out[1L] - epoch, 100, tolerance = 1e-9)
+})
+
+test_that("snap_times=TRUE: grid remains regularly spaced after snapping", {
+  track <- make_offset_mv("a", t_start = 40, t_end = 350)
+  out <- tt_regular_time(track, interval = s(100), snap_times = TRUE)
+  gaps <- diff(sort(as.numeric(move2::mt_time(out))))
+  expect_true(all(abs(gaps - 100) < 1e-9))
+})
+
+test_that("snap_times=FALSE: first grid point equals track start (default behaviour)", {
+  track <- make_offset_mv("a", t_start = 40, t_end = 300)
+  out <- tt_regular_time(track, interval = s(100), snap_times = FALSE)
+  t_out <- sort(as.numeric(move2::mt_time(out)))
+  epoch <- as.numeric(as.POSIXct("2024-01-01", tz = "UTC"))
+  expect_equal(t_out[1L] - epoch, 40, tolerance = 1e-9)
+})
+
+test_that("snap_times=TRUE: overlapping tracks share timestamps", {
+  # Track "a" starts at t=+40 s, track "b" starts at t=+70 s.
+  # Both cover through t=+300 s. Interval = 100 s.
+  # Snapped grids: a → {100, 200, 300}, b → {100, 200, 300}  (identical)
+  mv <- move2::mt_stack(
+    make_offset_mv("a", t_start = 40,  t_end = 300),
+    make_offset_mv("b", t_start = 70,  t_end = 300)
+  )
+  out <- tt_regular_time(mv, interval = s(100), snap_times = TRUE)
+  times_a <- sort(as.numeric(move2::mt_time(track_slice(out, "a"))))
+  times_b <- sort(as.numeric(move2::mt_time(track_slice(out, "b"))))
+  # The two grids must be identical
+  expect_equal(times_a, times_b)
+  # And there must be shared timestamps across the combined output
+  all_times <- as.numeric(move2::mt_time(out))
+  expect_true(any(duplicated(all_times)),
+    label = "at least one timestamp shared across tracks when snap_times=TRUE"
+  )
+})
+
+test_that("snap_times=FALSE: overlapping tracks do NOT share timestamps", {
+  # Same offsets as above but without snapping — grids start at 40 and 70,
+  # producing {40, 140, 240} and {70, 170, 270}: no common values.
+  mv <- move2::mt_stack(
+    make_offset_mv("a", t_start = 40,  t_end = 300),
+    make_offset_mv("b", t_start = 70,  t_end = 300)
+  )
+  out <- tt_regular_time(mv, interval = s(100), snap_times = FALSE)
+  all_times <- as.numeric(move2::mt_time(out))
+  expect_false(any(duplicated(all_times)),
+    label = "no shared timestamps across tracks when snap_times=FALSE"
+  )
+})
+
+test_that("snap_times=TRUE: track already aligned to grid boundary is unaffected", {
+  # Start exactly on a 100 s boundary (t = 200 s after epoch).
+  # The next boundary is t = 300 s, so the grid would lose the first point.
+  # This verifies correct ceiling arithmetic: 200 / 100 = 2 (whole), so
+  # snapped start = 200 + 100 = 300.
+  track <- make_offset_mv("a", t_start = 200, t_end = 500)
+  out_snap <- tt_regular_time(track, interval = s(100), snap_times = TRUE)
+  out_raw  <- tt_regular_time(track, interval = s(100), snap_times = FALSE)
+  epoch <- as.numeric(as.POSIXct("2024-01-01", tz = "UTC"))
+  # Raw starts at 200; snapped must start at 300
+  expect_equal(min(as.numeric(move2::mt_time(out_raw)))  - epoch, 200, tolerance = 1e-9)
+  expect_equal(min(as.numeric(move2::mt_time(out_snap))) - epoch, 300, tolerance = 1e-9)
+})
+
+test_that("invalid snap_times value raises an error", {
+  expect_error(
+    tt_regular_time(make_track(), interval = s(100), snap_times = "yes"),
+    "snap_times"
+  )
 })
