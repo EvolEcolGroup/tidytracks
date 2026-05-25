@@ -1,15 +1,14 @@
 #' Resample a `move2` track to regular time intervals by geometric interpolation
 #'
-#' Resamples one or more tracks stored in a `move2` object
-#' onto a regular time grid.  A new grid point is placed every
-#' `interval` time units, running from the first to the last observation
-#' of each track.  Tracks are processed independently, so different tracks may
-#' have different temporal extents.
+#' Resamples one or more tracks stored in a `move2` object onto a regular time
+#' grid.  A new grid point is placed every `interval` time units from the start
+#' of the track. Tracks are processed independently, so different tracks may
+#' have different temporal extents and the points from different tracks will not
+#' have matching time stamps (as the starting points are different).
 #'
-#' @section Spatial interpolation:
-#' Positions are interpolated geometrically along the observed path, not by
-#' linearly mixing raw coordinate values.  The method follows the same
-#' strategy as [move2::mt_interpolate()]:
+#' @section Spatial interpolation: Positions are linearly interpolated
+#'   along the observed path, with a strategy dependent on the map projection
+#'   (using a strategy similar to [move2::mt_interpolate()]):
 #'
 #' \itemize{
 #'   \item \strong{No CRS} – [sf::st_line_sample()] is called on the
@@ -23,49 +22,44 @@
 #'     are transformed back to the original CRS.
 #' }
 #'
-#' @section Temporal-to-spatial mapping:
-#' Raw observations are often unevenly spaced in both time and space.
-#' \code{tt_regular_time} accounts for this by first computing the normalised
-#' arc-length fraction of every input point along the path (using
-#' \code{\link[s2]{s2_distance}} for geographic CRS and Euclidean distance
-#' otherwise), then using \code{\link[stats]{approx}} to linearly interpolate
-#' those fractions at each new time step.  A stationary stretch of the track
-#' (many observations covering little distance) is therefore correctly treated
-#' as slow movement, not as a spatial shortcut.
+#' @section Temporal-to-spatial mapping: Raw observations are often unevenly
+#'   spaced in both time and space. \code{tt_regular_time} accounts for this by
+#'   first computing the normalised arc-length fraction of every input point
+#'   along the path (using \code{\link[s2]{s2_distance}} for geographic CRS and
+#'   Euclidean distance otherwise), then using \code{\link[stats]{approx}} to
+#'   linearly interpolate those fractions at each new time step.  A stationary
+#'   stretch of the track (many observations covering little distance) is
+#'   therefore correctly treated as slow movement, not as a spatial shortcut.
 #'
-#' @section Attribute interpolation:
-#' Numeric event-level columns are linearly interpolated at the new time steps
-#' using \code{\link[stats]{approx}}.  Non-numeric columns receive the value
-#' of the nearest preceding observation via \code{\link[base]{findInterval}}.
-#' Track-level attributes stored in \code{\link[move2]{mt_track_data}} are
-#' preserved unchanged.
+#' @section Attribute interpolation: Numeric event-level columns are linearly
+#'   interpolated at the new time steps using \code{\link[stats]{approx}}.
+#'   Non-numeric columns receive the value of the nearest preceding observation
+#'   via \code{\link[base]{findInterval}}. Track-level attributes stored in
+#'   \code{\link[move2]{mt_track_data}} are preserved unchanged.
 #'
 #' @param x A \code{\link[move2]{move2}} object.  Timestamps (as returned by
 #'   \code{\link[move2]{mt_time}}) must be \code{\link[base]{POSIXct}}.
 #' @param interval Resampling interval as a \code{\link[units]{units}} object
-#'   carrying time units convertible to seconds (e.g.
-#'   \code{units::set_units(60, "s")}, \code{units::set_units(1, "min")},
-#'   \code{units::set_units(0.5, "h")}).  Every track is resampled at this
-#'   cadence between its own first and last observation.  Passing a plain
-#'   numeric value raises an error to prevent silent unit mismatches.
-#' @param max_time_lag Optional upper bound on interpolation gaps, supplied as
-#'   a \code{\link[units]{units}} object with time units convertible to seconds
+#'   carrying time units convertible to seconds (e.g. \code{units::set_units(60,
+#'   "s")}, \code{units::set_units(1, "min")}, \code{units::set_units(0.5,
+#'   "h")}).  Every track is resampled at this cadence between its own first and
+#'   last observation.  Passing a plain numeric value raises an error to prevent
+#'   silent unit mismatches.
+#' @param max_time_lag Optional upper bound on interpolation gaps, supplied as a
+#'   \code{\link[units]{units}} object with time units convertible to seconds
 #'   (same rules as \code{interval}).  Grid points that fall strictly inside a
 #'   gap between consecutive input observations that is \emph{longer} than
-#'   \code{max_time_lag} are silently dropped from the output.  Pass
-#'   \code{NULL} (the default) to interpolate across all gaps regardless of
-#'   size.
+#'   \code{max_time_lag} are silently dropped from the output.  Pass \code{NULL}
+#'   (the default) to interpolate across all gaps regardless of size.
 #'
-#' @return A `move2` object on a regular time grid.  The
-#'   CRS, time-column name, track-id column name, and track-level attributes
-#'   of \code{x} are all preserved.
+#' @return A `move2` object on a regular time grid.  The CRS, time-column name,
+#'   track-id column name, and track-level attributes of \code{x} are all
+#'   preserved.
 #'
-#' @seealso
-#'   \code{\link[move2]{mt_interpolate}} for the move2 implementation of the
-#'     same spatial strategy with flexible time targets;
-#'   \code{\link[units]{set_units}} for constructing the required
-#'     \code{units} objects;
-#'   \code{\link[sf]{st_line_sample}} for Euclidean path sampling;
+#' @seealso \code{\link[move2]{mt_interpolate}} for the move2 implementation of
+#'   the same spatial strategy with flexible time targets;
+#'   \code{\link[units]{set_units}} for constructing the required \code{units}
+#'   objects; \code{\link[sf]{st_line_sample}} for Euclidean path sampling;
 #'   \code{\link[s2]{s2_interpolate_normalized}} for spherical arc sampling.
 #'
 #' @examples
