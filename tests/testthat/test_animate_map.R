@@ -23,12 +23,12 @@ x <- make_test_tracks()
 # helpers: minimal ggplots using the tt geoms ----
 make_paths_map <- function(x) {
   ggplot2::ggplot() +
-    geom_event_path(data = x, ggplot2::aes(colour = bird_id), linewidth = 1)
+    geom_event_path(data = x, ggplot2::aes(colour = bird_id), linewidth = 2)
 }
 
 make_points_map <- function(x) {
   ggplot2::ggplot() +
-    geom_event_point(data = x, ggplot2::aes(colour = bird_id))
+    geom_event_point(data = x, ggplot2::aes(colour = bird_id), size = 3)
 }
 
 # ===========================================================================
@@ -201,15 +201,13 @@ test_that("animate_map warns when multiple track layers are present", {
 # animate_map — path animation
 # ===========================================================================
 
-test_that("animate_map with path layer returns named list with p_anim and n_timesteps", {
-  result <- animate_map(make_paths_map(x))
-  expect_type(result, "list")
-  expect_named(result, c("p_anim", "n_timesteps"))
+test_that("animate_map with path layer returns a gganim object", {
+  expect_s3_class(animate_map(make_paths_map(x)), "gganim")
 })
 
-test_that("animate_map with path layer returns a gganim object", {
+test_that("animate_map with path layer attaches n_timesteps as an attribute", {
   result <- animate_map(make_paths_map(x))
-  expect_s3_class(result$p_anim, "gganim")
+  expect_false(is.null(attr(result, "n_timesteps")))
 })
 
 test_that("animate_map with path layer: n_timesteps reflects dropped final events", {
@@ -218,74 +216,68 @@ test_that("animate_map with path layer: n_timesteps reflects dropped final event
   # equal the number of unique timestamps in x minus those that only appear
   # as a final event. In the test data both tracks share the same timestamps,
   # so the last timestamp is dropped entirely: n_timesteps == n_unique_times - 1.
-  expect_equal(result$n_timesteps, length(unique(x$date_time)) - 1L)
+  expect_equal(attr(result, "n_timesteps"), length(unique(x$date_time)) - 1L)
 })
 
 test_that("animate_map with path layer: fade = TRUE produces a gganim object", {
-  result <- animate_map(make_paths_map(x), fade = TRUE, wake_length = 0.3)
-  expect_s3_class(result$p_anim, "gganim")
+  expect_s3_class(animate_map(make_paths_map(x), fade = TRUE, wake_length = 0.3), "gganim")
   # when running these tests manually, animate this result to check it
 })
 
 test_that("animate_map with path layer: fade = FALSE produces a gganim object", {
-  result <- animate_map(make_paths_map(x), fade = FALSE)
-  expect_s3_class(result$p_anim, "gganim")
+  expect_s3_class(animate_map(make_paths_map(x), fade = FALSE), "gganim")
   # when running these tests manually, animate this result to check it
 })
 
 test_that("animate_map with path layer embeds label_format in title", {
   fmt <- "%Y/%m/%d"
   result <- animate_map(make_paths_map(x), label_format = fmt)
-  expect_true(grepl(fmt, result$p_anim$labels$title, fixed = TRUE))
-  expect_true(grepl("frame_time", result$p_anim$labels$title, fixed = TRUE))
+  expect_true(grepl(fmt, result$labels$title, fixed = TRUE))
+  expect_true(grepl("frame_time", result$labels$title, fixed = TRUE))
 })
 
 test_that("animate_map with path layer works when piped from a ggplot", {
-  result <- make_paths_map(x) |> animate_map()
-  expect_s3_class(result$p_anim, "gganim")
+  expect_s3_class(make_paths_map(x) |> animate_map(), "gganim")
 })
 
 # ===========================================================================
 # animate_map — point animation
 # ===========================================================================
 
-test_that("animate_map with point layer returns named list with p_anim and n_timesteps", {
-  result <- animate_map(make_points_map(x))
-  expect_type(result, "list")
-  expect_named(result, c("p_anim", "n_timesteps"))
+test_that("animate_map with point layer returns a gganim object", {
+  expect_s3_class(animate_map(make_points_map(x)), "gganim")
 })
 
-test_that("animate_map with point layer returns a gganim object", {
+test_that("animate_map with point layer attaches n_timesteps as an attribute", {
   result <- animate_map(make_points_map(x))
-  expect_s3_class(result$p_anim, "gganim")
+  expect_false(is.null(attr(result, "n_timesteps")))
 })
 
 test_that("animate_map with point layer: n_timesteps matches unique datetimes", {
   result <- animate_map(make_points_map(x))
-  expect_equal(result$n_timesteps, length(unique(x$date_time)))
+  expect_equal(attr(result, "n_timesteps"), length(unique(x$date_time)))
 })
 
 test_that("animate_map with point layer embeds label_format in title", {
   fmt <- "%b %e %H:%M"
   result <- animate_map(make_points_map(x), label_format = fmt)
-  expect_true(grepl(fmt, result$p_anim$labels$title, fixed = TRUE))
-  expect_true(grepl("frame_time", result$p_anim$labels$title, fixed = TRUE))
+  expect_true(grepl(fmt, result$labels$title, fixed = TRUE))
+  expect_true(grepl("frame_time", result$labels$title, fixed = TRUE))
 })
 
 test_that("animate_map with point layer works when piped from a ggplot", {
-  result <- make_points_map(x) |> animate_map()
-  expect_s3_class(result$p_anim, "gganim")
+  expect_s3_class(make_points_map(x) |> animate_map(), "gganim")
 })
 
 # for manual testing only (uncomment both lines together):
 # result <- make_paths_map(x) |> animate_map(fade = TRUE)
-# gganimate::animate(result$p_anim, nframes = result$n_timesteps, fps = 2,
+# gganimate::animate(result, nframes = attr(result, "n_timesteps"), fps = 2,
 #                    renderer = gganimate::gifski_renderer())
 #
 # result <- make_paths_map(x) |> animate_map(fade = FALSE)
-# gganimate::animate(result$p_anim, nframes = result$n_timesteps, fps = 2,
+# gganimate::animate(result, nframes = attr(result, "n_timesteps"), fps = 2,
 #                    renderer = gganimate::gifski_renderer())
 #
 # result <- make_points_map(x) |> animate_map()
-# gganimate::animate(result$p_anim, nframes = result$n_timesteps, fps = 2,
+# gganimate::animate(result, nframes = attr(result, "n_timesteps"), fps = 2,
 #                    renderer = gganimate::gifski_renderer())

@@ -6,7 +6,6 @@
 \usage{
 animate_map(
   p,
-  x,
   fade = TRUE,
   wake_length = 0.5,
   label_format = "\%Y-\%m-\%d \%H:\%M:\%S"
@@ -16,9 +15,6 @@ animate_map(
 \item{p}{A \code{ggplot} object containing the fully styled map, with the
 \code{move2} tracking layer added using \code{geom_event_path} or
 \code{geom_event_point}.}
-
-\item{x}{The same \code{move2} object as used in the plot. Used to identify the
-datetime column name and compute the number of animation frames.}
 
 \item{fade}{Logical. Only relevant for path animations. If \code{TRUE}
 (default), previous segments fade out behind the current one using
@@ -35,9 +31,10 @@ used when \code{fade = TRUE} (paths) or for point animations. Default is
 each frame. Default is \code{"\\\%Y-\\\%m-\\\%d \\\%H:\\\%M:\\\%S"}.}
 }
 \value{
-A named list with: \code{p_anim} (a \code{gganim} object ready to pass to
-\code{gganimate::animate()}) and \code{n_timesteps} (the number of unique time steps
-in the layer data).
+A \code{gganim} object ready to pass to \code{gganimate::animate()}. The
+number of unique time steps in the track layer data is attached as
+\code{attr(result, "n_timesteps")} and can be passed directly to the \code{nframes}
+argument of \code{gganimate::animate()}.
 }
 \description{
 Takes a \code{ggplot} object built by the user, and the \code{tidytracks} tracking

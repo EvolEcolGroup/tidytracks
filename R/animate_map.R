@@ -42,9 +42,10 @@
 #'   \code{\link[base]{format.POSIXct}} format for the date-time label shown on
 #'   each frame. Default is `"\%Y-\%m-\%d \%H:\%M:\%S"`.
 #'
-#' @return A named list with: `p_anim` (a `gganim` object ready to pass to
-#'   `gganimate::animate()`) and `n_timesteps` (the number of unique time steps
-#'   in the layer data).
+#' @return A `gganim` object ready to pass to `gganimate::animate()`. The
+#'   number of unique time steps in the track layer data is attached as
+#'   `attr(result, "n_timesteps")` and can be passed directly to the `nframes`
+#'   argument of `gganimate::animate()`.
 #' @export
 animate_map <- function(p,
                            fade = TRUE,
@@ -107,7 +108,8 @@ animate_map <- function(p,
       title = paste0("{format(frame_time, '", label_format, "')}")
     )
 
-  list(p_anim = p_anim, n_timesteps = n_timesteps)
+  attr(p_anim, "n_timesteps") <- n_timesteps
+  p_anim
 }
 
 
