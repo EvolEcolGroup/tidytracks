@@ -44,6 +44,7 @@ geom_event_path <- function(mapping = ggplot2::aes(),
                             na.rm = FALSE, 
                             show.legend = NA,
                             ...) {
+  data_name <- deparse(substitute(data))
   # check that data is not NULL
   if (is.null(data)) {
     stop("data must be specified for this geometry")
@@ -73,7 +74,8 @@ geom_event_path <- function(mapping = ggplot2::aes(),
   }
 
   # Tag so animate_map() can identify this as a tidytracks track layer.
-  attr(data_steps, "tidytracks_geom") <- "event_path"
+  attr(data_steps, "tidytracks_geom")      <- "event_path"
+  attr(data_steps, "tidytracks_data_name") <- data_name
   
   ggplot2::geom_sf(
     mapping = mapping, data = data_steps, stat = stat,

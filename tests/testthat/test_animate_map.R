@@ -90,6 +90,18 @@ test_that("geom_event_point retains tidytracks_geom attribute in layer data", {
   expect_equal(attr(layer_data, "tidytracks_geom"), "event_point")
 })
 
+test_that("geom_event_path retains tidytracks_data_name attribute matching the object name", {
+  p <- make_paths_map(x)
+  layer_data <- p$layers[[1]]$data
+  expect_equal(attr(layer_data, "tidytracks_data_name"), "x")
+})
+
+test_that("geom_event_point retains tidytracks_data_name attribute matching the object name", {
+  p <- make_points_map(x)
+  layer_data <- p$layers[[1]]$data
+  expect_equal(attr(layer_data, "tidytracks_data_name"), "x")
+})
+
 test_that("tt_detect_layer_type returns NULL for an empty plot", {
   expect_null(tt_detect_layer_type(ggplot2::ggplot()))
 })
@@ -154,6 +166,13 @@ test_that("tt_detect_layer_type warns when multiple track layers are present", {
   expect_warning(tt_detect_layer_type(p), "Multiple")
 })
 
+test_that("tt_detect_layer_type warning mentions layer_to_animate", {
+  p <- ggplot2::ggplot() +
+    geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
+    geom_event_point(data = x, ggplot2::aes(colour = bird_id))
+  expect_warning(tt_detect_layer_type(p), "layer_to_animate")
+})
+
 test_that("tt_detect_layer_type returns the first track layer when multiple are present", {
   # path is added first, so it should be returned despite the warning
   p <- ggplot2::ggplot() +
@@ -161,6 +180,46 @@ test_that("tt_detect_layer_type returns the first track layer when multiple are 
     geom_event_point(data = x, ggplot2::aes(colour = bird_id))
   result <- suppressWarnings(tt_detect_layer_type(p))
   expect_equal(result$type, "path")
+})
+
+test_that("tt_detect_layer_type selects the correct layer by name", {
+  # Two move2 objects with identical timestamps; x2 is a point layer added second
+  x2 <- x
+  p <- ggplot2::ggplot() +
+    geom_event_path(data = x,  ggplot2::aes(colour = bird_id)) +
+    geom_event_point(data = x2, ggplot2::aes(colour = bird_id))
+  result <- tt_detect_layer_type(p, layer_name = "x2")
+  expect_equal(result$type, "point")
+})
+
+test_that("tt_detect_layer_type errors if layer_name does not match any layer", {
+  p <- make_paths_map(x)
+  expect_error(tt_detect_layer_type(p, layer_name = "nonexistent"), "nonexistent")
+})
+
+test_that("animate_map errors if layer_to_animate is not a move2 object", {
+  p <- make_paths_map(x)
+  expect_error(animate_map(p, layer_to_animate = data.frame()), "move2")
+})
+
+test_that("animate_map with layer_to_animate suppresses the multiple-layers warning", {
+  p <- ggplot2::ggplot() +
+    geom_event_path(data = x,  ggplot2::aes(colour = bird_id)) +
+    geom_event_point(data = x, ggplot2::aes(colour = bird_id))
+  expect_no_warning(animate_map(p, layer_to_animate = x))
+})
+
+test_that("animate_map with layer_to_animate selects the named layer", {
+  x2 <- x
+  p <- ggplot2::ggplot() +
+    geom_event_path(data = x,  ggplot2::aes(colour = bird_id)) +
+    geom_event_point(data = x2, ggplot2::aes(colour = bird_id))
+  # Without layer_to_animate, path (first layer) would be animated; here we
+  # explicitly request the point layer
+  result <- animate_map(p, layer_to_animate = x2)
+  expect_s3_class(result, "gganim")
+  # n_timesteps for a point layer equals all unique timestamps (no rows dropped)
+  expect_equal(attr(result, "n_timesteps"), length(unique(x2$date_time)))
 })
 
 # ===========================================================================
@@ -195,6 +254,19 @@ test_that("animate_map warns when multiple track layers are present", {
     geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
     geom_event_point(data = x, ggplot2::aes(colour = bird_id))
   expect_warning(animate_map(p), "Multiple")
+})
+
+test_that("animate_map warns and animates the first layer in the stack when layer_to_animate is not given", {
+  # x_fewer has fewer timesteps than x, so n_timesteps reveals which was used.
+  # x is added first (path), x_fewer second (point).
+  x_fewer <- make_test_tracks() |> dplyr::slice(1:5)
+  p <- ggplot2::ggplot() +
+    geom_event_path(data = x,        ggplot2::aes(colour = bird_id)) +
+    geom_event_point(data = x_fewer, ggplot2::aes(colour = bird_id))
+  result <- NULL
+  expect_warning(result <- animate_map(p), "Multiple")
+  # path layer drops the final event per track (2 tracks, 10 rows -> 8 unique times)
+  expect_equal(attr(result, "n_timesteps"), length(unique(x$date_time)) - 1L)
 })
 
 # ===========================================================================

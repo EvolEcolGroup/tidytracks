@@ -30,6 +30,11 @@
 #' @param p A `ggplot` object containing the fully styled map, with the
 #'   `move2` tracking layer added using `geom_event_path` or
 #'   `geom_event_point`.
+#' @param layer_to_animate Optional. The `move2` object to animate over.
+#'   Only needed when the map contains more than one `geom_event_path` or
+#'   `geom_event_point` layer; supplying it suppresses the "multiple layers"
+#'   warning and ensures the correct layer is animated. Must be the same object
+#'   (by name) that was passed to `data` in the corresponding geom call.
 #' @param fade Logical. Only relevant for path animations. If `TRUE`
 #'   (default), previous segments fade out behind the current one using
 #'   `shadow_wake_build`. If `FALSE`, all previous segments
@@ -48,12 +53,18 @@
 #'   argument of `gganimate::animate()`.
 #' @export
 animate_map <- function(p,
+                           layer_to_animate = NULL,
                            fade = TRUE,
                            wake_length = 0.5,
                            label_format = "%Y-%m-%d %H:%M:%S") {
 
+  layer_name <- if (!is.null(layer_to_animate)) deparse(substitute(layer_to_animate)) else NULL
+
   if (!inherits(p, "ggplot")) {
     stop("p must be a ggplot object")
+  }
+  if (!is.null(layer_to_animate) && !inherits(layer_to_animate, "move2")) {
+    stop("layer_to_animate must be a move2 object")
   }
   if (!is.logical(fade) || length(fade) != 1 || is.na(fade)) {
     stop("fade must be TRUE or FALSE")
@@ -63,7 +74,7 @@ animate_map <- function(p,
     stop("wake_length must be a single numeric value greater than 0 and at most 1")
   }
 
-  detected <- tt_detect_layer_type(p)
+  detected <- tt_detect_layer_type(p, layer_name = layer_name)
 
   if (is.null(detected)) {
     stop(
@@ -118,39 +129,62 @@ animate_map <- function(p,
 # their data by geom_event_path() and geom_event_point(). This prevents false
 # matches from other sf layers (e.g. land polygons) that happen to share a
 # geometry type or carry a POSIXct column.
-# If multiple tidytracks layers are found, a warning is issued and the first one
-# in the plot's layer stack is used.
+# If layer_name is provided (the deparsed name of the user's move2 object), only
+# layers whose "tidytracks_data_name" attribute matches are considered, allowing
+# unambiguous selection when multiple track layers are present.
+# If multiple tidytracks layers are found and layer_name is NULL, a warning is
+# issued and the first one in the plot's layer stack is used.
 # Returns a list(type, data, time_col) where type is "path" or "point", data is
 # the matched layer's sf data frame, and time_col is the name of the POSIXct
 # column. Returns NULL if no supported layer is found.
-tt_detect_layer_type <- function(p) {
+tt_detect_layer_type <- function(p, layer_name = NULL) {
   matches <- list()
 
   for (layer in p$layers) {
+    # look for layers tagged with tidytracks_geom (i.e. made using
+    # geom_event_point or geom_event_path).
     data <- layer$data
     tag  <- attr(data, "tidytracks_geom")
     if (is.null(tag)) next
-
+    # check for a datetime column
     posixct_cols <- names(data)[vapply(data, inherits, logical(1), "POSIXct")]
     if (length(posixct_cols) == 0L) next
     time_col <- posixct_cols[[1L]]
-
-    type <- switch(tag,
+    # add type which is either path or point depending on tidytracks_geom attr
+    type <- base::switch(tag,
       event_path  = "path",
       event_point = "point",
       NULL
     )
     if (is.null(type)) next
-
+    # add to the list of matches
     matches <- c(matches, list(list(type = type, data = data, time_col = time_col)))
   }
 
   if (length(matches) == 0L) return(NULL)
 
+  # if layer_name was given, use this to filter further
+  if (!is.null(layer_name)) {
+    named_matches <- base::Filter(
+      function(m) base::identical(attr(m$data, "tidytracks_data_name"), layer_name),
+      matches
+    )
+    if (length(named_matches) == 0L) {
+      stop(
+        "No track layer with the name '", layer_name, "' was found in the map. ",
+        "Check that `layer_to_animate` is the same object passed to `data` in ",
+        "the geom_event_path() or geom_event_point() call.",
+        call. = FALSE
+      )
+    }
+    return(named_matches[[1L]])
+  }
+
+  # if more than 2 found (and not filtered using layer name), throw warning.
   if (length(matches) > 1L) {
     warning(
       "Multiple `move2` track layers found in the map; ",
-      "animating over the first one.",
+      "animating over the first one. Use `layer_to_animate` to specify which.",
       call. = FALSE
     )
   }

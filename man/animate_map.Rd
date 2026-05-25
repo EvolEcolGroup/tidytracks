@@ -6,6 +6,7 @@
 \usage{
 animate_map(
   p,
+  layer_to_animate = NULL,
   fade = TRUE,
   wake_length = 0.5,
   label_format = "\%Y-\%m-\%d \%H:\%M:\%S"
@@ -15,6 +16,12 @@ animate_map(
 \item{p}{A \code{ggplot} object containing the fully styled map, with the
 \code{move2} tracking layer added using \code{geom_event_path} or
 \code{geom_event_point}.}
+
+\item{layer_to_animate}{Optional. The \code{move2} object to animate over.
+Only needed when the map contains more than one \code{geom_event_path} or
+\code{geom_event_point} layer; supplying it suppresses the "multiple layers"
+warning and ensures the correct layer is animated. Must be the same object
+(by name) that was passed to \code{data} in the corresponding geom call.}
 
 \item{fade}{Logical. Only relevant for path animations. If \code{TRUE}
 (default), previous segments fade out behind the current one using
