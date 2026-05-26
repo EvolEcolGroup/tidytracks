@@ -12,7 +12,7 @@ tt_summary_health(x)
 \value{
 A tibble with one row per track and the following columns:
 \itemize{
-\item track_id: The track ID
+\item \code{<track id column>}: The track ID from \code{x}
 \item median_sampling_interval: The median sampling interval in seconds
 \item track_duration: The duration of the track in seconds
 \item expected_points: The expected number of points based on the median sampling interval
