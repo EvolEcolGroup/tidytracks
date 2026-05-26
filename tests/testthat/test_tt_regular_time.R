@@ -208,6 +208,18 @@ test_that("numeric attribute is correct at 50 s grid", {
   )
 })
 
+test_that("units attributes keep units class after interpolation", {
+  track <- make_track(crs = NA)
+  track$speed <- units::set_units(c(1, 3, 5), "m/s")
+
+  out <- tt_regular_time(track, interval = s(50))
+  out_sorted <- out[order(move2::mt_time(out)), ]
+
+  expect_true(inherits(out_sorted$speed, "units"))
+  expect_true(units::ud_are_convertible(units::deparse_unit(out_sorted$speed), "m/s"))
+  expect_equal(as.numeric(out_sorted$speed), c(1, 2, 3, 4, 5), tolerance = TOL_ATTR)
+})
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 7. IRREGULAR INPUT SPACING
@@ -316,6 +328,13 @@ test_that("plain numeric interval raises an error mentioning 'units'", {
   expect_error(tt_regular_time(make_track(), interval = 100), "units")
 })
 
+test_that("vector interval raises a clear length-1 error", {
+  expect_error(
+    tt_regular_time(make_track(), interval = s(c(60, 120))),
+    "length-1"
+  )
+})
+
 test_that("non-time units for interval raises an error mentioning 'seconds'", {
   expect_error(
     tt_regular_time(make_track(), interval = units::set_units(1, "m")),
@@ -337,6 +356,13 @@ test_that("non-time units for max_time_lag raises an error mentioning 'seconds'"
       max_time_lag = units::set_units(1, "m")
     ),
     "seconds"
+  )
+})
+
+test_that("vector max_time_lag raises a clear length-1 error", {
+  expect_error(
+    tt_regular_time(make_track(), interval = s(100), max_time_lag = s(c(50, 60))),
+    "length-1"
   )
 })
 
@@ -363,6 +389,40 @@ test_that("non-POSIXct timestamps raise an error mentioning 'POSIXct'", {
 
 test_that("single-point track raises an error mentioning 'at least 2'", {
   expect_error(tt_regular_time(make_track()[1L, ], interval = s(100)), "at least 2")
+})
+
+test_that("unsorted input timestamps are handled correctly", {
+  track <- make_track(crs = NA)
+  unsorted <- track[c(3, 1, 2), ]
+  out_sorted <- tt_regular_time(track, interval = s(50))
+  out_unsorted <- tt_regular_time(unsorted, interval = s(50))
+
+  expect_equal(
+    as.numeric(move2::mt_time(out_unsorted)),
+    as.numeric(move2::mt_time(out_sorted))
+  )
+  expect_equal(
+    sorted_coords(out_unsorted),
+    sorted_coords(out_sorted),
+    tolerance = TOL_COORD
+  )
+})
+
+test_that("tracks fully removed by gap filtering return valid empty output", {
+  mv <- move2::mt_stack(
+    make_mv("drop", x_off = 0, t_offsets = c(40, 70), value = c(0, 10)),
+    make_mv("keep", x_off = 10, t_offsets = c(0, 100, 250), value = c(0, 5, 10))
+  )
+  out <- tt_regular_time(
+    mv,
+    interval = s(100),
+    max_time_lag = s(10),
+    snap_times = TRUE
+  )
+
+  expect_false("drop" %in% as.character(unique(move2::mt_track_id(out))))
+  expect_true("keep" %in% as.character(unique(move2::mt_track_id(out))))
+  expect_equal(as.character(move2::mt_track_data(out)$track_id), "keep")
 })
 
 
@@ -445,7 +505,7 @@ test_that("snap_times=FALSE: overlapping tracks do NOT share timestamps", {
   )
 })
 
-test_that("snap_times=TRUE: track already aligned to grid boundary is unaffected", {
+test_that("snap_times=TRUE: aligned track starts at the next boundary", {
   # Start exactly on a 100 s boundary (t = 200 s after epoch).
   # The next boundary is t = 300 s, so the grid would lose the first point.
   # This verifies correct ceiling arithmetic: 200 / 100 = 2 (whole), so
