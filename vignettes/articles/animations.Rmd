@@ -48,10 +48,9 @@ individuals, matching timestamps across individuals that were tracked
 concurrently. Therefore we regularise our timestamps of we haven't already:
 
 ```{r interpolate, collapse=TRUE}
-df <- move2::mt_interpolate(x = df,
-                            time = "12 hours",
-                            omit = TRUE)
-
+df <- tt_regular_time(x = df,
+                      interval = as_units(12, "hour"),
+                      snap_times = TRUE)
 df
 ```
 

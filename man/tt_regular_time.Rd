@@ -7,7 +7,7 @@
 tt_regular_time(x, interval, max_time_lag = NULL, snap_times = FALSE)
 }
 \arguments{
-\item{x}{A\code{move2} object.  Timestamps (as returned by \code{\link[=event_time]{event_time()}}) must be
+\item{x}{A \code{move2} object.  Timestamps (as returned by \code{\link[=event_time]{event_time()}}) must be
 \link[base:DateTimeClasses]{base::POSIXct}.}
 
 \item{interval}{Resampling interval as a \code{\link[units:units]{units::units}} object
@@ -125,7 +125,7 @@ resampled_snap
 \seealso{
 \code{\link[move2]{mt_interpolate}} for the move2 implementation of
 the same spatial strategy with flexible time targets (including
-interpolating to specific missing timesstamps);
+interpolating to specific missing timestamps);
 \code{\link[units:units]{units::as_units()}} for constructing the required \code{units}
 objects; \code{\link[sf:st_line_sample]{sf::st_line_sample()}} for Euclidean path sampling;
 \code{\link[s2:s2_interpolate]{s2::s2_interpolate_normalized()}} for spherical arc sampling.
