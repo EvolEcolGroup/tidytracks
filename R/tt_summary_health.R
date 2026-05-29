@@ -7,7 +7,7 @@
 #' @param x A `move2` object
 #' @return A tibble with one row per track and the following columns:
 #' \itemize{
-#'  \item \code{move2::mt_track_id_column(x)}: The track ID column from \code{x}
+#'  \item \code{<track id column>}: The track ID from \code{x}
 #'  \item median_sampling_interval: The median sampling interval in seconds
 #'  \item track_duration: The duration of the track in seconds
 #'  \item expected_points: The expected number of points based on the median sampling interval
