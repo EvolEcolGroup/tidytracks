@@ -94,24 +94,6 @@ df_sub <- df %>%
   dplyr::filter(date_time <= (min(df$date_time) + lubridate::days(30)))
 ```
 
-### projections
-
-Sort out your projections: check that the CRS of all your layers match, and if 
-needed, transform every object to your desired projection for plotting.
-
-```{r sort_projections, collapse=TRUE}
-# # check CRS of df matches the other layers for the plot
-# all.equal(st_crs(df), st_crs(colony), st_crs(land))
-# 
-# 
-# 
-# # transform all my layers into the new projection
-# df_p <- sf::st_transform(df, my_crs)
-# colony_p <- sf::st_transform(colony, my_crs)
-# land_p <- sf::st_transform(land, my_crs)
-
-```
-
 ### make map
 
 Next, assemble your map using `ggplot2`. Add `sf` layers using `geom_sf`, 
