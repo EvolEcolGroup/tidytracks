@@ -17,12 +17,15 @@
 #' the appropriate animation:
 #'
 #' \itemize{
-#'   \item{ \strong{Path layer} (`geom_event_path`): if `fade = TRUE`,
-#'     segments fade out behind the current one; if `fade = FALSE`, all
-#'     previous segments remain visible, producing a permanently growing path.}
+#'   \item{ \strong{Path layer} (`geom_event_path`): segments fade out behind
+#'     the current one using a wake of length `wake_length`.}
 #'   \item{ \strong{Point layer} (`geom_event_point`): points move through
-#'     time with a fading, shrinking wake regardless of `fade`.}
+#'     time with a fading, shrinking wake of length `wake_length`.}
 #' }
+#'
+#' Setting `wake_length = 1` is a special case for both layer types: all past
+#' positions are shown at full opacity with no fading, producing a permanently
+#' growing path or dot trail.
 #'
 #' All aesthetic choices (colour, size, linewidth, alpha, etc.) are set by the
 #' user in their `geom_event_path()` or `geom_event_point()` call.
@@ -35,14 +38,10 @@
 #'   `geom_event_point` layer; supplying it suppresses the "multiple layers"
 #'   warning and ensures the correct layer is animated. Must be the same object
 #'   (by name) that was passed to `data` in the corresponding geom call.
-#' @param fade Logical. Only relevant for path animations. If `TRUE`
-#'   (default), previous segments fade out behind the current one using
-#'   `shadow_wake_build`. If `FALSE`, all previous segments
-#'   remain fully visible, producing a permanently growing path.
 #' @param wake_length Numeric between 0 (exclusive) and 1 (inclusive). Length
-#'   of the fading trail as a proportion of the total animation length. Only
-#'   used when `fade = TRUE` (paths) or for point animations. Default is
-#'   `0.5`.
+#'   of the fading trail as a proportion of the total animation length. Default
+#'   is `0.5`. Set to `1` to disable fading entirely: all past positions are
+#'   shown at full opacity (a permanently growing path or dot trail).
 #' @param label_format A character string specifying the
 #'   \code{\link[base]{format.POSIXct}} format for the date-time label shown on
 #'   each frame. Default is `"\%Y-\%m-\%d \%H:\%M:\%S"`.
@@ -54,7 +53,6 @@
 #' @export
 animate_map <- function(p,
                            layer_to_animate = NULL,
-                           fade = TRUE,
                            wake_length = 0.5,
                            label_format = "%Y-%m-%d %H:%M:%S") {
 
@@ -65,9 +63,6 @@ animate_map <- function(p,
   }
   if (!is.null(layer_to_animate) && !inherits(layer_to_animate, "move2")) {
     stop("layer_to_animate must be a move2 object")
-  }
-  if (!is.logical(fade) || length(fade) != 1 || is.na(fade)) {
-    stop("fade must be TRUE or FALSE")
   }
   if (!is.numeric(wake_length) || length(wake_length) != 1 ||
       wake_length <= 0 || wake_length > 1) {
@@ -94,24 +89,18 @@ animate_map <- function(p,
 
   p_anim <- p + gganimate::transition_time(time = !!time_sym)
 
-  if (layer_type == "path") {
-    if (fade) {
-      p_anim <- p_anim +
-        shadow_wake_build(wake_length = wake_length,
-                          size = FALSE, alpha = TRUE, wrap = FALSE)
-    } else {
-      p_anim <- p_anim +
-        gganimate::shadow_mark(past = TRUE, future = FALSE)
-    }
-  } else {
-    # point: always use a fading, shrinking wake
+  if (wake_length == 1) {
+    # special case: full opacity, no fading — all past positions stay visible
+    p_anim <- p_anim + gganimate::shadow_mark(past = TRUE, future = FALSE)
+  } else if (layer_type == "path") {
     p_anim <- p_anim +
-      shadow_wake_build(
-        wake_length = wake_length,
-        size = TRUE,
-        alpha = TRUE,
-        wrap = FALSE
-      )
+      shadow_wake_build(wake_length = wake_length,
+                        size = FALSE, alpha = TRUE, wrap = FALSE)
+  } else {
+    # point: fading, shrinking wake
+    p_anim <- p_anim +
+      shadow_wake_build(wake_length = wake_length,
+                        size = TRUE, alpha = TRUE, wrap = FALSE)
   }
 
   p_anim <- p_anim +

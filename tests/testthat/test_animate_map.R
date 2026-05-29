@@ -230,10 +230,6 @@ test_that("animate_map errors if p is not a ggplot", {
   expect_error(animate_map("not_a_plot"), "ggplot")
 })
 
-test_that("animate_map errors if fade is not logical", {
-  expect_error(animate_map(make_paths_map(x), fade = "yes"), "fade")
-})
-
 test_that("animate_map errors if wake_length is out of range", {
   p <- make_paths_map(x)
   expect_error(animate_map(p, wake_length = 0),    "wake_length")
@@ -291,14 +287,22 @@ test_that("animate_map with path layer: n_timesteps reflects dropped final event
   expect_equal(attr(result, "n_timesteps"), length(unique(x$date_time)) - 1L)
 })
 
-test_that("animate_map with path layer: fade = TRUE produces a gganim object", {
-  expect_s3_class(animate_map(make_paths_map(x), fade = TRUE, wake_length = 0.3), "gganim")
-  # when running these tests manually, animate this result to check it
+test_that("animate_map with path layer: custom wake_length produces a gganim object", {
+  expect_s3_class(animate_map(make_paths_map(x), wake_length = 0.3), "gganim")
 })
 
-test_that("animate_map with path layer: fade = FALSE produces a gganim object", {
-  expect_s3_class(animate_map(make_paths_map(x), fade = FALSE), "gganim")
-  # when running these tests manually, animate this result to check it
+test_that("animate_map with path layer: wake_length < 1 uses a shadow_wake_build", {
+  result <- animate_map(make_paths_map(x), wake_length = 0.3)
+  expect_true(inherits(result$shadow, "ShadowWakeBuild"))
+})
+
+test_that("animate_map with path layer: wake_length = 1 produces a gganim object", {
+  expect_s3_class(animate_map(make_paths_map(x), wake_length = 1), "gganim")
+})
+
+test_that("animate_map with path layer: wake_length = 1 uses shadow_mark (no fading)", {
+  result <- animate_map(make_paths_map(x), wake_length = 1)
+  expect_true(inherits(result$shadow, "ShadowMark"))
 })
 
 test_that("animate_map with path layer embeds label_format in title", {
@@ -341,15 +345,33 @@ test_that("animate_map with point layer works when piped from a ggplot", {
   expect_s3_class(make_points_map(x) |> animate_map(), "gganim")
 })
 
+test_that("animate_map with point layer: wake_length < 1 uses a shadow_wake_build", {
+  result <- animate_map(make_points_map(x), wake_length = 0.3)
+  expect_true(inherits(result$shadow, "ShadowWakeBuild"))
+})
+
+test_that("animate_map with point layer: wake_length = 1 produces a gganim object", {
+  expect_s3_class(animate_map(make_points_map(x), wake_length = 1), "gganim")
+})
+
+test_that("animate_map with point layer: wake_length = 1 uses shadow_mark (no fading)", {
+  result <- animate_map(make_points_map(x), wake_length = 1)
+  expect_true(inherits(result$shadow, "ShadowMark"))
+})
+
 # for manual testing only (uncomment both lines together):
-# result <- make_paths_map(x) |> animate_map(fade = TRUE)
+# result <- make_paths_map(x) |> animate_map()
 # gganimate::animate(result, nframes = attr(result, "n_timesteps"), fps = 2,
 #                    renderer = gganimate::gifski_renderer())
 #
-# result <- make_paths_map(x) |> animate_map(fade = FALSE)
+# result <- make_paths_map(x) |> animate_map(wake_length = 1)
 # gganimate::animate(result, nframes = attr(result, "n_timesteps"), fps = 2,
 #                    renderer = gganimate::gifski_renderer())
 #
 # result <- make_points_map(x) |> animate_map()
+# gganimate::animate(result, nframes = attr(result, "n_timesteps"), fps = 2,
+#                    renderer = gganimate::gifski_renderer())
+#
+# result <- make_points_map(x) |> animate_map(wake_length = 1)
 # gganimate::animate(result, nframes = attr(result, "n_timesteps"), fps = 2,
 #                    renderer = gganimate::gifski_renderer())

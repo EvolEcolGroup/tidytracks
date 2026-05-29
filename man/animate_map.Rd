@@ -7,7 +7,6 @@
 animate_map(
   p,
   layer_to_animate = NULL,
-  fade = TRUE,
   wake_length = 0.5,
   label_format = "\%Y-\%m-\%d \%H:\%M:\%S"
 )
@@ -23,15 +22,10 @@ Only needed when the map contains more than one \code{geom_event_path} or
 warning and ensures the correct layer is animated. Must be the same object
 (by name) that was passed to \code{data} in the corresponding geom call.}
 
-\item{fade}{Logical. Only relevant for path animations. If \code{TRUE}
-(default), previous segments fade out behind the current one using
-\code{shadow_wake_build}. If \code{FALSE}, all previous segments
-remain fully visible, producing a permanently growing path.}
-
 \item{wake_length}{Numeric between 0 (exclusive) and 1 (inclusive). Length
-of the fading trail as a proportion of the total animation length. Only
-used when \code{fade = TRUE} (paths) or for point animations. Default is
-\code{0.5}.}
+of the fading trail as a proportion of the total animation length. Default
+is \code{0.5}. Set to \code{1} to disable fading entirely: all past positions are
+shown at full opacity (a permanently growing path or dot trail).}
 
 \item{label_format}{A character string specifying the
 \code{\link[base]{format.POSIXct}} format for the date-time label shown on
@@ -62,12 +56,15 @@ detects which is present from the geometry type in the layer data and applies
 the appropriate animation:
 
 \itemize{
-\item{ \strong{Path layer} (\code{geom_event_path}): if \code{fade = TRUE},
-segments fade out behind the current one; if \code{fade = FALSE}, all
-previous segments remain visible, producing a permanently growing path.}
+\item{ \strong{Path layer} (\code{geom_event_path}): segments fade out behind
+the current one using a wake of length \code{wake_length}.}
 \item{ \strong{Point layer} (\code{geom_event_point}): points move through
-time with a fading, shrinking wake regardless of \code{fade}.}
+time with a fading, shrinking wake of length \code{wake_length}.}
 }
+
+Setting \code{wake_length = 1} is a special case for both layer types: all past
+positions are shown at full opacity with no fading, producing a permanently
+growing path or dot trail.
 
 All aesthetic choices (colour, size, linewidth, alpha, etc.) are set by the
 user in their \code{geom_event_path()} or \code{geom_event_point()} call.
