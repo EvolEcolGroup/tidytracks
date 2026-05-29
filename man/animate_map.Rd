@@ -68,4 +68,9 @@ growing path or dot trail.
 
 All aesthetic choices (colour, size, linewidth, alpha, etc.) are set by the
 user in their \code{geom_event_path()} or \code{geom_event_point()} call.
+
+If your animation looks very jittery, with individuals not moving smoothly,
+it could be because the individuals do not have matching timestamps. Use
+\code{\link{tt_regular_time}} with \code{snap_times = TRUE} to ensure timestamps
+of all individuals match.
 }
