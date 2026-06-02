@@ -63,12 +63,10 @@ shags <- tt_read_data(
 
 show_meta(shags)
 
-## need to do a proper lat filter because think more than 1 violate it 
+# latitude filter
 
-# now filter for all except one bird that violates the latitude filter (KB_23_44224_40)
-unique(shags$track_id)
 shags <- shags %>%
-  filter(track_id != "KB_23_42962_38")
+  dplyr::filter(st_coordinates(geometry)[,2] < -5)
 
 # save new rda as shags_new - as RDA file
 save(shags, file = "data/shags_new.rda")
