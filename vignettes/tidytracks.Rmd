@@ -76,13 +76,11 @@ The CSV also contains other columns of information about the tracks (e.g. `sex`,
 ```{r read_events}
 library(tidytracks)
 library(dplyr)
-shags <- tt_read_data(events = shags_csv,
-                      col_track_id = "track_id",
-                      col_coords = c("longitude", "latitude"),
-                      col_date_time = c("date_gmt", "time_gmt"),
-                      format_date_time = "%d/%m/%Y %H:%M:%S",
-                      time_zone = "UTC",
-                      crs = 4326)
+library(ggplot2)
+
+# load data called "shags" from package
+data("shags_new", package = "tidytracks")
+shags
 ```
 
 Inspecting the events table, we have:
