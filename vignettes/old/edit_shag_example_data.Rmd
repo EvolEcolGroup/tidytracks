@@ -1,0 +1,114 @@
+---
+title: "Untitled"
+author: "HP"
+date: "2026-06-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Packages
+
+```{r setup, message=FALSE, warning=FALSE}
+library(tidytracks)
+library(sf)
+library(dplyr)
+```
+
+## Load Example Dataset
+
+```{r load-data}
+data("shags_tt", package = "tidytracks")
+
+shags_tt
+```
+
+## Inspect Columns and Metadata
+
+```{r inspect}
+colnames(shags_tt)
+
+show_meta(shags_tt)
+```
+
+## Convert Metadata to Event Columns
+
+Because `shags_tt` is a `move2` object with metadata attached, renaming the ID col breaks it
+
+```{r metadata-to-events}
+event_cols <- colnames(show_meta(shags_tt))
+
+shags_tt_events <- shags_tt %>%
+  as_event_column(all_of(event_cols))
+
+show_meta(shags_tt_events)
+```
+
+## Convert to a DF so can change colname
+
+```{r create-dataframe}
+coords <- st_coordinates(shags_tt_events)
+
+shags_df <- shags_tt_events %>%
+  st_drop_geometry() %>%
+  as.data.frame() %>%
+  mutate(
+    longitude = coords[, 1],
+    latitude = coords[, 2]
+  )
+
+head(shags_df)
+```
+
+## Rename Track Identifier
+
+```{r rename-id}
+shags_df <- shags_df %>%
+  rename(track_id = bird_id)
+
+colnames(shags_df)
+```
+
+## make TT object again
+
+```{r recreate-tidytracks}
+shags <- tt_read_data(
+  events = shags_df,
+  col_track_id = "track_id",
+  col_coords = c("longitude", "latitude"),
+  col_date_time = "date_time",
+  crs = 4326,
+  time_zone = "UTC"
+)
+
+show_meta(shags)
+```
+
+## Inspect Track IDs
+
+```{r inspect-track-ids}
+unique(shags$track_id)
+```
+
+## Remove the track that violates the latitude filter.
+
+```{r filter-track}
+shags <- shags %>%
+  filter(track_id != "KB_23_42962_38")
+```
+
+## Save 
+
+```{r save-data}
+save(shags, file = "data/shags_new.rda")
+```
+
+## check
+
+```{r verify-save}
+file.exists("data/shags_new.rda")
+```
+
+This can be pasted directly into an .Rmd file and knitted.
