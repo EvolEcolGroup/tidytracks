@@ -138,7 +138,7 @@ ggplot() +
 ```
 
 We can explore what each individual is doing by plotting the locations of each
-individual separately with `facet_wrap`. In this example, instaed of plotting individual
+individual separately with `facet_wrap`. In this example, instead of plotting individual
 locations as points, we can also use `geom_event_path()` to plot the paths between the locations:
 
 ```{r}
@@ -152,6 +152,8 @@ the tracked period.
 
 `geom_event_point()` and `geom_event_path()` are compatible with `coord_sf()`
 to project the map:
+
+# can we add this point into one of the prev maps?
 
 ```{r plot_projection}
 ggplot() +
@@ -250,15 +252,16 @@ Some of those speeds (>15000 m/minute) seem a bit high. We can check the units
 ```{r}
 units(shags$speed)
 ```
-
 Let's recalculate them in units that might be more familiar to us.
 
 ```{r}
 shags <- shags %>%
-  dplyr::mutate(speed = units::set_units(speed, "km/h")) 
+  mutate(speed = set_units(speed, "km/h")) 
 
 shags %>%
   summary()
+
+# is units a dependency, is it clearer to have it with :: or not?
 ```
 Hmm, 900 km/h is much faster than typical flight speeds for a shag (European
 shags usually fly at speeds around 50–65 km/h; see e.g. Wanless et al. 1997).
@@ -322,6 +325,7 @@ shags <- shags %>%
   dplyr::mutate(speed = event_speed(., units = "km/h"))
 summary(shags)
 ```
+TODO- removing end speeds, did lizzie update this? 
 
 We can see that we have removed some locations with unrealistic speeds. Note
 that the McConnell algorithm does not simply remove steps above the threshold

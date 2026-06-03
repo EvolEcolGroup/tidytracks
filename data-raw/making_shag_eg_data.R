@@ -63,7 +63,7 @@ shags <- tt_read_data(
 
 show_meta(shags)
 
-# latitude filter
+# latitude filter - remove points not tracks
 
 shags <- shags %>%
   dplyr::filter(st_coordinates(geometry)[,2] < -5)
