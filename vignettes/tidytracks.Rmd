@@ -80,8 +80,10 @@ library(ggplot2)
 
 # load data called "shags" from package
 data("shags_new", package = "tidytracks")
-shags
 ```
+
+## We want to revert track_id to bird_id
+## Use tt_read_data to read the data instead of using data()
 
 Inspecting the events table, we have:
 
@@ -260,8 +262,6 @@ shags <- shags %>%
 
 shags %>%
   summary()
-
-# is units a dependency, is it clearer to have it with :: or not?
 ```
 Hmm, 900 km/h is much faster than typical flight speeds for a shag (European
 shags usually fly at speeds around 50–65 km/h; see e.g. Wanless et al. 1997).
@@ -290,7 +290,7 @@ the units in the object.
 nrow(shags) # check number of events before filter
 # run the speed filter
 shags <- shags %>%
-  tt_clean_mcconnell(max_speed = units::as_units(80, "km/h"))
+  tt_clean_mcconnell(max_speed = set_units(80, "km/h"))
 nrow(shags) # check number of events after the filter
 ```
 
@@ -303,9 +303,11 @@ Let us now recompute the speeds after running the filter (again, in km/h):
 
 ```{r}
 shags <- shags %>%
-  dplyr::mutate(speed = event_speed(., units = "km/h"))
+  mutate(speed = event_speed(., units = "km/h"))
 summary(shags)
 ```
+
+## remove/move the points that are still creating outliers after the filter (beginning or end of the track)?
 
 We still have some locations with unrealistic speeds, so let's run the 
 speed filter again.
@@ -317,7 +319,7 @@ and how to explain/fix this.
 nrow(shags) # check number of events before filter
 # run the speed filter
 shags <- shags %>%
-  tt_clean_mcconnell(max_speed = units::as_units(80, "km/h"))
+  tt_clean_mcconnell(max_speed = set_units(80, "km/h"))
 nrow(shags) # check number of events after the filter#
 
 # recompute speeds and check summary
@@ -382,6 +384,8 @@ ggplot() +
   geom_sf(data = show_meta(shags)$colony_coord, color = "grey20")
 ```
 
+## Truncate deployments so that they don't have more than 2/3 trips each.
+
 <br>
 
 ***
@@ -391,7 +395,7 @@ ggplot() +
 We can get a summary of our tracks with:
 
 ```{r}
-shags_sub %>%
+shags %>%
   track_summary_stats(centre_col = "colony_coord")
 ```
 
@@ -417,48 +421,33 @@ directly on the `move2` object?
 
 TODO add this code once we've enabled updating the metadata table.
 
-<br>
-
-***
-
-# Home Range estimates
-
-We can now estimate the home range of individuals. We will subset
-
-Let's get a summary of the metadata of what is left:
 ```{r}
-summary(show_meta(shags))
-```
-
-First lets find the three shags with the most trips and make a subset of these:
-```{r}
-top3_birds <- shags %>%
-  count(track_id, trip_id) %>%  
-  count(track_id, name = "n_trips") %>% 
-  arrange(desc(n_trips)) %>% 
-  slice(1:3) %>% 
-  pull(track_id)
-
-shags_trips_sub <- shags %>%
-  filter_by_meta(track_id %in% top3_birds)
-
+shags_females <- shags %>%
+  filter_by_meta(sex == "Female") # we should make all strings not capital
+show_meta(shags_females)
 ```
 
 We can now plot the trips:
 ```{r}
 ggplot() +
   geom_track_path(
-    data = shags_trips_sub,
+    data = shags_females,
     aes(color = trip_id)
   ) +
   facet_wrap(~track_id) + theme(legend.position="none")
 
 ```
 
+
+***
+
+# Home Range estimates
+
+
 To estimate home ranges, we need to project the data to an equal area
 projection. We can use the `sf::st_transform()` function to do this:
 ```{r}
-shags_trips_sub <- shags_trips_sub %>%
+shags_females_proj <- shags_females %>%
   sf::st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
 
@@ -471,27 +460,28 @@ individuals (the default).
 
 We want to estimate the home range for each bird, so we will group by `track_id`:
 ```{r}
-shags_kde <- shags_trips_sub %>%
+shags_females_kde <- shags_females_proj %>%
   group_by(track_id) %>%
   tt_hr_kde(levels = c(0.5, 0.95))
 ```
 
-`shags_kde` is an `sf` object, with estimates of the area (in the units of
+`shags_females_kde` is an `sf` object, with estimates of the area (in the units of
 the projection, in this case m^2) and a geometry column:
 ```{r}
-shags_kde
+shags_females_kde
 ```
 
 We could easily change the units of the area with `set_units()`:
 ```{r}
-shags_kde %>%
-  mutate(area = set_units(area, "km^2"))
+shags_females_kde %>%
+  mutate(area = set_units(area, "km^2")) %>%
+  select (track_id, level, area)
 ```
 
 
 We can plot the home ranges:
 ```{r}
-ggplot(shags_kde) +
+ggplot(shags_females_kde) +
   geom_sf(aes(fill = track_id), alpha = 0.7)
 ```
 
@@ -499,11 +489,11 @@ We can add actual events with:
 ```{r}
 ggplot() +
   geom_sf(
-    data = shags_kde,
+    data = shags_females_kde,
     aes(fill = track_id), alpha = 0.7
   ) +
   geom_event_point(
-    data = shags_trips_sub,
+    data = shags_females_proj,
     size = 0.1
   ) +
   facet_wrap(~track_id)
@@ -511,7 +501,7 @@ ggplot() +
 
 To get a minimum convex polygon covering 95% of the data, we can use:
 ```{r}
-shags_mcp <- shags_trips_sub %>%
+shags_females_mcp <- shags_females_proj %>%
   group_by(track_id) %>%
   tt_hr_mcp(levels = c(0.95))
 ```
@@ -520,12 +510,18 @@ We can plot the MCPs with:
 ```{r}
 ggplot() +
   geom_sf(
-    data = shags_mcp,
+    data = shags_females_mcp,
     aes(fill = track_id), alpha = 0.7
   ) +
   geom_event_point(
-    data = shags_trips_sub,
+    data = shags_females_proj,
     size = 0.1
   ) +
   facet_wrap(~track_id)
 ```
+
+## Save your data
+We can save our `move2` object with the `tt_write_data()` function, which can save the events and meta data either separately or as a single CSV text file.
+
+##TODO eample of code (saving to the temp directory)
+tempfile(fileext = ".csv")
