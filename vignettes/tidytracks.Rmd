@@ -79,7 +79,7 @@ library(dplyr)
 library(ggplot2)
 
 # load data called "shags" from package
-data("shags_new", package = "tidytracks")
+data("shags_tt", package = "tidytracks")
 ```
 
 ## We want to revert track_id to bird_id
@@ -385,6 +385,8 @@ ggplot() +
 ```
 
 ## Truncate deployments so that they don't have more than 2/3 trips each.
+
+
 
 <br>
 
