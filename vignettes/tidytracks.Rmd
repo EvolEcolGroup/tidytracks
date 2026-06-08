@@ -88,7 +88,7 @@ data("shags_tt", package = "tidytracks")
 Inspecting the events table, we have:
 
 ```{r inspect_events}
-shags
+shags_tt
 ```
 
 We can see how each row in the table is an event, in this case a time-stamped
