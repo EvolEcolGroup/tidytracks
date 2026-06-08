@@ -141,6 +141,10 @@ shags_tt <- shags_tt %>%
 
 #todo: remove any points that still break the speed filter
 
+# first add speed col
+# then used lizzies code to flag points
+# any points that break it, move to nearer the last point. IE replace
+# them with the prev point +0.1 or similar
 
 # save shags_tt as a csv
 tt_write_data(shags_tt, file = "data-raw/shags_tt.csv", combined = TRUE)
