@@ -133,6 +133,15 @@ nrow(shags_tt_filtered)
 shags_tt <- shags_tt_filtered %>%
   select(-index)
 
+# latitude filter
+
+
+shags_tt <- shags_tt %>%
+  dplyr::filter(st_coordinates(geometry)[,2] < -5)
+
+#todo: remove any points that still break the speed filter
+
+
 # save shags_tt as a csv
 tt_write_data(shags_tt, file = "data-raw/shags_tt.csv", combined = TRUE)
 ?tt_write_data
