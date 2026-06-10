@@ -136,6 +136,11 @@ shags <- shags_tt %>%
 
 nrow(shags_tt) - nrow(shags)
 
+# latitude filter
+
+shags <- shags %>%
+  dplyr::filter(sf::st_coordinates(geometry)[,2] < -5)
+
 # tidy up
 
 rm(shags_tt, shags_df, shags_meta, shags_trips, shags_trips_filtered, shags_tt_filtered)
