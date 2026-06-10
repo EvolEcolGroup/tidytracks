@@ -144,13 +144,36 @@ rm(shags_tt, shags_df, shags_meta, shags_trips, shags_trips_filtered, shags_tt_f
 
 # save into inst/extdata/csv_files (unsure where to put?)
 
-?tt_write_data
-tt_write_data(shags, "inst/extdata/csv_files/shags_example", combined = TRUE)
+# camnt get tt_write_data to work sdo just make int a df and then save as csv
 
-shags_csv <- read.csv(
-  "inst/extdata/csv_files/shags_example_combined.csv",
-  row.names = NULL
-)
+# move sex and col coord to events
 
+# first drop geometry of the col_coord in shoa_meta(shags)$colony_coord
+
+show_meta(shags) <- show_meta(shags) %>%
+  mutate(colony_lon = sf::st_coordinates(colony_coord)[, "X"],
+        colony_lat = sf::st_coordinates(colony_coord)[, "Y"] )%>%
+  select(-colony_coord)
+
+# now move sex and colony_coord to events
+
+shags <- shags %>%
+  as_event_column(c(colony_lon, colony_lat, sex))
+
+# then seperate'geometry' col into 'lon' and 'lat' cols
+shags <- shags %>%
+  mutate (lon = sf::st_coordinates(shags)[,1],
+          lat = sf::st_coordinates(shags)[,2]) 
+
+# convert to a df
+
+shags_df <- as.data.frame(shags) %>%
+  select(-geometry) # remove geometry column as now have lon and lat cols
+  
+
+head(shags_df)
+
+# write as a csv and save in inst/extdata/csv_fies
+write.csv(shags_df, file = "inst/extdata/csv_files/shags_example.csv", row.names = FALSE)
 
 # no longer need usethin as going to source csv
