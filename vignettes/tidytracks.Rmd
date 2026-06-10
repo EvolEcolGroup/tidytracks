@@ -309,6 +309,8 @@ after <- nrow(shags_tt)
 
 removed <- (before - after) %>% print()
 
+# filtered too much, just want to remove the very high ones
+
 ```
 
 Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
@@ -325,6 +327,9 @@ Let us now recompute the speeds after running the filter (again, in km/h):
 shags_tt <- shags_tt %>%
   mutate(speed = event_speed(., units = "km/h"))
 summary(shags_tt$speed)
+
+# which point ids  it?
+
 
 ```
 - still v unrealistc speeds, check data we are using
