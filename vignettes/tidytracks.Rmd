@@ -77,6 +77,7 @@ The CSV also contains other columns of information about the tracks (e.g. `sex`,
 library(tidytracks)
 library(dplyr)
 library(ggplot2)
+library(sf)
 
 # load in a csv file containing tracks and some metadata
 
@@ -156,8 +157,6 @@ It is good practice to project data each time we plot it. `geom_event_point()` a
 compatible with all the ggplot2 functionality, we will also adjust the aspect ratio within `theme()`.
 
 ```{r plot_data}
-library(ggplot2)
-
 ggplot() +
   geom_event_point(data = shags_tt, aes(color = bird_id))+
   coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
@@ -280,7 +279,7 @@ shags_tt <- shags_tt %>%
 shags_tt %>%
   summary()
 ```
-Hmm, 900 km/h is much faster than typical flight speeds for a shag (European
+Hmm, 263 km/h is much faster than typical flight speeds for a shag (European
 shags usually fly at speeds around 50–65 km/h; see e.g. Wanless et al. 1997).
 
 Let's plot the speed of each event:
@@ -291,7 +290,7 @@ ggplot() +
     aes(color = speed)) +
   facet_wrap(~bird_id) +
   coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
-  theme(aspect.ratio = 1, 
+  theme(aspect.ratio = 0.8, 
         axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
@@ -317,8 +316,11 @@ nrow(shags_tt)
 Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
 flagged by the algorithm. There is also a function `event_flag_mcconnell()`
 which flags points without removing them; see the advanced vignette for more
-details on how to use it (TODO there is no advance vignette yet!!!).
+details on how to use it 
 
+**(TODO there is no advance vignette yet!!!).
+
+Here we see that x points have been removed.
 Let us now recompute the speeds after running the filter (again, in km/h):
 
 ```{r}
@@ -326,7 +328,8 @@ shags_tt <- shags_tt %>%
   mutate(speed = event_speed(., units = "km/h"))
 summary(shags_tt)
 ```
-## only removes 2 points (none removed is remove more, but more realistic - thoughts?)
+** only removes 2 points (none removed is remove more, but more realistic - thoughts?)
+- still v unrealistc speeds, check data we are using
 
 We can see that we have removed some locations with unrealistic speeds. Note
 that the McConnell algorithm does not simply remove steps above the threshold
@@ -344,9 +347,9 @@ per track, either as a column in the metadata.
 ```{r}
 ?tt_trip_split
 # for some reason discarded all the trips here, but worked when creating data?
-shags_tt_split <- shags_tt_truncated  %>%
+shags_tt_split <- shags_tt  %>%
   tt_split_trips(
-    centre_col = "colony_coord",
+    centre_col = "colony_coords",
     buffer_outbound = as_units(1, "km"),
     buffer_inbound = as_units(3, "km"),
     complete = TRUE)
