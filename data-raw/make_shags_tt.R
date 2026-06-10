@@ -147,6 +147,10 @@ rm(shags_tt, shags_df, shags_meta, shags_trips, shags_trips_filtered, shags_tt_f
 ?tt_write_data
 tt_write_data(shags, "inst/extdata/csv_files/shags_example", combined = TRUE)
 
-# no longer need usethin as going to source csv
+shags_csv <- read.csv(
+  "inst/extdata/csv_files/shags_example_combined.csv",
+  row.names = NULL
+)
 
- usethis::use_data(shags, overwrite = TRUE)
+
+# no longer need usethin as going to source csv
