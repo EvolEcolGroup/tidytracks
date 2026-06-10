@@ -132,8 +132,7 @@ show_meta(shags_tt) <- st_as_sf(
   show_meta(shags_tt),
   coords = c("colony_lon", "colony_lat"),
   crs = 4326,
-  remove = FALSE
-)
+  remove = FALSE)
 
 st_geometry(show_meta(shags_tt)) <- "colony_coords"
 
@@ -343,14 +342,16 @@ trips. For this we need to define the colony location, and a buffer around it.
 per track, either as a column in the metadata. 
 
 ```{r}
-
-# for some reason dscarded all the trips here, but worked when creating data?
-shags_tt_split <- shags_tt %>%
+?tt_trip_split
+# for some reason discarded all the trips here, but worked when creating data?
+shags_tt_split <- shags_tt_truncated  %>%
   tt_split_trips(
-    centre_col = "colony_coords",
+    centre_col = "colony_coord",
     buffer_outbound = as_units(1, "km"),
-    buffer_inbound = as_units(1, "km"),
-    complete = FALSE)
+    buffer_inbound = as_units(3, "km"),
+    complete = TRUE)
+
+show_meta(shags_tt)
 ```
 
 If we now inspect the object, we can see that there is a new column, `trip_id`,

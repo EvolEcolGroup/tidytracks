@@ -54,8 +54,8 @@ shags_tt <- shags_tt %>%
 shags_trips <- shags_tt %>%
   tt_split_trips(
     centre_col = "colony_coord",
-    buffer_outbound = as_units(1, "km"),
-    buffer_inbound = as_units(1, "km"),
+    buffer_outbound = as_units(0.5, "km"),
+    buffer_inbound = as_units(0.5, "km"),
     complete = TRUE)
 
 # check number of trips per bird_id
@@ -74,7 +74,7 @@ shags_tt_truncated <- shags_tt %>%
          n_points = n()) %>%
   filter(
     !(bird_id %in% c("kb_17", "kb_19", "kb_29") &
-        point_number > n_points * 0.5),
+        point_number > n_points * 0.25),
     !(bird_id == "kb_27" &
         point_number > n_points * 0.3),
     !(bird_id %in% c("kb_42", "kb_43", "kb_45") &
@@ -95,8 +95,8 @@ data.frame(
 shags_truncated_trips <- shags_tt_truncated %>%
   tt_split_trips(
     centre_col = "colony_coord",
-    buffer_outbound = as_units(3, "km"),
-    buffer_inbound = as_units(3, "km"),
+    buffer_outbound = as_units(0.5, "km"),
+    buffer_inbound = as_units(0.5, "km"),
     complete = TRUE)
 
 # summarise number of trip_id per bird_id
