@@ -149,4 +149,4 @@ tt_write_data(shags, "inst/extdata/csv_files/shags_example", combined = TRUE)
 
 # no longer need usethin as going to source csv
 
-# usethis::use_data(shags_tt, overwrite = TRUE)
+ usethis::use_data(shags, overwrite = TRUE)
