@@ -1,5 +1,6 @@
 library(dplyr)
 library(tidytracks)
+library(sf)
 
 # make shags dataset from csv file
 
@@ -12,19 +13,12 @@ shags_meta <- read.csv(system.file("extdata/shag_tidytrack_meta.csv",
 shags_meta <- shags_meta %>%
   sf::st_as_sf(coords = c("colony_lon", "colony_lat"), 
                crs = 4326, remove = FALSE) %>%
-   dplyr::rename(colony_coord = geometry)
+   dplyr::rename(colony_coord = geometry) %>%
+  dplyr::select(bird_id, colony_coord) %>%
+  mutate(bird_id = paste0("KB_", substr(bird_id, nchar(bird_id)-1, nchar(bird_id))))%>%
+  mutate (across(where(is.character), tolower))
 
-# what cols do we have?
-colnames(shags_meta)
-
-# actually just want bird_id, status, colony_coord
-
-shags_meta <- shags_meta %>%
-  dplyr::select(bird_id, status, colony_coord, sex)
-
-# make bird_id just "KB_ then the last 2 digits"
-shags_meta <- shags_meta %>%
-  mutate(bird_id = paste0("KB_", substr(bird_id, nchar(bird_id)-1, nchar(bird_id))))
+head(shags_meta)
 
 # get the events file
 
@@ -35,11 +29,14 @@ shags_csv <- system.file("extdata/shag_tidytrack_sample.csv",
 shags_df <- read.csv(shags_csv)
 
 colnames(shags_df)
+head(shags_df)
 
 # select only bird id, date_gmt, time_gmt, Longitude and Latitude and rename bird_id
 shags_df <- shags_df %>%
-  select(bird_id, date_gmt, time_gmt, longitude, latitude)%>%
-  mutate(bird_id = paste0("KB_", substr(bird_id, nchar(bird_id)-1, nchar(bird_id))))
+  select(bird_id, date_gmt, time_gmt, longitude, latitude, sex)%>%
+  mutate(bird_id = paste0("KB_", substr(bird_id, nchar(bird_id)-1, nchar(bird_id))))%>%
+  mutate (across(where(is.character), tolower))
+  
 
 
 # read in the data using tt_read_data, including the metadata
@@ -55,6 +52,7 @@ shags_tt <- tt_read_data(events = shags_df,
 str(shags_tt)
 
 colnames(show_meta(shags_tt))
+head(shags_tt)
 
 # split the trips, then truncate the points by number of trips
 
@@ -63,14 +61,12 @@ colnames(show_meta(shags_tt))
 # add an index col first
 shags_tt <- shags_tt %>%
   mutate(index = row_number())
-  
-
 
 shags_trips <- shags_tt %>%
   tt_split_trips(
     centre_col = "colony_coord",
-    buffer_outbound = as_units(3, "km"),
-    buffer_inbound = as_units(3, "km"),
+    buffer_outbound = as_units(1, "km"),
+    buffer_inbound = as_units(1, "km"),
     complete = TRUE # keep only complete trips
   )
 
@@ -78,6 +74,8 @@ shags_trips <- shags_tt %>%
 shags_trips %>%
   group_by(bird_id) %>%
   summarise(n_trips = n_distinct(trip_id))
+
+# instead of this which doesnt work, just chop diofferent % of the points off
 
 # remove original bird id column
 
@@ -90,7 +88,7 @@ shags_trips %>%
 
 shags_trips <- shags_trips %>%
   group_by(bird_id) %>%
-  # add trip number (last number of trip_id)
+  #add trip number (last number of trip_id)
   mutate(trip_number = as.numeric(gsub(".*_(\\d+)$", "\\1", trip_id))) %>%
   ungroup()
 
@@ -105,17 +103,23 @@ shags_trips %>%
 
 # remove trips over those numbers
 shags_trips <- shags_trips %>%#
-  filter(!(bird_id == "KB_29" & trip_number > 2),
-         !(bird_id == "KB_42" & trip_number > 3),
-         !(bird_id == "KB_43" & trip_number > 1),
-         !(bird_id == "KB_45" & trip_number > 3),
-         !(bird_id == "KB_27" & trip_number > 1)) %>%
+  filter(!(bird_id == "kb_29" & trip_number > 2),
+         !(bird_id == "kb_42" & trip_number > 3),
+         !(bird_id == "kb_43" & trip_number > 1),
+         !(bird_id == "kb_45" & trip_number > 3),
+         !(bird_id == "kb_27" & trip_number > 1)) %>%
   select(-trip_number) # remove trip_id column
 
 # check number of trips per bird_id
 shags_trips %>%
   group_by(bird_id) %>%
   summarise(n_trips = n_distinct(trip_id))
+
+# remove a further 30% of points (the last 30% of points in each trip)
+# shags_trips <- shags_trips %>%
+#   group_by(bird_id) %>%
+#   slice_head(prop = 0.8) %>%
+#   ungroup()
 
 # add N trips column to the events data
 
@@ -149,6 +153,21 @@ shags_tt <- shags_tt %>%
 # save shags_tt as a csv
 tt_write_data(shags_tt, file = "data-raw/shags_tt.csv", combined = TRUE)
 ?tt_write_data
+
+# test splitting again
+
+shags_tt_split <- shags_tt %>%
+  tt_split_trips(
+    centre_col = "colony_coord",
+    buffer_outbound = as_units(1, "km"),
+    buffer_inbound = as_units(1, "km"),
+    complete = TRUE
+  )
+
+# how many trip_id per track_id
+shags_tt_split %>%
+  group_by(bird_id) %>%
+  summarise(n_trips = n_distinct(trip_id))
 
 # that truncating didnt work as re- evaluates, got to cut down even more drastically 
 # for some trips? 
