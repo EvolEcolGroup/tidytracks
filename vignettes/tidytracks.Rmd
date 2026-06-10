@@ -14,6 +14,7 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+
 ```
 
 # Tracking data representation in `tidytracks`
@@ -96,9 +97,7 @@ shags_tt <- tt_read_data(
   time_zone = "UTC",
   crs = 4326)
 
-
 ```
-
 ## We want to revert track_id to bird_id
 ## Use tt_read_data to read the data instead of using data()
 
@@ -129,15 +128,11 @@ Whilst this is done automatically for locations events, location information in 
 metadata needs to converted after reading the file:
 
 ```{r add_colony_geom_to_meta}
-show_meta(shags_tt) <- st_as_sf(
-  show_meta(shags_tt),
-  coords = c("colony_lon", "colony_lat"),
-  crs = 4326,
-  remove = FALSE)
+show_meta(shags_tt) <- show_meta(shags_tt) %>%
+  sf::st_as_sf(coords = c("colony_lon", "colony_lat"), 
+               crs = 4326, remove = FALSE)%>%
+  dplyr::rename(colony_coord = geometry)
 
-st_geometry(show_meta(shags_tt)) <- "colony_coords"
-
-show_meta(shags_tt)
 ```
 
 Note that `move2` objects don't have to be ordered by time, but for many analysis,
@@ -279,7 +274,7 @@ shags_tt <- shags_tt %>%
 shags_tt %>%
   summary()
 ```
-Hmm, 263 km/h is much faster than typical flight speeds for a shag (European
+Hmm, 904 km/h is much faster than typical flight speeds for a shag (European
 shags usually fly at speeds around 50–65 km/h; see e.g. Wanless et al. 1997).
 
 Let's plot the speed of each event:
@@ -305,12 +300,15 @@ flying at 58km/h (Yukihisa et al. 2016) we will set the maximum to 60. Note that
 the units in the object.
 
 ```{r}
-nrow(shags_tt) 
+before <- nrow(shags_tt) 
 
 shags_tt <- shags_tt %>%
   tt_clean_mcconnell(max_speed = set_units(60, "km/h"))
 
-nrow(shags_tt) 
+after <- nrow(shags_tt) 
+
+removed <- (before - after) %>% print()
+
 ```
 
 Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
@@ -320,15 +318,15 @@ details on how to use it
 
 **(TODO there is no advance vignette yet!!!).
 
-Here we see that x points have been removed.
+Here we see that 33 points have been removed.
 Let us now recompute the speeds after running the filter (again, in km/h):
 
 ```{r}
 shags_tt <- shags_tt %>%
   mutate(speed = event_speed(., units = "km/h"))
-summary(shags_tt)
+summary(shags_tt$speed)
+
 ```
-** only removes 2 points (none removed is remove more, but more realistic - thoughts?)
 - still v unrealistc speeds, check data we are using
 
 We can see that we have removed some locations with unrealistic speeds. Note
@@ -345,16 +343,19 @@ trips. For this we need to define the colony location, and a buffer around it.
 per track, either as a column in the metadata. 
 
 ```{r}
-?tt_trip_split
+
 # for some reason discarded all the trips here, but worked when creating data?
+
+
 shags_tt_split <- shags_tt  %>%
   tt_split_trips(
-    centre_col = "colony_coords",
-    buffer_outbound = as_units(1, "km"),
+    centre_col = "colony_coord",
+    buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(3, "km"),
     complete = TRUE)
 
 show_meta(shags_tt)
+
 ```
 
 If we now inspect the object, we can see that there is a new column, `trip_id`,
@@ -365,7 +366,7 @@ shags_tt_split
 
 Let's look at the metadata:
 ```{r}
-str(show_meta(shags))
+str(show_meta(shags_tt))
 ```
 
 TODO update this paragraph now that we're keeping all birds in: We can see that
@@ -385,8 +386,8 @@ dataset.
 
 ```{r}
 ggplot() +
-  geom_sf(data = track_lines(shags), aes(color = trip_id)) +
-  geom_sf(data = show_meta(shags)$colony_coord, color = "grey20")
+  geom_sf(data = track_lines(shags_tt_split), aes(color = trip_id)) +
+  geom_sf(data = show_meta(shags_tt_split)$colony_coords, color = "grey20")
 ```
 
 
@@ -399,7 +400,7 @@ ggplot() +
 We can get a summary of our tracks with:
 
 ```{r}
-shags %>%
+shags_tt %>%
   track_summary_stats(centre_col = "colony_coord")
 ```
 
@@ -426,9 +427,9 @@ directly on the `move2` object?
 TODO add this code once we've enabled updating the metadata table.
 
 ```{r}
-shags_females <- shags %>%
-  filter_by_meta(sex == "Female") # we should make all strings not capital
-show_meta(shags_females)
+shags_females <- shags_tt%>%
+  filter_by_meta(sex == "female")
+show_meta(shags_tt)
 ```
 
 We can now plot the trips:
