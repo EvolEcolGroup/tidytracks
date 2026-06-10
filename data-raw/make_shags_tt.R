@@ -308,7 +308,7 @@ table(df_check$speed_flag, useNA="ifany") # 14 flagged points
 library(leaflet)
 
 # count the number of flagged points in each deployment
-df_filtered %>%
+df_check%>%
   as.data.frame() %>%
   dplyr::filter(speed_flag == TRUE) %>%
   dplyr::group_by(bird_id) %>%
@@ -323,7 +323,7 @@ df_filtered %>%
 df_check <- df_check[order(df_check$date_time), ]
 
 # Create a track line from the points
-track_line <- df_ %>%
+track_line <- df_check %>%
   sf::st_geometry() %>%
   sf::st_cast("POINT") %>%
   sf::st_union() %>%
@@ -363,8 +363,16 @@ n_locs_filtered <- nrow(df_filtered)
 # if just delete all these points, are they all then below speed filter?
 
 # filter shags_tt by point_id in df_check
+
+# get the point_id of the points that are flagged for speed
+point_ids_bad <- df_check %>%
+  filter(speed_flag == TRUE) %>%
+  pull(point_id)
+
+# now keep everything in shags_tt except the points with these point_ids
 shags_tt_filtered <- shags_tt %>%
-  filter(point_id %in% df_check$point_id[!df_check$speed_flag])
+  filter(!point_id %in% point_ids_bad)%>%
+  select(-point_id) # remove point_id col as no longer needed
 
 # check summary of speeds in filtered data
 shags_tt_filtered %>%
@@ -374,13 +382,6 @@ shags_tt_filtered %>%
   select(bird_id, date_time, speed)
 
 # put shags_tt_filtered back into shags_tt
-
-
-shags_tt <- shags_tt %>%
-  filter(point_id %in% df_check$point_id[!df_check$speed_flag]) %>%
-  select(-point_id) # remove point_id col as no longer needed
-
-# track 
 
 
 #tidy up
