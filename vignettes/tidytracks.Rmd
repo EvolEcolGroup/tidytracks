@@ -79,19 +79,21 @@ library(dplyr)
 library(ggplot2)
 
 # load in a csv file containing tracks and some metadata
-# question, think this is local??
 
-shags_csv <- shags
+shags_csv <- system.file(
+  "extdata",
+  "csv_files",
+  "shags_example.csv",
+  package = "tidytracks"
+)
 
 shags_tt <- tt_read_data(
   events = shags_csv,
   col_track_id = "bird_id",
-  col_coords = c("longitude", "latitude"),
-  col_date_time = c("date_gmt", "time_gmt"),
-  format_date_time = "%d/%m/%Y %H:%M:%S",
+  col_coords = c("lon", "lat"),
+  col_date_time = "date_time",
   time_zone = "UTC",
-  crs = 4326
-)
+  crs = 4326)
 
 
 ```
@@ -115,7 +117,7 @@ The rest of the information was moved to the meta data table. We can inspect
 the meta data table as follows:
 
 ```{r inspect_meta}
-show_meta(shags)
+show_meta(shags_tt)
 ```
 
 We have a `track_id` column that links back to the events table, and then
@@ -126,18 +128,17 @@ Whilst this is done automatically for locations events, location information in 
 metadata needs to converted after reading the file:
 
 ```{r add_colony_geom_to_meta}
-# add geometry column (colony location point) to metadata
-show_meta(shags) <- show_meta(shags) %>%
+show_meta(shags_tt) <- show_meta(shags_tt) %>%
   mutate(colony_coord = sf_point_col(x = colony_lon, y = colony_lat,
                                      crs = 4326))
-show_meta(shags)
+show_meta(shags_tt)
 ```
 
 Note that `move2` objects don't have to be ordered by time, but for many analysis,
 this is a requirement. We can order the
 data by time using the `tt_order_time()` function:
 ```{r order_by_time}
-shags <- shags %>% tt_order_time()
+shags_tt <- shags_tt %>% tt_order_time()
 ```
 
 Functions that start with `tt_` are specific to tidy tables of tracks (i.e.
@@ -150,7 +151,7 @@ To plot the data with the `ggplot2` package, we can use the `geom_event_point()`
 ```{r plot_data}
 library(ggplot2)
 ggplot() +
-  geom_event_point(data = shags, aes(color = track_id))
+  geom_event_point(data = shags_tt, aes(color = bird_id))
 ```
 
 We can explore what each individual is doing by plotting the locations of each
@@ -159,12 +160,12 @@ locations as points, we can also use `geom_event_path()` to plot the paths betwe
 
 ```{r}
 ggplot() +
-  geom_event_path(data = shags, aes(color = track_id)) +
-  facet_wrap(~track_id)
+  geom_event_path(data = shags_tt, aes(color = bird_id)) +
+  facet_wrap(~bird_id)
 ```
 
-We can see that bird `'KB_23_42962_38'` moved very little (or not at all) during
-the tracked period.
+We can see that bird `'kb__38'` moved very little (or not at all) during
+the tracked period. ## gone??
 
 `geom_event_point()` and `geom_event_path()` are compatible with `coord_sf()`
 to project the map:
