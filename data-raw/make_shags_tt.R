@@ -127,6 +127,265 @@ nrow(shags_df) - nrow(shags_tt)
 # tidy up
 rm(shags_tt_truncated)
 
+
+
+# speed filtering - flag any points that break speed filter and plot them
+
+# we'll use to identify which points should be removed
+
+shags_tt <- shags_tt %>%
+  dplyr::mutate(point_id = 1:nrow(shags_tt))%>%
+  dplyr::arrange(bird_id, date_time)
+
+# take a copy of df
+df_dups <- shags_tt
+
+# add speed to following location
+df_dups <- df_dups %>%
+  dplyr::mutate(speed = tidytracks::event_speed(.)) %>%
+  dplyr::mutate(speed = units::set_units(speed, "km/h")) %>%
+  dplyr::mutate(speed_0 = ifelse(as.numeric(speed) == 0, TRUE, FALSE))
+table(df_dups$speed_0, useNA="ifany") # only 1 points with speed 0
+
+# flag any location which has the exact same lon and lat as the previous location
+
+df_dups <- df_dups %>%
+  dplyr::mutate(lon = sf::st_coordinates(.)[,1],
+                lat = sf::st_coordinates(.)[,2]) %>%
+  dplyr::group_by(bird_id) %>%
+  dplyr::mutate(lon_prev = dplyr::lag(lon),
+                lat_prev = dplyr::lag(lat)) %>%
+  dplyr::mutate(dup_loc = ifelse(lon == lon_prev & lat == lat_prev, TRUE, FALSE)) %>%
+  dplyr::ungroup()
+table(df_dups$dup_loc, useNA="ifany") # also 1 so thats ok
+
+# check the indices of the duplicates and the speed 0 points match perfectly
+
+indices_speed_0 <- which(df_dups$speed_0 == TRUE) # the first of each duplicate set
+indices_dup_loc <- which(df_dups$dup_loc == TRUE) # the second of each set
+all(indices_speed_0+1 == indices_dup_loc) # TRUE, they match perfectly
+
+
+# these are the points which are identified as duplicates
+nrow(subset(df_dups, speed_0 == TRUE | dup_loc == TRUE))
+
+head(shags_tt)
+
+# get colony coords then make 0.5 km box around them
+col_coords <- sf::st_coordinates(show_meta(shags_tt)$colony_coord[1]) # get colony coords from first row
+
+# points all so close tp col and only 1 doesn't move so keep 
+
+##Speed Filter
+
+# add speed to df and summarise
+shags_tt <- shags_tt %>%
+  dplyr::mutate(speed = tidytracks::event_speed(.)) %>%
+  dplyr::mutate(speed = units::set_units(speed, "km/h"))
+
+shags_tt %>%
+  summary()
+
+#max speed is 950 
+
+hist(shags_tt$speed, breaks = 100, xlim = c(0, 200))
+
+#most speeds well below 150
+
+#max speed is very fast km/h, want to filter to 100km/h and below
+#maybe units not working?
+
+# flag points that still break after speed filter, then ONLY remove these from original data
+# as using as example
+
+# apply speed filter
+
+max_speed <- units::as_units(60, "km/h")
+max_iter  <- 50   # safety stop
+
+# initialise
+df_filtered <- shags_tt
+n_prev <- nrow(df_filtered)
+iter <- 0
+removed_each_iter <- integer()
+
+repeat {
+  iter <- iter + 1
+  
+  df_next <- df_filtered %>%
+    tidytracks::tt_clean_mcconnell(max_speed = max_speed)
+  
+  n_new <- nrow(df_next)
+  removed <- n_prev - n_new
+  removed_each_iter <- c(removed_each_iter, removed)
+  
+  message(
+    sprintf(
+      "Iteration %d: removed %d points (remaining %d)",
+      iter, removed, n_new
+    )
+  )
+  
+  # stopping conditions
+  if (removed == 0) break
+  if (iter >= max_iter) {
+    warning("Reached max_iter before convergence")
+    break
+  }
+  
+  # update for next iteration
+  df_filtered <- df_next
+  n_prev <- n_new
+}
+
+
+# summary
+list(
+  n_iterations = iter,
+  total_removed = nrow(shags_tt) - nrow(df_filtered),
+  removed_per_iteration = removed_each_iter,
+  n_remaining = nrow(df_filtered)
+)
+
+
+# [plot ]
+
+# check how many high speeds are at the end of tracks?
+# make sure speed exists and is up to date
+df_check <- df_filtered %>%
+  arrange(bird_id, date_time) %>%
+  group_by(bird_id) %>%
+  mutate(
+    is_last_point = row_number() == n(),
+    is_penultimate = row_number() == n() - 1,
+    is_first_point = row_number() == 1,
+    is_second_point = row_number() == 2
+  ) %>%
+  ungroup()
+
+summary(df_check$is_last_point)
+
+df_check %>%
+  filter(
+    is_penultimate | is_last_point,
+    as.numeric(speed) > 70
+  )
+
+
+# YES kb_40 penultimate point is 188 km/h so can just move this
+#none 
+
+df_check %>%
+  filter(
+    is_second_point | is_first_point,
+    as.numeric(speed) > 70
+  )
+
+# none
+
+# see speeds over 70
+df_filtered %>%
+  filter(as.numeric(speed) > 70)%>%
+  select(bird_id,point_id, date_time, speed)%>%
+  arrange(desc(speed))
+
+# the other are  mid track 7, some are quite close to 70
+
+# plot the points with speed > 70 to see where they are in the tracks
+high_speed_points <- df_check %>%
+  filter(as.numeric(speed) > 70)
+
+#add flags 
+
+# flag points with speed >100, and the following point (so we can see which is wrong)
+indices_high_speed <- which(as.numeric(df_check$speed) > 70)
+indices_following  <- indices_high_speed + 1
+df_check$speed_flag <- FALSE
+df_check$speed_flag[c(indices_high_speed, indices_following)] <- TRUE
+table(df_check$speed_flag, useNA="ifany") # 14 flagged points
+
+# plot a map in leaflet, with a popup label showing the datetime field
+library(leaflet)
+
+# count the number of flagged points in each deployment
+df_filtered %>%
+  as.data.frame() %>%
+  dplyr::filter(speed_flag == TRUE) %>%
+  dplyr::group_by(bird_id) %>%
+  dplyr::summarise(n_flagged = dplyr::n())
+
+
+# print those track ids within a sentence
+
+# subset to one deployment to check - speeds over 70
+
+# Ensure points are ordered by time
+df_check <- df_check[order(df_check$date_time), ]
+
+# Create a track line from the points
+track_line <- df_ %>%
+  sf::st_geometry() %>%
+  sf::st_cast("POINT") %>%
+  sf::st_union() %>%
+  sf::st_cast("LINESTRING")
+
+leaflet(data = df_check) %>%
+  addTiles() %>%
+  
+  # Track line
+  addPolylines(
+    data = track_line,
+    color = "black",
+    weight = 2
+  ) %>%
+  
+  # All points
+  addCircleMarkers(
+    lng = sf::st_coordinates(df_check)[,1],
+    lat = sf::st_coordinates(df_check)[,2],
+    radius = 3,
+    color = ifelse(df_check$speed_flag, "red", "blue"),
+    popup = ~as.character(date_time)
+  ) %>%
+  
+  # Highlight flagged points
+  addCircleMarkers(
+    data = subset(df_check, speed_flag),
+    lng = sf::st_coordinates(subset(df_check, speed_flag))[,1],
+    lat = sf::st_coordinates(subset(df_check, speed_flag))[,2],
+    radius = 8,
+    color = "red",
+    fill = FALSE,
+    weight = 2
+  )
+n_locs_filtered <- nrow(df_filtered)
+
+# if just delete all these points, are they all then below speed filter?
+
+# filter shags_tt by point_id in df_check
+shags_tt_filtered <- shags_tt %>%
+  filter(point_id %in% df_check$point_id[!df_check$speed_flag])
+
+# check summary of speeds in filtered data
+shags_tt_filtered %>%
+  dplyr::mutate(speed = tidytracks::event_speed(.)) %>%
+  dplyr::mutate(speed = units::set_units(speed, "km/h"))%>%
+  arrange(desc(speed)) %>%
+  select(bird_id, date_time, speed)
+
+# put shags_tt_filtered back into shags_tt
+
+
+shags_tt <- shags_tt %>%
+  filter(point_id %in% df_check$point_id[!df_check$speed_flag]) %>%
+  select(-point_id) # remove point_id col as no longer needed
+
+# track 
+
+
+#tidy up
+rm(df_check, df_filtered, high_speed_points, indices_following, indices_high_speed, track_line)
+
 # save into inst/extdata/csv_files (unsure where to put?)
 
 # can't get tt_write_data to work so just make into a df and then save as csv
@@ -146,12 +405,14 @@ shags_tt <- shags_tt %>%
   mutate (lon = sf::st_coordinates(shags_tt)[,1],
           lat = sf::st_coordinates(shags_tt)[,2]) 
 
+
 # convert to a df
 shags_df_2 <- as.data.frame(shags_tt) %>%
   select(-geometry) 
 
 # check
 head(shags_df_2)
+
 
 # write as a csv
 write.csv(shags_df_2, file = "inst/extdata/csv_files/shags_example.csv", row.names = FALSE)
