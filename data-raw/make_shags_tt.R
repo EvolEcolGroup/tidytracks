@@ -44,18 +44,23 @@ shags_tt <- tt_read_data(events = shags_df,
                          time_zone = "UTC",
                          crs = 4326)
 
+# latitude filter
+shags_tt <- shags_tt %>%
+  dplyr::filter(sf::st_coordinates(geometry)[,2] < -5)
+
 # Split the trips to see how many points need to be truncated
 
 # add index col first to keep track of points after filtering
 shags_tt <- shags_tt %>%
   mutate(index = row_number())
+unique(shags_tt$bird_id)
 
 # split trips 
 shags_trips <- shags_tt %>%
   tt_split_trips(
     centre_col = "colony_coord",
-    buffer_outbound = as_units(0.5, "km"),
-    buffer_inbound = as_units(0.5, "km"),
+    buffer_outbound = as_units(1, "km"),
+    buffer_inbound = as_units(1, "km"),
     complete = TRUE)
 
 # check number of trips per bird_id
@@ -72,13 +77,13 @@ shags_tt_truncated <- shags_tt %>%
   group_by(bird_id) %>%
   mutate(point_number = row_number(), 
          n_points = n()) %>%
-  filter(
-    !(bird_id %in% c("kb_17", "kb_19", "kb_29") &
-        point_number > n_points * 0.25),
+  filter(bird_id == "kb_38" | bird_id == "kb_40" |
+    !(bird_id %in% c("kb_17", "kb_19", "kb_29", "kb_45") &
+        point_number > n_points * 0.5),
     !(bird_id == "kb_27" &
-        point_number > n_points * 0.3),
-    !(bird_id %in% c("kb_42", "kb_43", "kb_45") &
-        point_number > n_points * 0.25)) %>%
+        point_number > n_points * 0.5),
+    !(bird_id %in% c("kb_42", "kb_43") &
+        point_number > n_points * 0.5)) %>%
   ungroup() %>%
   select(-point_number, -n_points)
 
@@ -95,8 +100,8 @@ data.frame(
 shags_truncated_trips <- shags_tt_truncated %>%
   tt_split_trips(
     centre_col = "colony_coord",
-    buffer_outbound = as_units(0.5, "km"),
-    buffer_inbound = as_units(0.5, "km"),
+    buffer_outbound = as_units(3, "km"),
+    buffer_inbound = as_units(3, "km"),
     complete = TRUE)
 
 # summarise number of trip_id per bird_id
@@ -110,18 +115,14 @@ shags_truncated_trips %>%
 rm(shags_meta, shags_trips, shags_truncated_trips, shags_trips)
 
 # filter shags_tt by index col to keep only the points in shags_trips_filtered
-# keep all of kb_38 because it was removed as incomplete but want in example
-shags_tt <- shags_tt %>%
-  filter(bird_id == "kb_38" |
-         index %in% shags_tt_truncated$index) %>%
+# rather than indexing can tt_truncated just be shags_ttt?
+
+# yes, but remove the index col first to avoid confusion
+shags_tt <- shags_tt_truncated %>%
   select(-index)
 
 # how many rows removed from original?
 nrow(shags_df) - nrow(shags_tt)
-
-# latitude filter
-shags_tt <- shags_tt %>%
-  dplyr::filter(sf::st_coordinates(geometry)[,2] < -5)
 
 # tidy up
 rm(shags_tt_truncated)
