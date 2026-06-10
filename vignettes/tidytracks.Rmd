@@ -78,8 +78,22 @@ library(tidytracks)
 library(dplyr)
 library(ggplot2)
 
-# load data called "shags" from package
-data("shags_tt", package = "tidytracks")
+# load in a csv file containing tracks and some metadata
+# question, think this is local??
+
+shags_csv <- shags
+
+shags_tt <- tt_read_data(
+  events = shags_csv,
+  col_track_id = "bird_id",
+  col_coords = c("longitude", "latitude"),
+  col_date_time = c("date_gmt", "time_gmt"),
+  format_date_time = "%d/%m/%Y %H:%M:%S",
+  time_zone = "UTC",
+  crs = 4326
+)
+
+
 ```
 
 ## We want to revert track_id to bird_id
