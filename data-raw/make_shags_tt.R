@@ -2,7 +2,7 @@ library(dplyr)
 library(tidytracks)
 library(sf)
 
-# make shags dataset from csv file
+# make shags dataset from csv file - need meta for a col coors
 
 shags_meta <- read.csv(system.file("extdata/shag_tidytrack_meta.csv",
                                    package = "tidytracks"))
@@ -28,10 +28,9 @@ shags_csv <- system.file("extdata/shag_tidytrack_sample.csv",
 # open the file as df
 shags_df <- read.csv(shags_csv)
 
-colnames(shags_df)
-head(shags_df)
+# select only bird id, date_gmt, time_gmt, Longitude and Latitude and rename bird_id,
+# make all lowercase
 
-# select only bird id, date_gmt, time_gmt, Longitude and Latitude and rename bird_id
 shags_df <- shags_df %>%
   select(bird_id, date_gmt, time_gmt, longitude, latitude, sex)%>%
   mutate(bird_id = paste0("KB_", substr(bird_id, nchar(bird_id)-1, nchar(bird_id))))%>%
@@ -51,16 +50,15 @@ shags_tt <- tt_read_data(events = shags_df,
                          crs = 4326)
 str(shags_tt)
 
-colnames(show_meta(shags_tt))
-head(shags_tt)
 
-# split the trips, then truncate the points by number of trips
+# split the trips to see how many points need to be truncated
 
-# index first to keep track of points after filtering
+# add index col first to keep track of points after filtering
 
-# add an index col first
 shags_tt <- shags_tt %>%
   mutate(index = row_number())
+
+# split trips 
 
 shags_trips <- shags_tt %>%
   tt_split_trips(
@@ -75,102 +73,80 @@ shags_trips %>%
   group_by(bird_id) %>%
   summarise(n_trips = n_distinct(trip_id))
 
-# instead of this which doesnt work, just chop diofferent % of the points off
+# remove 50% of end points of kb_17, kb_19,  kb_29
+# 30% of kb_27 and 
+# don't change kb_38
+# remove last 75% of points from kb_42, kb_10 and kb_45
 
-# remove original bird id column
 
-# truncate 2 trips from KB_29
-# truncate 9 trips from KB_42
-# truncate  8 trips from KB 43
-# truncate 10 trips from KB_45
-
-# add a column for trip_number and use the trip_id to assign trip numbers, 
-
-shags_trips <- shags_trips %>%
-  group_by(bird_id) %>%
-  #add trip number (last number of trip_id)
-  mutate(trip_number = as.numeric(gsub(".*_(\\d+)$", "\\1", trip_id))) %>%
-  ungroup()
-
-# show table of trip number and unique bird_id
-shags_trips %>%
-  group_by(bird_id, trip_number) %>%
-  summarise(n = n()) %>%
-  ungroup() %>%
-  group_by(bird_id) %>%
-  summarise(n_trips = n_distinct(trip_number))
-# just removing trip ids over those numbers not bird IDs
-
-# remove trips over those numbers
-shags_trips <- shags_trips %>%#
-  filter(!(bird_id == "kb_29" & trip_number > 2),
-         !(bird_id == "kb_42" & trip_number > 3),
-         !(bird_id == "kb_43" & trip_number > 1),
-         !(bird_id == "kb_45" & trip_number > 3),
-         !(bird_id == "kb_27" & trip_number > 1)) %>%
-  select(-trip_number) # remove trip_id column
-
-# check number of trips per bird_id
-shags_trips %>%
-  group_by(bird_id) %>%
-  summarise(n_trips = n_distinct(trip_id))
-
-# remove a further 30% of points (the last 30% of points in each trip)
-# shags_trips <- shags_trips %>%
-#   group_by(bird_id) %>%
-#   slice_head(prop = 0.8) %>%
-#   ungroup()
-
-# add N trips column to the events data
-
-# now filter shags_tt by the index points retained in shags_trips
 shags_tt_filtered <- shags_tt %>%
-  filter(index %in% shags_trips$index)
+  group_by(bird_id) %>%
+  mutate(point_number = row_number(),
+    n_points = n()) %>%
+  filter(
+    !(bird_id %in% c("kb_17", "kb_19", "kb_29") &
+        point_number > n_points * 0.5),
+    !(bird_id == "kb_27" &
+        point_number > n_points * 0.3),
+    !(bird_id %in% c("kb_42", "kb_43", "kb_45") &
+        point_number > n_points * 0.25)) %>%
+  ungroup() %>%
+  select(-point_number, -n_points)
 
-# this worked, was a sneaky group_by
+# check how many removed
 
-nrow(shags_trips)
-nrow(shags_tt)
 nrow(shags_tt_filtered)
+nrow(shags_tt)
 
-# put shags_tt_filtered into shags_tt and remove the index column
-shags_tt <- shags_tt_filtered %>%
-  select(-index)
+# table pf nuber of points per track in shags_tt and shags_tt_filtered
+shags_tt %>%
+  group_by(bird_id) %>%
+  summarise(n_points = n()) %>%
+  select(bird_id, n_points)
 
-# latitude filter
+shags_tt_filtered %>%
+  group_by(bird_id) %>%
+  summarise(n_points = n()) %>%
+  select(bird_id, n_points)
 
+# split to check splits into fewer trips
 
-shags_tt <- shags_tt %>%
-  dplyr::filter(st_coordinates(geometry)[,2] < -5)
-
-#todo: remove any points that still break the speed filter
-
-# first add speed col
-# then used lizzies code to flag points
-# any points that break it, move to nearer the last point. IE replace
-# them with the prev point +0.1 or similar
-
-# save shags_tt as a csv
-tt_write_data(shags_tt, file = "data-raw/shags_tt.csv", combined = TRUE)
-?tt_write_data
-
-# test splitting again
-
-shags_tt_split <- shags_tt %>%
+shags_trips_filtered <- shags_tt_filtered %>%
   tt_split_trips(
     centre_col = "colony_coord",
-    buffer_outbound = as_units(1, "km"),
-    buffer_inbound = as_units(1, "km"),
-    complete = TRUE
+    buffer_outbound = as_units(3, "km"),
+    buffer_inbound = as_units(3, "km"),
+    complete = TRUE # keep only complete trips
   )
 
-# how many trip_id per track_id
-shags_tt_split %>%
+# summarise number of trip_id per bird_id
+
+shags_trips_filtered %>%
   group_by(bird_id) %>%
   summarise(n_trips = n_distinct(trip_id))
 
-# that truncating didnt work as re- evaluates, got to cut down even more drastically 
-# for some trips? 
-# we do not need 
+# this looks much better
 
-usethis::use_data(shags_tt, overwrite = TRUE)
+# now filter shags_tt by the index col to keep only the points that are in shags_trips_filtered
+shags <- shags_tt %>%
+  filter(index %in% shags_trips_filtered$index) %>%
+  select(-index)
+
+# hpow many rows removed?
+
+nrow(shags_tt) - nrow(shags)
+
+# tidy up
+
+rm(shags_tt, shags_df, shags_meta, shags_trips, shags_trips_filtered, shags_tt_filtered)
+
+# write to a csv as combined, keep the col coord in the csv
+
+# save into inst/extdata/csv_files (unsure where to put?)
+
+?tt_write_data
+tt_write_data(shags, "inst/extdata/csv_files/shags_example", combined = TRUE)
+
+# no longer need usethin as going to source csv
+
+# usethis::use_data(shags_tt, overwrite = TRUE)
