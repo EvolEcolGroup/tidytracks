@@ -128,9 +128,15 @@ Whilst this is done automatically for locations events, location information in 
 metadata needs to converted after reading the file:
 
 ```{r add_colony_geom_to_meta}
-show_meta(shags_tt) <- show_meta(shags_tt) %>%
-  mutate(colony_coord = sf_point_col(x = colony_lon, y = colony_lat,
-                                     crs = 4326))
+show_meta(shags_tt) <- st_as_sf(
+  show_meta(shags_tt),
+  coords = c("colony_lon", "colony_lat"),
+  crs = 4326,
+  remove = FALSE
+)
+
+st_geometry(show_meta(shags_tt)) <- "colony_coords"
+
 show_meta(shags_tt)
 ```
 
@@ -147,11 +153,17 @@ Functions that start with `tt_` are specific to tidy tables of tracks (i.e.
 # Plotting the data
 
 To plot the data with the `ggplot2` package, we can use the `geom_event_point()` function to plot the locations of each event: 
+It is good practice to project data each time we plot it. `geom_event_point()` and `geom_event_path()` are compatible with `coord_sf()` so we can add a projection directly into the ggplot. As it is 
+compatible with all the ggplot2 functionality, we will also adjust the aspect ratio within `theme()`.
 
 ```{r plot_data}
 library(ggplot2)
+
 ggplot() +
-  geom_event_point(data = shags_tt, aes(color = bird_id))
+  geom_event_point(data = shags_tt, aes(color = bird_id))+
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+    theme(aspect.ratio = 1)
+
 ```
 
 We can explore what each individual is doing by plotting the locations of each
@@ -161,23 +173,14 @@ locations as points, we can also use `geom_event_path()` to plot the paths betwe
 ```{r}
 ggplot() +
   geom_event_path(data = shags_tt, aes(color = bird_id)) +
-  facet_wrap(~bird_id)
+  facet_wrap(~bird_id) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 We can see that bird `'kb__38'` moved very little (or not at all) during
-the tracked period. ## gone??
-
-`geom_event_point()` and `geom_event_path()` are compatible with `coord_sf()`
-to project the map:
-
-# can we add this point into one of the prev maps?
-
-```{r plot_projection}
-ggplot() +
-  geom_event_point(data = shags_tt, aes(color = bird_id)) +
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')
-```
-
+the tracked period.
 
 # A grammar of movement
 
@@ -198,8 +201,8 @@ with a final NA so that we have the same number of rows as the original track.
 
 So, we can add speed to our `shags` object with:
 ```{r}
-shags <- shags %>% 
-  dplyr::mutate(speed = event_speed(.))
+shags_tt <- shags_tt %>% 
+  mutate(speed = event_speed(.))
 ```
 
 Note the use of the `.` place-holder in the brackets of `event_speed()` to pass
@@ -208,7 +211,7 @@ the whole `move2` object to the function. This is only possible with a `magrittr
 
 We can now visualise the distribution of speeds:
 ```{r}
-shags %>%
+shags_tt %>%
   ggplot(aes(x = speed)) +
   geom_histogram(bins = 100)
 ```
@@ -228,13 +231,13 @@ generally return a vector of length equal to the number of tracks in the object.
 For example, `track_duration()` returns the total duration of each track:
 
 ```{r}
-shags %>%
+shags_tt %>%
   track_duration()
 ```
 
 If we wanted the same estimates in hours rather than days, we would simply say:
 ```{r}
-shags %>%
+shags_tt %>%
   track_duration(units = "hours")
 ```
 
@@ -260,22 +263,22 @@ object).
 
 We can get an overview of the speeds of each step with:
 ```{r}
-shags %>%
+shags_tt %>%
   summary()
 ```
 
 Some of those speeds (>15000 m/minute) seem a bit high. We can check the units
 (to make sure we have them right):
 ```{r}
-units(shags$speed)
+units(shags_tt$speed)
 ```
 Let's recalculate them in units that might be more familiar to us.
 
 ```{r}
-shags <- shags %>%
+shags_tt <- shags_tt %>%
   mutate(speed = set_units(speed, "km/h")) 
 
-shags %>%
+shags_tt %>%
   summary()
 ```
 Hmm, 900 km/h is much faster than typical flight speeds for a shag (European
@@ -285,10 +288,12 @@ Let's plot the speed of each event:
 ```{r}
 ggplot() +
   geom_event_path(
-    data = shags,
-    aes(color = speed)
-  ) +
-  facet_wrap(~track_id)
+    data = shags_tt,
+    aes(color = speed)) +
+  facet_wrap(~bird_id) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 It looks like there are a few GPS location errors here, resulting in unrealistic
@@ -297,16 +302,17 @@ speeds.
 We can remove locations characterised by unlikely speeds using the McConnell's
 algorithm (the same used by `trip::speedfilter()`). Max speed can be set to an
 appropriate number for the species we are working with. Shags have been observed
-flying at 60km/h so we will set the maximum to 80. Note that we can give the
+flying at 58km/h (Yukihisa et al. 2016) we will set the maximum to 60. Note that we can give the
 `max_speed` in any units we want, and they will be automatically converted to
 the units in the object.
 
 ```{r}
-nrow(shags) # check number of events before filter
-# run the speed filter
-shags <- shags %>%
-  tt_clean_mcconnell(max_speed = set_units(80, "km/h"))
-nrow(shags) # check number of events after the filter
+nrow(shags_tt) 
+
+shags_tt <- shags_tt %>%
+  tt_clean_mcconnell(max_speed = set_units(60, "km/h"))
+
+nrow(shags_tt) 
 ```
 
 Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
@@ -317,32 +323,11 @@ details on how to use it (TODO there is no advance vignette yet!!!).
 Let us now recompute the speeds after running the filter (again, in km/h):
 
 ```{r}
-shags <- shags %>%
+shags_tt <- shags_tt %>%
   mutate(speed = event_speed(., units = "km/h"))
-summary(shags)
+summary(shags_tt)
 ```
-
-## remove/move the points that are still creating outliers after the filter (beginning or end of the track)?
-
-We still have some locations with unrealistic speeds, so let's run the 
-speed filter again.
-
-TODO we still have unrealistic speeds - need to check where they're coming from 
-and how to explain/fix this.
-
-```{r}
-nrow(shags) # check number of events before filter
-# run the speed filter
-shags <- shags %>%
-  tt_clean_mcconnell(max_speed = set_units(80, "km/h"))
-nrow(shags) # check number of events after the filter#
-
-# recompute speeds and check summary
-shags <- shags %>%
-  dplyr::mutate(speed = event_speed(., units = "km/h"))
-summary(shags)
-```
-TODO- removing end speeds, did lizzie update this? 
+## only removes 2 points (none removed is remove more, but more realistic - thoughts?)
 
 We can see that we have removed some locations with unrealistic speeds. Note
 that the McConnell algorithm does not simply remove steps above the threshold
@@ -355,22 +340,23 @@ above the threshold if the subsequent point is not too far away.
 Shags are central place foragers, and we now want to split the track into
 trips. For this we need to define the colony location, and a buffer around it.
 `tt_split_trips()` can take either a single colony point, or one nest location
-per track (as a column in the metadata). 
+per track, either as a column in the metadata. 
 
 ```{r}
-shags <- shags %>%
+
+# for some reason dscarded all the trips here, but worked when creating data?
+shags_tt_split <- shags_tt %>%
   tt_split_trips(
-    centre_col = "colony_coord",
-    buffer_outbound = as_units(3, "km"),
-    buffer_inbound = as_units(3, "km"),
-    complete = TRUE # keep only complete trips
-  )
+    centre_col = "colony_coords",
+    buffer_outbound = as_units(1, "km"),
+    buffer_inbound = as_units(1, "km"),
+    complete = FALSE)
 ```
 
 If we now inspect the object, we can see that there is a new column, `trip_id`,
-which is also used as the new `track_id_column` in the `move2` object:
+which is also used as the new `bird_id_column` in the `move2` object:
 ```{r}
-shags
+shags_tt_split
 ```
 
 Let's look at the metadata:
@@ -398,9 +384,6 @@ ggplot() +
   geom_sf(data = track_lines(shags), aes(color = trip_id)) +
   geom_sf(data = show_meta(shags)$colony_coord, color = "grey20")
 ```
-
-## Truncate deployments so that they don't have more than 2/3 trips each.
-
 
 
 <br>
