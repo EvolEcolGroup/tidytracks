@@ -2,44 +2,39 @@ library(dplyr)
 library(tidytracks)
 library(sf)
 
-# make shags dataset from csv file - need meta for a col coors
-
+# make shags dataset from csv file - need meta for a col coords
 shags_meta <- read.csv(system.file("extdata/shag_tidytrack_meta.csv",
                                    package = "tidytracks"))
 
-# add geometry column (colony location point) to metadata
-
-
+# make the colony cpords into a geometry col and select only this and track id
+#rename bird_id to keep short and simple
+# make all lower case
 shags_meta <- shags_meta %>%
   sf::st_as_sf(coords = c("colony_lon", "colony_lat"), 
                crs = 4326, remove = FALSE) %>%
-   dplyr::rename(colony_coord = geometry) %>%
+  dplyr::rename(colony_coord = geometry) %>%
   dplyr::select(bird_id, colony_coord) %>%
-  mutate(bird_id = paste0("KB_", substr(bird_id, nchar(bird_id)-1, nchar(bird_id))))%>%
-  mutate (across(where(is.character), tolower))
+  mutate(bird_id = paste0("kb_", substr(bird_id, nchar(bird_id)-1, nchar(bird_id))))
+
 
 head(shags_meta)
 
 # get the events file
-
 shags_csv <- system.file("extdata/shag_tidytrack_sample.csv", 
                          package = "tidytracks")
 
 # open the file as df
 shags_df <- read.csv(shags_csv)
 
-# select only bird id, date_gmt, time_gmt, Longitude and Latitude and rename bird_id,
+# select bird id, date_gmt, time_gmt, longitude, latitude, sex
+# rename bird_id,
 # make all lowercase
-
 shags_df <- shags_df %>%
   select(bird_id, date_gmt, time_gmt, longitude, latitude, sex)%>%
-  mutate(bird_id = paste0("KB_", substr(bird_id, nchar(bird_id)-1, nchar(bird_id))))%>%
+  mutate(bird_id = paste0("kb_", substr(bird_id, nchar(bird_id)-1, nchar(bird_id))))%>%
   mutate (across(where(is.character), tolower))
   
-
-
 # read in the data using tt_read_data, including the metadata
-
 shags_tt <- tt_read_data(events = shags_df,
                          col_track_id = "bird_id",
                          col_coords = c("longitude", "latitude"),
@@ -48,41 +43,35 @@ shags_tt <- tt_read_data(events = shags_df,
                          meta = shags_meta,
                          time_zone = "UTC",
                          crs = 4326)
-str(shags_tt)
 
-
-# split the trips to see how many points need to be truncated
+# Split the trips to see how many points need to be truncated
 
 # add index col first to keep track of points after filtering
-
 shags_tt <- shags_tt %>%
   mutate(index = row_number())
 
 # split trips 
-
 shags_trips <- shags_tt %>%
   tt_split_trips(
     centre_col = "colony_coord",
     buffer_outbound = as_units(1, "km"),
     buffer_inbound = as_units(1, "km"),
-    complete = TRUE # keep only complete trips
-  )
+    complete = TRUE)
 
 # check number of trips per bird_id
 shags_trips %>%
   group_by(bird_id) %>%
   summarise(n_trips = n_distinct(trip_id))
 
-# remove 50% of end points of kb_17, kb_19,  kb_29
-# 30% of kb_27 and 
+# remove last 50% of of kb_17, kb_19,  kb_29
+# remove last 30% of kb_27  
 # don't change kb_38
 # remove last 75% of points from kb_42, kb_10 and kb_45
 
-
-shags_tt_filtered <- shags_tt %>%
+shags_tt_truncated <- shags_tt %>%
   group_by(bird_id) %>%
-  mutate(point_number = row_number(),
-    n_points = n()) %>%
+  mutate(point_number = row_number(), 
+         n_points = n()) %>%
   filter(
     !(bird_id %in% c("kb_17", "kb_19", "kb_29") &
         point_number > n_points * 0.5),
@@ -93,94 +82,76 @@ shags_tt_filtered <- shags_tt %>%
   ungroup() %>%
   select(-point_number, -n_points)
 
-# check how many removed
+# check how many points removed
+nrow(shags_tt) - nrow(shags_tt_truncated)
 
-nrow(shags_tt_filtered)
-nrow(shags_tt)
-
-# table pf nuber of points per track in shags_tt and shags_tt_filtered
-shags_tt %>%
-  group_by(bird_id) %>%
-  summarise(n_points = n()) %>%
-  select(bird_id, n_points)
-
-shags_tt_filtered %>%
-  group_by(bird_id) %>%
-  summarise(n_points = n()) %>%
-  select(bird_id, n_points)
+# table of number of points per track in shags_tt and shags_tt_filtered
+data.frame(
+  bird_id = unique(shags_tt$bird_id),
+  points_in_shags_tt = sapply(unique(shags_tt$bird_id), function(id) sum(shags_tt$bird_id == id)),
+  points_in_shags_shags_tt_truncated = sapply(unique(shags_tt$bird_id), function(id) sum(shags_tt_truncated$bird_id == id)))
 
 # split to check splits into fewer trips
-
-shags_trips_filtered <- shags_tt_filtered %>%
+shags_truncated_trips <- shags_tt_truncated %>%
   tt_split_trips(
     centre_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(3, "km"),
-    complete = TRUE # keep only complete trips
-  )
+    complete = TRUE)
 
 # summarise number of trip_id per bird_id
-
-shags_trips_filtered %>%
+shags_truncated_trips %>%
   group_by(bird_id) %>%
   summarise(n_trips = n_distinct(trip_id))
 
 # this looks much better
 
-# now filter shags_tt by the index col to keep only the points that are in shags_trips_filtered
-shags <- shags_tt %>%
-  filter(
-    bird_id == "kb_38" |
-      index %in% shags_trips_filtered$index
-  ) %>%
-  select(-index)
-# hpow many rows removed?
+# remove some intermediate data 
+rm(shags_meta, shags_trips, shags_truncated_trips, shags_trips)
 
-nrow(shags_tt) - nrow(shags)
+# filter shags_tt by index col to keep only the points in shags_trips_filtered
+# keep all of kb_38 because it was removed as incomplete but want in example
+shags_tt <- shags_tt %>%
+  filter(bird_id == "kb_38" |
+         index %in% shags_tt_truncated$index) %>%
+  select(-index)
+
+# how many rows removed from original?
+nrow(shags_df) - nrow(shags_tt)
 
 # latitude filter
-
-shags <- shags %>%
+shags_tt <- shags_tt %>%
   dplyr::filter(sf::st_coordinates(geometry)[,2] < -5)
 
 # tidy up
-
-rm(shags_tt, shags_df, shags_meta, shags_trips, shags_trips_filtered, shags_tt_filtered)
-
-# write to a csv as combined, keep the col coord in the csv
+rm(shags_tt_truncated)
 
 # save into inst/extdata/csv_files (unsure where to put?)
 
-# camnt get tt_write_data to work sdo just make int a df and then save as csv
+# can't get tt_write_data to work so just make into a df and then save as csv
 
-# move sex and col coord to events
-
-# first drop geometry of the col_coord in shoa_meta(shags)$colony_coord
-
-show_meta(shags) <- show_meta(shags) %>%
+# first drop geometry of the colony_coord
+show_meta(shags_tt) <- show_meta(shags_tt) %>%
   mutate(colony_lon = sf::st_coordinates(colony_coord)[, "X"],
-        colony_lat = sf::st_coordinates(colony_coord)[, "Y"] )%>%
+         colony_lat = sf::st_coordinates(colony_coord)[, "Y"] )%>%
   select(-colony_coord)
 
 # now move sex and colony_coord to events
-
-shags <- shags %>%
+shags_tt <- shags_tt %>%
   as_event_column(c(colony_lon, colony_lat, sex))
 
-# then seperate'geometry' col into 'lon' and 'lat' cols
-shags <- shags %>%
-  mutate (lon = sf::st_coordinates(shags)[,1],
-          lat = sf::st_coordinates(shags)[,2]) 
+# then separate geometry col into 'lon' and 'lat' cols
+shags_tt <- shags_tt %>%
+  mutate (lon = sf::st_coordinates(shags_tt)[,1],
+          lat = sf::st_coordinates(shags_tt)[,2]) 
 
 # convert to a df
+shags_df_2 <- as.data.frame(shags_tt) %>%
+  select(-geometry) 
 
-shags_df <- as.data.frame(shags) %>%
-  select(-geometry) # remove geometry column as now have lon and lat cols
-  
+# check
+head(shags_df_2)
 
-head(shags_df)
+# write as a csv
+write.csv(shags_df_2, file = "inst/extdata/csv_files/shags_example.csv", row.names = FALSE)
 
-# write as a csv and save in inst/extdata/csv_fies
-write.csv(shags_df, file = "inst/extdata/csv_files/shags_example.csv", row.names = FALSE)
-
-# no longer need usethin as going to source csv
