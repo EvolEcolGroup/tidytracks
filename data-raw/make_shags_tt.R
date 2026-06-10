@@ -129,9 +129,11 @@ shags_trips_filtered %>%
 
 # now filter shags_tt by the index col to keep only the points that are in shags_trips_filtered
 shags <- shags_tt %>%
-  filter(index %in% shags_trips_filtered$index) %>%
+  filter(
+    bird_id == "kb_38" |
+      index %in% shags_trips_filtered$index
+  ) %>%
   select(-index)
-
 # hpow many rows removed?
 
 nrow(shags_tt) - nrow(shags)
