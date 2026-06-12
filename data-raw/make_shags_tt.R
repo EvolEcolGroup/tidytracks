@@ -292,7 +292,7 @@ df_filtered %>%
 # the other are  mid track 7, some are quite close to 70
 
 # plot the points with speed > 70 to see where they are in the tracks
-high_speed_points <- df_check %>%
+df_check %>%
   filter(as.numeric(speed) > 70)
 
 #add flags 
@@ -306,6 +306,10 @@ table(df_check$speed_flag, useNA="ifany") # 14 flagged points
 
 # plot a map in leaflet, with a popup label showing the datetime field
 library(leaflet)
+
+
+
+# plot bird kb_42
 
 # count the number of flagged points in each deployment
 df_check%>%
