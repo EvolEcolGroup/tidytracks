@@ -333,6 +333,10 @@ shags_tt_filtered %>%
 
 # yeah think this worked!!
 
+# rerun speed filter to check, hopefullyh removes all really bad points. may want to add in a few
+# more weird ones t have tio run filter twice
+
+
 
 #tidy up
 rm(df_check, df_filtered, high_speed_points, indices_following, indices_high_speed, track_line)
