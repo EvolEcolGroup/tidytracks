@@ -371,7 +371,7 @@ shags_tt_split
 
 Let's look at the metadata:
 ```{r}
-str(show_meta(shags_tt))
+str(show_meta(shags_tt_split))
 ```
 
 TODO update this paragraph now that we're keeping all birds in: We can see that
@@ -391,8 +391,8 @@ dataset.
 
 ```{r}
 ggplot() +
-  geom_sf(data = track_lines(shags_tt_split), aes(color = trip_id)) +
-  geom_sf(data = show_meta(shags_tt_split)$colony_coords, color = "grey20")
+  geom_event_path(data = shags_tt_split, aes(color = trip_id)) +
+  geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20")
 ```
 
 
@@ -432,19 +432,22 @@ directly on the `move2` object?
 TODO add this code once we've enabled updating the metadata table.
 
 ```{r}
-shags_females <- shags_tt%>%
+# NB. currently using the pre-trip-splitted data here
+# because the tt_hr_kde step below errors when using trip-splitted data,
+# probably because of an issue with trip_id being the track_id_column
+shags_females <- shags_tt %>%
   filter_by_meta(sex == "female")
-show_meta(shags_tt)
+show_meta(shags_females)
 ```
 
 We can now plot the trips:
 ```{r}
 ggplot() +
-  geom_track_path(
+  geom_event_path(
     data = shags_females,
-    aes(color = trip_id)
+    aes(color = bird_id) # can't use trip_id here because not trip splitted data
   ) +
-  facet_wrap(~track_id) + theme(legend.position="none")
+  facet_wrap(~bird_id) + theme(legend.position="none")
 
 ```
 
@@ -457,6 +460,9 @@ ggplot() +
 To estimate home ranges, we need to project the data to an equal area
 projection. We can use the `sf::st_transform()` function to do this:
 ```{r}
+# does it fix the later error if we remove geometry column from meta
+show_meta(shags_females) <- sf::st_drop_geometry(show_meta(shags_females))
+
 shags_females_proj <- shags_females %>%
   sf::st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
@@ -471,7 +477,7 @@ individuals (the default).
 We want to estimate the home range for each bird, so we will group by `track_id`:
 ```{r}
 shags_females_kde <- shags_females_proj %>%
-  group_by(track_id) %>%
+  group_by(bird_id) %>% # TODO this doesn't work on trip splitted data
   tt_hr_kde(levels = c(0.5, 0.95))
 ```
 
@@ -485,14 +491,14 @@ We could easily change the units of the area with `set_units()`:
 ```{r}
 shags_females_kde %>%
   mutate(area = set_units(area, "km^2")) %>%
-  select (track_id, level, area)
+  select(bird_id, level, area)
 ```
 
 
 We can plot the home ranges:
 ```{r}
 ggplot(shags_females_kde) +
-  geom_sf(aes(fill = track_id), alpha = 0.7)
+  geom_sf(aes(fill = bird_id), alpha = 0.7)
 ```
 
 We can add actual events with:
@@ -500,19 +506,19 @@ We can add actual events with:
 ggplot() +
   geom_sf(
     data = shags_females_kde,
-    aes(fill = track_id), alpha = 0.7
+    aes(fill = bird_id), alpha = 0.7
   ) +
   geom_event_point(
     data = shags_females_proj,
     size = 0.1
   ) +
-  facet_wrap(~track_id)
+  facet_wrap(~bird_id)
 ```
 
 To get a minimum convex polygon covering 95% of the data, we can use:
 ```{r}
 shags_females_mcp <- shags_females_proj %>%
-  group_by(track_id) %>%
+  group_by(bird_id) %>%
   tt_hr_mcp(levels = c(0.95))
 ```
 
@@ -521,13 +527,13 @@ We can plot the MCPs with:
 ggplot() +
   geom_sf(
     data = shags_females_mcp,
-    aes(fill = track_id), alpha = 0.7
+    aes(fill = bird_id), alpha = 0.7
   ) +
   geom_event_point(
     data = shags_females_proj,
     size = 0.1
   ) +
-  facet_wrap(~track_id)
+  facet_wrap(~bird_id)
 ```
 
 ## Save your data
