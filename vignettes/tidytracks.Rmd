@@ -460,9 +460,6 @@ ggplot() +
 To estimate home ranges, we need to project the data to an equal area
 projection. We can use the `sf::st_transform()` function to do this:
 ```{r}
-# does it fix the later error if we remove geometry column from meta
-show_meta(shags_females) <- sf::st_drop_geometry(show_meta(shags_females))
-
 shags_females_proj <- shags_females %>%
   sf::st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
