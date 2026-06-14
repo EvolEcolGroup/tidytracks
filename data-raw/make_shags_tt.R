@@ -356,7 +356,7 @@ show_meta(shags_tt) <- show_meta(shags_tt) %>%
 shags_tt <- shags_tt %>%
   as_event_column(c(colony_lon, colony_lat, sex))
 
-# then separate geometry col into 'lon' and 'lat' cols
+# then separate geometry col into 'lon' and 'lat' col\
 shags_tt <- shags_tt %>%
   mutate (lon = sf::st_coordinates(shags_tt)[,1],
           lat = sf::st_coordinates(shags_tt)[,2]) 
