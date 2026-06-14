@@ -237,10 +237,8 @@ df_check <- shags_tt_it_1 %>%
   ungroup()
 
 df_check %>%
-  filter(
-    is_penultimate | is_last_point,
-    as.numeric(speed) > 100
-  ) %>%
+  filter(is_penultimate | is_last_point,
+    as.numeric(speed) > 100) %>%
   select(bird_id, speed, is_last_point, is_penultimate)
 
 # is penultimate point
@@ -336,7 +334,8 @@ shags_tt_filtered %>%
 # rerun speed filter to check, hopefullyh removes all really bad points. may want to add in a few
 # more weird ones t have tio run filter twice
 
-
+speed_filter_check <- shags_tt_filtered %>%
+  tidytracks::tt_clean_mcconnell(max_speed = max_speed)
 
 #tidy up
 rm(df_check, df_filtered, high_speed_points, indices_following, indices_high_speed, track_line)
@@ -345,6 +344,8 @@ rm(df_check, df_filtered, high_speed_points, indices_following, indices_high_spe
 
 # can't get tt_write_data to work so just make into a df and then save as csv
 
+
+shags_tt <- shags_tt_filtered
 # first drop geometry of the colony_coord
 show_meta(shags_tt) <- show_meta(shags_tt) %>%
   mutate(colony_lon = sf::st_coordinates(colony_coord)[, "X"],
