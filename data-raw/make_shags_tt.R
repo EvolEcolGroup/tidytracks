@@ -247,7 +247,7 @@ df_check %>%
 
 # none
 
-kb_40 <- shags_tt_it_1 %>%
+kb_40 <- shags_tt %>%
   filter(bird_id == "kb_40")
 
 #add flags 
@@ -255,8 +255,8 @@ kb_40 <- shags_tt_it_1 %>%
 # flag points with speed >100, and the following point (so we can see which is wrong)
 indices_high_speed <- which(as.numeric(kb_40$speed) > 80)
 indices_following  <- indices_high_speed + 1
-df_check$speed_flag <- FALSE
-df_check$speed_flag[c(indices_high_speed, indices_following)] <- TRUE
+kb_40$speed_flag <- FALSE
+kb_40$speed_flag[c(indices_high_speed, indices_following)] <- TRUE
 table(kb_40$speed_flag, useNA="ifany") # 14 flagged points
 
 # plot a map in leaflet, with a popup label showing the datetime field
@@ -267,7 +267,7 @@ library(leaflet)
 # subset to one deployment to check - speeds over 70
 
 # Ensure points are ordered by time
-kb_40 <- df_check[order(kb_40$date_time), ]
+kb_40 <- kb_40[order(kb_40$date_time), ]
 
 # Create a track line from the points
 track_line <- kb_40 %>%
