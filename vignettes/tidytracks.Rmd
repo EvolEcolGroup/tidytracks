@@ -309,8 +309,6 @@ after <- nrow(shags_tt)
 
 removed <- (before - after) %>% print()
 
-# filtered too much, just want to remove the very high ones
-
 ```
 
 Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
@@ -319,6 +317,7 @@ which flags points without removing them; see the advanced vignette for more
 details on how to use it 
 
 **(TODO there is no advance vignette yet!!!).
+# TODO- add note about running filter twoice
 
 Here we see that 33 points have been removed.
 Let us now recompute the speeds after running the filter (again, in km/h):
@@ -328,11 +327,8 @@ shags_tt <- shags_tt %>%
   mutate(speed = event_speed(., units = "km/h"))
 summary(shags_tt$speed)
 
-# which point ids  it?
-
 
 ```
-- still v unrealistc speeds, check data we are using
 
 We can see that we have removed some locations with unrealistic speeds. Note
 that the McConnell algorithm does not simply remove steps above the threshold
@@ -348,10 +344,6 @@ trips. For this we need to define the colony location, and a buffer around it.
 per track, either as a column in the metadata. 
 
 ```{r}
-
-# for some reason discarded all the trips here, but worked when creating data?
-
-
 shags_tt_split <- shags_tt  %>%
   tt_split_trips(
     centre_col = "colony_coord",
