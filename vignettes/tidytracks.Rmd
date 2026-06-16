@@ -322,7 +322,7 @@ details on how to use it.
 
 **(TODO there is no advance vignette yet!!!).
 
-Here we see that 23 points have been removed. 
+Here we see that 25 points have been removed. 
 Let us now recompute the speeds after running the filter (again, in km/h):
 
 ```{r}
@@ -371,7 +371,7 @@ Let's look at the metadata:
 ```{r}
 str(show_meta(shags_tt_split))
 ```
-We can see that all the birds except for kb_38 mad ebetween 1 and 3 central place foaging trips. kb_38 didn't move and was therefor filtered out..
+We can see that all the birds except for kb_38 and kb_40 made between 1 and 3 central place foraging trips. kb_38 didn't move and was therefor filtered out. kb_40 migrated away from the colony and did not return so was also removedt.
 
 **How the trip splitting works:**
 
@@ -417,18 +417,7 @@ perform some analysis. This information is the meta table, so we will use
 
 
 ```{r}
-# add the track summary stats diration and distance to the meta data table
-
-show_meta(shags_tt_split) <- show_meta(shags_tt_split) %>%
-  left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"), by = "trip_id")
-
-head(show_meta(shags_tt_split))
-
-```
-
-
-```{r}
-shags_females <- shags_tt %>%
+shags_females <- shags_tt_split %>%
   filter_by_meta(sex == "female")
 show_meta(shags_females)
 ```
@@ -444,7 +433,7 @@ ggplot() +
 
 ```
 
-If we wanted, we could also add the track summary statistics into the metadata, and use this information to filter the dataset, for example to only trips that were longer than a certain duration or distance threshold.
+If we wanted, we could also add the track summary statistics into the metadata, and use this information to filter the data set, for example to only trips that were longer than a certain duration or distance threshold.
 
 ```{r}
 
@@ -457,7 +446,7 @@ head(show_meta(shags_tt_split))
 
 We may wish to move metadata to the events table or vice versa, for example to add the track summary statistics into the metadata, and use this information to filter the data set, for example to get an idea of sample sizes of points for each sex. We can move information between the metadata and events data with `as_event_column` and `as_meta_column`. For example, to inspect the number of points we have for each sex, we can do:
 
-# geometry causng problems here too
+# geometry causing problems here too
 
 ```{r}
 shags_tt_split <- shags_tt_split %>%
