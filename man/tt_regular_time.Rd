@@ -7,13 +7,13 @@
 tt_regular_time(x, interval, max_time_lag = NULL, snap_times = FALSE)
 }
 \arguments{
-\item{x}{A\code{move2} object.  Timestamps (as returned by \code{\link[=event_time]{event_time()}}) must be
-\link[base:DateTimeClasses]{base::POSIXct}.}
+\item{x}{A \code{move2} object.  Timestamps (as returned by \code{\link[=event_time]{event_time()}}) must be
+\link[base:POSIXct]{base::POSIXct}.}
 
 \item{interval}{Resampling interval as a \code{\link[units:units]{units::units}} object
 carrying time units convertible to seconds (e.g. \code{as_units(60,
-  "s")}, \code{as_units(1, "min")}, \code{as_units(0.5,
-  "h")}).  Every track is resampled at this cadence between its own first and
+"s")}, \code{as_units(1, "min")}, \code{as_units(0.5,
+"h")}).  Every track is resampled at this cadence between its own first and
 last observation.  Passing a plain numeric value raises an error to prevent
 silent unit mismatches.}
 
@@ -53,11 +53,11 @@ strategy similar to \code{\link[move2:mt_interpolate]{move2::mt_interpolate()}})
 \item \strong{No CRS} – \code{\link[sf:st_line_sample]{sf::st_line_sample()}} is called on the
 Euclidean linestring connecting the observations.
 \item \strong{Geographic CRS (lon/lat)} – the path is treated as a
-spherical polyline and \code{\link[s2:s2_interpolate]{s2::s2_interpolate_normalized()}} is
+spherical polyline and \code{\link[s2:s2_interpolate_normalized]{s2::s2_interpolate_normalized()}} is
 used, which follows great-circle arcs between consecutive points.
 \item \strong{Projected CRS} – the track is temporarily transformed to
 WGS 84 (EPSG:4326) for spherical interpolation via
-\code{\link[s2:s2_interpolate]{s2::s2_interpolate_normalized()}}, then the resulting points
+\code{\link[s2:s2_interpolate_normalized]{s2::s2_interpolate_normalized()}}, then the resulting points
 are transformed back to the original CRS.
 }
 }
@@ -66,8 +66,8 @@ are transformed back to the original CRS.
  Raw observations are often unevenly
 spaced in both time and space. \code{tt_regular_time} accounts for this by
 first computing the normalised arc-length fraction of every input point
-along the path (using \code{\link[s2:s2_is_collection]{s2::s2_distance()}} for geographic CRS and Euclidean
-distance otherwise), then using \code{\link[stats:approxfun]{stats::approx()}} to linearly interpolate
+along the path (using \code{\link[s2:s2_distance]{s2::s2_distance()}} for geographic CRS and Euclidean
+distance otherwise), then using \code{\link[stats:approx]{stats::approx()}} to linearly interpolate
 those fractions at each new time step.  A stationary stretch of the track
 (many observations covering little distance) is therefore correctly treated
 as slow movement, not as a spatial shortcut.
@@ -75,7 +75,7 @@ as slow movement, not as a spatial shortcut.
 
 \section{Attribute interpolation}{
  Numeric event-level columns are linearly
-interpolated at the new time steps using \code{\link[stats:approxfun]{stats::approx()}}. Non-numeric
+interpolated at the new time steps using \code{\link[stats:approx]{stats::approx()}}. Non-numeric
 columns receive the value of the nearest preceding observation via
 \code{\link[base]{findInterval}}. Track-level attributes stored in
 \code{\link[move2]{mt_track_data}} are preserved unchanged.
@@ -125,8 +125,8 @@ resampled_snap
 \seealso{
 \code{\link[move2]{mt_interpolate}} for the move2 implementation of
 the same spatial strategy with flexible time targets (including
-interpolating to specific missing timesstamps);
-\code{\link[units:units]{units::as_units()}} for constructing the required \code{units}
+interpolating to specific missing timestamps);
+\code{\link[units:as_units]{units::as_units()}} for constructing the required \code{units}
 objects; \code{\link[sf:st_line_sample]{sf::st_line_sample()}} for Euclidean path sampling;
-\code{\link[s2:s2_interpolate]{s2::s2_interpolate_normalized()}} for spherical arc sampling.
+\code{\link[s2:s2_interpolate_normalized]{s2::s2_interpolate_normalized()}} for spherical arc sampling.
 }

@@ -18,7 +18,7 @@ the combined table will be saved as '<file_prefix>_combined.csv'.}
 event and metadata tables. Default is FALSE.}
 }
 \value{
-Invisibly, the result of the final \code{\link[utils:write.table]{utils::write.csv()}} call; this
+Invisibly, the result of the final \code{\link[utils:write.csv]{utils::write.csv()}} call; this
 function is primarily called for its side effect of writing CSV files.
 }
 \description{

@@ -359,7 +359,7 @@ shags_tt_split <- shags_tt  %>%
     buffer_inbound = as_units(3, "km"),
     complete = TRUE)
 
-show_meta(shags_tt)
+show_meta(shags_tt_split)
 
 ```
 
@@ -435,7 +435,7 @@ TODO add this code once we've enabled updating the metadata table.
 # NB. currently using the pre-trip-splitted data here
 # because the tt_hr_kde step below errors when using trip-splitted data,
 # probably because of an issue with trip_id being the track_id_column
-shags_females <- shags_tt %>%
+shags_females <- shags_tt_split %>%
   filter_by_meta(sex == "female")
 show_meta(shags_females)
 ```
@@ -474,9 +474,11 @@ individuals (the default).
 We want to estimate the home range for each bird, so we will group by `track_id`:
 ```{r}
 shags_females_kde <- shags_females_proj %>%
-  group_by(bird_id) %>% # TODO this doesn't work on trip splitted data
-  tt_hr_kde(levels = c(0.5, 0.95))
+  group_by(bird_id) %>%
+  tt_hr_kde(levels = c(0.5))
 ```
+
+We get a warning since one of the dataset is small, and so the 0.50 isopleth could not be computed. This is because the KDE is based on a grid, and if there are too few points, the grid will not be able to capture the distribution of the points.
 
 `shags_females_kde` is an `sf` object, with estimates of the area (in the units of
 the projection, in this case m^2) and a geometry column:
