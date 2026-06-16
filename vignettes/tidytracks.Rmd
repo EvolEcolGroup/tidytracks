@@ -140,21 +140,12 @@ show_meta(shags_tt)
 
 We have a `bird_id` column that links back to the events table, and then
 information about the sex and species of the bird, as well as a column of
-coordinates for the colony location. In `tidytracks`, all locations
-should be stored as `sfc_POINT` geometries with a defined coordinate reference 
-system (CRS). Whilst this is done automatically for locations events, location 
-information in themetadata needs to converted after reading the file:
+coordinates for the colony location. 
 
-```{r add_colony_geom_to_meta}
-show_meta(shags_tt) <- show_meta(shags_tt) %>%
-  st_as_sf(coords = c("colony_lon", "colony_lat"), 
-               crs = 4326, remove = FALSE)%>%
-  rename(colony_coord = geometry)
-```
 
 Note that `move2` objects don't have to be ordered by time, but for many analysis,
-this is a requirement. We can order the
-data by time using the `tt_order_time()` function:
+this is a requirement. We can order the data by time using the `tt_order_time()` function:
+
 ```{r order_by_time}
 shags_tt <- shags_tt %>% tt_order_time()
 ```
@@ -356,7 +347,7 @@ speed, but uses the root mean square speed for previous/next and 2nd previous to
 next point, thus allowing for individual steps that might have a speed just
 above the threshold if the subsequent point is not too far away.
 
-Note: because of this, Note: sometimes if there are two consecutive points with 
+Note: because of this, sometimes if there are two consecutive points with 
 unrealistically high speeds, the algorithm may miss one, this can be remedied by 
 recalculating speeds and then running the filter again. 
 
@@ -365,7 +356,21 @@ recalculating speeds and then running the filter again.
 Shags are central place foragers, and we now want to split the track into
 trips. For this we need to define the colony location, and a buffer around it.
 `tt_split_trips()` can take either a single colony point, or one nest location
-per track, either as a column in the metadata. 
+per track, either as a column in the metadata.  
+
+In `tidytracks`, all locations should be stored as `sfc_POINT` geometries with a
+defined coordinate reference system (CRS). Whilst this is done automatically for
+locations events, location  information in themetadata needs to converted after reading the file:
+
+```{r add_colony_geom_to_meta}
+show_meta(shags_tt) <- show_meta(shags_tt) %>%
+  st_as_sf(coords = c("colony_lon", "colony_lat"), 
+               crs = 4326, remove = FALSE)%>%
+  rename(colony_coord = geometry)
+```
+
+When splitting trips and defining the parameters to do so, it is important toconsider
+the resolution and accuracy of your locations, and the likely movements of your birds.
 
 ```{r}
 shags_tt_split <- shags_tt  %>%
@@ -407,7 +412,8 @@ dataset.
 ```{r}
 ggplot() +
   geom_event_path(data = shags_tt_split, aes(color = trip_id)) +
-  geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20")
+  geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20")+
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') 
 ```
 
 
@@ -426,13 +432,15 @@ shags_tt_split %>%
 
 Note that `track_summary_stats()` will return a tibble with one row per track,
 rather than the usual vector with one element per track that is produced by most
-`track_*` functions.
+`track_*` functions. Note that these distance calculations are being done on unprojected 
+data in Euclidean distance. Reprojection within the ggplot maps only applies within the map 
+itself and doesn't change the tidytracks object.
 
 <br>
 
 ## Filter trips
 
-We will now filter the dataset to leave only the females, so that we can then
+We will now filter the data set to leave only the females, so that we can then
 perform some analysis. This information is the meta table, so we will use
 `filter_by_meta()` to filter the dataset:
 
