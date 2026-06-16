@@ -499,15 +499,18 @@ estimate home ranges, we need to project the data to an equal area projection.
 We can use the `sf::st_transform()` function to do this:
 ```{r}
 shags_females_proj <- shags_females %>%
-  sf::st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
+  st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
 
-We can now estimate the home range using Kernel Density Estimation (KDE). The 
-default smoothing parameter (h) in the `tt_hr_kde` function is set to
-"h_ref_mean". The bandwidth for the kernel density estimation can be either a 
-number, or "h_ref_indiv" for using the reference bandwidth
-for each individual, or "h_ref_mean" for using the mean bandwidth for all
-individuals (the default). 
+We can now estimate the home range using Kernel Density Estimation (KDE) with the
+function `tt_hr_kde`, which  creates a KDE per trip, normalises them, then combines 
+into one KDE per group that you specify. here we will group by by individual but you 
+could instead group by e.g. sex.
+
+The default smoothing parameter (h) in `tt_hr_kde` 
+is set to "h_ref_mean". The bandwidth for the kernel density estimation can be either a 
+number, or "h_ref_indiv" for using the reference bandwidth for each individual, or 
+"h_ref_mean" for using the mean bandwidth for all individuals (the default). 
 
 We want to estimate the home range for each bird, so we will group by `bird_id`:
 ```{r}
@@ -529,8 +532,15 @@ shags_females_kde %>%
   select(bird_id, level, area)
 ```
 
+If you want to NOT do KDE per trip, you need to change the track_id field of your 
+tidytracks object. For example if you already trip splitted, the unit of tt object 
+is now trip, and kernels will always be created per trip and aggregated to your 
+grouping. If you're then doing something else like analysis of the whole incubation 
+period and you want to compare the kernels at the whole-bird level, you need to 
+change your inherent tt object track_id to the bird_id instead.
 
 We can plot the home ranges:
+
 ```{r}
 ggplot(shags_females_kde) +
   geom_sf(aes(fill = bird_id), alpha = 0.7)
