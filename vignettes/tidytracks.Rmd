@@ -384,7 +384,7 @@ shags_tt_split <- shags_tt  %>%
 ```
 
 If we now inspect the object, we can see that there is a new column, `trip_id`,
-which is also used as the new `bird_id_column` in the `move2` object:
+which is also used as the new `track_id_column` in the `move2` object:
 ```{r}
 head(shags_tt_split)
 
