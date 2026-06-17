@@ -24,9 +24,3 @@ x and y columns in a data frame. The resulting object is
 a \code{sf} geometry set that can be used as an additional spatial column
 in an sf data frame, in addition to the primary geometry column.
 }
-\examples{
-sf_point_col(show_meta(shags_tt)$lon_colony,
-  show_meta(shags_tt)$lat_colony,
-  crs = 4326)
-
-}

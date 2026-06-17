@@ -12,11 +12,12 @@
 #' If not set (default), no CRS is assigned.
 #' @return A `sf` geometry set of POINT geometries
 #' @export
-#' @examples
-#' sf_point_col(show_meta(shags_tt)$lon_colony,
-#'   show_meta(shags_tt)$lat_colony,
-#'   crs = 4326)
-#' 
+
+# @examples
+# sf_point_col(show_meta(shags_tt)$lon_colony,
+#    show_meta(shags_tt)$lat_colony,
+#  crs = 4326)
+#
 sf_point_col <- function(x, y, crs = sf::NA_crs_) {
   if (length(x) != length(y)) {
     stop("x and y must have the same length")

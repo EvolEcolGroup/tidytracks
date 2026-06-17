@@ -1,3 +1,4 @@
+skip_if_not_installed("trip")
 walrus_sub <- trip::walrus818[1:600, ]
 # create a walrus dataset
 walrus_mt <- mt_as_move2(walrus_sub)

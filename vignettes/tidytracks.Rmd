@@ -519,6 +519,8 @@ shags_females_kde <- shags_females_proj %>% # doesnt work on trip splitted data
   tt_hr_kde(levels = c(0.5, 0.95))
 ```
 
+We get a warning since one of the dataset is small, and so the 0.50 isopleth could not be computed. This is because the KDE is based on a grid, and if there are too few points, the grid will not be able to capture the distribution of the points.
+
 `shags_females_kde` is an `sf` object, with estimates of the area (in the units of
 the projection, in this case m^2) and a geometry column:
 ```{r}

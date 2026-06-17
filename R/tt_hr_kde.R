@@ -134,6 +134,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     group_id = group_unique,
     .combine = rbind # dplyr::bind_rows
   ) %do% {
+#    browser()
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, ]
     h_val <- h[group_id]
@@ -168,6 +169,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     }
     res_tbl
   }
+  
   # # change class of ud column to PackedSpatRaster_list
   # names(kde_results$ud) <- group_labels
   # kde_results$ud <- as_PackedSpatRaster_list(kde_results$ud)
@@ -232,7 +234,7 @@ kde_one_group <- function(xy, crs, bbox, res, h, id) {
   names(r) <- "ud"
   terra::metags(r) <- c(paste0("id = ", id), "method = kde", paste0("h = ", h),
                         paste0("density_sum = ", sum_density))
-
+  
   # return it wrapped (so that it can be put in a list)
   return(terra::wrap(r))
 }
