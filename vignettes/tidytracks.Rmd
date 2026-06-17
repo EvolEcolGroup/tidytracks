@@ -417,7 +417,7 @@ perform some analysis. This information is the meta table, so we will use
 
 
 ```{r filter_females}
-shags_females <- shags_tt_split %>%
+shags_females <- shags_tt %>%
   filter_by_meta(sex == "female")
 show_meta(shags_females)
 ```
@@ -450,7 +450,7 @@ show_meta(shags_tt_split)
 We may wish to move metadata to the events table (using `as_event_column()`)
 or vice versa (using `as_meta_column()`).
 For example, to count the number of points available for males and females,
-we can move the sex information into the event table, and count how many events
+We can move the sex information into the event table, and count how many events
 we have for males and females:
 
 ```{r moving_sex_to event}
