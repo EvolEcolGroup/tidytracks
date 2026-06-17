@@ -10,3 +10,5 @@ test_that("as_event_column works correctly", {
   expect_true("sex" %in% colnames(example_tt3))
   expect_true("sex" %in% colnames(show_meta(example_tt3)))
 })
+
+# now repeat tests with an sf column

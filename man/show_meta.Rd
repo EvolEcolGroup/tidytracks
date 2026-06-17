@@ -29,7 +29,7 @@ the number of rows matches the number of tracks in the \code{move2} object, and
 that the track IDs correspond to those in the \code{move2} object.
 }
 \examples{
-show_meta(shags_tt)
-show_meta(shags_tt)$new_column <- "example_info"
-show_meta(shags_tt)
+show_meta(example_tt)
+show_meta(example_tt)$age <- c(2, 3, 2)
+show_meta(example_tt)
 }

@@ -360,13 +360,11 @@ per track, either as a column in the metadata.
 
 In `tidytracks`, all locations should be stored as `sfc_POINT` geometries with a
 defined coordinate reference system (CRS). Whilst this is done automatically for
-locations events, location  information in themetadata needs to converted after reading the file:
+locations events, location  information in the metadata needs to converted after reading the file:
 
 ```{r add_colony_geom_to_meta}
 show_meta(shags_tt) <- show_meta(shags_tt) %>%
-  st_as_sf(coords = c("colony_lon", "colony_lat"), 
-               crs = 4326, remove = FALSE)%>%
-  rename(colony_coord = geometry)
+  mutate(colony_coord = sf_point_col(colony_lon, colony_lat, crs = 4326))
 ```
 
 When splitting trips and defining the parameters to do so, it is important toconsider
@@ -464,28 +462,26 @@ were longer than a certain duration or distance threshold.
 ```{r add_summary_stats}
 
 show_meta(shags_tt_split) <- show_meta(shags_tt_split) %>%
-  left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"), by = "trip_id")
+  left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"), 
+            by = "trip_id")
 
-head(show_meta(shags_tt_split))
+show_meta(shags_tt_split)
 
 ```
 
-We may wish to move metadata to the events table or vice versa, for example to add
-the track summary statistics into the metadata, and use this information to filter 
-the data set, for example to get an idea of sample sizes of points for each sex. 
-We can move information between the metadata and events data with `as_event_column`
-and `as_meta_column`. For example, to inspect the number of points we have for each 
-sex, we can do:
+We may wish to move metadata to the events table (using `as_event_column()`)
+or vice versa (using `as_meta_column()`).
+For example, to count the number of points available for males and females,
+we can move the sex information into the event table, and count how many events
+we have for males and females:
 
-# geometry causing problems here too
-
-```{r moving_sex_to event, eval = FALSE}
-shags_tt_split <- shags_tt_split %>%
-  as_event_column(sex)
-  count(sex, name)
+```{r moving_sex_to event}
+shags_tt_split %>%
+  as_event_column(sex) %>%
+  pull(sex) %>%
+  table()
 ```
 
-***
 
 # Home Range estimates
 
