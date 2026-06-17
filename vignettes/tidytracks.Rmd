@@ -162,7 +162,7 @@ with `coord_sf()` so we can add a projection directly into the ggplot. As it is
 compatible with all the ggplot2 functionality, we will also adjust the aspect ratio 
 within `theme()`.
 
-```{r plot_data}
+```{r plot_events}
 ggplot() +
   geom_event_point(data = shags_tt, aes(color = bird_id))+
   coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
@@ -175,7 +175,7 @@ individual separately with `facet_wrap`. In this example, instead of plotting
 individuallocations as points, we can also use `geom_event_path()` to plot the
 paths between the locations:
 
-```{r}
+```{r shags_plot_paths}
 ggplot() +
   geom_event_path(data = shags_tt, aes(color = bird_id)) +
   facet_wrap(~bird_id) +
@@ -205,7 +205,7 @@ event. For each track, `event_speed()` returns the speed of each segment, padded
 with a final NA so that we have the same number of rows as the original track.
 
 So, we can add speed to our `shags_tt` object with:
-```{r}
+```{r speed}
 shags_tt <- shags_tt %>% 
   mutate(speed = event_speed(.))
 ```
@@ -215,7 +215,7 @@ the whole `move2` object to the function. This is only possible with a `magrittr
 pipe (`%>%`), and not with the base R pipe (`|>`).
 
 We can now visualise the distribution of speeds:
-```{r}
+```{r plot_speed}
 shags_tt %>%
   ggplot(aes(x = speed)) +
   geom_histogram(bins = 100)
@@ -235,13 +235,13 @@ Finally, there are `track_*` functions, which operate on the whole track, and wi
 generally return a vector of length equal to the number of tracks in the object.
 For example, `track_duration()` returns the total duration of each track:
 
-```{r}
+```{r duration}
 shags_tt %>%
   track_duration()
 ```
 
 If we wanted the same estimates in hours rather than days, we would simply say:
-```{r}
+```{r duration_units}
 shags_tt %>%
   track_duration(units = "hours")
 ```
@@ -267,19 +267,19 @@ object).
 # Cleaning the data
 
 We can get an overview of the speeds of each step with:
-```{r}
+```{r summary_speed}
 shags_tt %>%
   summary()
 ```
 
 Some of those speeds (>15000 m/minute) seem a bit high. We can check the units
 (to make sure we have them right):
-```{r}
+```{r units}
 units(shags_tt$speed)
 ```
 Let's recalculate them in units that might be more familiar to us.
 
-```{r}
+```{r units2}
 shags_tt <- shags_tt %>%
   mutate(speed = set_units(speed, "km/h")) 
 
@@ -290,7 +290,7 @@ Hmm, 904 km/h is much faster than typical flight speeds for a shag (European
 shags usually fly at speeds around 50–65 km/h; see e.g. Wanless et al. 1997).
 
 Let's plot the speed of each event:
-```{r}
+```{r plot_speed_new}
 ggplot() +
   geom_event_path(
     data = shags_tt,
@@ -311,7 +311,7 @@ flying at 58km/h (Yukihisa et al. 2016) we will set the maximum to 60. Note that
 we can give the `max_speed` in any units we want, and they will be automatically 
 converted to the units in the object.
 
-```{r}
+```{r mcconnel}
 before <- nrow(shags_tt) 
 
 shags_tt <- shags_tt %>%
@@ -333,7 +333,7 @@ details on how to use it.
 Here we see that 25 points have been removed. 
 Let us now recompute the speeds after running the filter (again, in km/h):
 
-```{r}
+```{r post_mcconnel}
 shags_tt <- shags_tt %>%
   mutate(speed = event_speed(., units = "km/h"))
 summary(shags_tt$speed)
@@ -372,7 +372,7 @@ show_meta(shags_tt) <- show_meta(shags_tt) %>%
 When splitting trips and defining the parameters to do so, it is important toconsider
 the resolution and accuracy of your locations, and the likely movements of your birds.
 
-```{r}
+```{r split_trips}
 shags_tt_split <- shags_tt  %>%
   tt_split_trips(
     centre_col = "colony_coord",
@@ -385,14 +385,14 @@ shags_tt_split <- shags_tt  %>%
 
 If we now inspect the object, we can see that there is a new column, `trip_id`,
 which is also used as the new `track_id_column` in the `move2` object:
-```{r}
+```{r inspect_splits}
 head(shags_tt_split)
 
 unique(shags_tt_split$trip_id)
 ```
 
 Let's look at the metadata:
-```{r}
+```{r split_meta}
 str(show_meta(shags_tt_split))
 ```
 We can see that all the birds except for kb_38 and kb_40 made between 1 and 3 central 
@@ -409,7 +409,7 @@ argument ensures that only trips which both leave and return to the colony
 leave the buffer zone, or trips that are not complete, are removed from the
 dataset.
 
-```{r}
+```{r plot_split}
 ggplot() +
   geom_event_path(data = shags_tt_split, aes(color = trip_id)) +
   geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20")+
@@ -417,15 +417,11 @@ ggplot() +
 ```
 
 
-<br>
-
-***
-
 # Summarising tracks
 
 We can get a summary of our tracks with:
 
-```{r}
+```{r summary}
 shags_tt_split %>%
   track_summary_stats(centre_col = "colony_coord")
 ```
@@ -436,7 +432,6 @@ rather than the usual vector with one element per track that is produced by most
 data in Euclidean distance. Reprojection within the ggplot maps only applies within the map 
 itself and doesn't change the tidytracks object.
 
-<br>
 
 ## Filter trips
 
@@ -445,14 +440,14 @@ perform some analysis. This information is the meta table, so we will use
 `filter_by_meta()` to filter the dataset:
 
 
-```{r}
+```{r filter_females}
 shags_females <- shags_tt_split %>%
   filter_by_meta(sex == "female")
 show_meta(shags_females)
 ```
 
 We can now plot the trips:
-```{r}
+```{r plot_females}
 ggplot() +
   geom_event_path(
     data = shags_females,
@@ -466,7 +461,7 @@ If we wanted, we could also add the track summary statistics into the metadata,
 and use this information to filter the data set, for example to only trips that 
 were longer than a certain duration or distance threshold.
 
-```{r}
+```{r add_summary_stats}
 
 show_meta(shags_tt_split) <- show_meta(shags_tt_split) %>%
   left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"), by = "trip_id")
@@ -484,7 +479,7 @@ sex, we can do:
 
 # geometry causing problems here too
 
-```{r}
+```{r moving_sex_to event, eval = FALSE}
 shags_tt_split <- shags_tt_split %>%
   as_event_column(sex)
   count(sex, name)
@@ -497,7 +492,7 @@ shags_tt_split <- shags_tt_split %>%
 For this analysis, we will use the shags_females data set we just created. To 
 estimate home ranges, we need to project the data to an equal area projection. 
 We can use the `sf::st_transform()` function to do this:
-```{r}
+```{r female_crs}
 shags_females_proj <- shags_females %>%
   st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
@@ -543,13 +538,13 @@ change your inherent tt object track_id to the bird_id instead.
 
 We can plot the home ranges:
 
-```{r}
+```{r plot_kde}
 ggplot(shags_females_kde) +
   geom_sf(aes(fill = bird_id), alpha = 0.7)
 ```
 
 We can add actual events with:
-```{r}
+```{r plot_kde_points}
 ggplot() +
   geom_sf(
     data = shags_females_kde,
@@ -564,14 +559,14 @@ ggplot() +
 ```
 
 To get a minimum convex polygon covering 95% of the data, we can use:
-```{r}
+```{r compute_mcp}
 shags_females_mcp <- shags_females_proj %>%
   group_by(bird_id) %>%
   tt_hr_mcp(levels = c(0.95))
 ```
 
 We can plot the MCPs with:
-```{r}
+```{r plot_mcp}
 ggplot() +
   geom_sf(
     data = shags_females_mcp,
@@ -588,7 +583,7 @@ ggplot() +
 ## Save your data
 We can save our `move2` object with the `tt_write_data()` function, which can save the events and meta data either separately or as a single CSV text file. In this example we will save it to the temporary directory.
 
-```{R}
+```{r save_data}
 
 # save to temp directory
 tmp_prefix <- file.path(tempdir(), "shags_females")

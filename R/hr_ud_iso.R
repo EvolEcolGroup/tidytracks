@@ -131,7 +131,7 @@ hr_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
   }
   
   out <- dplyr::bind_rows(poly_list) %>%
-    dplyr::mutate(area = sf::st_area(.data$geometry), .after = .data$level)
+    dplyr::mutate(area = sf::st_area(.data$geometry), .after = "level")
   
   sf::st_as_sf(out)
 }

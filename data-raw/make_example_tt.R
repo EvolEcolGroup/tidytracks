@@ -10,4 +10,8 @@ tt_read_data("./data-raw/raw_csv/example_tt.csv",
              crs = 4326) -> example_tt
 # add a metadata column
 show_meta(example_tt)$sex <- c("male", "male", "female")
+show_meta(example_tt)$colony <- sf_point_col(x = c(1.37, -2.44, -0.78),
+                                             y = c(0.06, -1.76, 0.43),
+                                             crs = 4326)
+
 usethis::use_data(example_tt, overwrite = TRUE)
