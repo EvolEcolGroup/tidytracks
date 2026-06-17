@@ -19,10 +19,10 @@ knitr::opts_chunk$set(
 
 # Tracking data representation in `tidytracks`
 
-`tidytracks` uses tidy tables to represent movement data based on `move2`
-objects.
+`tidytracks` uses tidy tables to represent movement, We refer to such a table as a **tibble of tracks** (technically, such tables are `move2`
+objects from the `move2` package).
 
-In a tidy table of **tracks**, each row represents an **event**, which is a
+In a tibble of **tracks**, each row represents an **event**, which is a
 time-stamped observation, associated with a location (and, optionally, extra 
 data such as activity information).
 
@@ -34,66 +34,49 @@ away from the central place. In this case, the unit of tracking (i.e. the new
 
 The **metadata** that describes each of these tracks is stored in a separate
 table, which is linked to the event table by a `track_id_column`. This means we
-do not have to repeat information (such as the *id* or *sex* of an animal) for
-each **event**, but we can use the **metadata** of the **track** to store that
+do not have to repeat information (such as the **ring_number** or *sex* of an 
+animal) for each **event**, but we can use the **metadata** of the **track** 
+to store that
 information.
 
-This vignette will use an example dataset of GPS tracks from the Antarctic shag
-*Leucocarbo bransfieldensis*, a seabird acting as a central-place forager.
-This dataset contains 9 tracks with nearly 8,000 locations. Note that these are
-based on real data, but have been modified to show the functionality of
-`tidytracks`. Please do not use them for any real analyses of shag movement!
-
-# Reading data into a `move2` object
+# Reading data into a tibble of tracks
 
 In `tidytracks`, we start by reading a table of events (e.g., GPS locations)
 from a CSV file or as existing `data.frame` in R.
 
 This table should contain at least the following columns:
 - one column which is the `track_id` (i.e. the variable that groups events into 
- a track)
+ a track, e.g. `bird_id` or `logger_id`)
 - two columns representing the `x` and `y` coordinates (e.g. `longitude` and 
  `latitude`)
 - a `date-time` column (or separate `date` and `time` columns)
 
 Additional columns of data will be stored in the **events** table if they have
-information that is specific to each event (i.e. the values are not unique
+information that is specific to each event (i.e. the values are not the same
 within a given track, e.g. the temperature recorded at each location),
 or they will be moved to the **metadata** table if they are
-track specific (e.g. track_id, sex of the individual, colony coordinates,
+track specific (e.g. sex of the individual, colony coordinates,
 breeding status, etc.).
 
 ## Example data
 
-We start with a small data set of Antarctic Shags. We have a single CSV. Each
-row must include information about the locations (in this case `lat` and
+This vignette will use an example dataset of GPS tracks from the Antarctic shag
+*Leucocarbo bransfieldensis*, a seabird acting as a central-place forager.
+This dataset contains 9 tracks with nearly 4,000 locations. Note that these are
+based on real data, but have been modified to show the functionality of
+`tidytracks`. Please do not use them for any real analyses of shag movement!
+
+We have a single CSV. Each
+row includes information about the locations (in this case `lat` and
 `lon`) and time (in this case, one `date_time` column). Locations belonging
 to the same bird's track are identified by the same value in the `bird_id` column
 (in this example, as we only have one track per bird, the `bird_id` is the individual 
-ID number of the bird).  The CSV also contains other columns of information about
-the tracks (`sex` and colony coordinates split into `colony_lat` and `colony_lon`.
+ID number of the bird).
+
+The CSV also contains other columns of information about
+the tracks (`sex` and colony coordinates split into `colony_lat` and `colony_lon`).
 These are repeated for each event, so they will be moved to the metadata table when 
-we create the tidytracks object.
-
-First we want to load a couple of packages and the example data, then use the 
-`tt_read_data()` function to read the data into a `move2` object. 
-The tt_read_data() function takes the following arguments:
-* `events`: the path to the CSV file (or a data.frame)
-* `col_track_id`: the name of the column that identifies the track (`bird_id`)
-* `col_coords`: a vector of the names of the columns that contain the coordinates
-  (in this case, `lon` and `lat`)
-* `col_date_time`: the name of the column that contains the date-time information 
-  (`date_time`)
-* `time_zone`: optional, the time zone of the date-time information 
-  (in this case, `UTC`)
-* `crs`: optional, the coordinate reference system of the coordinates (in this 
-  case, WGS84, which is EPSG:4326)
-
-Other optional arguments include `format_data_time`, defines the format of the 
-date-time field(s) for as.POSIXct() to parse the date-time. `convert_meta`	is a
-boolean on whether to attempt to transfer information in the events table that is
-track specific, and `meta` is a path to a csv file containing meta data, or a 
-dataframe containing metadata, which can be used to populate the metadata table. 
+we create the `tidytracks object.
 
 ```{r read_events}
 library(tidytracks)
@@ -118,7 +101,6 @@ shags_tt <- tt_read_data(
 
 ```
 
-
 Inspecting the events table, we have:
 
 ```{r inspect_events}
@@ -139,11 +121,10 @@ show_meta(shags_tt)
 ```
 
 We have a `bird_id` column that links back to the events table, and then
-information about the sex and species of the bird, as well as a column of
+information about the sex of the bird, as well as a column of
 coordinates for the colony location. 
 
-
-Note that `move2` objects don't have to be ordered by time, but for many analysis,
+Note that `move2` objects don't have to be ordered by time, but for many analyses,
 this is a requirement. We can order the data by time using the `tt_order_time()` function:
 
 ```{r order_by_time}
@@ -155,11 +136,11 @@ Functions that start with `tt_` are specific to tidy tables of tracks (i.e.
 
 # Plotting the data
 
-To plot the data with the `ggplot2` package, we can use the `geom_event_point()`
+To visualise the data with the `ggplot2` package, we can use the `geom_event_point()`
 function to plot the locations of each event. It is good practice to project data 
-each time we plot it. `geom_event_point()` and `geom_event_path()` are compatible 
-with `coord_sf()` so we can add a projection directly into the ggplot. As it is 
-compatible with all the ggplot2 functionality, we will also adjust the aspect ratio 
+each time we plot it. `geom_event_point()` is compatible 
+with `coord_sf()` so we can add a projection directly into the `ggplot`. All other
+decorations of `ggplot2` can be used; in this case, we will also adjust the aspect ratio 
 within `theme()`.
 
 ```{r plot_events}
@@ -172,8 +153,8 @@ ggplot() +
 
 We can explore what each individual is doing by plotting the locations of each
 individual separately with `facet_wrap`. In this example, instead of plotting 
-individuallocations as points, we can also use `geom_event_path()` to plot the
-paths between the locations:
+locations as points, we will use `geom_event_path()` to plot the
+paths between them:
 
 ```{r shags_plot_paths}
 ggplot() +
@@ -190,9 +171,10 @@ the tracked period.
 # A grammar of movement
 
 As we saw above, `tt_*` functions are specific to and operate on the whole table
-of tracks (aka the `move2` object), and often will return a complete table of
-tracks. There are functions to clean the data using
-different algorithms (e.g. `tt_clean_mcconnell`), or to split the data into
+of tracks (aka the `move2` object), and often will return either a complete table of
+tracks or different tibble (e.g. a tibble of kernels). For example,
+there are functions to clean the data using
+a given algorithm (e.g. `tt_clean_mcconnell`), or to split the data into
 trips for central place foragers (e.g. `tt_split_trips`). We will see those
 functions in action in a later section.
 
@@ -222,17 +204,17 @@ shags_tt %>%
 ```
 
 Note the message about 9 rows having been dropped; those are the 9 last events
-for which there is no distance. Also, functions in `tidytracks` tend to return
+for which there is no distance. Also, when appropriate, functions in `tidytracks` return
 values with units, to avoid conversion problems (in this case, meters per minute).
 Functions usually have a `units` parameter that allows to change the units that
 are returned (more details about working with units below).
 
-The histogram above is suggests that there might be outliers in the data,
+The histogram above suggests that there might be outliers in the data,
 as we seem to have a few events with very high speeds. We will see later
 how we can clean up the data using McConnell's algorithm. 
 
 Finally, there are `track_*` functions, which operate on the whole track, and will
-generally return a vector of length equal to the number of tracks in the object.
+return a vector of length equal to the number of tracks in the object.
 For example, `track_duration()` returns the total duration of each track:
 
 ```{r duration}
@@ -251,18 +233,14 @@ ambiguities.
 
 For example, `event_flag_mcconnell()` will return a logical vector
 indicating whether events are valid or whether they should be filtered out using
-McConnell's algorithm, whilst `tt_clean_mcconnell()` will return a `move2`
-object with the invalid events removed. 
+McConnell's algorithm, whilst `tt_clean_mcconnell()` will return tibble of tracks
+with the invalid events removed. 
 
 Similarly, `event_distance()` will return a vector of distances between events
 (a vector of the same length as the rows of the event column), while
 `track_distance()` will return the total (cumulative) distance for each track
 (and thus a shorter vector of length equal to the number of tracks in the
 object).
-
-<br>
-
-***
 
 # Cleaning the data
 
@@ -286,7 +264,7 @@ shags_tt <- shags_tt %>%
 shags_tt %>%
   summary()
 ```
-Hmm, 904 km/h is much faster than typical flight speeds for a shag (European
+Hmm, 904 km/h is much faster than typical flight speed for a shag (European
 shags usually fly at speeds around 50–65 km/h; see e.g. Wanless et al. 1997).
 
 Let's plot the speed of each event:
