@@ -143,11 +143,13 @@ with `coord_sf()` so we can add a projection directly into the `ggplot`. All oth
 decorations of `ggplot2` can be used; in this case, we will also adjust the aspect ratio 
 within `theme()`.
 
-```{r plot_events}
+```{r plot_events, fig.width=6, fig.height=4}
 ggplot() +
   geom_event_point(data = shags_tt, aes(color = bird_id))+
   coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
-    theme(aspect.ratio = 1)
+    theme(aspect.ratio = 1, 
+      axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 ```
 
@@ -156,7 +158,7 @@ individual separately with `facet_wrap`. In this example, instead of plotting
 locations as points, we will use `geom_event_path()` to plot the
 paths between them:
 
-```{r shags_plot_paths}
+```{r shags_plot_paths, fig.width=6, fig.height=4}
 ggplot() +
   geom_event_path(data = shags_tt, aes(color = bird_id)) +
   facet_wrap(~bird_id) +
@@ -197,7 +199,7 @@ the whole `move2` object to the function. This is only possible with a `magrittr
 pipe (`%>%`), and not with the base R pipe (`|>`).
 
 We can now visualise the distribution of speeds:
-```{r plot_speed}
+```{r plot_speed, fig.width=6, fig.height=4}
 shags_tt %>%
   ggplot(aes(x = speed)) +
   geom_histogram(bins = 100)
@@ -268,14 +270,14 @@ Hmm, 904 km/h is much faster than typical flight speed for a shag (European
 shags usually fly at speeds around 50–65 km/h; see e.g. Wanless et al. 1997).
 
 Let's plot the speed of each event:
-```{r plot_speed_new}
+```{r plot_speed_new, fig.width=6, fig.height=4}
 ggplot() +
   geom_event_path(
     data = shags_tt,
     aes(color = speed)) +
   facet_wrap(~bird_id) +
   coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
-  theme(aspect.ratio = 0.8, 
+  theme(aspect.ratio = 1, 
         axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
@@ -290,32 +292,28 @@ we can give the `max_speed` in any units we want, and they will be automatically
 converted to the units in the object.
 
 ```{r mcconnel}
-before <- nrow(shags_tt) 
+n_before <- nrow(shags_tt) 
 
 shags_tt <- shags_tt %>%
   tt_clean_mcconnell(max_speed = as_units(60, "km/h"))
 
-after <- nrow(shags_tt) 
+n_after <- nrow(shags_tt)
 
-before - after
+n_before - n_after
 ```
 
 Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
 flagged by the algorithm. There is also a function `event_flag_mcconnell()`
-which flags points without removing them; see the advanced vignette for more
+which flags points without removing them; see its help page for more
 details on how to use it.
 
-**(TODO there is no advance vignette yet!!!).
-
-Here we see that 25 points have been removed. 
+Here we see that `r (n_before - n_after)` points have been removed. 
 Let us now recompute the speeds after running the filter (again, in km/h):
 
 ```{r post_mcconnel}
 shags_tt <- shags_tt %>%
   mutate(speed = event_speed(., units = "km/h"))
 summary(shags_tt$speed)
-
-
 ```
 
 Note again the use of '.' to pass the tibble to `event_speed()`.
@@ -359,8 +357,6 @@ shags_tt_split <- shags_tt  %>%
     buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(3, "km"),
     complete = TRUE)
-
-
 ```
 
 If we now inspect the object, we can see that there is a new column, `trip_id`,
@@ -389,11 +385,14 @@ argument ensures that only trips which both leave and return to the colony
 leave the buffer zone, or trips that are not complete, are removed from the
 dataset.
 
-```{r plot_split}
+```{r plot_split, fig.width=6, fig.height=4}
 ggplot() +
   geom_event_path(data = shags_tt_split, aes(color = trip_id)) +
   geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20")+
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') 
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
 ```
 
 
@@ -427,14 +426,16 @@ show_meta(shags_females)
 ```
 
 We can now plot the trips:
-```{r plot_females}
+```{r plot_females, fig.width=6, fig.height=4}
 ggplot() +
   geom_event_path(
     data = shags_females,
     aes(color = bird_id) # can't use trip_id here because not trip splitted data
   ) +
-  facet_wrap(~bird_id) + theme(legend.position="none")
-
+  facet_wrap(~bird_id) +
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position="none")
 ```
 
 If we wanted, we could also add the track summary statistics into the metadata, 
@@ -442,13 +443,11 @@ and use this information to filter the data set, for example to only trips that
 were longer than a certain duration or distance threshold.
 
 ```{r add_summary_stats}
-
 show_meta(shags_tt_split) <- show_meta(shags_tt_split) %>%
   left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"), 
             by = "trip_id")
 
 show_meta(shags_tt_split)
-
 ```
 
 We may wish to move metadata to the events table (using `as_event_column()`)
@@ -516,13 +515,16 @@ change your inherent tt object track_id to the bird_id instead.
 
 We can plot the home ranges:
 
-```{r plot_kde}
+```{r plot_kde, fig.width=6, fig.height=4}
 ggplot(shags_females_kde) +
-  geom_sf(aes(fill = bird_id), alpha = 0.7)
+  geom_sf(aes(fill = bird_id), alpha = 0.7) +
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
 ```
 
 We can add actual events with:
-```{r plot_kde_points}
+```{r plot_kde_points, fig.width=6, fig.height=4}
 ggplot() +
   geom_sf(
     data = shags_females_kde,
@@ -533,7 +535,8 @@ ggplot() +
     size = 0.1
   ) +
   facet_wrap(~bird_id) +
-  theme(aspect.ratio = 0.9)
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 To get a minimum convex polygon covering 95% of the data, we can use:
@@ -544,7 +547,7 @@ shags_females_mcp <- shags_females_proj %>%
 ```
 
 We can plot the MCPs with:
-```{r plot_mcp}
+```{r plot_mcp, fig.width=6, fig.height=4}
 ggplot() +
   geom_sf(
     data = shags_females_mcp,
@@ -555,7 +558,8 @@ ggplot() +
     size = 0.1
   ) +
   facet_wrap(~bird_id)+
-  theme(aspect.ratio = 0.9)
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 ## Save your data

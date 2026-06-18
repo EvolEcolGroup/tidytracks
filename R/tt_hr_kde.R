@@ -67,7 +67,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     stop("levels must be between 0 and 1")
   }
   # reorder levels from small to big
-  levels <- sort(levels)
+  levels <- sort(levels, decreasing = TRUE)
 
   # get the group indices
   group_index <- dplyr::group_indices(x)
