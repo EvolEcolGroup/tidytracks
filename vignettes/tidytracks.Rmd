@@ -280,7 +280,7 @@ ggplot() +
 ```
 
 It looks like there are a few GPS location errors here, resulting in unrealistic
-speeds.
+speeds (we can easily see the very fast outlier is at the end of a track).
 
 We can remove locations characterised by unlikely speeds using the McConnell's
 algorithm (the same used by `trip::speedfilter()`). Max speed can be set to an
@@ -293,12 +293,11 @@ converted to the units in the object.
 before <- nrow(shags_tt) 
 
 shags_tt <- shags_tt %>%
-  tt_clean_mcconnell(max_speed = set_units(60, "km/h"))
+  tt_clean_mcconnell(max_speed = as_units(60, "km/h"))
 
 after <- nrow(shags_tt) 
 
-removed <- (before - after) %>% print()
-
+before - after
 ```
 
 Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
@@ -319,6 +318,8 @@ summary(shags_tt$speed)
 
 ```
 
+Note again the use of '.' to pass the tibble to `event_speed()`.
+
 We can see that we have removed some locations with unrealistic speeds. Note
 that the McConnell algorithm does not simply remove steps above the threshold
 speed, but uses the root mean square speed for previous/next and 2nd previous to
@@ -334,7 +335,7 @@ recalculating speeds and then running the filter again.
 Shags are central place foragers, and we now want to split the track into
 trips. For this we need to define the colony location, and a buffer around it.
 `tt_split_trips()` can take either a single colony point, or one nest location
-per track, either as a column in the metadata.  
+per track as a point column in the metadata
 
 In `tidytracks`, all locations should be stored as `sfc_POINT` geometries with a
 defined coordinate reference system (CRS). Whilst this is done automatically for
@@ -345,7 +346,10 @@ show_meta(shags_tt) <- show_meta(shags_tt) %>%
   mutate(colony_coord = sf_point_col(colony_lon, colony_lat, crs = 4326))
 ```
 
-When splitting trips and defining the parameters to do so, it is important toconsider
+Note that we use `sf_point_col()` to create a column. Do not replace the metadata
+with a full sf tibble, as that creates problems with certain functions.
+
+When splitting trips and defining the parameters to do so, it is important to consider
 the resolution and accuracy of your locations, and the likely movements of your birds.
 
 ```{r split_trips}
