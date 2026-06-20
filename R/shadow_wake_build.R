@@ -17,8 +17,8 @@
 #' @param wake_length A number between 0 and 1 giving the length of the wake,
 #' in relation to the total number of frames.
 #' @param size Numeric indicating the size the wake should end on. If `NULL`
-#' then size is not modified. Can also be a boolean with `TRUE` beeing equal `0`
-#' and `FALSE` beeing equal to `NULL`
+#' then size is not modified. Can also be a boolean with `TRUE` being equal `0`
+#' and `FALSE` being equal to `NULL`
 #' @param alpha as `size` but for alpha modification of the wake
 #' @param colour,fill colour or fill the wake should end on. If `NULL` they are
 #' not modified.
@@ -166,7 +166,8 @@ ShadowWakeBuild <- ggplot2::ggproto('ShadowWakeBuild', gganimate::Shadow,
                                     prepare_frame_data = function(self, data, shadow, params, frame_ind, shadow_ind) {
                                       Map(function(d, s, e) {
                                         if (e) return(d[[1]])
-                                        
+                                        if (is.null(s) || nrow(s) == 0L) return(d[[1]])
+                                         
                                         ids <- d[[1]]$.id[!d[[1]]$.phase %in% params$exclude_phase]
                                         s <- s[s$.id %in% ids, , drop = FALSE]
                                         

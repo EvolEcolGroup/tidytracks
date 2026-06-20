@@ -43,6 +43,12 @@ test_that("geom_event_path errors if data is not a move2 object", {
   expect_error(geom_event_path(data = data.frame()), "move2")
 })
 
+test_that("geom_event_path validates drop_final_point", {
+  expect_error(geom_event_path(data = x, drop_final_point = NA), "drop_final_point")
+  expect_error(geom_event_path(data = x, drop_final_point = c(TRUE, FALSE)), "drop_final_point")
+  expect_error(geom_event_path(data = x, drop_final_point = 1), "drop_final_point")
+})
+
 test_that("geom_event_path can be added to a ggplot without error", {
   expect_no_error(
     ggplot2::ggplot() + geom_event_path(data = x, ggplot2::aes(colour = bird_id))
@@ -314,6 +320,20 @@ test_that("animate_map with path layer embeds label_format in title", {
 
 test_that("animate_map with path layer works when piped from a ggplot", {
   expect_s3_class(make_paths_map(x) |> animate_map(), "gganim")
+})
+
+test_that("animate_map with path layer renders a minimal animation", {
+  skip_on_cran()
+  result <- make_paths_map(x) |> animate_map()
+  expect_no_error(
+    gganimate::animate(
+      result,
+      nframes = 2,
+      fps = 1,
+      duration = 1,
+      renderer = gganimate::file_renderer(dir = tempdir(), prefix = "tidytracks-test")
+    )
+  )
 })
 
 # ===========================================================================

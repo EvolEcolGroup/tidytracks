@@ -53,6 +53,10 @@ geom_event_path <- function(mapping = ggplot2::aes(),
   if (!inherits(data, "move2")) {
     stop("data must be a move2 object")
   }
+  if (!is.logical(drop_final_point) || length(drop_final_point) != 1L ||
+      is.na(drop_final_point)) {
+    stop("drop_final_point must be a single non-missing logical value")
+  }
   
   # make segments between each pair of points using move2::mt_segments
   data_steps <- data %>%

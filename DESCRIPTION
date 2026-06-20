@@ -30,17 +30,22 @@ Imports:
   rlang,
   s2,
   sf,
+  scales,
   stats,
   terra,
   tibble,
   tidyr,
-  tidyterra
+  tidyterra,
+  tweenr,
+  vctrs
 Suggests:
     adehabitatHR,
+    basemaps,
     sp,
     knitr,
     rmarkdown,
     reshape2,
+    rnaturalearth,
     lwgeom,
     testthat (>= 3.0.0),
     trip,
