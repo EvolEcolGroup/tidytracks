@@ -118,19 +118,25 @@ animate_map <- function(p,
 }
 
 
-# Internal helper: detect whether the plot contains a path or point track layer.
-# Identifies track layers exclusively by the "tidytracks_geom" attribute set on
-# their data by geom_event_path() and geom_event_point(). This prevents false
-# matches from other sf layers (e.g. land polygons) that happen to share a
-# geometry type or carry a POSIXct column.
-# If layer_name is provided (the deparsed name of the user's move2 object), only
-# layers whose "tidytracks_data_name" attribute matches are considered, allowing
-# unambiguous selection when multiple track layers are present.
-# If multiple tidytracks layers are found and layer_name is NULL, a warning is
-# issued and the first one in the plot's layer stack is used.
-# Returns a list(type, data, time_col) where type is "path" or "point", data is
-# the matched layer's sf data frame, and time_col is the name of the POSIXct
-# column. Returns NULL if no supported layer is found.
+#' Internal helper: detect whether the plot contains a path or point track layer.
+#'
+#' Identifies track layers exclusively by the "tidytracks_geom" attribute set on
+#' their data by geom_event_path() and geom_event_point(). This prevents false
+#' matches from other sf layers (e.g. land polygons) that happen to share a
+#' geometry type or carry a POSIXct column.
+#' If layer_name is provided (the deparsed name of the user's move2 object), only
+#' layers whose "tidytracks_data_name" attribute matches are considered, allowing
+#' unambiguous selection when multiple track layers are present.
+#' If multiple tidytracks layers are found and layer_name is NULL, a warning is
+#' issued and the first one in the plot's layer stack is used.
+#'
+#' @param p  the plot
+#' @param layer_name name of layer
+#'
+#' @returns a list(type, data, time_col) where type is "path" or "point", data is
+#' the matched layer's sf data frame, and time_col is the name of the POSIXct
+#' column. Returns NULL if no supported layer is found.
+#' @keywords internal
 tt_detect_layer_type <- function(p, layer_name = NULL) {
   matches <- list()
 
@@ -140,10 +146,19 @@ tt_detect_layer_type <- function(p, layer_name = NULL) {
     data <- layer$data
     tag  <- attr(data, "tidytracks_geom")
     if (is.null(tag)) next
-    # check for a datetime column
-    posixct_cols <- names(data)[vapply(data, inherits, logical(1), "POSIXct")]
-    if (length(posixct_cols) == 0L) next
-    time_col <- posixct_cols[[1L]]
+    # get the posixct column name from the attribute set by the geom
+    time_col<- attr(data, "tidytracks_time_col")
+    # TODO the old code was checking if the time_col actually exists in the data
+    # and is POSIXct, but this should always be true if the geoms are working
+    # correctly, so maybe this check is redundant? If we want to keep it, we
+    # should probably throw an error if the column is not found or not POSIXct,
+    # rather than just skipping the layer silently.
+    
+    # # check for a datetime column
+    # posixct_cols <- names(data)[vapply(data, inherits, logical(1), "POSIXct")]
+    # if (length(posixct_cols) == 0L) next
+    # time_col <- posixct_cols[[1L]]
+ 
     # add type which is either path or point depending on tidytracks_geom attr
     type <- base::switch(tag,
       event_path  = "path",
