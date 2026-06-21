@@ -69,7 +69,10 @@ geom_event_path <- function(mapping = ggplot2::aes(),
   # mt_segments() returns a POINT geometry for the final event of each track
   # (no outgoing step). IF drop_final_point - TRUE, filter to LINESTRING only: 
   # mixed geometry types break gganimate's transition_time.
-  if (drop_final_point){
+  if (!is.logical(drop_final_point) || length(drop_final_point) != 1L || is.na(drop_final_point)) {
+    stop("drop_final_point must be TRUE or FALSE")
+  }
+  if (drop_final_point) {
     data_steps <- data_steps[sf::st_geometry_type(data_steps) == "LINESTRING", ]
   }
 
