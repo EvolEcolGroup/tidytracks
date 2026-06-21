@@ -45,7 +45,7 @@ df
 
 Animation works best with regular timesteps and, if you have multiple 
 individuals, matching timestamps across individuals that were tracked 
-concurrently. Therefore we regularise our timestamps of we haven't already:
+concurrently. Therefore we regularise our timestamps if we haven't already:
 
 ```{r interpolate, collapse=TRUE}
 df <- tt_regular_time(x = df,
