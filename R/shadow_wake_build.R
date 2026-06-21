@@ -17,8 +17,8 @@
 #' @param wake_length A number between 0 and 1 giving the length of the wake,
 #' in relation to the total number of frames.
 #' @param size Numeric indicating the size the wake should end on. If `NULL`
-#' then size is not modified. Can also be a boolean with `TRUE` beeing equal `0`
-#' and `FALSE` beeing equal to `NULL`
+#' then size is not modified. Can also be a boolean, with `TRUE` being equal to `0`
+#' and `FALSE` being equal to `NULL`
 #' @param alpha as `size` but for alpha modification of the wake
 #' @param colour,fill colour or fill the wake should end on. If `NULL` they are
 #' not modified.
