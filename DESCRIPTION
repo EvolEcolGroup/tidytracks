@@ -28,12 +28,15 @@ Imports:
   purrr,
   rlang,
   s2,
+  scales,
   sf,
   stats,
   terra,
   tibble,
   tidyr,
-  tidyterra
+  tidyterra,
+  tweenr,
+  vctrs
 Suggests:
     adehabitatHR,
     sp,

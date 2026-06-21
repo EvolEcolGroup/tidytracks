@@ -34,6 +34,9 @@
 #' @family shadows
 #'
 #' @importFrom ggplot2 ggproto
+#' @importFrom scales alpha
+#' @importFrom tweenr tween_at
+#' @importFrom vctrs vec_rbind
 #' @keywords internal
 
 shadow_wake_build <- function(wake_length,
