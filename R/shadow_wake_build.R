@@ -122,33 +122,35 @@ ShadowWakeBuild <- ggplot2::ggproto('ShadowWakeBuild', gganimate::Shadow,
                                             no_alpha <- is.na(d$alpha)
                                             d$alpha[!no_alpha] <- tweenr::tween_at(params$alpha, d$alpha[!no_alpha], i[!no_alpha], params$falloff)
                                           } else {
-                                            no_alpha <- TRUE
+                                            no_alpha <- rep(TRUE, nrow(d))
                                           }
                                           
                                           # For rows without an explicit alpha column, fade is encoded
                                           # directly in the colour/fill strings. tween_at requires b to be
                                           # the same length as at, so we extract the per-row current alpha
                                           # rather than passing the scalar 1.
-                                          i_sub <- if (isTRUE(no_alpha)) i else i[no_alpha]
-                                          if (!is.null(d$colour)) {
-                                            col_sub <- d$colour[no_alpha]
-                                            cur_alpha <- grDevices::col2rgb(col_sub, alpha = TRUE)["alpha", ] / 255
-                                            d$colour[no_alpha] <- scales::alpha(col_sub, tweenr::tween_at(params$alpha, cur_alpha, i_sub, params$falloff))
-                                          }
-                                          if (!is.null(d$fill)) {
-                                            fill_sub <- d$fill[no_alpha]
-                                            cur_alpha <- grDevices::col2rgb(fill_sub, alpha = TRUE)["alpha", ] / 255
-                                            d$fill[no_alpha] <- scales::alpha(fill_sub, tweenr::tween_at(params$alpha, cur_alpha, i_sub, params$falloff))
-                                          }
-                                          if (!is.null(d$edge_colour)) {
-                                            ec_sub <- d$edge_colour[no_alpha]
-                                            cur_alpha <- grDevices::col2rgb(ec_sub, alpha = TRUE)["alpha", ] / 255
-                                            d$edge_colour[no_alpha] <- scales::alpha(ec_sub, tweenr::tween_at(params$alpha, cur_alpha, i_sub, params$falloff))
-                                          }
-                                          if (!is.null(d$edge_fill)) {
-                                            ef_sub <- d$edge_fill[no_alpha]
-                                            cur_alpha <- grDevices::col2rgb(ef_sub, alpha = TRUE)["alpha", ] / 255
-                                            d$edge_fill[no_alpha] <- scales::alpha(ef_sub, tweenr::tween_at(params$alpha, cur_alpha, i_sub, params$falloff))
+                                          if (any(no_alpha)) {
+                                            i_sub <- i[no_alpha]
+                                            if (!is.null(d$colour)) {
+                                              col_sub <- d$colour[no_alpha]
+                                              cur_alpha <- grDevices::col2rgb(col_sub, alpha = TRUE)["alpha", ] / 255
+                                              d$colour[no_alpha] <- scales::alpha(col_sub, tweenr::tween_at(params$alpha, cur_alpha, i_sub, params$falloff))
+                                            }
+                                            if (!is.null(d$fill)) {
+                                              fill_sub <- d$fill[no_alpha]
+                                              cur_alpha <- grDevices::col2rgb(fill_sub, alpha = TRUE)["alpha", ] / 255
+                                              d$fill[no_alpha] <- scales::alpha(fill_sub, tweenr::tween_at(params$alpha, cur_alpha, i_sub, params$falloff))
+                                            }
+                                            if (!is.null(d$edge_colour)) {
+                                              ec_sub <- d$edge_colour[no_alpha]
+                                              cur_alpha <- grDevices::col2rgb(ec_sub, alpha = TRUE)["alpha", ] / 255
+                                              d$edge_colour[no_alpha] <- scales::alpha(ec_sub, tweenr::tween_at(params$alpha, cur_alpha, i_sub, params$falloff))
+                                            }
+                                            if (!is.null(d$edge_fill)) {
+                                              ef_sub <- d$edge_fill[no_alpha]
+                                              cur_alpha <- grDevices::col2rgb(ef_sub, alpha = TRUE)["alpha", ] / 255
+                                              d$edge_fill[no_alpha] <- scales::alpha(ef_sub, tweenr::tween_at(params$alpha, cur_alpha, i_sub, params$falloff))
+                                            }
                                           }
                                         }
                                         
