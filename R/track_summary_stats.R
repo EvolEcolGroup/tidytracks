@@ -45,6 +45,18 @@ track_summary_stats <- function(x,  centre_col = NULL,
         stop("centre_col must be a column name in the metadata table")
       }
       centre_col <- show_meta(x)[[centre_col]]
+      # cehck that this is an `sfc_POINT` column
+      if (!inherits(centre_col, "sfc_POINT")) {
+        stop("centre_col must be a `sfc_POINT` column in the metadata table")
+      }
+      # check that we have a crs for this column
+      if (is.na(sf::st_crs(centre_col))) {
+        stop("centre_col must have a crs specified")
+      }
+      # project the centre_col to the same crs as x
+      if (!sf::st_crs(centre_col) == sf::st_crs(x)) {
+        centre_col <- sf::st_transform(centre_col, sf::st_crs(x))
+      }                                                
     } else {
       stop("centre_col must be the name of a column in the metadata")
     }
