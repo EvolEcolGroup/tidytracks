@@ -54,7 +54,7 @@ tt_split_trips <- function(x, centre_col = NULL,
         stop("centre_col must have a crs specified")
       }
       # project the centre_col to the same crs as x
-      if (!sf::st_crs(centre_col) == sf::st_crs(x)) {
+      if (!(sf::st_crs(centre_col) == sf::st_crs(x))) {
         centre_col <- sf::st_transform(centre_col, sf::st_crs(x))
       }
       centre_col <- sf::st_coordinates(centre_col)
