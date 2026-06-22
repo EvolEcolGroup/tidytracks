@@ -5,11 +5,12 @@
 #' vector. The summary statistics include the duration of the track, the
 #' cumulative distance, the maximum and minimum latitude and longitude of
 #' the total track, and, if a central place location is provided, the maximum
-#' distance that location,  and the latitude at the most distant point from
+#' distance that location, and the latitude at the most distant point from
 #' the central place location
 #'
 #' @param x A `move2` object
-#' @param centre_col A geometry object or a column name in the metadata table.
+#' @param centre_col The name of an sf point column (usually added with 
+#' [sf_point_col()] in the metadata table.
 #' @param units_duration The units to use for the duration. Default is "days".
 #' @return A tibble of summary statistics, with one row per track.
 #' @export
@@ -44,24 +45,15 @@ track_summary_stats <- function(x,  centre_col = NULL,
         stop("centre_col must be a column name in the metadata table")
       }
       centre_col <- show_meta(x)[[centre_col]]
-    } else if (inherits(centre_col, "sf")) {
-      stop("this option has yet to be properly implemented")
-      # @TODO @BUG the code below needs changing
-      centre_col <- sf::st_geometry(centre_col)
-      if (nrow(centre_col) == 1) {
-        # we have a single origin
-        # copy over for as many times as n tracks
-        centre_col <- matrix(rep(centre_col, nrow(x)), ncol = 2)
-      } else if (nrow(centre_col) != nrow(show_meta(x))) {
-        stop("centre_col must be a geometry object of length 1 or the same ",
-             "length as the number of tracks in x")
-      }
     } else {
-      stop("centre_col must be the name of a column in the metadata or ",
-           "an `sf` point object")
+      stop("centre_col must be the name of a column in the metadata")
     }
+  } else {
+    stop("center_col needs to be specified")
+    # TODO if center col is null, we create a dummy centre_col with the first
+    # location of each track
+    
   }
-  
   # 1 - total duration 
   tot_duration <- track_duration(x, units = units_duration) # this is a named vector of difftimes
   # get tot_duration as a tibble with track_id field
