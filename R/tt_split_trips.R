@@ -62,28 +62,6 @@ tt_split_trips <- function(x, centre_col = NULL,
       stop("centre_col must be the name of a column in the metadata")
     }
 
-  # 
-  # # Check if centre_col is a geometry object
-  # if (inherits(centre_col, "character")) {
-  #   # check if it exists in the metadata
-  #   if (!centre_col %in% names(show_meta(x))) {
-  #     stop("centre_col must be a column name in the metadata table")
-  #   }
-  #   centre_col <- sf::st_coordinates(show_meta(x)[[centre_col]])
-  # } else if (inherits(centre_col, "sf")) {
-  #   centre_col <- sf::st_coordinates(centre_col)
-  #   if (nrow(centre_col) == 1) {
-  #     # we have a single origin
-  #     # copy over for as many times as n tracks
-  #     centre_col <- matrix(rep(centre_col, nrow(x)), ncol = 2)
-  #   } else if (nrow(centre_col) != nrow(show_meta(x))) {
-  #     stop("centre_col must be a geometry object of length 1 or the same ",
-  #          "length as the number of tracks in x")
-  #   }
-  # } else {
-  #   stop("centre_col must be the name of a column in the metadata or ",
-  #        "an `sf` point object")
-  # }
 
   # Sort out units
   # set the units for the distance
