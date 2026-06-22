@@ -15,16 +15,12 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
   #   ggplot2::geom_sf(ggplot2::aes(color = bird_id)) +
   #   ggplot2::geom_sf(data = move2::mt_track_lines(test_mt))
   
-  # create a centre_col of length 2 (same number as tracks in test_mt)
-  centre_sf <- sf::st_as_sf(
-    data.frame(
-      bird_id = c("id_1", "id_2"),
-      lon = rep(0, 2),
-      lat = rep(0, 2)
-    ),
-    coords = c("lon", "lat"), crs = 4326
-  )
 
+  show_meta(test_mt)$centre_sf <- sf_point_col(x = c(0, 0),
+                                              y = c(0, 0),
+                                              crs = 4326)
+  
+  
   # now test the trip splitting
 
   # measure distances from point 0,0
@@ -39,7 +35,7 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
 
   # split the trips using centre_sf
   test_mt_split <- tt_split_trips(test_mt,
-    centre_col = centre_sf,
+    centre_col = "centre_sf",
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(100, "km"),
     complete = FALSE
@@ -85,7 +81,7 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
 
   # repeat with different units
   test_mt_split2 <- tt_split_trips(test_mt,
-    centre_col = centre_sf,
+    centre_col = "centre_sf",
     buffer_outbound = as_units(100000, "m"),
     buffer_inbound = as_units(100, "km"),
     complete = FALSE
@@ -94,7 +90,7 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
 
   # change inbound buffer
   test_mt_split3 <- tt_split_trips(test_mt,
-    centre_col = centre_sf,
+    centre_col = "centre_sf",
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(300, "km"),
     complete = FALSE
@@ -109,7 +105,7 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
 
   # check that, if we say complete = TRUE, all trips are complete
   test_mt_split4 <- tt_split_trips(test_mt,
-    centre_col = centre_sf,
+    centre_col = "centre_sf",
     buffer_outbound = as_units(100, "km"),
     buffer_inbound = as_units(300, "km"),
     complete = TRUE
@@ -118,7 +114,37 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
   expect_true(all((show_meta(test_mt_split4)$trip_type == "complete")))
   # there should only be 4 lines (3 trips + 1 trip)
   expect_equal(nrow(show_meta(test_mt_split4)), 4)
+  
+  # now test some errors for the centre_col argument
+  expect_error(
+    tt_split_trips(test_mt,
+      centre_col = "non_existent_column",
+      buffer_outbound = as_units(100, "km"),
+      buffer_inbound = as_units(100, "km"),
+      complete = FALSE
+    ), "centre_col must be a column name in the metadata table"
+  ) 
+  expect_error(
+    tt_split_trips(test_mt,
+      centre_col = "bird_id",
+      buffer_outbound = as_units(100, "km"),
+      buffer_inbound = as_units(100, "km"),
+      complete = FALSE
+    ), "centre_col must be a `sfc_POINT` column in the metadata table"
+  )
+  
+  # remove the crs from the center_sf column and check that we get the correct error
+  show_meta(test_mt)$centre_sf <- sf_point_col(x = c(0, 0), y = c(0, 0))
+  expect_error(
+    tt_split_trips(test_mt,
+      centre_col = "centre_sf",
+      buffer_outbound = as_units(100, "km"),
+      buffer_inbound = as_units(100, "km"),
+      complete = FALSE
+    ), "centre_col must have a crs specified"
+  )
+  
+  
 })
 
-# @TODO write tests with centre inputs as different from each others, or
-#   provided as additional column of meta (like in the vignette)
+# @TODO write tests with centre inputs as different from each others
