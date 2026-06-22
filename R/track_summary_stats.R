@@ -9,8 +9,8 @@
 #' the central place location
 #'
 #' @param x A `move2` object
-#' @param centre_col The name of an sf point column (usually added with 
-#' [sf_point_col()] in the metadata table.
+#' @param centre_col The name of an sf point column (usually added with
+#'   [sf_point_col()]) in the metadata table.
 #' @param units_duration The units to use for the duration. Default is "days".
 #' @return A tibble of summary statistics, with one row per track.
 #' @export
