@@ -189,7 +189,7 @@ tt_detect_layer_type <- function(p, layer_name = NULL) {
     return(named_matches[[1L]])
   }
 
-  # if more than 2 found (and not filtered using layer name), throw warning.
+  # if more than 1 found (and not filtered using layer name), throw warning.
   if (length(matches) > 1L) {
     warning(
       "Multiple `move2` track layers found in the map; ",
