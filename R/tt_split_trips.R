@@ -38,27 +38,30 @@ tt_split_trips <- function(x, centre_col = NULL,
     stop("centre_col must be provided")
   }
 
-  # Check if centre_col is a geometry object
+  # check centre_col input
   if (inherits(centre_col, "character")) {
-    # check if it exists in the metadata
-    if (!centre_col %in% names(show_meta(x))) {
-      stop("centre_col must be a column name in the metadata table")
+      # check if it exists in the metadata
+      if (!centre_col %in% names(show_meta(x))) {
+        stop("centre_col must be a column name in the metadata table")
+      }
+      centre_col <- show_meta(x)[[centre_col]]
+      # cehck that this is an `sfc_POINT` column
+      if (!inherits(centre_col, "sfc_POINT")) {
+        stop("centre_col must be a `sfc_POINT` column in the metadata table")
+      }
+      # check that we have a crs for this column
+      if (is.na(sf::st_crs(centre_col))) {
+        stop("centre_col must have a crs specified")
+      }
+      # project the centre_col to the same crs as x
+      if (!(sf::st_crs(centre_col) == sf::st_crs(x))) {
+        centre_col <- sf::st_transform(centre_col, sf::st_crs(x))
+      }
+      centre_col <- sf::st_coordinates(centre_col)
+    } else {
+      stop("centre_col must be the name of a column in the metadata")
     }
-    centre_col <- sf::st_coordinates(show_meta(x)[[centre_col]])
-  } else if (inherits(centre_col, "sf")) {
-    centre_col <- sf::st_coordinates(centre_col)
-    if (nrow(centre_col) == 1) {
-      # we have a single origin
-      # copy over for as many times as n tracks
-      centre_col <- matrix(rep(centre_col, nrow(x)), ncol = 2)
-    } else if (nrow(centre_col) != nrow(show_meta(x))) {
-      stop("centre_col must be a geometry object of length 1 or the same ",
-           "length as the number of tracks in x")
-    }
-  } else {
-    stop("centre_col must be the name of a column in the metadata or ",
-         "an `sf` point object")
-  }
+
 
   # Sort out units
   # set the units for the distance

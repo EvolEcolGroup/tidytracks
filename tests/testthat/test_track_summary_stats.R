@@ -40,16 +40,12 @@ test_that("track_summary_stats correctly computes track summaries", {
   # set up metadata for these events
   meta_df <- data.frame(
     bird_id = unique(coords_df$bird_id),
-    species = c("species_a", "species_b"),
-    geometry = sf::st_sfc(
-      sf::st_point(c(0, 0)),
-      sf::st_point(c(0, 0)), crs = 4326)
+    species = c("species_a", "species_b")
   )
-  colnames(meta_df)[which(colnames(meta_df) == "geometry")] <- "colony_sf"
-  sf::st_geometry(meta_df) <- "colony_sf"
-  
+  meta_df$colony_sf = sf_point_col(x = c(0, 0), y = c(0, 0), crs = 4326)
+
   # convert this df to a move2 object
-  test_mt <- tt_read_data(events = coords_df,
+  test_tt <- tt_read_data(events = coords_df,
                           col_track_id = "bird_id",
                           col_coords = c("longitude", "latitude"),
                           col_date_time = "date_time",
@@ -57,32 +53,32 @@ test_that("track_summary_stats correctly computes track summaries", {
   )
   
   # plot to check
-  # ggplot2::ggplot(test_mt) +
+  # ggplot2::ggplot(test_tt) +
   #   # ggplot2::geom_sf(ggplot2::aes(color = date_time)) +
   #   ggplot2::geom_sf(ggplot2::aes(color = bird_id)) +
-  #   ggplot2::geom_sf(data = move2::mt_track_lines(test_mt))
+  #   ggplot2::geom_sf(data = move2::mt_track_lines(test_tt))
   
   # run the trip splitting with complete = FALSE (includes incomplete trips
   # and locations at centre)
-  test_mt_split <- tt_split_trips(test_mt,
+  test_tt_split <- tt_split_trips(test_tt,
                                   centre_col = "colony_sf",
                                   buffer_outbound = as_units(100, "km"),
                                   buffer_inbound = as_units(100, "km"),
                                   complete = FALSE
   )
   # check that the trip ids are correct
-  expect_equal(length(unique(test_mt_split$trip_id)), 6)
-  expect_equal(length(unique(test_mt_split$bird_id)), 2)
+  expect_equal(length(unique(test_tt_split$trip_id)), 6)
+  expect_equal(length(unique(test_tt_split$bird_id)), 2)
   
   # compute track summaries
   test_sums <- track_summary_stats(
-    x = test_mt_split,
+    x = test_tt_split,
     centre_col = "colony_sf",
     units_duration = units::as_units(1, "hours")
   )
   
   # check that all the expected columns are present
-  expected_cols <- c(move2::mt_track_id_column(test_mt_split),
+  expected_cols <- c(move2::mt_track_id_column(test_tt_split),
                      "tot_duration", "tot_distance", 
                      "max_latitude", "min_latitude",
                      "max_longitude", "min_longitude",
@@ -91,18 +87,18 @@ test_that("track_summary_stats correctly computes track summaries", {
   expect_true(all(expected_cols %in% colnames(test_sums)))
   
   # check that trip_nas have been removed, so number of trips is no longer the same
-  expect_true(nrow(test_sums) < nrow(show_meta(test_mt_split)))
+  expect_true(nrow(test_sums) < nrow(show_meta(test_tt_split)))
   
-  # if we remove trip_nas from show_meta(test_mt_split), then the trip_ids in 
+  # if we remove trip_nas from show_meta(test_tt_split), then the trip_ids in 
   # sum_stats, should equal the trip_ids in show_meta
-  trip_ids <- unique(event_track_id(test_mt_split))
+  trip_ids <- unique(event_track_id(test_tt_split))
   trip_na_ids <- trip_ids[grepl("_trip_na$", trip_ids)]
-  meta_no_nas <- show_meta(test_mt_split)[
-    !(show_meta(test_mt_split)[[move2::mt_track_id_column(test_mt_split)]] %in% 
+  meta_no_nas <- show_meta(test_tt_split)[
+    !(show_meta(test_tt_split)[[move2::mt_track_id_column(test_tt_split)]] %in% 
         trip_na_ids), ]
   expect_equal(
-    test_sums[[move2::mt_track_id_column(test_mt_split)]],
-    meta_no_nas[[move2::mt_track_id_column(test_mt_split)]]
+    test_sums[[move2::mt_track_id_column(test_tt_split)]],
+    meta_no_nas[[move2::mt_track_id_column(test_tt_split)]]
   )
   
   # check the units of duration are as requested (hours)
@@ -121,9 +117,49 @@ test_that("track_summary_stats correctly computes track summaries", {
   
   # TODO add tests that the values are correct
   
+  # check that we have the same results if the centers have different projectoin
+  # check if the centers have different projection
+  show_meta(test_tt_split)$colony_sf <- 
+    sf::st_transform(show_meta(test_tt_split)$colony_sf, 5936)
+
+  # compute track summaries
+  test_sums2 <- track_summary_stats(
+    x = test_tt_split,
+    centre_col = "colony_sf",
+    units_duration = units::as_units(1, "hours")
+  )
+  expect_identical(test_sums, test_sums2)
+  
+  # now test some errors for the centre_col argument
+  expect_error(
+    track_summary_stats(
+      x = test_tt_split,
+      centre_col = "non_existent_column",
+      units_duration = units::as_units(1, "hours")
+    ),
+    "centre_col must be a column name in the metadata table"
+  )
+  expect_error(
+    track_summary_stats(
+      x = test_tt_split,
+      centre_col = "species",
+      units_duration = units::as_units(1, "hours")
+    ),
+    "centre_col must be a `sfc_POINT` column in the metadata table"
+  )
+  # remove the crs from the colony_sf column and check that we get the correct error
+  show_meta(test_tt_split)$colony_sf = sf_point_col(x = c(0, 0), y = c(0, 0))
+  expect_error(
+    track_summary_stats(
+      x = test_tt_split,
+      centre_col = "colony_sf",
+      units_duration = units::as_units(1, "hours")
+    ),
+    "centre_col must have a crs specified"
+  )
+  
+  
 })
 
 # TODO add test for where there are >10 trips per individual (to make sure
 # the trip_id field is carrying through the function correctly)
-
-
