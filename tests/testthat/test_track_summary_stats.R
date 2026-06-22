@@ -117,6 +117,19 @@ test_that("track_summary_stats correctly computes track summaries", {
   
   # TODO add tests that the values are correct
   
+  # check that we have the same results if the centers have different projectoin
+  # check if the centers have different projection
+  show_meta(test_tt_split)$colony_sf <- 
+    sf::st_transform(show_meta(test_tt_split)$colony_sf, 5936)
+
+  # compute track summaries
+  test_sums2 <- track_summary_stats(
+    x = test_tt_split,
+    centre_col = "colony_sf",
+    units_duration = units::as_units(1, "hours")
+  )
+  expect_identical(test_sums, test_sums2)
+  
   # now test some errors for the centre_col argument
   expect_error(
     track_summary_stats(

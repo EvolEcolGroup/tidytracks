@@ -88,6 +88,19 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
   )
   expect_identical(test_mt_split, test_mt_split2)
 
+  # check if the centers have different projection
+  show_meta(test_mt)$centre_sf <- 
+    sf::st_transform(show_meta(test_mt)$centre_sf, 5936)
+  
+  # repeat with different units
+  test_mt_split2b <- tt_split_trips(test_mt,
+                                   centre_col = "centre_sf",
+                                   buffer_outbound = as_units(100000, "m"),
+                                   buffer_inbound = as_units(100, "km"),
+                                   complete = FALSE
+  )
+  expect_identical(test_mt_split$trip_id, test_mt_split2b$trip_id)
+
   # change inbound buffer
   test_mt_split3 <- tt_split_trips(test_mt,
     centre_col = "centre_sf",
