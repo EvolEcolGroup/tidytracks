@@ -36,13 +36,9 @@ create_toy_tt <- function() {
   # set up metadata for these events
   meta_df <- data.frame(
     bird_id = unique(coords_df$bird_id),
-    species = c("species_a", "species_b"),
-    geometry = sf::st_sfc(
-      sf::st_point(c(0, 0)),
-      sf::st_point(c(0, 0)), crs = 4326)
-  )
-  colnames(meta_df)[which(colnames(meta_df) == "geometry")] <- "colony_sf"
-  sf::st_geometry(meta_df) <- "colony_sf"
+    species = c("species_a", "species_b")  )
+  meta_df$colony_sf = sf_point_col(x = c(0, 0), y = c(0, 0), crs = 4326)
+  
   # make tt (move2) object
   test_tt <- tt_read_data(events = coords_df,
                           col_track_id = "bird_id",
