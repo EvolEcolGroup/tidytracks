@@ -51,6 +51,11 @@ event_flag_mcconnell <- function(x, max_speed = NULL, first_last = FALSE) {
   # This controls how distances are calculated later.
   projected <- !sf::st_is_longlat(x)
   
+  # If there are fewer than 2 events, no speed can be computed; nothing to filter.
+  if (nrow(x) < 2) {
+    return(rep(TRUE, nrow(x)))
+  }
+
   # Create a reference unit matching the coordinate system currently
   # used by the track. Distances are divided by 60 hours simply to
   # produce a speed unit compatible with the track CRS.
