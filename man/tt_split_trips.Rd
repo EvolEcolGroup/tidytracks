@@ -7,8 +7,8 @@
 tt_split_trips(
   x,
   centre_col = NULL,
-  buffer_outbound = units::as_units(1000, "m"),
-  buffer_inbound = units::as_units(1000, "m"),
+  buffer_outbound = as_units(1000, "m"),
+  buffer_inbound = as_units(1000, "m"),
   complete = TRUE
 )
 }

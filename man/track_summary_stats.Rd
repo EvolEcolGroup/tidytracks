@@ -4,11 +4,7 @@
 \alias{track_summary_stats}
 \title{Compute summary statistics for each track}
 \usage{
-track_summary_stats(
-  x,
-  centre_col = NULL,
-  units_duration = units::as_units(1, "days")
-)
+track_summary_stats(x, centre_col = NULL, units_duration = as_units(1, "days"))
 }
 \arguments{
 \item{x}{A \code{move2} object}

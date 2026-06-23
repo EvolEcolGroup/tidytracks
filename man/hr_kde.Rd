@@ -7,7 +7,7 @@
 hr_kde(x, h = "h_ref_mean", bbox = NULL, res = NULL, levels = NULL)
 }
 \arguments{
-\item{x}{A move2 object; if explicitely grouped, the home range is estimated
+\item{x}{A move2 object; if explicitly grouped, the home range is estimated
 for each group, combining all tracks within each group. Otherwise, the
 track id is used as grouping variable.}
 

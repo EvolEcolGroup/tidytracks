@@ -29,3 +29,4 @@ a \code{sfc_GEOMETRYCOLLECTION} object.
 This method can be applied to a whole tibble of UDs, or to an individual
 UD.
 }
+\concept{home_range}

@@ -32,7 +32,7 @@
 #' @export
 
 track_summary_stats <- function(x,  centre_col = NULL,
-                                units_duration = units::as_units(1, "days")) {
+                                units_duration = as_units(1, "days")) {
   
   # Check if x is a move2 object
   if (!inherits(x, "move2")) {

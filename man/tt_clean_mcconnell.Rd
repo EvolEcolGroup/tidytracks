@@ -7,19 +7,25 @@
 tt_clean_mcconnell(
   x,
   max_speed = NULL,
-  flag_action = c("remove", "interpolate", "null")
+  flag_action = c("remove", "interpolate", "null"),
+  check_first_last = FALSE
 )
 }
 \arguments{
 \item{x}{A move2 object}
 
 \item{max_speed}{speed, provided as a \code{units} object (e.g.
-units::as_units(50, 'm/s').}
+as_units(50, 'm/s').}
 
 \item{flag_action}{One of "remove", "null", or "interpolate", to either
 remove the points flagged by the algorithm, keep the time stamp but set
 location to NULL, or replace the location with a linearly interpolated
 location from the events that were not filtered out.}
+
+\item{check_first_last}{Logical. If \code{TRUE}, also evaluate the first and last
+currently valid point of each track using the endpoint RMS described above.
+If either endpoint is removed, the McConnell filter is rerun on the reduced
+track until the result is stable.}
 }
 \value{
 A clean \code{move2} object with events removed

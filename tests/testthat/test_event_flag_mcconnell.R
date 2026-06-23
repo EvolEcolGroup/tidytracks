@@ -92,7 +92,7 @@ test_that("event_flag_mcconnell returns a logical vector of event length", {
   out <- event_flag_mcconnell(
     x,
     max_speed = units::as_units(10, "m/h"),
-    first_last = FALSE
+    check_first_last = FALSE
   )
   
   expect_type(out, "logical")
@@ -101,7 +101,7 @@ test_that("event_flag_mcconnell returns a logical vector of event length", {
 })
 
 
-test_that("first point is deterministically flagged when first_last = TRUE", {
+test_that("first point is deterministically flagged when check_first_last = TRUE", {
   # Deterministic projected example (meters, hourly timestamps).
   # Without endpoint handling, all points survive.
   # With endpoint handling, only the first point is removed.
@@ -115,13 +115,13 @@ test_that("first point is deterministically flagged when first_last = TRUE", {
   out_no_endpoints <- event_flag_mcconnell(
     x,
     max_speed = units::as_units(10, "m/h"),
-    first_last = FALSE
+    check_first_last = FALSE
   )
   
   out_with_endpoints <- event_flag_mcconnell(
     x,
     max_speed = units::as_units(10, "m/h"),
-    first_last = TRUE
+    check_first_last = TRUE
   )
   
   expect_identical(out_no_endpoints, c(TRUE, TRUE, TRUE, TRUE))
@@ -129,7 +129,7 @@ test_that("first point is deterministically flagged when first_last = TRUE", {
 })
 
 
-test_that("last point is deterministically flagged when first_last = TRUE", {
+test_that("last point is deterministically flagged when check_first_last = TRUE", {
   # Deterministic projected example (meters, hourly timestamps).
   # Without endpoint handling, all points survive.
   # With endpoint handling, only the last point is removed.
@@ -143,13 +143,13 @@ test_that("last point is deterministically flagged when first_last = TRUE", {
   out_no_endpoints <- event_flag_mcconnell(
     x,
     max_speed = units::as_units(30, "m/h"),
-    first_last = FALSE
+    check_first_last = FALSE
   )
   
   out_with_endpoints <- event_flag_mcconnell(
     x,
     max_speed = units::as_units(30, "m/h"),
-    first_last = TRUE
+    check_first_last = TRUE
   )
   
   expect_identical(out_no_endpoints, c(TRUE, TRUE, TRUE, TRUE))
@@ -157,15 +157,15 @@ test_that("last point is deterministically flagged when first_last = TRUE", {
 })
 
 
-test_that("first_last = TRUE reruns the algorithm deterministically", {
+test_that("check_first_last = TRUE reruns the algorithm deterministically", {
   # Deterministic rerun example for the endpoint-first implementation.
   #
   # Full track:
   #   c(200, 40, 170, 60, 20)
   #
   # Expected behaviour:
-  # - first_last = FALSE (McConnell core only): point 3 is removed
-  # - first_last = TRUE:
+  # - check_first_last = FALSE (McConnell core only): point 3 is removed
+  # - check_first_last = TRUE:
   #     * point 1 is removed by the endpoint RMS check,
   #     * after re-evaluating the new endpoints, point 2 is removed,
   #     * after re-evaluating again, point 3 is removed,
@@ -180,13 +180,13 @@ test_that("first_last = TRUE reruns the algorithm deterministically", {
   out_no_endpoints <- event_flag_mcconnell(
     x,
     max_speed = units::as_units(90, "m/h"),
-    first_last = FALSE
+    check_first_last = FALSE
   )
   
   out_with_endpoints <- event_flag_mcconnell(
     x,
     max_speed = units::as_units(90, "m/h"),
-    first_last = TRUE
+    check_first_last = TRUE
   )
   
   expect_identical(
@@ -215,7 +215,7 @@ test_that("multiple track IDs are handled independently", {
   out <- event_flag_mcconnell(
     x,
     max_speed = units::as_units(10, "m/h"),
-    first_last = TRUE
+    check_first_last = TRUE
   )
   
   expect_identical(

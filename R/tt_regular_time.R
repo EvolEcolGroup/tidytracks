@@ -196,7 +196,7 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
 .to_seconds <- function(x, arg) {
   if (!inherits(x, "units")) {
     stop("`", arg, "` must be a units object ",
-      "(e.g. `units::set_units(60, \"s\")` or `units::set_units(1, \"min\")`).",
+      "(e.g. `as_units(60, \"s\")` or `as_units(1, \"min\")`).",
       call. = FALSE
     )
   }

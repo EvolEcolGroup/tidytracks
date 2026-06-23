@@ -4,18 +4,19 @@
 \alias{event_flag_mcconnell}
 \title{Clean data based on speed}
 \usage{
-event_flag_mcconnell(x, max_speed = NULL, first_last = FALSE)
+event_flag_mcconnell(x, max_speed = NULL, check_first_last = FALSE)
 }
 \arguments{
 \item{x}{A move2 object.}
 
 \item{max_speed}{Speed, provided as a \code{units} object, e.g.
-\code{units::as_units(50, "m/s")}.}
+\code{as_units(50, "m/s")}.}
 
-\item{first_last}{Logical. If \code{TRUE}, also evaluate the first and last
+\item{check_first_last}{Logical. If \code{TRUE}, also evaluate the first and last
 currently valid point of each track using the endpoint RMS described above.
 If either endpoint is removed, the McConnell filter is rerun on the reduced
-track until the result is stable.}
+track until the result is stable. It defaults to \code{FALSE} to maintain the
+original behaviour of the McConnell algorithm.}
 }
 \value{
 A logical vector of the same length as the number of events in \code{x},
@@ -27,13 +28,13 @@ based on speed. This is a port of the \code{speedfilter} function from the \code
 package, with an optional endpoint check.
 }
 \details{
-When \code{first_last = TRUE}, the function also evaluates the first and last
-currently valid point of each track using an endpoint RMS:
+When \code{check_first_last = TRUE}, the function also evaluates the first and
+last currently valid point of each track using an endpoint RMS:
 \itemize{
 \item first point: RMS of speed(1,2) and speed(1,3)
 \item last point:  RMS of speed(n-1,n) and speed(n-2,n)
 }
 
-If an endpoint is removed, the McConnell filter is rerun on the reduced track,
-and the endpoint check is repeated until the result is stable.
+If an endpoint is removed, the McConnell filter is rerun on the reduced
+track, and the endpoint check is repeated until the result is stable.
 }

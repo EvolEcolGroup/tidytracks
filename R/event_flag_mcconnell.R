@@ -4,27 +4,27 @@
 #' based on speed. This is a port of the `speedfilter` function from the `trip`
 #' package, with an optional endpoint check.
 #'
-#' When `first_last = TRUE`, the function also evaluates the first and last
-#' currently valid point of each track using an endpoint RMS:
+#' When `check_first_last = TRUE`, the function also evaluates the first and
+#' last currently valid point of each track using an endpoint RMS:
 #' - first point: RMS of speed(1,2) and speed(1,3)
 #' - last point:  RMS of speed(n-1,n) and speed(n-2,n)
 #'
-#' If an endpoint is removed, the McConnell filter is rerun on the reduced track,
-#' and the endpoint check is repeated until the result is stable.
+#' If an endpoint is removed, the McConnell filter is rerun on the reduced
+#' track, and the endpoint check is repeated until the result is stable.
 #'
 #' @param x A move2 object.
 #' @param max_speed Speed, provided as a `units` object, e.g.
-#'   `units::as_units(50, "m/s")`.
-#' @param first_last Logical. If `TRUE`, also evaluate the first and last
+#'   `as_units(50, "m/s")`.
+#' @param check_first_last Logical. If `TRUE`, also evaluate the first and last
 #'   currently valid point of each track using the endpoint RMS described above.
 #'   If either endpoint is removed, the McConnell filter is rerun on the reduced
-#'   track until the result is stable.
-#'
+#'   track until the result is stable. It defaults to `FALSE` to maintain the
+#'   original behaviour of the McConnell algorithm.
 #' @return A logical vector of the same length as the number of events in `x`,
 #'   indicating which points are valid.
 #' @export
 
-event_flag_mcconnell <- function(x, max_speed = NULL, first_last = FALSE) {
+event_flag_mcconnell <- function(x, max_speed = NULL, check_first_last = FALSE) {
   
   # ---------------------------------------------------------------------------
   # Input checks
@@ -44,7 +44,7 @@ event_flag_mcconnell <- function(x, max_speed = NULL, first_last = FALSE) {
   # Require a units object to avoid ambiguity regarding speed units.
   # This prevents accidental mixing of km/h, m/s, etc.
   if (!inherits(max_speed, "units")) {
-    stop("max_speed must be a units object: e.g. units::as_units(50, 'm/s')")
+    stop("max_speed must be a units object: e.g. as_units(50, 'm/s')")
   }
   
   # Determine whether coordinates are projected or longitude/latitude.
@@ -344,20 +344,20 @@ event_flag_mcconnell <- function(x, max_speed = NULL, first_last = FALSE) {
   # Helper: combined filtering procedure for one track
   # ---------------------------------------------------------------------------
   #
-  # When first_last = FALSE:
+  # When check_first_last = FALSE:
   #   Run standard McConnell filter only.
   #
-  # When first_last = TRUE:
+  # When check_first_last = TRUE:
   #   1. Check endpoints.
   #   2. Remove flagged endpoints.
   #   3. Rerun McConnell filter.
   #   4. Repeat until no changes occur.
   # ---------------------------------------------------------------------------
   filter_one_track <- function(xy, track_time, max_speed, projected,
-                               first_last, pprm, track_label = NULL) {
+                               check_first_last, pprm, track_label = NULL) {
     
     # Preserve original behaviour exactly.
-    if (!isTRUE(first_last)) {
+    if (!isTRUE(check_first_last)) {
       
       return(
         mcconnell_core_track(
@@ -454,7 +454,7 @@ event_flag_mcconnell <- function(x, max_speed = NULL, first_last = FALSE) {
       track_time = track_time,
       max_speed = max_speed,
       projected = projected,
-      first_last = first_last,
+      check_first_last = check_first_last,
       pprm = pprm,
       track_label = i_track
     )

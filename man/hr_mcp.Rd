@@ -15,7 +15,7 @@ hr_mcp(x, levels = c(0.5, 0.95))
 \value{
 A tibble of subclass \code{hr_poly_tbl} of results, with columns:
 \itemize{
-\item \code{group_id}: the ids from the groping of \code{x}
+\item \code{group_id}: the ids from the grouping of \code{x}
 \item \code{level}: the level of the contour line
 \item \code{geometry}: the geometry of the home range as a list of sf polygons
 }
