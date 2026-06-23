@@ -10,8 +10,8 @@
 #'
 #' @param x A `move2` object
 #' @param centre_col The name of an sf point column (usually added with
-#'   [sf_point_col()]) in the metadata table. If let to NULL, variables
-#'   related to a central place location will not be calculated.
+#'   [sf_point_col()]) in the metadata table. If left to NULL, the first location
+#'   (i.e. the starting point) is used at the centre.
 #' @param units_duration The units to use for the duration. Default is "days".
 #' @return A tibble of summary statistics, with one row per track. The columns are:
 #' \itemize{
@@ -23,11 +23,11 @@
 #'  \item max_longitude: The maximum longitude of the track
 #'  \item min_longitude: The minimum longitude of the track
 #'  \item max_dist_centre: The maximum distance from the central place location in
-#'  column `centre_col` (if provided) in metres
+#'  column `centre_col` (or the starting point) in metres
 #'  \item lat_at_max_dist_centre: The latitude at the point of maximum distance from
-#'  the central place location (if provided)
+#'  the central place location (or the starting point))
 #'  \item lon_at_max_dist_centre: The longitude at the point of maximum
-#'  distance from the central place location (if provided)
+#'  distance from the central place location (or the starting point)
 #'  }
 #' @export
 
@@ -52,9 +52,15 @@ track_summary_stats <- function(x,  centre_col = NULL,
     # remove these trip_na events from x
     x <- x[!event_track_id(x) %in% trip_na_ids, ]
   }
+  .group_var <- move2::mt_track_id_column(x)
   
   # check centre_col input
-    if (inherits(centre_col, "character")) {
+  if (is.null(centre_col)) {
+    centre_col <- x %>%
+      dplyr::group_by(.data[[.group_var]])  %>%
+      dplyr::slice_min(.data[[move2::mt_time_column(x)]], n = 1, with_ties = FALSE) %>%
+      sf::st_geometry()
+  } else  if (inherits(centre_col, "character")) {
       # check if it exists in the metadata
       if (!centre_col %in% names(show_meta(x))) {
         stop("centre_col must be a column name in the metadata table")
@@ -84,7 +90,6 @@ track_summary_stats <- function(x,  centre_col = NULL,
   
   # 2 - total distance travelled
   # TODO write a cum_distance function that works on coords
-  .group_var <- move2::mt_track_id_column(x)
   tot_distance_df <- x %>%
     dplyr::mutate(distance = move2::mt_distance(x)) %>% # add distance to next point (end-of-track is NA)
     sf::st_drop_geometry() %>% # otherwise we end up with a geometry field in the output
@@ -116,7 +121,6 @@ track_summary_stats <- function(x,  centre_col = NULL,
   
   # 4 - if centre_col is given, calculate max distance from centre and 
   #     latitude at that point
-  if (!is.null(centre_col)){
     # appease R CMD check - could have used a globalVariable for this instead
     i_foreach <- NULL
     # get maximum distance between the centre and the events for each track
@@ -150,7 +154,7 @@ track_summary_stats <- function(x,  centre_col = NULL,
     sum_stats <- dplyr::full_join(sum_stats, centre_sums,
                                   by = "track_id")
     
-  }
+
   
   # check that sum_stats has the right number of rows (number of unique track IDs)
   # This is a sanity check, it should never happen.
