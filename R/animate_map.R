@@ -57,12 +57,17 @@
 #'   argument of `gganimate::animate()`.
 #' @export
 animate_map <- function(p,
-                           layer_to_animate = NULL,
-                           wake_length = 0.5,
-                           label_format = "%Y-%m-%d %H:%M:%S") {
+                        layer_to_animate = NULL,
+                        wake_length = 0.5,
+                        label_format = "%Y-%m-%d %H:%M:%S") {
 
+  # Capture the name of the move2 object as a string at call time, before any
+  # evaluation. This is used later to match against the "tidytracks_data_name"
+  # attribute stamped on layer data by the geoms, allowing unambiguous selection
+  # when multiple track layers are present.
   layer_name <- if (!is.null(layer_to_animate)) deparse(substitute(layer_to_animate)) else NULL
 
+  # --- Input validation ---
   if (!inherits(p, "ggplot")) {
     stop("p must be a ggplot object")
   }
@@ -74,6 +79,9 @@ animate_map <- function(p,
     stop("wake_length must be a single numeric value greater than 0 and at most 1")
   }
 
+  # --- Detect the track layer to animate ---
+  # Scan the plot's layer stack for a layer tagged by geom_event_path or
+  # geom_event_point. Returns a list(type, data, time_col), or NULL if none found.
   detected <- tt_detect_layer_type(p, layer_name = layer_name)
 
   if (is.null(detected)) {
@@ -83,6 +91,8 @@ animate_map <- function(p,
     )
   }
 
+  # Pull the time column name and geometry type ("path" or "point") from the
+  # detection result.
   time_col <- detected$time_col
 
   layer_type <- detected$type
@@ -90,29 +100,45 @@ animate_map <- function(p,
   # of each track is dropped by geom_event_path, so the layer may contain fewer
   # unique timestamps than x.
   n_timesteps <- length(unique(detected$data[[time_col]]))
+  # Convert the column name string to a symbol so it can be unquoted inside
+  # the transition_time() call with !!.
   time_sym  <- rlang::sym(time_col)
 
+  # --- Build the animated plot ---
+  # transition_time() drives the animation: gganimate renders one frame per
+  # unique value of the time column, interpolating between them.
   p_anim <- p + gganimate::transition_time(time = !!time_sym)
 
+  # --- Add the appropriate wake / shadow layer ---
   if (wake_length == 1) {
-    # special case: full opacity, no fading — all past positions stay visible
+    # Special case: retain all past positions at full opacity with no fading.
+    # shadow_mark() is used here instead of shadow_wake() because it preserves
+    # every previously rendered frame permanently without any falloff.
     p_anim <- p_anim + gganimate::shadow_mark(past = TRUE, future = FALSE)
   } else if (layer_type == "path") {
+    # Path wake: alpha fades out along the trail, but size stays constant —
+    # shrinking line width looks odd for segment-based paths.
     p_anim <- p_anim +
       shadow_wake_build(wake_length = wake_length,
                         size = FALSE, alpha = TRUE, wrap = FALSE)
   } else {
-    # point: fading, shrinking wake
+    # Point wake: both alpha and size shrink along the trail, giving a comet-
+    # like effect that clearly shows direction of travel.
     p_anim <- p_anim +
       shadow_wake_build(wake_length = wake_length,
                         size = TRUE, alpha = TRUE, wrap = FALSE)
   }
 
+  # --- Add a dynamic frame-time label to the plot title ---
+  # gganimate evaluates the title string as a glue expression, so wrapping the
+  # format() call in {} causes it to be re-evaluated and updated on every frame.
   p_anim <- p_anim +
     ggplot2::labs(
       title = paste0("{format(frame_time, '", label_format, "')}")
     )
 
+  # Attach the frame count as an attribute so callers can pass it directly to
+  # the `nframes` argument of gganimate::animate() without having to recount.
   attr(p_anim, "n_timesteps") <- n_timesteps
   p_anim
 }
@@ -140,13 +166,16 @@ animate_map <- function(p,
 tt_detect_layer_type <- function(p, layer_name = NULL) {
   matches <- list()
 
+  # Iterate over every layer in the plot, looking for ones tagged by tidytracks.
   for (layer in p$layers) {
-    # look for layers tagged with tidytracks_geom (i.e. made using
-    # geom_event_point or geom_event_path).
+    # Only geom_event_path and geom_event_point set the "tidytracks_geom"
+    # attribute on their data; all other layers (basemaps, polygons, etc.)
+    # won't have it and are skipped.
     data <- layer$data
     tag  <- attr(data, "tidytracks_geom")
     if (is.null(tag)) next
-    # get the posixct column name from the attribute set by the geom
+    # The geom also stamps the name of the time column on the data, saving us
+    # from having to guess which POSIXct column to animate over.
     time_col<- attr(data, "tidytracks_time_col")
     # TODO the old code was checking if the time_col actually exists in the data
     # and is POSIXct, but this should always be true if the geoms are working
@@ -159,20 +188,23 @@ tt_detect_layer_type <- function(p, layer_name = NULL) {
     # if (length(posixct_cols) == 0L) next
     # time_col <- posixct_cols[[1L]]
  
-    # add type which is either path or point depending on tidytracks_geom attr
+    # Map the raw tag string to the canonical type label used downstream.
     type <- base::switch(tag,
       event_path  = "path",
       event_point = "point",
       NULL
     )
     if (is.null(type)) next
-    # add to the list of matches
+    # Collect all valid matches; we may need to disambiguate below.
     matches <- c(matches, list(list(type = type, data = data, time_col = time_col)))
   }
 
   if (length(matches) == 0L) return(NULL)
 
-  # if layer_name was given, use this to filter further
+  # If the caller named a specific move2 object to animate, filter the candidate
+  # list down to only layers whose data carry a matching "tidytracks_data_name"
+  # attribute. This is the mechanism that prevents ambiguity when the map has
+  # more than one track layer.
   if (!is.null(layer_name)) {
     named_matches <- base::Filter(
       function(m) base::identical(attr(m$data, "tidytracks_data_name"), layer_name),
@@ -189,7 +221,8 @@ tt_detect_layer_type <- function(p, layer_name = NULL) {
     return(named_matches[[1L]])
   }
 
-  # if more than 1 found (and not filtered using layer name), throw warning.
+  # If multiple tidytracks layers exist and no name was given, warn and fall
+  # back to the first one (i.e. the lowest layer in the plot stack).
   if (length(matches) > 1L) {
     warning(
       "Multiple `move2` track layers found in the map; ",

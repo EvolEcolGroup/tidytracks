@@ -19,7 +19,8 @@ library(gganimate)
 ```
 
 
-`tidytracks` makes creating animated maps of your animal movement data easy.
+`tidytracks` also includes a function for animating maps of animal movement 
+data over time.
 
 <br>
 

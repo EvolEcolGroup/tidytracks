@@ -12,8 +12,8 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
-  \item{move2}{\code{\link[move2:mt_as_move2]{mt_as_move2()}}}
+  \item{move2}{\code{\link[move2]{mt_as_move2}}}
 
-  \item{units}{\code{\link[units:as_units]{as_units()}}}
+  \item{units}{\code{\link[units:units]{as_units}}}
 }}
 
