@@ -18,7 +18,7 @@
 #' unit for area. In this case, it is recommended to project `x` to an
 #' appropriate projection before using this function. 
 #'
-#' @param x A move2 object; if explicitely grouped, the home range is estimated
+#' @param x A move2 object; if explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
 #'   track id is used as grouping variable.
 #' @param h The bandwidth for the kernel density estimation. Either a number, or
