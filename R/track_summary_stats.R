@@ -56,10 +56,16 @@ track_summary_stats <- function(x,  centre_col = NULL,
   
   # check centre_col input
   if (is.null(centre_col)) {
-    centre_col <- x %>%
-      dplyr::group_by(.data[[.group_var]])  %>%
+    centre_df <- x %>%
+      dplyr::group_by(.data[[.group_var]]) %>%
       dplyr::slice_min(.data[[move2::mt_time_column(x)]], n = 1, with_ties = FALSE) %>%
-      sf::st_geometry()
+      dplyr::ungroup()
+
+    centre_col <- sf::st_geometry(centre_df)
+    names(centre_col) <- centre_df[[.group_var]]
+
+    # Reorder to match metadata row order used later in the function
+    centre_col <- centre_col[as.character(show_meta(x)[[.group_var]])]
   } else  if (inherits(centre_col, "character")) {
       # check if it exists in the metadata
       if (!centre_col %in% names(show_meta(x))) {
