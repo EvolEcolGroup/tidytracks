@@ -18,7 +18,7 @@ str(show_meta(ten_tracks))
 # functioning (if quite coarse) kde
 ten_tracks_kde <- ten_tracks %>%
   group_by(track_id) %>%
-  tt_hr_kde(levels = c(0.5, 0.95), 
+  hr_kde(levels = c(0.5, 0.95), 
             h="h_ref_mean",
             res = 10000)
 
@@ -33,7 +33,7 @@ broken_bbox <- list(
 
 ten_tracks_kde_1 <- ten_tracks %>%
   group_by(track_id) %>%
-  tt_hr_kde(
+  hr_kde(
     levels = c(0.5, 0.95),
     h = "h_ref_mean",
     bbox = broken_bbox,
@@ -53,7 +53,7 @@ nine_tracks <- ten_tracks %>%
 
 nine_tracks_kde_1 <- nine_tracks %>%
   group_by(track_id) %>%
-  tt_hr_kde(levels = c(0.5, 0.95), 
+  hr_kde(levels = c(0.5, 0.95), 
             h="h_ref_mean",
             res = 50000) 
 
@@ -63,7 +63,7 @@ sum(sf::st_is_empty(nine_tracks_kde_1))
 # try with finer res
 nine_tracks_kde_2 <- nine_tracks %>%
   group_by(track_id) %>%
-  tt_hr_kde(levels = c(0.5, 0.95), 
+  hr_kde(levels = c(0.5, 0.95), 
             h="h_ref_mean",
             res = 20000) 
 

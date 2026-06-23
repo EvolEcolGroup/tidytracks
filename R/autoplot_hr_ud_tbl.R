@@ -1,13 +1,13 @@
 #' Autoplot a tibble of utilisation distributions
 #'
 #' This autoplot function can be used to plot all or a subset of UDs from a
-#' tibble of UDs created by [tt_hr_kde()]. The first column of the tibble is
+#' tibble of UDs created by [hr_kde()]. The first column of the tibble is
 #' assumed to be an id column, which is used to identify the UDs to plot. The
 #' layout of the plots can be specified with the `layout` argument, and it is
 #' assembled with `patchwork`.
 #'
 #' @param object A tibble of utilisation distributions created by kde of class
-#'   `hr_ud_tbl` as created with [tt_hr_kde()].
+#'   `hr_ud_tbl` as created with [hr_kde()].
 #' @param id_to_plot Integer or character, the id of the utilisation
 #'   distribution to plot. If `NULL`, all utilisation distributions in the
 #'   tibble are plotted. The first column of the tibble is assumed to be the id

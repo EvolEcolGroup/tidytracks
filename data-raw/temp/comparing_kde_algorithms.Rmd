@@ -50,7 +50,7 @@ boar_mt <- readRDS("../tests/testthat/testdata/wildboar_tt.rds")
 # group by name
 boar_mt <- boar_mt %>%
   dplyr::group_by(Name)
-boar_kde <- tt_hr_kde(boar_mt,
+boar_kde <- hr_kde(boar_mt,
                       h = "h_ref_ade_indiv",
                       levels = c(0.50, 0.95))
 

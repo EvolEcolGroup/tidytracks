@@ -14,7 +14,7 @@ hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi"))
 }
 \arguments{
 \item{x}{A SpatRaster of the utilisation distribution (with a layer \code{ud}), or
-a tibble of UDs of class \code{hr_ud_tbl} (e.g. as created with \code{\link[=tt_hr_kde]{tt_hr_kde()}}).}
+a tibble of UDs of class \code{hr_ud_tbl} (e.g. as created with \code{\link[=hr_kde]{hr_kde()}}).}
 
 \item{...}{Additional arguments (not currently used)}
 

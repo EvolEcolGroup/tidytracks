@@ -546,7 +546,7 @@ shags_trips_sub <- shags_trips_sub %>%
 ```
 
 We can now estimate the home range using Kernel Density Estimation (KDE). The 
-default smoothing parameter (h) in the `tt_hr_kde` function is set to
+default smoothing parameter (h) in the `hr_kde` function is set to
 "h_ref_mean". The bandwidth for the kernel density estimation can be either a 
 number, or "h_ref_indiv" for using the reference bandwidth
 for each individual, or "h_ref_mean" for using the mean bandwidth for all
@@ -556,7 +556,7 @@ We want to estimate the home range for each bird, so we will group by `bird_id`:
 ```{r}
 shags_kde <- shags_trips_sub %>%
   group_by(bird_id) %>%
-  tt_hr_kde(levels = c(0.5, 0.95))
+  hr_kde(levels = c(0.5, 0.95))
 ```
 
 `shags_kde` is an `sf` object, with estimates of the area (in the units of
@@ -596,7 +596,7 @@ To get a minimum convex polygon covering 95% of the data, we can use:
 ```{r}
 shags_mcp <- shags_trips_sub %>%
   group_by(bird_id) %>%
-  tt_hr_mcp(levels = c(0.95))
+  hr_mcp(levels = c(0.95))
 ```
 
 We can plot the MCPs with:

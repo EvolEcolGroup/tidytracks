@@ -11,7 +11,6 @@
 #' - `level`: the level of the contour line
 #' - `geometry`: the geometry of the home range as a list of sf polygons
 #' @export
-#' @family home_range
 
 hr_mcp <- function(x, levels = c(0.5, 0.95)) {
   # Check if x is a grouped move2 object

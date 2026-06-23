@@ -3,7 +3,7 @@
 #' This method can be applied to a whole tibble of UDs, or to an individual
 #' UD.
 #' 
-#' @param x either a tibble of class `hr_ud_tbl`, as created by [tt_hr_kde()],
+#' @param x either a tibble of class `hr_ud_tbl`, as created by [hr_kde()],
 #' or a `SpatRaster` object from the `ud` column of a `hr_ud_tbl` tibble.
 #' @param levels numeric vector of isopleth levels to create. Default is
 #' `c(0.50, 0.95)`, which will create 50% and 95% isopleths. Levels should be between
@@ -12,6 +12,7 @@
 #' `id`, `level`, and `geometry`. If `x` is a `hr_ud` object, 
 #' a `sfc_GEOMETRYCOLLECTION` object.
 #' @export
+#' @family home_range
 
 hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
   UseMethod("hr_ud_iso")

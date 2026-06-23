@@ -54,7 +54,6 @@
 #'   the isopleth for the appropriate level
 #'
 #' @export
-#' @family home_range
 
 hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
                       res = NULL, levels = NULL) {

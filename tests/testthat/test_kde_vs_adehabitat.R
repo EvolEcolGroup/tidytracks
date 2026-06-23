@@ -1,6 +1,6 @@
 skip_if_not_installed("adehabitatHR")
 skip_if_not_installed("sp")
-test_that("tt_hr_kde is equivalent to adehabitatHR", {
+test_that("hr_kde is equivalent to adehabitatHR", {
   suppressPackageStartupMessages({
     library(sp)
     suppressMessages(library(adehabitatHR))
@@ -33,7 +33,7 @@ test_that("tt_hr_kde is equivalent to adehabitatHR", {
   wildboars_tt <- readRDS(file.path( test_path("testdata"),"wildboar_tt.rds"))
   wildboars_tt <- wildboars_tt %>% dplyr::group_by(name)
   mask.xy <- as.data.frame(my_grid)
-  wildboars_kde <- tt_hr_kde(wildboars_tt,
+  wildboars_kde <- hr_kde(wildboars_tt,
     levels = NULL,
     h = "h_ref_indiv",
     res = 50,

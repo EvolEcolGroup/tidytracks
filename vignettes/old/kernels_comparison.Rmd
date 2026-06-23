@@ -225,7 +225,7 @@ yes, it looks like the bbox of the grid is the same as the extent of the grid, s
 Note that the limits in the MASS kde function refer to centroids (i.e. the determine the actual values of x and y)
 ```{r}
 wildboars_tt <- wildboars_tt %>% dplyr::group_by(name)
-wildboars_kde <- tt_hr_kde(wildboars_tt, levels = NULL,
+wildboars_kde <- hr_kde(wildboars_tt, levels = NULL,
                            h = "h_ref_indiv",
                            res = 50,
                            bbox = list(xmin = min(mask.xy$x)-25, ymin = min(mask.xy$y)-25,
@@ -328,7 +328,7 @@ plot(iso_90, col=1:4)
 
 ## next steps
 
-- try with `tidytracks::tt_hr_kde()` - getting the exact same grid etc. will be 
+- try with `tidytracks::hr_kde()` - getting the exact same grid etc. will be 
    difficult.
 - check the differences are still <0.1%
 - replace the `adehabitatHR` object's values (in `@data`) with the values from 

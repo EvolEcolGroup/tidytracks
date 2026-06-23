@@ -1,10 +1,10 @@
-test_that("tt_hr_kde works with multiple tracks", {
+test_that("hr_kde works with multiple tracks", {
   # load a simple dataset originally from adehabitat
   boar_tt <- readRDS(file.path( test_path("testdata"),"wildboar_tt.rds"))
   # group by name
   boar_tt <- boar_tt %>%
     dplyr::group_by(name)
-  boar_kde <- tt_hr_kde(boar_tt, res = 50)
+  boar_kde <- hr_kde(boar_tt, res = 50)
   # we expect 4 rows, one per group
   expect_equal(nrow(boar_kde), 4)
   # this should be  a hr_kde_tbl object
@@ -30,7 +30,7 @@ test_that("tt_hr_kde works with multiple tracks", {
   
   # use a tt that is not grouped
   boar_tt2 <- readRDS(file.path( test_path("testdata"),"wildboar_tt.rds"))
-  boar_kde2 <- tt_hr_kde(boar_tt2, res = 50)
+  boar_kde2 <- hr_kde(boar_tt2, res = 50)
   # this should be the same as the previous one
   expect_equal(boar_kde, boar_kde2, ignore_attr = TRUE)
   
@@ -43,12 +43,12 @@ test_that("tt_hr_kde works with multiple tracks", {
   
 })
 
-test_that("tt_hr_kde bbox columns are always numeric (not list-cols)", {
+test_that("hr_kde bbox columns are always numeric (not list-cols)", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   boar_tt <- boar_tt %>% dplyr::group_by(name)
 
   # Call with default (NULL) bbox — internally uses sf::st_bbox()
-  boar_kde <- tt_hr_kde(boar_tt, res = 50)
+  boar_kde <- hr_kde(boar_tt, res = 50)
   expect_true(is.numeric(boar_kde$xmin))
   expect_true(is.numeric(boar_kde$xmax))
   expect_true(is.numeric(boar_kde$ymin))
@@ -62,7 +62,7 @@ test_that("tt_hr_kde bbox columns are always numeric (not list-cols)", {
     xmax = unname(ext["xmax"]) + 1000,
     ymax = unname(ext["ymax"]) + 1000
   )
-  boar_kde_list <- tt_hr_kde(boar_tt, res = 50, bbox = bbox_list)
+  boar_kde_list <- hr_kde(boar_tt, res = 50, bbox = bbox_list)
   expect_true(is.numeric(boar_kde_list$xmin))
   expect_true(is.numeric(boar_kde_list$xmax))
   expect_true(is.numeric(boar_kde_list$ymin))
