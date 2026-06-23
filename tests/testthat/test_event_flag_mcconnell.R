@@ -5,7 +5,7 @@
 # Minimal move2 constructor for tests, following the structure of the toy
 # example used in the discussion.
 #
-# We use a projected CRS (EPSG:3857), so the x/y coordinates above are treated
+# We use a projected CRS (EPSG:27700), so the x/y coordinates above are treated
 # as planar coordinates in meters. This keeps the tests deterministic and makes
 # the speed thresholds easy to reason about.
 make_test_move2 <- function(x, y, time, track_id) {
