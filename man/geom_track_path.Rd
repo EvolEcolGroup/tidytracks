@@ -46,8 +46,8 @@ A \code{ggplot2} layer object.
 This function provides a \code{ggplot2} geometry to plot track as
 paths. It uses \code{\link[=track_lines]{track_lines()}} to create \code{sf} multilines which are then
 plotted via a wrapper around \verb{[ggplot2::geom_sf()]}, thus allowing for
-projections to be set using the \code{\link[ggplot2:ggsf]{ggplot2::coord_sf()}}` function. See
-\code{\link[ggplot2:ggsf]{ggplot2::geom_sf()}} for details. All variables from the metadata table can
+projections to be set using the \code{\link[ggplot2:coord_sf]{ggplot2::coord_sf()}}` function. See
+\code{\link[ggplot2:geom_sf]{ggplot2::geom_sf()}} for details. All variables from the metadata table can
 be used for mapping.
 }
 \details{

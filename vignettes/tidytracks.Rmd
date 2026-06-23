@@ -421,10 +421,6 @@ shags_tt$speed <- NULL
 ```
 
 
-<br>
-
-***
-
 # Splitting trips
 
 Shags are central place foragers, and we now want to split the track into

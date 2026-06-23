@@ -1,6 +1,6 @@
 Package: tidytracks
 Title: Functions to Analyse Tracking Data
-Version: 0.0.0.9004
+Version: 0.0.0.9005
 Authors@R: c(
     person("Andrea", "Manica", , "am315@cam.ac.uk", role = c("aut", "cre")),
     person("Lizzie", "Pearmain", role = c("aut")),
@@ -51,4 +51,3 @@ VignetteBuilder: knitr
 Config/testthat/edition: 3
 LazyData: true
 Config/roxygen2/version: 8.0.0
-RoxygenNote: 7.3.3

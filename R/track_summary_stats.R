@@ -3,15 +3,32 @@
 #' This function provides a set of summary statistics for each track. It is
 #' unusual in returning a tibble of multiple variables rather than a single
 #' vector. The summary statistics include the duration of the track, the
-#' cumulative distance, the maximum and minimum latitude and longitude of
-#' the total track, and, if a central place location is provided, the maximum
-#' distance that location,  and the latitude at the most distant point from
-#' the central place location
+#' cumulative distance, the maximum and minimum latitude and longitude of the
+#' total track, and, if a central place location is provided, the maximum
+#' distance that location, and the latitude at the most distant point from the
+#' central place location
 #'
 #' @param x A `move2` object
-#' @param centre_col A geometry object or a column name in the metadata table.
+#' @param centre_col The name of an sf point column (usually added with
+#'   [sf_point_col()]) in the metadata table. If let to NULL, variables
+#'   related to a central place location will not be calculated.
 #' @param units_duration The units to use for the duration. Default is "days".
-#' @return A tibble of summary statistics, with one row per track.
+#' @return A tibble of summary statistics, with one row per track. The columns are:
+#' \itemize{
+#'  \item \code{<track id column>}: The track ID from \code{x}
+#'  \item tot_duration: The total duration of the track in the specified units
+#'  \item tot_distance: The total distance travelled in the track in metres
+#'  \item max_latitude: The maximum latitude of the track
+#'  \item min_latitude: The minimum latitude of the track
+#'  \item max_longitude: The maximum longitude of the track
+#'  \item min_longitude: The minimum longitude of the track
+#'  \item max_dist_centre: The maximum distance from the central place location in
+#'  column `centre_col` (if provided) in metres
+#'  \item lat_at_max_dist_centre: The latitude at the point of maximum distance from
+#'  the central place location (if provided)
+#'  \item lon_at_max_dist_centre: The longitude at the point of maximum
+#'  distance from the central place location (if provided)
+#'  }
 #' @export
 
 track_summary_stats <- function(x,  centre_col = NULL,
@@ -37,31 +54,28 @@ track_summary_stats <- function(x,  centre_col = NULL,
   }
   
   # check centre_col input
-  if (!is.null(centre_col)){
     if (inherits(centre_col, "character")) {
       # check if it exists in the metadata
       if (!centre_col %in% names(show_meta(x))) {
         stop("centre_col must be a column name in the metadata table")
       }
       centre_col <- show_meta(x)[[centre_col]]
-    } else if (inherits(centre_col, "sf")) {
-      stop("this option has yet to be properly implemented")
-      # @TODO @BUG the code below needs changing
-      centre_col <- sf::st_geometry(centre_col)
-      if (nrow(centre_col) == 1) {
-        # we have a single origin
-        # copy over for as many times as n tracks
-        centre_col <- matrix(rep(centre_col, nrow(x)), ncol = 2)
-      } else if (nrow(centre_col) != nrow(show_meta(x))) {
-        stop("centre_col must be a geometry object of length 1 or the same ",
-             "length as the number of tracks in x")
+      # cehck that this is an `sfc_POINT` column
+      if (!inherits(centre_col, "sfc_POINT")) {
+        stop("centre_col must be a `sfc_POINT` column in the metadata table")
       }
+      # check that we have a crs for this column
+      if (is.na(sf::st_crs(centre_col))) {
+        stop("centre_col must have a crs specified")
+      }
+      # project the centre_col to the same crs as x
+      if (!(sf::st_crs(centre_col) == sf::st_crs(x))) {
+        centre_col <- sf::st_transform(centre_col, sf::st_crs(x))
+      }                                                
     } else {
-      stop("centre_col must be the name of a column in the metadata or ",
-           "an `sf` point object")
+      stop("centre_col must be the name of a column in the metadata")
     }
-  }
-  
+
   # 1 - total duration 
   tot_duration <- track_duration(x, units = units_duration) # this is a named vector of difftimes
   # get tot_duration as a tibble with track_id field

@@ -13,19 +13,36 @@ track_summary_stats(
 \arguments{
 \item{x}{A \code{move2} object}
 
-\item{centre_col}{A geometry object or a column name in the metadata table.}
+\item{centre_col}{The name of an sf point column (usually added with
+\code{\link[=sf_point_col]{sf_point_col()}}) in the metadata table. If let to NULL, variables
+related to a central place location will not be calculated.}
 
 \item{units_duration}{The units to use for the duration. Default is "days".}
 }
 \value{
-A tibble of summary statistics, with one row per track.
+A tibble of summary statistics, with one row per track. The columns are:
+\itemize{
+\item \code{<track id column>}: The track ID from \code{x}
+\item tot_duration: The total duration of the track in the specified units
+\item tot_distance: The total distance travelled in the track in metres
+\item max_latitude: The maximum latitude of the track
+\item min_latitude: The minimum latitude of the track
+\item max_longitude: The maximum longitude of the track
+\item min_longitude: The minimum longitude of the track
+\item max_dist_centre: The maximum distance from the central place location in
+column \code{centre_col} (if provided) in metres
+\item lat_at_max_dist_centre: The latitude at the point of maximum distance from
+the central place location (if provided)
+\item lon_at_max_dist_centre: The longitude at the point of maximum
+distance from the central place location (if provided)
+}
 }
 \description{
 This function provides a set of summary statistics for each track. It is
 unusual in returning a tibble of multiple variables rather than a single
 vector. The summary statistics include the duration of the track, the
-cumulative distance, the maximum and minimum latitude and longitude of
-the total track, and, if a central place location is provided, the maximum
-distance that location,  and the latitude at the most distant point from
-the central place location
+cumulative distance, the maximum and minimum latitude and longitude of the
+total track, and, if a central place location is provided, the maximum
+distance that location, and the latitude at the most distant point from the
+central place location
 }
