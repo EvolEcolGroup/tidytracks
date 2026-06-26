@@ -44,7 +44,7 @@ hr_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
   levels <- sort(levels)
   
   # check that x has a ud layer
-  if ("ud" %notin% names(x)) {
+  if (!("ud" %in% names(x))) {
     stop("x must have a layer named 'ud'")
   }
 
