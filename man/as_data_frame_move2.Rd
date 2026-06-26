@@ -4,7 +4,7 @@
 \alias{as.data.frame.move2}
 \title{Convert a \code{move2} object to a data frame}
 \usage{
-\method{as.data.frame}{move2}(x, ..., include_meta = TRUE)
+\method{as.data.frame}{move2}(x, ..., include_meta = FALSE, drop_geometry = FALSE)
 }
 \arguments{
 \item{x}{A \code{move2} object}
@@ -13,6 +13,10 @@
 
 \item{include_meta}{Logical, whether to include the metadata attributes in
 the resulting data frame. Default is TRUE.}
+
+\item{drop_geometry}{Logical, whether to drop the geometry column from the
+resulting data frame. Default is FALSE. If TRUE, the coordinates are stored
+in separate columns (\code{X} and \code{Y}).}
 }
 \value{
 A data frame with one row per event, including the event attributes,
@@ -26,5 +30,5 @@ the metadata attributes (unless \code{include_meta} is set to \code{FALSE}).
 }
 \examples{
 # example code
-as.data.frame(example_tt)
+as.data.frame(example_tt, include_meta = TRUE, drop_geometry = TRUE)
 }
