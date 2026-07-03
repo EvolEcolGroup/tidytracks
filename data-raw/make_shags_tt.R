@@ -3,8 +3,7 @@ library(tidytracks)
 library(sf)
 
 # make shags dataset from csv file - need meta for a col coords
-shags_meta <- read.csv(system.file("extdata/shag_tidytrack_meta.csv",
-                                   package = "tidytracks"))
+shags_meta <- read.csv("./data-raw/raw_csv/shag_tidytrack_meta.csv")
 
 # make the colony cpords into a geometry col and select only this and track id
 #rename bird_id to keep short and simple
@@ -20,11 +19,8 @@ shags_meta <- shags_meta %>%
 head(shags_meta)
 
 # get the events file
-shags_csv <- system.file("extdata/shag_tidytrack_sample.csv", 
-                         package = "tidytracks")
-
 # open the file as df
-shags_df <- read.csv(shags_csv)
+shags_df <- read.csv("./data-raw/raw_csv/shag_tidytrack_sample.csv")
 
 # select bird id, date_gmt, time_gmt, longitude, latitude, sex
 # rename bird_id,
@@ -371,5 +367,5 @@ head(shags_df_2)
 
 
 # write as a csv
-write.csv(shags_df_2, file = "inst/extdata/csv_files/shags_example.csv", row.names = FALSE)
+write.csv(shags_df_2, file = "inst/extdata/shags_example.csv", row.names = FALSE)
 

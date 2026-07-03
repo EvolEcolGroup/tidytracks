@@ -86,7 +86,6 @@ library(sf)
 
 shags_csv <- system.file(
   "extdata",
-  "csv_files",
   "shags_example.csv",
   package = "tidytracks"
 )
