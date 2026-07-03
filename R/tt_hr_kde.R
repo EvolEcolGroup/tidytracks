@@ -67,7 +67,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     stop("levels must be between 0 and 1")
   }
   # reorder levels from small to big
-  levels <- sort(levels)
+  levels <- sort(levels, decreasing = TRUE)
 
   # get the group indices
   group_index <- dplyr::group_indices(x)
@@ -168,6 +168,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     }
     res_tbl
   }
+  
   # # change class of ud column to PackedSpatRaster_list
   # names(kde_results$ud) <- group_labels
   # kde_results$ud <- as_PackedSpatRaster_list(kde_results$ud)
@@ -232,7 +233,7 @@ kde_one_group <- function(xy, crs, bbox, res, h, id) {
   names(r) <- "ud"
   terra::metags(r) <- c(paste0("id = ", id), "method = kde", paste0("h = ", h),
                         paste0("density_sum = ", sum_density))
-
+  
   # return it wrapped (so that it can be put in a list)
   return(terra::wrap(r))
 }

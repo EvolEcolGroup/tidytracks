@@ -83,15 +83,13 @@ columns receive the value of the nearest preceding observation via
 
 \examples{
 library(sf)
-library(move2)
-library(units)
 
 # Build a simple three-point track with irregular time gaps
 times <- as.POSIXct("2024-01-01 00:00:00", tz = "UTC") + c(5, 90, 200)
-geom <- sf::st_sfc(
-  sf::st_point(c(-0.10, 51.50)),
-  sf::st_point(c(-0.05, 51.52)),
-  sf::st_point(c(0.00, 51.54)),
+geom <- st_sfc(
+  st_point(c(-0.10, 51.50)),
+  st_point(c(-0.05, 51.52)),
+  st_point(c(0.00, 51.54)),
   crs = 4326
 )
 track <- move2::mt_as_move2(

@@ -14,13 +14,15 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
+
 ```
 
 # Tracking data representation in `tidytracks`
 
-`tidytracks` uses tidy tables to represent movement data.
+`tidytracks` uses tidy tables to represent movement, We refer to such a table as a **tibble of tracks** (technically, such tables are `move2`
+objects from the `move2` package).
 
-In a tidy table of **tracks**, each row represents an **event**, which is a
+In a tibble of **tracks**, each row represents an **event**, which is a
 time-stamped observation, associated with a location (and, optionally, extra 
 data such as activity information).
 
@@ -32,93 +34,70 @@ away from the central place. In this case, the unit of tracking (i.e. the new
 
 The **metadata** that describes each of these tracks is stored in a separate
 table, which is linked to the event table by a `track_id_column`. This means we
-do not have to repeat information (such as the *id* or *sex* of an animal) for
-each **event**, but we can use the **metadata** of the **track** to store that
+do not have to repeat information (such as the **ring_number** or *sex* of an 
+animal) for each **event**, but we can use the **metadata** of the **track** 
+to store that
 information.
 
-This vignette will use an example dataset of GPS tracks from the Antarctic shag
-*Leucocarbo bransfieldensis*, a seabird acting as a central-place forager.
-This dataset contains 9 tracks with nearly 8,000 locations. Note that these are
-based on real data, but have been modified to show the functionality of
-`tidytracks`. Please do not use them for any real analyses of shag movement!
-
-# Reading data into a `move2` object
+# Reading data into a tibble of tracks
 
 In `tidytracks`, we start by reading a table of events (e.g., GPS locations)
 from a CSV file or as existing `data.frame` in R.
 
 This table should contain at least the following columns:
 - one column which is the `track_id` (i.e. the variable that groups events into 
- a track)
+ a track, e.g. `bird_id` or `logger_id`)
 - two columns representing the `x` and `y` coordinates (e.g. `longitude` and 
  `latitude`)
 - a `date-time` column (or separate `date` and `time` columns)
 
 Additional columns of data will be stored in the **events** table if they have
-information that is specific to each event (i.e. the values are not unique
+information that is specific to each event (i.e. the values are not the same
 within a given track, e.g. the temperature recorded at each location),
 or they will be moved to the **metadata** table if they are
-track specific (e.g. bird_id, sex of the individual, colony coordinates,
+track specific (e.g. sex of the individual, colony coordinates,
 breeding status, etc.).
 
 ## Example data
 
-We start with a small data set of Antarctic Shags. Let's quickly inspect the CSV
-file to check the columns it contains:
+This vignette will use an example dataset of GPS tracks from the Antarctic shag
+*Leucocarbo bransfieldensis*, a seabird acting as a central-place forager.
+This dataset contains 9 tracks with nearly 4,000 locations. Note that these are
+based on real data, but have been modified to show the functionality of
+`tidytracks`. Please do not use them for any real analyses of shag movement!
 
-```{r inspect_events_csv}
-shags_csv <- system.file("extdata/shag_tidytrack_sample.csv", 
-                         package = "tidytracks")
-str(read.csv(shags_csv))
-```
-The important fields we'll use are:
+We have a single CSV. Each
+row includes information about the locations (in this case `lat` and
+`lon`) and time (in this case, one `date_time` column). Locations belonging
+to the same bird's track are identified by the same value in the `bird_id` column
+(in this example, as we only have one track per bird, the `bird_id` is the individual 
+ID number of the bird).
 
-* `bird_id`: the identifier for each animal/deployment (this is our unit of 
- tracking, i.e. the `track_id_column`)
-* `date_gmt` and `time_gmt`: the date and time of each location
-* `longitude` and `latitude`: the coordinates of each location
-
-The rest of the animal/deployment fields (`sex`, `colony`, `year`) are track 
-specific, so they will be moved to the metadata table.
-
-There is a companion file of metadata including extra information such as colony 
-coordinates and deployment dates. We will read this CSV too and then it can be 
-merged into the metadata table when we create the tidytracks object. 
-
-```{r read_meta}
-# read shag metadata
-shags_meta <- read.csv(system.file("extdata/shag_tidytrack_meta.csv",
-                         package = "tidytracks"))
-```
-
-We will combine the colony coordinates into one column using the `sf` 
-package - we'll use this metadata column for trip splitting later.
-
-```{r add_colony_geom_to_meta}
-library(tidytracks)
-library(dplyr)
-# add geometry column (colony location point) to metadata
-shags_meta <- shags_meta %>%
-  sf::st_as_sf(coords = c("colony_lon", "colony_lat"), 
-               crs = 4326, remove = FALSE) %>%
-  # rename this geometry column to colony_coord
-  dplyr::rename(colony_coord = geometry)
-dplyr::glimpse(shags_meta)
-```
-
-Let us now read in the events (tracking locations) data using `tt_read_data()`. 
-We'll read the data directly from the CSV file and convert it into a `move2` 
-object, and add in extra metadata from the `shags_meta` file.
+The CSV also contains other columns of information about
+the tracks (`sex` and colony coordinates split into `colony_lat` and `colony_lon`).
+These are repeated for each event, so they will be moved to the metadata table when 
+we create the `tidytracks` object.
 
 ```{r read_events}
-shags_tt <- tt_read_data(events = shags_csv,
-                         col_track_id = "bird_id",
-                         col_coords = c("longitude", "latitude"),
-                         col_date_time = c("date_gmt", "time_gmt"),
-                         format_date_time = "%d/%m/%Y %H:%M:%S",
-                         meta = shags_meta,
-                         time_zone = "UTC",
-                         crs = 4326)
+library(tidytracks)
+library(dplyr)
+library(ggplot2)
+library(sf)
+
+shags_csv <- system.file(
+  "extdata",
+  "shags_example.csv",
+  package = "tidytracks"
+)
+
+shags_tt <- tt_read_data(
+  events = shags_csv,
+  col_track_id = "bird_id",
+  col_coords = c("lon", "lat"),
+  col_date_time = "date_time",
+  time_zone = "UTC",
+  crs = 4326)
+
 ```
 
 Inspecting the events table, we have:
@@ -141,13 +120,12 @@ show_meta(shags_tt)
 ```
 
 We have a `bird_id` column that links back to the events table, and then
-information about the sex and species of the bird, as well as a column of
-coordinates for the colony location (they are stored as `sfc_POINT` geometries
-from the `sf` package, so that they come with crs information).
+information about the sex of the bird, as well as a column of
+coordinates for the colony location. 
 
+Note that `move2` objects don't have to be ordered by time, but for many analyses,
+this is a requirement. We can order the data by time using the `tt_order_time()` function:
 
-Note that `move2` objects don't have to be ordered by time. We can order the
-data by time using the `tt_order_time()` function:
 ```{r order_by_time}
 shags_tt <- shags_tt %>% tt_order_time()
 ```
@@ -157,100 +135,47 @@ Functions that start with `tt_` are specific to tidy tables of tracks (i.e.
 
 # Plotting the data
 
-We can plot the data using the `ggplot2` package. 
+To visualise the data with the `ggplot2` package, we can use the `geom_event_point()`
+function to plot the locations of each event. It is good practice to project data 
+each time we plot it. `geom_event_point()` is compatible 
+with `coord_sf()` so we can add a projection directly into the `ggplot`. All other
+decorations of `ggplot2` can be used; in this case, we will also adjust the aspect ratio 
+within `theme()`.
 
-```{r plot_data}
-library(ggplot2)
+```{r plot_events, fig.width=6, fig.height=4}
 ggplot() +
-  geom_event_point(data = shags_tt, aes(color = bird_id))
-```
+  geom_event_point(data = shags_tt, aes(color = bird_id))+
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
+    theme(aspect.ratio = 1, 
+      axis.text.x = element_text(angle = 45, hjust = 1))
 
-In this plot we can see that at least one of the individuals has an outlying
-point at 0'00, 0'00 (this is a common GPS error referred to as 'Null Island').
-Lets quickly filter out these outliers by latitude so that we can see the map
-properly.
-
-```{r latitude_filter}
-shags_tt <- shags_tt %>%
-  dplyr::filter(sf::st_coordinates(geometry)[,2] < -5)
-```
-
-We are keeping only points south of 5 degrees latitude, a very conservative 
-filter for the reasonable home range of our Antarctic Shags. 
-Let's plot the data again.
-
-```{r plot_all}
-ggplot() +
-  geom_event_point(data = shags_tt, aes(color = bird_id))
-  
-```
-  
-Let's explore what each individual is doing by plotting the locations of each
-individual separately.
-
-We can plot each bird either as points:
-
-```{r plot_by_bird}
-ggplot() +
-  geom_event_point(data = shags_tt, aes(color = bird_id)) +
-  facet_wrap(~bird_id)
 
 ```
 
-Or as paths (lines between the points):
+We can explore what each individual is doing by plotting the locations of each
+individual separately with `facet_wrap`. In this example, instead of plotting 
+locations as points, we will use `geom_event_path()` to plot the
+paths between them:
 
-```{r}
+```{r shags_plot_paths, fig.width=6, fig.height=4}
 ggplot() +
   geom_event_path(data = shags_tt, aes(color = bird_id)) +
-  facet_wrap(~bird_id)
+  facet_wrap(~bird_id) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-We can see that bird `'KB_23_42962_38'` moved very little (or not at all) during
+We can see that bird `'kb_38'` moved very little (or not at all) during
 the tracked period.
-
-
-## Projecting
-
-As a `move2` object is a derived `sf` tibble, we can simply use `coord_sf` to
-plot the data in a map projection:
-
-```{r plot_projection}
-ggplot() +
-  geom_event_point(data = shags_tt, aes(color = bird_id)) +
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')
-```
-
-Instead of plotting the individual locations, we might prefer to plot the
-trajectory as a path:
-
-```{r plot_proj_paths}
-ggplot() +
-  geom_track_path(data = shags_tt, aes(color = bird_id)) +
-  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
-```
-
-# Filtering data
-
-*TODO move this section further down, and show an example of filtering by 
-a field in metadata that isn't in the events table, e.g. by sex.*
-
-If we want to use only a subset of tracks, we could filter the `move2` object
-directly like a normal tibble. However, we can also use the metadata to filter
-the tracks (e.g. by sex or species). We can use the `filter_by_meta()` function
-to do so:
-
-```{r}
-shags_sub <- shags_tt %>%
-  filter_by_meta(bird_id %in% c("KB_23_42962_38", "KB_23_42778_45", "KB_23_44224_40"))
-shags_sub
-```
 
 # A grammar of movement
 
 As we saw above, `tt_*` functions are specific to and operate on the whole table
-of tracks (aka the `move2` object), and often will return a complete table of
-tracks. There are functions to clean the data using
-different algorithms (e.g. `tt_clean_mcconnell`), or to split the data into
+of tracks (aka the `move2` object), and often will return either a complete table of
+tracks or different tibble (e.g. a tibble of kernels). For example,
+there are functions to clean the data using
+a given algorithm (e.g. `tt_clean_mcconnell`), or to split the data into
 trips for central place foragers (e.g. `tt_split_trips`). We will see those
 functions in action in a later section.
 
@@ -263,43 +188,43 @@ event. For each track, `event_speed()` returns the speed of each segment, padded
 with a final NA so that we have the same number of rows as the original track.
 
 So, we can add speed to our `shags_tt` object with:
-```{r}
+```{r speed}
 shags_tt <- shags_tt %>% 
-  dplyr::mutate(speed = event_speed(.))
+  mutate(speed = event_speed(.))
 ```
 
-Note the use of the . place-holder in the brackets of `event_speed()` to pass
-the `move2` object to the function. This is only possible with a `magrittr` pipe
-(`%>%`), and not with the base R pipe (`|>`).
+Note the use of the `.` place-holder in the brackets of `event_speed()` to pass
+the whole `move2` object to the function. This is only possible with a `magrittr` 
+pipe (`%>%`), and not with the base R pipe (`|>`).
 
 We can now visualise the distribution of speeds:
-```{r}
+```{r plot_speed, fig.width=6, fig.height=4}
 shags_tt %>%
   ggplot(aes(x = speed)) +
   geom_histogram(bins = 100)
 ```
 
 Note the message about 9 rows having been dropped; those are the 9 last events
-for which there is no distance. Also, functions in `tidytracks` tend to return
+for which there is no distance. Also, when appropriate, functions in `tidytracks` return
 values with units, to avoid conversion problems (in this case, meters per minute).
 Functions usually have a `units` parameter that allows to change the units that
 are returned (more details about working with units below).
 
-The histogram above is suggests that there might be outliers in the data,
+The histogram above suggests that there might be outliers in the data,
 as we seem to have a few events with very high speeds. We will see later
 how we can clean up the data using McConnell's algorithm. 
 
 Finally, there are `track_*` functions, which operate on the whole track, and will
-generally return a vector of length equal to the number of tracks in the object.
+return a vector of length equal to the number of tracks in the object.
 For example, `track_duration()` returns the total duration of each track:
 
-```{r}
+```{r duration}
 shags_tt %>%
   track_duration()
 ```
 
 If we wanted the same estimates in hours rather than days, we would simply say:
-```{r}
+```{r duration_units}
 shags_tt %>%
   track_duration(units = "hours")
 ```
@@ -309,8 +234,8 @@ ambiguities.
 
 For example, `event_flag_mcconnell()` will return a logical vector
 indicating whether events are valid or whether they should be filtered out using
-McConnell's algorithm, whilst `tt_clean_mcconnell()` will return a `move2`
-object with the invalid events removed. 
+McConnell's algorithm, whilst `tt_clean_mcconnell()` will return tibble of tracks
+with the invalid events removed. 
 
 Similarly, `event_distance()` will return a vector of distances between events
 (a vector of the same length as the rows of the event column), while
@@ -318,95 +243,79 @@ Similarly, `event_distance()` will return a vector of distances between events
 (and thus a shorter vector of length equal to the number of tracks in the
 object).
 
-<br>
-
-***
-
 # Cleaning the data
 
 We can get an overview of the speeds of each step with:
-```{r}
+```{r summary_speed}
 shags_tt %>%
   summary()
 ```
 
 Some of those speeds (>15000 m/minute) seem a bit high. We can check the units
 (to make sure we have them right):
-```{r}
+```{r units}
 units(shags_tt$speed)
 ```
-
 Let's recalculate them in units that might be more familiar to us.
 
-```{r}
+```{r units2}
 shags_tt <- shags_tt %>%
-  dplyr::mutate(speed = units::set_units(speed, "km/h")) 
+  mutate(speed = set_units(speed, "km/h")) 
 
 shags_tt %>%
   summary()
 ```
-Hmm, 900 km/h is much faster than typical flight speeds for a shag (European
+Hmm, 904 km/h is much faster than typical flight speed for a shag (European
 shags usually fly at speeds around 50–65 km/h; see e.g. Wanless et al. 1997).
 
 Let's plot the speed of each event:
-```{r}
+```{r plot_speed_new, fig.width=6, fig.height=4}
 ggplot() +
   geom_event_path(
     data = shags_tt,
-    aes(color = speed)
-  ) +
-  facet_wrap(~bird_id)
+    aes(color = speed)) +
+  facet_wrap(~bird_id) +
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 It looks like there are a few GPS location errors here, resulting in unrealistic
-speeds.
+speeds (we can easily see the very fast outlier is at the end of a track).
 
 We can remove locations characterised by unlikely speeds using the McConnell's
 algorithm (the same used by `trip::speedfilter()`). Max speed can be set to an
 appropriate number for the species we are working with. Shags have been observed
-flying at 60km/h so we will set the maximum to 80. Note that we can give the
-`max_speed` in any units we want, and they will be automatically converted to
-the units in the object.
+flying at 58km/h (Yukihisa et al. 2016) we will set the maximum to 60. Note that 
+we can give the `max_speed` in any units we want, and they will be automatically 
+converted to the units in the object.
 
-```{r}
-nrow(shags_tt) # check number of events before filter
-# run the speed filter
+```{r mcconnel}
+n_before <- nrow(shags_tt) 
+
 shags_tt <- shags_tt %>%
-  tt_clean_mcconnell(max_speed = units::as_units(80, "km/h"))
-nrow(shags_tt) # check number of events after the filter
+  tt_clean_mcconnell(max_speed = as_units(60, "km/h"))
+
+n_after <- nrow(shags_tt)
+
+n_before - n_after
 ```
 
 Note that `tt_clean_mcconnell()` is "destructive" and will remove the points
 flagged by the algorithm. There is also a function `event_flag_mcconnell()`
-which flags points without removing them; see the advanced vignette for more
-details on how to use it (TODO there is no advance vignette yet!!!).
+which flags points without removing them; see its help page for more
+details on how to use it.
 
+Here we see that `r (n_before - n_after)` points have been removed. 
 Let us now recompute the speeds after running the filter (again, in km/h):
 
-```{r}
+```{r post_mcconnel}
 shags_tt <- shags_tt %>%
-  dplyr::mutate(speed = event_speed(., units = "km/h"))
-summary(shags_tt)
+  mutate(speed = event_speed(., units = "km/h"))
+summary(shags_tt$speed)
 ```
 
-We still have some locations with unrealistic speeds, so let's run the 
-speed filter again.
-
-TODO we still have unrealistic speeds - need to check where they're coming from 
-and how to explain/fix this.
-
-```{r}
-nrow(shags_tt) # check number of events before filter
-# run the speed filter
-shags_tt <- shags_tt %>%
-  tt_clean_mcconnell(max_speed = units::as_units(80, "km/h"))
-nrow(shags_tt) # check number of events after the filter#
-
-# recompute speeds and check summary
-shags_tt <- shags_tt %>%
-  dplyr::mutate(speed = event_speed(., units = "km/h"))
-summary(shags_tt)
-```
+Note again the use of '.' to pass the tibble to `event_speed()`.
 
 We can see that we have removed some locations with unrealistic speeds. Note
 that the McConnell algorithm does not simply remove steps above the threshold
@@ -414,45 +323,56 @@ speed, but uses the root mean square speed for previous/next and 2nd previous to
 next point, thus allowing for individual steps that might have a speed just
 above the threshold if the subsequent point is not too far away.
 
-Let's remove the speed field for now.
-
-```{r}
-shags_tt$speed <- NULL
-```
-
+Note: because of this, sometimes if there are two consecutive points with 
+unrealistically high speeds, the algorithm may miss one, this can be remedied by 
+recalculating speeds and then running the filter again. 
 
 # Splitting trips
 
 Shags are central place foragers, and we now want to split the track into
 trips. For this we need to define the colony location, and a buffer around it.
 `tt_split_trips()` can take either a single colony point, or one nest location
-per track (as a column in the metadata). 
+per track as a point column in the metadata
 
-```{r}
-shags_tt <- shags_tt %>%
+In `tidytracks`, all locations should be stored as `sfc_POINT` geometries with a
+defined coordinate reference system (CRS). Whilst this is done automatically for
+locations events, location  information in the metadata needs to converted after reading the file:
+
+```{r add_colony_geom_to_meta}
+show_meta(shags_tt) <- show_meta(shags_tt) %>%
+  mutate(colony_coord = sf_point_col(colony_lon, colony_lat, crs = 4326))
+```
+
+Note that we use `sf_point_col()` to create a column. Do not replace the metadata
+with a full sf tibble, as that creates problems with certain functions.
+
+When splitting trips and defining the parameters to do so, it is important to consider
+the resolution and accuracy of your locations, and the likely movements of your birds.
+
+```{r split_trips}
+shags_tt_split <- shags_tt  %>%
   tt_split_trips(
     centre_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(3, "km"),
-    complete = TRUE # keep only complete trips
-  )
+    complete = TRUE)
 ```
 
 If we now inspect the object, we can see that there is a new column, `trip_id`,
 which is also used as the new `track_id_column` in the `move2` object:
-```{r}
-shags_tt
+```{r inspect_splits}
+head(shags_tt_split)
+
+unique(shags_tt_split$trip_id)
 ```
 
 Let's look at the metadata:
-```{r}
-str(show_meta(shags_tt))
+```{r split_meta}
+str(show_meta(shags_tt_split))
 ```
-
-TODO update this paragraph now that we're keeping all birds in: We can see that
-only individual KB_23_42778_45 performed proper central place trips, and
-specifically it made 3 trips. KB_23_44224_40 migrated away from the study area.
-KB_23_42962_38 never moved and was therefore filtered out.
+We can see that all the birds except for kb_38 and kb_40 made between 1 and 3 central 
+place foraging trips. kb_38 didn't move and was therefor filtered out. 
+kb_40 migrated away from the colony and did not return so was also removed.
 
 **How the trip splitting works:**
 
@@ -464,151 +384,203 @@ argument ensures that only trips which both leave and return to the colony
 leave the buffer zone, or trips that are not complete, are removed from the
 dataset.
 
-```{r}
+```{r plot_split, fig.width=6, fig.height=4}
 ggplot() +
-  geom_sf(data = track_lines(shags_tt), aes(color = trip_id)) +
-  geom_sf(data = show_meta(shags_tt)$colony_coord, color = "grey20")
+  geom_event_path(data = shags_tt_split, aes(color = trip_id)) +
+  geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20")+
+  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
 ```
 
-<br>
-
-***
 
 # Summarising tracks
 
 We can get a summary of our tracks with:
 
-```{r}
-shags_sub %>%
+```{r summary}
+shags_tt_split %>%
   track_summary_stats(centre_col = "colony_coord")
 ```
 
 Note that `track_summary_stats()` will return a tibble with one row per track,
 rather than the usual vector with one element per track that is produced by most
-`track_*` functions.
+`track_*` functions. Note that these distance calculations are being done on unprojected 
+data in Euclidean distance. Reprojection within the ggplot maps only applies within the map 
+itself and doesn't change the tidytracks object.
 
-<br>
 
 ## Filter trips
 
-If we wanted, we could use this information to filter the dataset, for example
-to only trips that were longer than a certain duration or distance threshold.
+We will now filter the data set to leave only the females, so that we can then
+perform some analysis. This information is the meta table, so we will use
+`filter_by_meta()` to filter the dataset:
 
-It is better to add the trip stats to the metadata table and use
-`filter_by_meta()` or just get the `trip_id`s that meet the criteria and filter
-directly on the `move2` object?
 
-TODO add this code once we've enabled updating the metadata table.
-
-<br>
-
-***
-
-# Home Range estimates
-
-We can now estimate the home range of individuals.
-
-Let's get a summary of the metadata of what is left:
-```{r}
-summary(show_meta(shags_tt))
-```
-
-First lets find the three shags with the most trips and make a subset of these:
-```{r}
-top3_birds <- shags_tt %>%
-  count(bird_id, trip_id) %>%  
-  count(bird_id, name = "n_trips") %>% 
-  arrange(desc(n_trips)) %>% 
-  slice(1:3) %>% 
-  pull(bird_id)
-
-shags_trips_sub <- shags_tt %>%
-  filter_by_meta(bird_id %in% top3_birds)
-
+```{r filter_females}
+shags_females <- shags_tt_split %>%
+  filter_by_meta(sex == "female")
+show_meta(shags_females)
 ```
 
 We can now plot the trips:
-```{r}
+```{r plot_females, fig.width=6, fig.height=4}
 ggplot() +
-  geom_track_path(
-    data = shags_trips_sub,
-    aes(color = trip_id)
+  geom_event_path(
+    data = shags_females,
+    aes(color = bird_id) # can't use trip_id here because not trip splitted data
   ) +
-  facet_wrap(~bird_id) + theme(legend.position="none")
-
+  facet_wrap(~bird_id) +
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position="none")
 ```
 
-To estimate home ranges, we need to project the data to an equal area
-projection. We can use the `sf::st_transform()` function to do this:
-```{r}
-shags_trips_sub <- shags_trips_sub %>%
-  sf::st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
+If we wanted, we could also add the track summary statistics into the metadata, 
+and use this information to filter the data set, for example to only trips that 
+were longer than a certain duration or distance threshold.
+
+```{r add_summary_stats}
+show_meta(shags_tt_split) <- show_meta(shags_tt_split) %>%
+  left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"), 
+            by = "trip_id")
+
+show_meta(shags_tt_split)
 ```
 
-We can now estimate the home range using Kernel Density Estimation (KDE). The 
-default smoothing parameter (h) in the `tt_hr_kde` function is set to
-"h_ref_mean". The bandwidth for the kernel density estimation can be either a 
-number, or "h_ref_indiv" for using the reference bandwidth
-for each individual, or "h_ref_mean" for using the mean bandwidth for all
-individuals (the default). 
+We may wish to move metadata to the events table (using `as_event_column()`)
+or vice versa (using `as_meta_column()`).
+For example, to count the number of points available for males and females,
+we can move the sex information into the event table, and count how many events
+we have for males and females:
+
+```{r moving_sex_to_event}
+shags_tt_split %>%
+  as_event_column(sex) %>%
+  pull(sex) %>%
+  table()
+```
+
+
+# Home Range estimates
+
+For this analysis, we will use the shags_females data set we just created. To 
+estimate home ranges, we need to project the data to an equal area projection. 
+We can use the `sf::st_transform()` function to do this:
+```{r female_crs}
+shags_females_proj <- shags_females %>%
+  st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
+```
+
+We can now estimate the home range using Kernel Density Estimation (KDE) with the
+function `tt_hr_kde`, which  creates a KDE per trip, normalises them, then combines 
+into one KDE per group that you specify. here we will group by by individual but you 
+could instead group by e.g. sex.
+
+The default smoothing parameter (h) in `tt_hr_kde` 
+is set to "h_ref_mean". The bandwidth for the kernel density estimation can be either a 
+number, or "h_ref_indiv" for using the reference bandwidth for each individual, or 
+"h_ref_mean" for using the mean bandwidth for all individuals (the default). 
 
 We want to estimate the home range for each bird, so we will group by `bird_id`:
 ```{r}
-shags_kde <- shags_trips_sub %>%
-  group_by(bird_id) %>%
+shags_females_kde <- shags_females_proj %>% # doesnt work on trip splitted data
+  group_by(bird_id) %>% 
   tt_hr_kde(levels = c(0.5, 0.95))
 ```
 
-`shags_kde` is an `sf` object, with estimates of the area (in the units of
+We get a warning since one of the dataset is small, and so the 0.50 isopleth could not be computed. This is because the KDE is based on a grid, and if there are too few points, the grid will not be able to capture the distribution of the points.
+
+`shags_females_kde` is an `sf` object, with estimates of the area (in the units of
 the projection, in this case m^2) and a geometry column:
 ```{r}
-shags_kde
+shags_females_kde
 ```
 
 We could easily change the units of the area with `set_units()`:
 ```{r}
-shags_kde %>%
-  mutate(area = set_units(area, "km^2"))
+shags_females_kde %>%
+  mutate(area = set_units(area, "km^2")) %>%
+  select(bird_id, level, area)
 ```
 
+If you want to NOT do KDE per trip, you need to change the track_id field of your 
+tidytracks object. For example if you already trip splitted, the unit of tt object 
+is now trip, and kernels will always be created per trip and aggregated to your 
+grouping. If you're then doing something else like analysis of the whole incubation 
+period and you want to compare the kernels at the whole-bird level, you need to 
+change your inherent tt object track_id to the bird_id instead.
 
 We can plot the home ranges:
-```{r}
-ggplot(shags_kde) +
-  geom_sf(aes(fill = bird_id), alpha = 0.7)
+
+```{r plot_kde, fig.width=6, fig.height=4}
+ggplot(shags_females_kde) +
+  geom_sf(aes(fill = bird_id), alpha = 0.7) +
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
 ```
 
 We can add actual events with:
-```{r}
+```{r plot_kde_points, fig.width=6, fig.height=4}
 ggplot() +
   geom_sf(
-    data = shags_kde,
+    data = shags_females_kde,
     aes(fill = bird_id), alpha = 0.7
   ) +
   geom_event_point(
-    data = shags_trips_sub,
+    data = shags_females_proj,
     size = 0.1
   ) +
-  facet_wrap(~bird_id)
+  facet_wrap(~bird_id) +
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 To get a minimum convex polygon covering 95% of the data, we can use:
-```{r}
-shags_mcp <- shags_trips_sub %>%
+```{r compute_mcp}
+shags_females_mcp <- shags_females_proj %>%
   group_by(bird_id) %>%
   tt_hr_mcp(levels = c(0.95))
 ```
 
 We can plot the MCPs with:
-```{r}
+```{r plot_mcp, fig.width=6, fig.height=4}
 ggplot() +
   geom_sf(
-    data = shags_mcp,
+    data = shags_females_mcp,
     aes(fill = bird_id), alpha = 0.7
   ) +
   geom_event_point(
-    data = shags_trips_sub,
+    data = shags_females_proj,
     size = 0.1
   ) +
-  facet_wrap(~bird_id)
+  facet_wrap(~bird_id)+
+  theme(aspect.ratio = 1, 
+        axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
+## Save your data
+We can save our `move2` object with the `tt_write_data()` function, which can save the events and meta data either separately or as a single CSV text file. In this example we will save it to the temporary directory.
+
+```{r save_data}
+
+# save to temp directory
+tmp_prefix <- file.path(tempdir(), "shags_females")
+
+tt_write_data(
+  shags_females,
+  tmp_prefix,
+  combined = TRUE
+)
+
+```
+
+
+
+
+
+
+
+
