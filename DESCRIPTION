@@ -21,18 +21,22 @@ Imports:
   foreach,
   geodist,
   ggplot2,
+  gganimate,
   methods,
   MASS,
   patchwork,
   purrr,
   rlang,
   s2,
+  scales,
   sf,
   stats,
   terra,
   tibble,
   tidyr,
-  tidyterra
+  tidyterra,
+  tweenr,
+  vctrs
 Suggests:
     adehabitatHR,
     sp,

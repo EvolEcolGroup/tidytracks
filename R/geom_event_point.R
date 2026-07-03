@@ -29,6 +29,7 @@ geom_event_point <- function(mapping = ggplot2::aes(), data = NULL,
                              position = "identity",
                              na.rm = FALSE, show.legend = NA,
                              ...) {
+  data_name <- deparse(substitute(data))
   # data can not be null
   if (is.null(data)) {
     stop("data must be specified for this geometry")
@@ -39,6 +40,11 @@ geom_event_point <- function(mapping = ggplot2::aes(), data = NULL,
   }
   # drop the units, as they are not compatible with ggplot
   data <- tt_drop_units(data)
+  # Tag so animate_map() can identify this as a tidytracks track layer.
+  attr(data, "tidytracks_geom")      <- "event_point"
+  attr(data, "tidytracks_data_name") <- data_name
+  attr(data, "tidytracks_time_col")  <- move2::mt_time_column(data)
+  
   ggplot2::geom_sf(
     mapping = mapping, data = data, stat = stat,
     position = position, na.rm = na.rm, show.legend = show.legend,

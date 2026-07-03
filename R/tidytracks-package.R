@@ -3,6 +3,8 @@
 
 ## usethis namespace: start
 #' @importFrom rlang .data
+#' @importFrom rlang !!
+#' @importFrom rlang !!!
 ## usethis namespace: end
 NULL
 
@@ -13,3 +15,5 @@ move2::mt_as_move2
 #' @importFrom units as_units
 #' @export
 units::as_units
+
+

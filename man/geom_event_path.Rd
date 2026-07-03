@@ -7,6 +7,7 @@
 geom_event_path(
   mapping = ggplot2::aes(),
   data = NULL,
+  drop_final_point = TRUE,
   stat = "sf",
   position = "identity",
   na.rm = FALSE,
@@ -22,6 +23,11 @@ used, as it is the case for \code{ggplot2::geom_sf()}.}
 
 \item{data}{The \code{move2} object to be displayed. For this geometry, there is
 no inheritance from the main \code{ggplot()} call, and data has to be specified.}
+
+\item{drop_final_point}{Logical, default is \code{TRUE}. The \code{move2::mt_segments}
+function cannot create a segment for the final point in each track, so it
+is left as a \code{POINT} geometry. If \code{TRUE}, we filter to \code{LINESTRING}
+geometries only (this is necessary for the animation function to work).}
 
 \item{stat}{The statistical transformation to use on the data for this layer.
 The default is "sf", which should normally be left unchanged.}
