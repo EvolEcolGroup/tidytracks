@@ -21,12 +21,12 @@ filter_by_meta <- function(.data, ..., .track_id = NULL) {
   # Next, we apply any filtering on the track_id_column that was specified
   if (!is.null(.track_id)) {
     track_ids_to_keep <- .track_id
-    new_id_data <- new_id_data |> dplyr::filter(!!rlang::sym(attr(.data, "track_id_column")) %in% track_ids_to_keep)
+    new_id_data <- new_id_data |> dplyr::filter(!!rlang::sym(move2::mt_track_id_column(.data)) %in% track_ids_to_keep)
   }
   # Get a vector of the track IDs that we're keeping.
   new_tracks <- new_id_data |>
     sf::st_drop_geometry() |> # in case there is geometry in metadata, drop it here
-    dplyr::select(!!rlang::sym(attr(.data, "track_id_column"))) |> # track_id_column is "trip_id"
+    dplyr::select(!!rlang::sym(move2::mt_track_id_column(.data))) |> # track_id_column is "trip_id"
     dplyr::pull()
   # Now we apply the filtering to the EVENTS DATA
   # Get track IDs of every line in the events table

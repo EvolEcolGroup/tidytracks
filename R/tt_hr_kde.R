@@ -134,7 +134,6 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     group_id = group_unique,
     .combine = rbind # dplyr::bind_rows
   ) %do% {
-#    browser()
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, ]
     h_val <- h[group_id]

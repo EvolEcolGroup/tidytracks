@@ -76,7 +76,7 @@ ID number of the bird).
 The CSV also contains other columns of information about
 the tracks (`sex` and colony coordinates split into `colony_lat` and `colony_lon`).
 These are repeated for each event, so they will be moved to the metadata table when 
-we create the `tidytracks object.
+we create the `tidytracks` object.
 
 ```{r read_events}
 library(tidytracks)
@@ -167,7 +167,7 @@ ggplot() +
         axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-We can see that bird `'kb__38'` moved very little (or not at all) during
+We can see that bird `'kb_38'` moved very little (or not at all) during
 the tracked period.
 
 # A grammar of movement
@@ -456,7 +456,7 @@ For example, to count the number of points available for males and females,
 we can move the sex information into the event table, and count how many events
 we have for males and females:
 
-```{r moving_sex_to event}
+```{r moving_sex_to_event}
 shags_tt_split %>%
   as_event_column(sex) %>%
   pull(sex) %>%
