@@ -160,4 +160,57 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
   
 })
 
+test_that("tt_split_trips marks first trip as incomplete when data starts outside colony", {
+
+  # Create a track that starts far from the colony (outside the buffer) and
+  # returns to the colony at the end. Without checking the start, this trip
+  # would be falsely classified as "complete".
+  coords_df <- data.frame(
+    longitude = c(5, 4, 3, 2, 1, 0.1),
+    latitude  = c(0, 0, 0, 0, 0, 0),
+    date_time = seq(
+      from   = as.POSIXct("2020-01-01 00:00:00"),
+      by     = "1 hour",
+      length.out = 6
+    ),
+    bird_id = "id_1"
+  )
+
+  test_mt <- tt_read_data(
+    events        = coords_df,
+    col_track_id  = "bird_id",
+    col_coords    = c("longitude", "latitude"),
+    col_date_time = "date_time"
+  )
+  show_meta(test_mt)$centre_sf <- sf_point_col(x = 0, y = 0, crs = 4326)
+
+  # Split trips: animal is outside 100 km from colony for first 5 points and
+  # returns within 100 km on the last point.
+  result <- tt_split_trips(test_mt,
+    centre_col    = "centre_sf",
+    buffer_outbound = as_units(100, "km"),
+    buffer_inbound  = as_units(100, "km"),
+    complete      = FALSE
+  )
+
+  # There should be one trip (trip_1) plus one at_centre segment at the end
+  meta <- show_meta(result)
+  expect_true("id_1_trip_1" %in% meta$trip_id)
+
+  # The trip that started outside the colony must be classified as incomplete
+  expect_equal(
+    meta$trip_type[meta$trip_id == "id_1_trip_1"],
+    "incomplete"
+  )
+
+  # With complete = TRUE, no trips should remain (the only trip is incomplete)
+  result_complete <- tt_split_trips(test_mt,
+    centre_col    = "centre_sf",
+    buffer_outbound = as_units(100, "km"),
+    buffer_inbound  = as_units(100, "km"),
+    complete      = TRUE
+  )
+  expect_equal(nrow(show_meta(result_complete)), 0)
+})
+
 # @TODO write tests with centre inputs as different from each others
