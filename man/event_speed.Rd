@@ -4,12 +4,12 @@
 \alias{event_speed}
 \title{Return the speed of each segment between events}
 \usage{
-event_speed(x, units)
+event_speed(x, units = as_units("m/min"))
 }
 \arguments{
 \item{x}{A move2 object}
 
-\item{units}{Optional, the units to use for the speed. The default is "m/s".
+\item{units}{Optional, the units to use for the speed. The default is "m/min".
 Other speed units supported by the \code{units} package can also be supplied.}
 }
 \value{
@@ -22,8 +22,13 @@ track. In order to return a vector with the same number of rows as the event
 table, the speed of the last event is set to NA. The speed is calculated as
 the distance between events divided by the time between events.
 }
+\details{
+For unprojected longitudes and latitudes, the distance is computed as the
+geodesic distance (via the \code{geodist} package); for projected coordinates, the
+Euclidean distance is used.
+}
 \examples{
 event_speed(example_tt)
-event_speed(example_tt, units = "km/h")
+event_speed(example_tt, units = as_units("m/s"))
 
 }

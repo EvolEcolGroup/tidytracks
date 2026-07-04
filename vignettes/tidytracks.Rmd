@@ -311,7 +311,7 @@ Let us now recompute the speeds after running the filter (again, in km/h):
 
 ```{r post_mcconnel}
 shags_tt <- shags_tt %>%
-  mutate(speed = event_speed(., units = "km/h"))
+  mutate(speed = event_speed(., units = as_units("km/h")))
 summary(shags_tt$speed)
 ```
 
