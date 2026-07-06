@@ -22,17 +22,15 @@ object. If a single geometry object is provided, it will be used as the
 centre for all tracks.}
 
 \item{buffer_outbound}{the distance from the centre to define outbound trips,
-specified as a unit object, e.g \code{as_units(10000, "m")} or
-\code{as_units(10, "km")}.}
+specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
 \item{buffer_inbound}{the distance from the centre to define inbound trips,
-specified as a unit object, e.g \code{as_units(10000, "m")} or
-\code{as_units(10, "km")}.}
+specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
 \item{complete}{boolean, if TRUE, only complete trips (i.e. the ones that
-ended within the inbound buffer) are kept. If FALSE, all trips are kept,
-and events at the colony (i.e. in-between trips) are collected into a dummy
-trip labelled "trip_na".}
+started in the outbound buffer and ended within the inbound buffer) are
+kept. If FALSE, all trips are kept, and events at the colony (i.e.
+in-between trips) are collected into a dummy trip labelled "trip_na".}
 }
 \value{
 a move2 object with the trips split.
