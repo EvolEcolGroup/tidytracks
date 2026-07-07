@@ -22,63 +22,117 @@ hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
 #' @rdname hr_ud_iso
 hr_ud_iso.hr_ud_tbl <- function(x, levels = c(0.50, 0.95)) {
   levels <- sort(levels)
-  # apply hr_ud_iso to each row of the tibble, and unnest the results
-  iso_list <- x %>%
-    dplyr::reframe(iso = purrr::map(.data$ud, ~ hr_ud_iso(.x, levels))) %>%
-    dplyr::pull(dplyr::any_of("iso")) %>%
-    as.list()
-  iso_list <- do.call(rbind, iso_list)
-  # double each line of the tibble for each level
+  
   res_tbl <- x %>%
+    dplyr::mutate(iso = purrr::map(.data$ud, hr_ud_iso, levels = levels)) %>%
     dplyr::select(-dplyr::any_of("ud")) %>%
-    tidyr::uncount(length(levels)) %>%
-    dplyr::bind_cols(iso_list) %>%
-    sf::st_as_sf()
-  # TODO verify if this class is sticky (I think we need to create methods to
-  # avoid it being dropped by the sf methods)
+    tidyr::unnest(dplyr::any_of("iso"))
+  
+  res_tbl <- sf::st_as_sf(res_tbl)
   class(res_tbl) <- c("hr_poly_tbl", class(res_tbl))
-  return(res_tbl)
+  res_tbl
 }
+
+
+
 
 #' @export
 #' @rdname hr_ud_iso
 hr_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
-  # check that levels are between 0 and 1
   if (any(levels < 0 | levels > 1)) {
     stop("levels should be between 0 and 1")
   }
-  levels = sort(levels)
-
-  # contours for the cumulative utilisation distribution
-  contours <- terra::as.contour(hr_cud(x), levels = levels)
-  # cast to an sf object, and union the contours for each level to create
-  # polygons
-  contours <- sf::st_as_sf(contours)
-  # avoid warnings during casting
-  suppressWarnings(
-    contours <- lapply(
-      split(contours, contours$level),
-      function(cont_lines) {
-        cont_lines %>%
-          sf::st_cast("LINESTRING") %>%
-          # cast to polygon to create a close contour
-          sf::st_cast("POLYGON") %>%
-          # union the polygons for this level to create a single polygon (or
-          # multipolygon)
-          sf::st_union() %>%
-          # even if we have a single polygon, recast to multipolygon to ensure
-          # we have a consistent geometry type
-          sf::st_cast("MULTIPOLYGON")
-      }
-    )
-  )
-  # recast list back to a single geometry set
-  contours <- do.call(c, contours)
-  # rename the geometry column, add the level column, and calculate area
-  contours <- sf::st_as_sf(contours) %>% 
-    dplyr::rename(geometry = x) %>%
-    dplyr::mutate(level = levels, area = sf::st_area(.data$geometry),
-                  .before = "geometry")
-   return(contours)
+  levels <- sort(levels)
   
+  # check that x has a ud layer
+  if (!("ud" %in% names(x))) {
+    stop("x must have a layer named 'ud'")
+  }
+
+  empty_iso <- function(x) {
+    sf::st_sf(
+      level = numeric(0),
+      area = numeric(0),
+      geometry = sf::st_sfc(crs = sf::st_crs(terra::crs(x)))
+    )
+  }
+  
+  # 1) Try to create contours
+  contours <- tryCatch(
+    terra::as.contour(hr_cud(x), levels = levels),
+    error = function(e) {
+      warning("No isopleths could be computed: ", conditionMessage(e))
+      return(empty_iso(x))
+    }
+  )
+  
+  # If tryCatch returned already-empty sf, stop here
+  if (inherits(contours, "sf")) {
+    return(contours)
+  }
+  
+  # 2) If no geometries, return empty
+  if (is.null(contours) || nrow(contours) == 0) {
+    warning("No isopleths could be computed")
+    return(empty_iso(x))
+  }
+  
+  # 3) Convert to sf
+  contours_sf <- tryCatch(
+    sf::st_as_sf(contours),
+    error = function(e) {
+      warning("Contours could not be converted to sf: ", conditionMessage(e))
+      return(empty_iso(x))
+    }
+  )
+  
+  if (nrow(contours_sf) == 0) {
+    return(empty_iso(x))
+  }
+  
+  # Make sure level exists
+  if (!"level" %in% names(contours_sf)) {
+    warning("Contour object has no `level` column")
+    return(empty_iso(x))
+  }
+  
+  # 4) Split by level and build polygons
+  split_contours <- split(contours_sf, contours_sf$level)
+  
+  poly_list <- purrr::imap(
+    split_contours,
+    function(cont_lines, lvl) {
+      tryCatch({
+        geom <- cont_lines %>%
+          dplyr::select(dplyr::any_of("geometry")) %>%
+          sf::st_cast("LINESTRING") %>%
+          sf::st_cast("POLYGON") %>%
+          sf::st_union() %>%
+          sf::st_cast("MULTIPOLYGON")
+        
+        sf::st_sf(
+          level = as.numeric(lvl),
+          geometry = sf::st_sfc(geom, crs = sf::st_crs(contours_sf))
+        )
+      }, error = function(e) {
+        warning(
+          "Failed to build polygon for level ", lvl, ": ",
+          conditionMessage(e)
+        )
+        NULL
+      })
+    }
+  )
+  
+  poly_list <- purrr::compact(poly_list)
+  
+  if (length(poly_list) == 0) {
+    warning("No isopleths could be polygonized")
+    return(empty_iso(x))
+  }
+  
+  out <- dplyr::bind_rows(poly_list) %>%
+    dplyr::mutate(area = sf::st_area(.data$geometry), .after = "level")
+  
+  sf::st_as_sf(out)
 }

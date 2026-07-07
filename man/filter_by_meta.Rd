@@ -18,5 +18,9 @@ criteria based on track metadata}
 A move2 object with only the selected tracks
 }
 \description{
-Filter the tracks based on variables from the metadata
+This function is based heavily on \code{move2::filter_track_data()}, but it is
+updated so that it still works if the track metadata has a  geometry column.
+It allows you to filter tracks based on any variables in the metadata table,
+including the track ID column (which you can specify using the track ID
+column name, or the shorthand \code{.track_id}).
 }

@@ -10,15 +10,15 @@
 #'   object. If a single geometry object is provided, it will be used as the
 #'   centre for all tracks.
 #' @param buffer_outbound the distance from the centre to define outbound trips,
-#'   specified as a unit object, e.g `as_units(10000, "m")` or 
-#'   `as_units(10, "km")`.
+#'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
+#'   "km")`.
 #' @param buffer_inbound the distance from the centre to define inbound trips,
-#'   specified as a unit object, e.g `as_units(10000, "m")` or 
-#'   `as_units(10, "km")`.
+#'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
+#'   "km")`.
 #' @param complete boolean, if TRUE, only complete trips (i.e. the ones that
-#'   ended within the inbound buffer) are kept. If FALSE, all trips are kept,
-#'   and events at the colony (i.e. in-between trips) are collected into a dummy
-#'   trip labelled "trip_na".
+#'   started in the outbound buffer and ended within the inbound buffer) are
+#'   kept. If FALSE, all trips are kept, and events at the colony (i.e.
+#'   in-between trips) are collected into a dummy trip labelled "trip_na".
 #' @returns a move2 object with the trips split.
 #' @export
 #' @importFrom foreach %do%
@@ -181,9 +181,13 @@ split_one_track <- function(label,
       "complete", "at_centre"
     )
   )
-  # check if last trip is incomplete
+  # check if last trip is incomplete (data ends outside colony)
   if (dist_to_centre[length(dist_to_centre)] > buffer_inbound) {
     trip_meta$trip_type[nrow(trip_meta)] <- "incomplete"
+  }
+  # check if first trip is incomplete (data starts outside colony)
+  if (runs$values[1] == TRUE) {
+    trip_meta$trip_type[1] <- "incomplete"
   }
 
   return(list(

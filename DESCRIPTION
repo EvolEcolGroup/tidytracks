@@ -21,18 +21,22 @@ Imports:
   foreach,
   geodist,
   ggplot2,
+  gganimate,
   methods,
   MASS,
   patchwork,
   purrr,
   rlang,
   s2,
+  scales,
   sf,
   stats,
   terra,
   tibble,
   tidyr,
-  tidyterra
+  tidyterra,
+  tweenr,
+  vctrs
 Suggests:
     adehabitatHR,
     sp,
@@ -42,9 +46,10 @@ Suggests:
     lwgeom,
     testthat (>= 3.0.0),
     trip,
-    track2KBA
+    track2KBA,
+    spelling
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 LazyData: true
 Config/roxygen2/version: 8.0.0
-RoxygenNote: 7.3.3
+Language: en-GB

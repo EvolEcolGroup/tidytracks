@@ -19,6 +19,4 @@ test_that("hr_ud_iso works", {
   names(boar_kde_1_no_ud) <- "not_ud"
   expect_error(hr_ud_iso(boar_kde_1_no_ud, levels = c(0.50, 0.95)),
                "x must have a layer named 'ud'")
-  
-  
 })

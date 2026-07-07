@@ -25,8 +25,15 @@ a \code{sf} geometry set that can be used as an additional spatial column
 in an sf data frame, in addition to the primary geometry column.
 }
 \examples{
-sf_point_col(show_meta(shags_tt)$lon_colony,
-  show_meta(shags_tt)$lat_colony,
-  crs = 4326)
+sf_point_col(x = show_meta(example_tt)$nest_lon,
+   y = show_meta(example_tt)$nest_lat,
+   crs = 4326)
 
+# assign to a column in the meta with mutate
+library(dplyr)
+show_meta(example_tt) \%>\%
+   mutate(nest_coord = sf_point_col(
+      x = show_meta(example_tt)$nest_lon,
+      y = show_meta(example_tt)$nest_lat,
+      crs = 4326))
 }
