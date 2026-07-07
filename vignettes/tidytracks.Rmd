@@ -487,7 +487,7 @@ number, or "h_ref_indiv" for using the reference bandwidth for each individual, 
 
 We want to estimate the home range for each bird, so we will group by `bird_id`:
 ```{r}
-shags_kde <- shags_trips_sub %>%
+shags_females_kde <- shags_females_proj %>%
   group_by(bird_id) %>%
   hr_kde(levels = c(0.5, 0.95))
 ```

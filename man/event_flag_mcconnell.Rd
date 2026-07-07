@@ -29,7 +29,8 @@ package, with an optional endpoint check.
 }
 \details{
 When \code{check_first_last = TRUE}, the function also evaluates the first and
-last currently valid point of each track using an endpoint RMS:
+last currently valid point of each track using an endpoint Root Mean Square
+(RMS):
 \itemize{
 \item first point: RMS of speed(1,2) and speed(1,3)
 \item last point:  RMS of speed(n-1,n) and speed(n-2,n)
