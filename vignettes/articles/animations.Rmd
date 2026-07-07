@@ -1,15 +1,20 @@
 ---
-title: "Animations with tidytracks"
+title: "Animating your maps"
 output: 
-  github_document:
-  # html_document:
-    toc: true
-    toc_depth: 3
+  rmarkdown::html_vignette
+#  html_document
+vignette: >
+  %\VignetteIndexEntry{Animating your maps}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+`tidytracks` also includes a function for animating maps of animal movement 
+data over time.
 
 ```{r load_packages, message=FALSE, warning=FALSE}
 library(tidytracks)
@@ -17,10 +22,6 @@ library(ggplot2)
 library(sf)
 library(gganimate)
 ```
-
-
-`tidytracks` also includes a function for animating maps of animal movement 
-data over time.
 
 <br>
 
@@ -178,12 +179,15 @@ for more information on the different renderer options for making your
 animation. You can also save each frame as an image file and use your own
 software to bind them into a video.
 
-```{r animate_map_2, message=FALSE, warning=FALSE}
+```{r animate_map_2, message=FALSE, warning=FALSE, fig.width=6, fig.height=4}
 gganimate::animate(
   plot = map_anim,         # our ggplot with added animation
   nframes = attr(map_anim, "n_timesteps"), # number of frames = time steps in data
   duration = 5,            # video duration in seconds
-  renderer = av_renderer() # default is gifski_renderer()
+  renderer = av_renderer(), # default is gifski_renderer()
+  # optionally, specify width and height of output animation
+  width = 600, height = 400,
+  units = "px", res = 96 # w/h in pixels, res in dpi
 )
 ```
 
@@ -220,6 +224,9 @@ map
 map_anim2 <- animate_map(p = map, 
                          wake_length = 0.3,
                          label_format = "%B %Y")
+```
+
+```{r anim_points_render, message=FALSE, warning=FALSE, eval=FALSE}
 # render the animation
 gganimate::animate(
   plot = map_anim2,
@@ -331,7 +338,10 @@ suggested number of frames.
 This time we'll add the animation by piping the `ggplot` to `animate_map` - 
 both ways of using the function work.
 
-```{r animate_raster_map, message=FALSE, warning=FALSE}
+The rendering of this animation has been temporarily disabled so that this 
+article can be built faster.
+
+```{r animate_raster_map, message=FALSE, warning=FALSE, eval=FALSE}
 # add animation to the map, this time with pipe 
 map_anim <- map %>%
   animate_map(wake_length = 0.1,
