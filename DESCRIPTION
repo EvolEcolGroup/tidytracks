@@ -4,7 +4,7 @@ Version: 0.0.0.9006
 Authors@R: c(
     person("Andrea", "Manica", , "am315@cam.ac.uk", role = c("aut", "cre")),
     person("Lizzie", "Pearmain", role = c("aut")),
-    person("Paul","Whitelow", role = c("aut")),
+    person("Paul","Whitelaw", role = c("aut")),
     person("Holly", "Pickett", role = c("aut"))
     )
 Description: Tidy functions to analyse tracking data, based on the move2 objects.
@@ -39,6 +39,7 @@ Imports:
   vctrs
 Suggests:
     adehabitatHR,
+    av,
     sp,
     knitr,
     rmarkdown,
