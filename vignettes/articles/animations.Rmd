@@ -44,7 +44,7 @@ df
 
 ### regularise data
 
-Animation works best with regular timesteps and, if you have multiple 
+Animation works best with regular time steps and, if you have multiple 
 individuals, matching timestamps across individuals that were tracked 
 concurrently. Therefore we regularise our timestamps if we haven't already:
 
@@ -146,7 +146,7 @@ from the `gganimate` package to render the animation from this object.
 Our `gganim` object has an attribute called `n_timesteps`. This is the number of
 unique timestamps in the tracking data used to make the plot. To ensure a smooth
 animation, we need to render it with **at least as many frames as there are
-timesteps** in the tracking data.
+time steps** in the tracking data.
 
 ```{r animate_map, collapse=TRUE, warning=FALSE}
 map_anim <- animate_map(p = map,           # our ggplot map
@@ -155,7 +155,7 @@ map_anim <- animate_map(p = map,           # our ggplot map
 ) 
 
 class(map_anim)               # the gganim object
-attr(map_anim, "n_timesteps") # number of timesteps in animation
+attr(map_anim, "n_timesteps") # number of time steps in animation
 ```
 
 ### render animation
@@ -181,7 +181,7 @@ software to bind them into a video.
 ```{r animate_map_2, message=FALSE, warning=FALSE}
 gganimate::animate(
   plot = map_anim,         # our ggplot with added animation
-  nframes = attr(map_anim, "n_timesteps"), # number of frames = timesteps in data
+  nframes = attr(map_anim, "n_timesteps"), # number of frames = time steps in data
   duration = 5,            # video duration in seconds
   renderer = av_renderer() # default is gifski_renderer()
 )

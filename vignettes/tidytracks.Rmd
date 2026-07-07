@@ -371,7 +371,7 @@ Let's look at the metadata:
 str(show_meta(shags_tt_split))
 ```
 We can see that all the birds except for kb_38 and kb_40 made between 1 and 3 central 
-place foraging trips. kb_38 didn't move and was therefor filtered out. 
+place foraging trips. kb_38 didn't move and was therefore filtered out. 
 kb_40 migrated away from the colony and did not return so was also removed.
 
 **How the trip splitting works:**

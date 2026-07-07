@@ -253,7 +253,7 @@ test_that("animate_map warns when multiple track layers are present", {
 })
 
 test_that("animate_map warns and animates the first layer in the stack when layer_to_animate is not given", {
-  # x_fewer has fewer timesteps than x, so n_timesteps reveals which was used.
+  # x_fewer has fewer time steps than x, so n_timesteps reveals which was used.
   # x is added first (path), x_fewer second (point).
   x_fewer <- make_test_tracks() |> dplyr::slice(1:5)
   p <- ggplot2::ggplot() +
