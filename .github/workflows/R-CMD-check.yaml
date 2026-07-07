@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# avoid running multiple ci
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 name: R-CMD-check.yaml
 
 permissions: read-all
