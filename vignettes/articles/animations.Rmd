@@ -152,7 +152,7 @@ time steps** in the tracking data.
 ```{r animate_map, collapse=TRUE, warning=FALSE}
 map_anim <- animate_map(p = map,           # our ggplot map
                         wake_length = 0.3, # proportion of total animation time
-                        label_format = "%B %Y" # Month Year
+                        label_format = "%B %d" # month and date
 ) 
 
 class(map_anim)               # the gganim object
@@ -179,14 +179,14 @@ for more information on the different renderer options for making your
 animation. You can also save each frame as an image file and use your own
 software to bind them into a video.
 
-```{r animate_map_2, message=FALSE, warning=FALSE, fig.width=6, fig.height=4}
+```{r animate_map_2, message=FALSE, warning=FALSE, fig.width=5.4, fig.height=4}
 gganimate::animate(
   plot = map_anim,         # our ggplot with added animation
   nframes = attr(map_anim, "n_timesteps"), # number of frames = time steps in data
   duration = 5,            # video duration in seconds
   renderer = av_renderer(), # default is gifski_renderer()
   # optionally, specify width and height of output animation
-  width = 600, height = 400,
+  width = 540, height = 400,
   units = "px", res = 96 # w/h in pixels, res in dpi
 )
 ```
@@ -223,16 +223,19 @@ map
 # add animation
 map_anim2 <- animate_map(p = map, 
                          wake_length = 0.3,
-                         label_format = "%B %Y")
+                         label_format = "%B %d")
 ```
 
-```{r anim_points_render, message=FALSE, warning=FALSE, eval=FALSE}
+```{r anim_points_render, message=FALSE, warning=FALSE, fig.width=5.4, fig.height=4}
 # render the animation
 gganimate::animate(
   plot = map_anim2,
   nframes = attr(map_anim2, "n_timesteps"),
   duration = 5,
-  renderer = av_renderer()
+  renderer = av_renderer(),
+  # optionally, specify width and height of output animation
+  width = 540, height = 400,
+  units = "px", res = 96
 )
 ```
 
@@ -326,7 +329,11 @@ map <- ggplot() +
 
 # remove axes and gridlines so it looks neater
 map <- map +
-  theme_void()
+  theme_void() +
+  theme(
+    plot.background = element_rect(
+      fill = "white",
+      colour = "white"))
 map
 ```
 
@@ -338,10 +345,7 @@ suggested number of frames.
 This time we'll add the animation by piping the `ggplot` to `animate_map` - 
 both ways of using the function work.
 
-The rendering of this animation has been temporarily disabled so that this 
-article can be built faster.
-
-```{r animate_raster_map, message=FALSE, warning=FALSE, eval=FALSE}
+```{r animate_raster_map, message=FALSE, warning=FALSE, fig.width=5.7, fig.height=5}
 # add animation to the map, this time with pipe 
 map_anim <- map %>%
   animate_map(wake_length = 0.1,
@@ -352,7 +356,10 @@ gganimate::animate(
   plot = map_anim,
   nframes = attr(map_anim, "n_timesteps"),
   duration = 20,
-  renderer = av_renderer()
+  renderer = av_renderer(),
+  # optionally, specify width and height of output animation
+  width = 568, height = 500,
+  units = "px", res = 96
 )
 ```
 
