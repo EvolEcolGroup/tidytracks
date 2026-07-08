@@ -2,7 +2,6 @@
 title: "Animating your maps"
 output: 
   rmarkdown::html_vignette
-#  html_document
 vignette: >
   %\VignetteIndexEntry{Animating your maps}
   %\VignetteEngine{knitr::rmarkdown}

@@ -1,10 +1,9 @@
 ---
 title: "tidytracks"
-output: 
-        rmarkdown::html_vignette
-        # pdf_document: default
+output:
+  rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{reading_data}
+  %\VignetteIndexEntry{tidytracks}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
