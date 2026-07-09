@@ -32,9 +32,9 @@ date and time columns). Time is assumed to be in UTC.}
 
 \item{format_date_time}{optional, a string containing the format of the
 date-time field(s): either the single date-time column, or the date and
-time columns separated by a space, for \code{as.POSIXct()} to parse the date-time.
-If \code{NULL} (default), a set of common formats will be tried. For help with
-specifying date-time formats, see \code{?strptime}.}
+time columns separated by a space, for \code{as.POSIXct()} to parse the
+date-time. If \code{NULL} (default), a set of common formats will be tried. For
+help with specifying date-time formats, see \code{?strptime}.}
 
 \item{crs}{a proj4 string or EPSG code defining the coordinate reference
 system of the data. Defaults to \code{4326} (WGS 84).}
@@ -46,27 +46,29 @@ date-time. Defaults to \code{"UTC"}.}
 in the events table that is track specific (e.g. bird id or colony
 coordinates) to the meta data table. Defaults to \code{TRUE}.}
 
-\item{meta}{A path to a csv file containing the meta data, OR a dataframe
-in R containing the metadata. If provided,
-this will be used to populate the meta data table. It needs to have a
-column with the track ids which includes all the track ids in the events
-table (additional track ids will be discarded). If a column exists in both
-the events table and the metadata table, the values will be compared: when
-identical, the duplicate is removed; when values conflict, both versions
-are retained with a '.meta' suffix added to the metadata version.}
+\item{meta}{A path to a csv file containing the meta data, OR a dataframe in
+R containing the metadata. If provided, this will be used to populate the
+meta data table. It needs to have a column with the track ids which
+includes all the track ids in the events table (additional track ids will
+be discarded). If a column exists in both the events table and the metadata
+table, the values will be compared: when identical, the duplicate is
+removed; when values conflict, both versions are retained with a '.meta'
+suffix added to the metadata version.}
 }
 \value{
 A \code{move2} object containing the event data.
 }
 \description{
-This function reads a csv file containing event data (and possibly metadata) and converts it into a
-\code{move2} object. The csv file should contain contain at least the following
-columns:
+This function reads a csv file containing event data (and possibly metadata)
+and converts it into a \code{move2} object. The csv file should contain contain at
+least the following columns:
 }
 \details{
 \itemize{
-\item one column which is the \code{track_id} (i.e. the variable that groups events into a track)
-\item two columns representing the x and y coordinates (e.g. longitude and latitude)
+\item one column which is the \code{track_id} (i.e. the variable that groups
+events into a track)
+\item two columns representing the x and y coordinates (e.g. longitude
+and latitude)
 \item a date-time column (or separate date and time columns)
 }
 

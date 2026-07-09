@@ -9,7 +9,7 @@ nrow(data)
 
 # need to change time to a date_time, and make up some metadata for each track
 
-# extract the simulated data as a dataframe (not a move2 object) so we can 
+# extract the simulated data as a dataframe (not a move2 object) so we can
 #   play around with it without upsetting the move2 data structures
 
 # make a vector of 10 date_times as a sequence at 10-min intervals
@@ -68,5 +68,3 @@ write.csv(
   file = "tests/testthat/testdata/test_tt_read_data_separate_date_time.csv",
   row.names = FALSE
 )
-
-

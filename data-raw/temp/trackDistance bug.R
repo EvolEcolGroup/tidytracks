@@ -3,20 +3,27 @@ test_sf$geometry
 
 x1 <- sf::st_coordinates(test_sf)
 
-trip::trackDistance(x1[-((nrow(x1) - 1):nrow(x1)), 1],
+trip::trackDistance(
+  x1[-((nrow(x1) - 1):nrow(x1)), 1],
   x1[-((nrow(x1) - 1):nrow(x1)), 2],
-  x1[-(1:2), 1], x1[-(1:2), 2],
+  x1[-(1:2), 1],
+  x1[-(1:2), 2],
   longlat = TRUE
 )
 
-trip::trackDistance(x1[-((nrow(x1) - 1):nrow(x1)), 1],
+trip::trackDistance(
+  x1[-((nrow(x1) - 1):nrow(x1)), 1],
   x1[-((nrow(x1) - 1):nrow(x1)), 2],
-  c(1:(nrow(x1) - 4), tail(x1[, 1], 2)), x1[-(1:2), 2],
+  c(1:(nrow(x1) - 4), tail(x1[, 1], 2)),
+  x1[-(1:2), 2],
   longlat = TRUE
 )
 
-trip::trackDistance(x1[-nrow(x1), 1], x1[-nrow(x1), 2],
-  x1[-1, 1], x1[-1, 2],
+trip::trackDistance(
+  x1[-nrow(x1), 1],
+  x1[-nrow(x1), 2],
+  x1[-1, 1],
+  x1[-1, 2],
   longlat = TRUE
 )
 
@@ -27,10 +34,11 @@ test_sf_proj <- sf::st_transform(test_sf, test_crs)
 x1 <- sf::st_coordinates(test_sf_proj)
 
 
-
-trip::trackDistance(x1[-((nrow(x1) - 1):nrow(x1)), 1],
+trip::trackDistance(
+  x1[-((nrow(x1) - 1):nrow(x1)), 1],
   x1[-((nrow(x1) - 1):nrow(x1)), 2],
-  x1[-(1:2), 1], x1[-(1:2), 2],
+  x1[-(1:2), 1],
+  x1[-(1:2), 2],
   longlat = FALSE
 )
 

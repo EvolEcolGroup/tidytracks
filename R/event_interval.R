@@ -21,6 +21,6 @@
 #' @examples
 #' event_interval(example_tt)
 #' event_interval(example_tt, units = "hours")
-#' 
+#'
 
 event_interval <- move2::mt_time_lags

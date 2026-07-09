@@ -26,7 +26,8 @@ mt_as_move2.trip <- function(x, ...) {
   # now cast as sf
   x_sf <- sf::st_as_sf(x_stdf)
   # and finally as move2 object
-  return(move2::mt_as_move2(x_sf,
+  return(move2::mt_as_move2(
+    x_sf,
     time_column = tor_names[1],
     track_id_column = tor_names[2]
   ))

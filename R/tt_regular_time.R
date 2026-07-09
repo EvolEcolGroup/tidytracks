@@ -109,14 +109,20 @@
 #' resampled_snap
 #'
 #' @export
-tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE) {
+tt_regular_time <- function(
+  x,
+  interval,
+  max_time_lag = NULL,
+  snap_times = FALSE
+) {
   # Validate inputs
   if (!move2::mt_is_move2(x)) {
     stop("`x` must be a move2 object.", call. = FALSE)
   }
 
   if (!inherits(move2::mt_time(x), "POSIXct")) {
-    stop("`tt_regular_time` requires POSIXct timestamps. ",
+    stop(
+      "`tt_regular_time` requires POSIXct timestamps. ",
       "Convert the time column with `mt_set_time()` before calling this function.",
       call. = FALSE
     )
@@ -146,15 +152,15 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
   results <- lapply(track_ids, function(tid) {
     track <- x[as.character(move2::mt_track_id(x)) == as.character(tid), ]
     .resample_one_track(
-      track        = track,
+      track = track,
       interval_sec = interval_sec,
-      max_lag_sec  = max_lag_sec,
-      snap_times   = snap_times,
-      has_crs      = has_crs,
-      input_crs    = input_crs,
-      time_col     = time_col,
-      track_col    = track_col,
-      geom_col     = geom_col
+      max_lag_sec = max_lag_sec,
+      snap_times = snap_times,
+      has_crs = has_crs,
+      input_crs = input_crs,
+      time_col = time_col,
+      track_col = track_col,
+      geom_col = geom_col
     )
   })
 
@@ -166,8 +172,9 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
   }
 
   combined <- do.call(rbind, valid_results)
-  out <- move2::mt_as_move2(combined,
-    time_column     = time_col,
+  out <- move2::mt_as_move2(
+    combined,
+    time_column = time_col,
     track_id_column = track_col
   )
   out_track_ids <- unique(as.character(combined[[track_col]]))
@@ -193,7 +200,10 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
 #' @noRd
 .to_seconds <- function(x, arg) {
   if (!inherits(x, "units")) {
-    stop("`", arg, "` must be a units object ",
+    stop(
+      "`",
+      arg,
+      "` must be a units object ",
       "(e.g. `as_units(60, \"s\")` or `as_units(1, \"min\")`).",
       call. = FALSE
     )
@@ -206,8 +216,13 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
   out <- tryCatch(
     as.numeric(units::set_units(x, "s")),
     error = function(e) {
-      stop("`", arg, "` must carry time units convertible to seconds; ",
-        "got '", units::deparse_unit(x), "'.",
+      stop(
+        "`",
+        arg,
+        "` must carry time units convertible to seconds; ",
+        "got '",
+        units::deparse_unit(x),
+        "'.",
         call. = FALSE
       )
     }
@@ -234,16 +249,27 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
 #'   inside large gaps.
 #' @keywords internal
 #' @noRd
-.resample_one_track <- function(track, interval_sec, max_lag_sec,
-                                snap_times = FALSE,
-                                has_crs, input_crs,
-                                time_col, track_col, geom_col) {
+.resample_one_track <- function(
+  track,
+  interval_sec,
+  max_lag_sec,
+  snap_times = FALSE,
+  has_crs,
+  input_crs,
+  time_col,
+  track_col,
+  geom_col
+) {
   track <- track[order(move2::mt_time(track)), ]
 
   if (nrow(track) < 2L) {
-    stop("Each track must have at least 2 observations to interpolate. ",
-      "Track '", unique(as.character(move2::mt_track_id(track))),
-      "' has only ", nrow(track), " row(s).",
+    stop(
+      "Each track must have at least 2 observations to interpolate. ",
+      "Track '",
+      unique(as.character(move2::mt_track_id(track))),
+      "' has only ",
+      nrow(track),
+      " row(s).",
       call. = FALSE
     )
   }
@@ -271,7 +297,8 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
   total_len <- cum_len[length(cum_len)]
 
   if (total_len == 0) {
-    stop("All locations in track '",
+    stop(
+      "All locations in track '",
       unique(as.character(move2::mt_track_id(track))),
       "' are coincident; cannot interpolate a stationary track.",
       call. = FALSE
@@ -281,11 +308,11 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
   space_frac <- cum_len / total_len
 
   s_norm <- stats::approx(
-    x      = t_sec,
-    y      = space_frac,
-    xout   = t_new,
+    x = t_sec,
+    y = space_frac,
+    xout = t_new,
     method = "linear",
-    rule   = 1L
+    rule = 1L
   )$y
 
   if (is.finite(max_lag_sec)) {
@@ -298,7 +325,8 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
       idx <- which(inside_segments)
       if (length(idx) > 0L) {
         seg_idx <- interval_idx[idx]
-        strictly_inside <- t_new[idx] > t_sec[seg_idx] & t_new[idx] < t_sec[seg_idx + 1L]
+        strictly_inside <- t_new[idx] > t_sec[seg_idx] &
+          t_new[idx] < t_sec[seg_idx + 1L]
         in_gap[idx] <- strictly_inside & gap_sizes[seg_idx] > max_lag_sec
       }
       t_new <- t_new[!in_gap]
@@ -429,10 +457,7 @@ tt_regular_time <- function(x, interval, max_time_lag = NULL, snap_times = FALSE
 #' @noRd
 .is_geographic <- function(crs) {
   isTRUE(crs$IsGeographic) ||
-    grepl("longlat|geographic",
-      crs$proj4string %||% "",
-      ignore.case = TRUE
-    )
+    grepl("longlat|geographic", crs$proj4string %||% "", ignore.case = TRUE)
 }
 
 

@@ -5,17 +5,17 @@ create_toy_tt_geo <- function() {
     bird_id = unique(coords_df$bird_id),
     species = c("species_a", "species_b"),
     geometry = sf::st_sfc(
-      sf::st_point(c(0, 10)),  # id_1: colony latitude 10
-      sf::st_point(c(0, 50)),  # id_2: colony latitude 50
+      sf::st_point(c(0, 10)), # id_1: colony latitude 10
+      sf::st_point(c(0, 50)), # id_2: colony latitude 50
       crs = 4326
     )
   )
   colnames(meta_df)[which(colnames(meta_df) == "geometry")] <- "colony_sf"
   sf::st_geometry(meta_df) <- "colony_sf"
   tt_read_data(
-    events    = coords_df,
-    col_track_id  = "bird_id",
-    col_coords    = c("longitude", "latitude"),
+    events = coords_df,
+    col_track_id = "bird_id",
+    col_coords = c("longitude", "latitude"),
     col_date_time = "date_time",
     meta = meta_df
   )

@@ -10,13 +10,14 @@ track_summary_stats(x, centre_col = NULL, units_duration = as_units(1, "days"))
 \item{x}{A \code{move2} object}
 
 \item{centre_col}{The name of an sf point column (usually added with
-\code{\link[=sf_point_col]{sf_point_col()}}) in the metadata table. If left to NULL, the first location
-(i.e. the starting point) is used at the centre.}
+\code{\link[=sf_point_col]{sf_point_col()}}) in the metadata table. If left to NULL, the first
+location (i.e. the starting point) is used at the centre.}
 
 \item{units_duration}{The units to use for the duration. Default is "days".}
 }
 \value{
-A tibble of summary statistics, with one row per track. The columns are:
+A tibble of summary statistics, with one row per track. The columns
+are:
 \itemize{
 \item \code{<track id column>}: The track ID from \code{x}
 \item tot_duration: The total duration of the track in the specified units
@@ -25,10 +26,10 @@ A tibble of summary statistics, with one row per track. The columns are:
 \item min_latitude: The minimum latitude of the track
 \item max_longitude: The maximum longitude of the track
 \item min_longitude: The minimum longitude of the track
-\item max_dist_centre: The maximum distance from the central place location in
-column \code{centre_col} (or the starting point) in metres
-\item lat_at_max_dist_centre: The latitude at the point of maximum distance from
-the central place location (or the starting point))
+\item max_dist_centre: The maximum distance from the central place location
+in column \code{centre_col} (or the starting point) in metres
+\item lat_at_max_dist_centre: The latitude at the point of maximum
+distance from the central place location (or the starting point))
 \item lon_at_max_dist_centre: The longitude at the point of maximum
 distance from the central place location (or the starting point)
 }

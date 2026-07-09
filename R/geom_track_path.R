@@ -30,10 +30,15 @@
 #' @returns A `ggplot2` layer object.
 #' @export
 
-geom_track_path <- function(mapping = ggplot2::aes(), data = NULL, stat = "sf",
-                            position = "identity",
-                            na.rm = FALSE, show.legend = NA,
-                            ...) {
+geom_track_path <- function(
+  mapping = ggplot2::aes(),
+  data = NULL,
+  stat = "sf",
+  position = "identity",
+  na.rm = FALSE,
+  show.legend = NA,
+  ...
+) {
   # check that data is not NULL
   if (is.null(data)) {
     stop("data must be specified for this geometry")
@@ -46,8 +51,13 @@ geom_track_path <- function(mapping = ggplot2::aes(), data = NULL, stat = "sf",
   # drop units to make it compatible with ggplot2
   data_lines <- tt_drop_units(data_lines)
   ggplot2::geom_sf(
-    mapping = mapping, data = data_lines, stat = stat,
-    position = position, na.rm = na.rm, show.legend = show.legend,
-    inherit.aes = FALSE, ...
+    mapping = mapping,
+    data = data_lines,
+    stat = stat,
+    position = position,
+    na.rm = na.rm,
+    show.legend = show.legend,
+    inherit.aes = FALSE,
+    ...
   )
 }

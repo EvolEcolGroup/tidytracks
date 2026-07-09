@@ -23,8 +23,8 @@ calculation. Options are \code{"ba"} (Bhattacharyya's Affinity), \code{"vi"} (Vo
 of Intersection), and \code{"udoi"} (Utilisation Distribution Overlap Index).
 Default is \code{"ba"}.}
 
-\item{y}{A SpatRaster of the utilisation distribution, if \code{x} is a single UD. Else, if
-\code{x} is tibble of UDs, \code{y} is not used.}
+\item{y}{A SpatRaster of the utilisation distribution, if \code{x} is a single UD.
+Else, if \code{x} is tibble of UDs, \code{y} is not used.}
 
 \item{cond_level}{Optional, the level for which the the conditional overlap
 is computed.}

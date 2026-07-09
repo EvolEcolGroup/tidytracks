@@ -50,13 +50,14 @@ A \code{ggplot2} layer object.
 }
 \description{
 This function provides a \code{ggplot2} geometry to plot steps
-between events as paths. It uses \code{\link[move2:mt_segments]{move2::mt_segments()}} to create \code{sf} lines
-joining each consecutive pair of events (i.e. steps. These steps are then
-added to the events table (with a point for the last event of each track),
-so that all variables in the event table are available for mapping the
-aesthetics. The resulting \code{sf} lines are then plotted via a wrapper around
-\verb{[ggplot2::geom_sf()]}, thus allowing for projections to be set using the
-\code{\link[ggplot2:coord_sf]{ggplot2::coord_sf()}}` function. See \code{\link[ggplot2:geom_sf]{ggplot2::geom_sf()}} for details.
+between events as paths. It uses \code{\link[move2:mt_segments]{move2::mt_segments()}} to create \code{sf}
+lines joining each consecutive pair of events (i.e. steps. These steps are
+then added to the events table (with a point for the last event of each
+track), so that all variables in the event table are available for mapping
+the aesthetics. The resulting \code{sf} lines are then plotted via a wrapper
+around \verb{[ggplot2::geom_sf()]}, thus allowing for projections to be set
+using the \code{\link[ggplot2:coord_sf]{ggplot2::coord_sf()}}` function. See \code{\link[ggplot2:geom_sf]{ggplot2::geom_sf()}} for
+details.
 }
 \details{
 Units (implemented via the package \code{units}) are produced by many

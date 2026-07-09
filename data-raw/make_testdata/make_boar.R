@@ -19,12 +19,15 @@ sf::st_crs(boar_sf) <- 27573
 #   addProviderTiles(providers$Esri.WorldImagery) %>%
 #   addCircleMarkers(radius = 3, color = "yellow")
 
-
-boar_sf$Date <- as.POSIXct((boar_sf$Date - max(boar_sf$Date)) * 8640, tz = "UTC")
+boar_sf$Date <- as.POSIXct(
+  (boar_sf$Date - max(boar_sf$Date)) * 8640,
+  tz = "UTC"
+)
 names(boar_sf) <- tolower(names(boar_sf))
 # Create a move2 object with the relocations
 
-wildboar_tt <- move2::mt_as_move2(boar_sf,
+wildboar_tt <- move2::mt_as_move2(
+  boar_sf,
   track_id_column = "name",
   time_column = "date"
 )

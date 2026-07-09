@@ -19,22 +19,26 @@
 #' # example code
 #' as.data.frame(example_tt, include_meta = TRUE, drop_geometry = TRUE)
 
-as.data.frame.move2 <- function(x, ..., include_meta = FALSE, drop_geometry = FALSE) {
-
+as.data.frame.move2 <- function(
+  x,
+  ...,
+  include_meta = FALSE,
+  drop_geometry = FALSE
+) {
   # If include_meta is TRUE, join the metadata attributes to the data frame
   if (include_meta) {
     x <- x |> move2::mt_as_event_attribute(dplyr::any_of(names(show_meta(x))))
   }
-  
+
   if (!drop_geometry) {
     return(NextMethod())
   } else {
-    
     # drop the geometry column and convert to a data frame
-    cbind(x |>
-            NextMethod() |>   # Convert the move2 object to a data frame
-          dplyr::select(-dplyr::all_of("geometry")),
-          sf::st_coordinates(x$geometry)) # add the coordinates as individual columns
-    
+    cbind(
+      x |>
+        NextMethod() |> # Convert the move2 object to a data frame
+        dplyr::select(-dplyr::all_of("geometry")),
+      sf::st_coordinates(x$geometry)
+    ) # add the coordinates as individual columns
   }
 }

@@ -1,21 +1,24 @@
-
 skip_if_not_installed("gganimate")
 
 # helper: build a minimal move2 object ----
 make_test_tracks <- function(crs = 4326) {
   times <- seq(
     as.POSIXct("2023-01-01 00:00:00", tz = "UTC"),
-    by = "10 mins", length.out = 10
+    by = "10 mins",
+    length.out = 10
   )
   df <- data.frame(
-    bird_id   = rep(c("A", "B"), each = 10),
+    bird_id = rep(c("A", "B"), each = 10),
     date_time = rep(times, 2),
     x = c(seq(0, 1, length.out = 10), seq(0.5, 1.5, length.out = 10)),
     y = c(seq(0, 1, length.out = 10), seq(0.5, 1.5, length.out = 10))
   )
   sf_df <- sf::st_as_sf(df, coords = c("x", "y"), crs = crs)
-  move2::mt_as_move2(sf_df, track_id_column = "bird_id",
-                     time_column = "date_time")
+  move2::mt_as_move2(
+    sf_df,
+    track_id_column = "bird_id",
+    time_column = "date_time"
+  )
 }
 
 x <- make_test_tracks()
@@ -45,13 +48,18 @@ test_that("geom_event_path errors if data is not a move2 object", {
 
 test_that("geom_event_path can be added to a ggplot without error", {
   expect_no_error(
-    ggplot2::ggplot() + geom_event_path(data = x, ggplot2::aes(colour = bird_id))
+    ggplot2::ggplot() +
+      geom_event_path(data = x, ggplot2::aes(colour = bird_id))
   )
 })
 
 test_that("geom_event_path with drop_final_point = TRUE contains only LINESTRING geometries", {
   p <- ggplot2::ggplot() +
-    geom_event_path(data = x, ggplot2::aes(colour = bird_id), drop_final_point = TRUE)
+    geom_event_path(
+      data = x,
+      ggplot2::aes(colour = bird_id),
+      drop_final_point = TRUE
+    )
   layer_data <- p$layers[[1]]$data
   geom_types <- unique(as.character(sf::st_geometry_type(layer_data)))
   expect_equal(geom_types, "LINESTRING")
@@ -60,7 +68,11 @@ test_that("geom_event_path with drop_final_point = TRUE contains only LINESTRING
 test_that("geom_event_path with drop_final_point = TRUE has n_events - n_tracks rows", {
   # (because the final point of each of track is not included)
   p <- ggplot2::ggplot() +
-    geom_event_path(data = x, ggplot2::aes(colour = bird_id), drop_final_point = TRUE)
+    geom_event_path(
+      data = x,
+      ggplot2::aes(colour = bird_id),
+      drop_final_point = TRUE
+    )
   layer_data <- p$layers[[1]]$data
   n_tracks <- length(unique(x[[move2::mt_track_id_column(x)]]))
   expect_equal(nrow(layer_data), nrow(x) - n_tracks)
@@ -186,7 +198,7 @@ test_that("tt_detect_layer_type selects the correct layer by name", {
   # Two move2 objects with identical timestamps; x2 is a point layer added second
   x2 <- x
   p <- ggplot2::ggplot() +
-    geom_event_path(data = x,  ggplot2::aes(colour = bird_id)) +
+    geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
     geom_event_point(data = x2, ggplot2::aes(colour = bird_id))
   result <- tt_detect_layer_type(p, layer_name = "x2")
   expect_equal(result$type, "point")
@@ -194,7 +206,10 @@ test_that("tt_detect_layer_type selects the correct layer by name", {
 
 test_that("tt_detect_layer_type errors if layer_name does not match any layer", {
   p <- make_paths_map(x)
-  expect_error(tt_detect_layer_type(p, layer_name = "nonexistent"), "nonexistent")
+  expect_error(
+    tt_detect_layer_type(p, layer_name = "nonexistent"),
+    "nonexistent"
+  )
 })
 
 test_that("animate_map errors if layer_to_animate is not a move2 object", {
@@ -204,7 +219,7 @@ test_that("animate_map errors if layer_to_animate is not a move2 object", {
 
 test_that("animate_map with layer_to_animate suppresses the multiple-layers warning", {
   p <- ggplot2::ggplot() +
-    geom_event_path(data = x,  ggplot2::aes(colour = bird_id)) +
+    geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
     geom_event_point(data = x, ggplot2::aes(colour = bird_id))
   expect_no_warning(animate_map(p, layer_to_animate = x))
 })
@@ -212,7 +227,7 @@ test_that("animate_map with layer_to_animate suppresses the multiple-layers warn
 test_that("animate_map with layer_to_animate selects the named layer", {
   x2 <- x
   p <- ggplot2::ggplot() +
-    geom_event_path(data = x,  ggplot2::aes(colour = bird_id)) +
+    geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
     geom_event_point(data = x2, ggplot2::aes(colour = bird_id))
   # Without layer_to_animate, path (first layer) would be animated; here we
   # explicitly request the point layer
@@ -232,13 +247,16 @@ test_that("animate_map errors if p is not a ggplot", {
 
 test_that("animate_map errors if wake_length is out of range", {
   p <- make_paths_map(x)
-  expect_error(animate_map(p, wake_length = 0),    "wake_length")
+  expect_error(animate_map(p, wake_length = 0), "wake_length")
   expect_error(animate_map(p, wake_length = -0.1), "wake_length")
-  expect_error(animate_map(p, wake_length = 1.5),  "wake_length")
+  expect_error(animate_map(p, wake_length = 1.5), "wake_length")
 })
 
 test_that("animate_map errors if wake_length is non-numeric", {
-  expect_error(animate_map(make_paths_map(x), wake_length = "half"), "wake_length")
+  expect_error(
+    animate_map(make_paths_map(x), wake_length = "half"),
+    "wake_length"
+  )
 })
 
 test_that("animate_map errors if no supported track layer is found", {
@@ -257,7 +275,7 @@ test_that("animate_map warns and animates the first layer in the stack when laye
   # x is added first (path), x_fewer second (point).
   x_fewer <- make_test_tracks() |> dplyr::slice(1:5)
   p <- ggplot2::ggplot() +
-    geom_event_path(data = x,        ggplot2::aes(colour = bird_id)) +
+    geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
     geom_event_point(data = x_fewer, ggplot2::aes(colour = bird_id))
   result <- NULL
   expect_warning(result <- animate_map(p), "Multiple")

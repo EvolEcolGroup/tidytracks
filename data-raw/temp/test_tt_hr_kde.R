@@ -1,16 +1,26 @@
 genetta_df <- as.data.frame(matrix(
   c(
-    0.5519758, 0.27524548,
-    0.5725632, 0.12309273,
-    0.5547747, 0.06100429,
-    0.6110925, 0.16211416,
-    0.5951087, 0.09316814,
-    0.5333567, 0.11673812,
-    0.5855461, 0.11170616,
-    0.5221387, 0.11061583,
-    0.5848452, 0.17213175
+    0.5519758,
+    0.27524548,
+    0.5725632,
+    0.12309273,
+    0.5547747,
+    0.06100429,
+    0.6110925,
+    0.16211416,
+    0.5951087,
+    0.09316814,
+    0.5333567,
+    0.11673812,
+    0.5855461,
+    0.11170616,
+    0.5221387,
+    0.11061583,
+    0.5848452,
+    0.17213175
   ),
-  ncol = 2, byrow = TRUE
+  ncol = 2,
+  byrow = TRUE
 ))
 names(genetta_df) <- c("lng", "lat")
 
@@ -22,7 +32,8 @@ mask_xy_grid <- expand.grid(
 sp::coordinates(mask_xy_grid) <- ~ x + y
 sp::gridded(mask_xy_grid) <- TRUE
 
-ade_genetta <- adehabitatHR::kernelUD(sp::SpatialPoints(genetta_df),
+ade_genetta <- adehabitatHR::kernelUD(
+  sp::SpatialPoints(genetta_df),
   h = "href",
   grid = mask_xy_grid,
   kern = "bivnorm"
@@ -42,7 +53,8 @@ genetta_sf <- sf::st_as_sf(
 genetta_sf$id <- "genetta"
 genetta_sf$time <- seq(
   from = as.POSIXct("2020-01-01 00:00:00"),
-  by = "1 hour", length.out = nrow(genetta_df)
+  by = "1 hour",
+  length.out = nrow(genetta_df)
 )
 genetta_tt <- move2::mt_as_move2(
   genetta_sf,
@@ -53,10 +65,16 @@ genetta_tt <- move2::mt_as_move2(
 genetta_tt <- genetta_tt %>%
   dplyr::group_by(id)
 grid_list <- list(
-  xmin = 0.4, ymin = 0.01,
-  xmax = 0.7, ymax = 0.4, n = 1240
+  xmin = 0.4,
+  ymin = 0.01,
+  xmax = 0.7,
+  ymax = 0.4,
+  n = 1240
 )
-genetta_tt_hr <- hr_kde(genetta_tt,
-  h = NULL, grid = grid_list,
-  levels = c(0.5, 0.95), keep_objects = FALSE
+genetta_tt_hr <- hr_kde(
+  genetta_tt,
+  h = NULL,
+  grid = grid_list,
+  levels = c(0.5, 0.95),
+  keep_objects = FALSE
 )

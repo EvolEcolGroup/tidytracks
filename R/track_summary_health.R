@@ -34,7 +34,7 @@ track_summary_health <- function(x) {
     actual_points = NA_integer_,
     proportion_missing = NA_real_
   )
-  
+
   # Ensure the move2 object is ordered by time within each track
   x <- tt_order_time(x)
 
@@ -44,9 +44,14 @@ track_summary_health <- function(x) {
     track_data <- x[event_track_id(x) == track_id, ]
 
     # Calculate the median sampling interval
-    sampling_intervals <- as.numeric(diff(event_time(track_data), units = "secs"))
-    sampling_intervals <- sampling_intervals[is.finite(sampling_intervals) &
-                                               sampling_intervals > 0]
+    sampling_intervals <- as.numeric(diff(
+      event_time(track_data),
+      units = "secs"
+    ))
+    sampling_intervals <- sampling_intervals[
+      is.finite(sampling_intervals) &
+        sampling_intervals > 0
+    ]
     median_sampling_interval <- if (length(sampling_intervals) == 0) {
       NA_real_
     } else {
@@ -54,8 +59,11 @@ track_summary_health <- function(x) {
     }
 
     # Calculate the track duration
-    track_duration <- as.numeric(difftime(max(event_time(track_data)), 
-                               min(event_time(track_data)), units = "secs"))
+    track_duration <- as.numeric(difftime(
+      max(event_time(track_data)),
+      min(event_time(track_data)),
+      units = "secs"
+    ))
 
     # Calculate the expected number of points
     # Calculate the actual number of points
@@ -72,7 +80,8 @@ track_summary_health <- function(x) {
 
     # Calculate the proportion of expected points that are missing
     if (expected_points > 0) {
-      proportion_missing <- max(expected_points - actual_points, 0) / expected_points
+      proportion_missing <- max(expected_points - actual_points, 0) /
+        expected_points
     } else {
       proportion_missing <- 0
     }
@@ -84,9 +93,11 @@ track_summary_health <- function(x) {
     results$actual_points[i] <- actual_points
     results$proportion_missing[i] <- proportion_missing
   }
-  
+
   # rename track_id field to the "track_id_column" in the original move2 object
-  colnames(results)[which(colnames(results) == "track_id")] <- move2::mt_track_id_column(x)
+  colnames(results)[which(
+    colnames(results) == "track_id"
+  )] <- move2::mt_track_id_column(x)
 
   return(results)
 }

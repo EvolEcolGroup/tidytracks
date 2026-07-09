@@ -15,12 +15,10 @@ track_duration <- function(x, units = as_units(1, "days")) {
     c,
     lapply(
       lapply(
-        split(event_time(x),
-          event_track_id(x),
-          drop = TRUE
-        ),
+        split(event_time(x), event_track_id(x), drop = TRUE),
         range
-      ), diff
+      ),
+      diff
     )
   )
   # Convert the duration (difftime) to the specified units

@@ -9,5 +9,5 @@
 #' @export
 #' @examples
 #' event_track_id(example_tt)
-#' 
+#'
 event_track_id <- move2::mt_track_id

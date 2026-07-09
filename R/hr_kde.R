@@ -16,7 +16,7 @@
 #' units of the projection of `x` (e.g. m^2 for a UTM projection). If `x` is
 #' unprojected, the area is computed in degrees^2, which is not a meaningful
 #' unit for area. In this case, it is recommended to project `x` to an
-#' appropriate projection before using this function. 
+#' appropriate projection before using this function.
 #'
 #' @param x A move2 object; if explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
@@ -36,7 +36,7 @@
 #'   distribution is returned; otherwise just the isopleths are returned. It is
 #'   possible to specify more than two levels, e.g.  `c(0.5, 0.95)` corresponds
 #'   to the 50% and 95% home ranges.
-#' @returns Either a `tibble`, or, if `levels` is not NULL, an `sf` tibble , 
+#' @returns Either a `tibble`, or, if `levels` is not NULL, an `sf` tibble ,
 #' with columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
@@ -55,8 +55,13 @@
 #'
 #' @export
 
-hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
-                      res = NULL, levels = NULL) {
+hr_kde <- function(
+  x,
+  h = "h_ref_mean",
+  bbox = NULL,
+  res = NULL,
+  levels = NULL
+) {
   # if x is not grouped, use the track ID column as grouping variable
   if (!inherits(x, "grouped_df")) {
     x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
@@ -78,9 +83,13 @@ hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
   xy <- sf::st_coordinates(x)
   # check h
   if (!is.numeric(h)) {
-    h <- match.arg(h, c(
-      "h_ref_mean", "h_ref_indiv"
-    ))
+    h <- match.arg(
+      h,
+      c(
+        "h_ref_mean",
+        "h_ref_indiv"
+      )
+    )
     h_fun <- get(h) # assign the function to h_fun
     h <- h_fun(xy, group_index) # compute h
   }
@@ -109,19 +118,22 @@ hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
     bbox["ymax"] <- bbox[["ymax"]] + extend_y
   }
   # check that bbox is a vector of four correctly named elements
-  if (length(bbox) != 4 ||
-    !all(c("xmin", "ymin", "xmax", "ymax")
-    %in% names(bbox))) {
+  if (
+    length(bbox) != 4 ||
+      !all(c("xmin", "ymin", "xmax", "ymax") %in% names(bbox))
+  ) {
     stop("bbox must be a named vector of length 4")
   }
   # coerce to plain numeric named vector (handles list inputs gracefully)
   bbox <- unlist(bbox)
 
-
   if (is.null(res)) {
     # set resolution to get a 1000 cells
-    res <- sqrt((bbox[["xmax"]] - bbox[["xmin"]]) *
-      (bbox[["ymax"]] - bbox[["ymin"]]) / 1000)
+    res <- sqrt(
+      (bbox[["xmax"]] - bbox[["xmin"]]) *
+        (bbox[["ymax"]] - bbox[["ymin"]]) /
+        1000
+    )
   }
 
   # update the max to be an exact multiple of res
@@ -133,54 +145,57 @@ hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
   kde_results <- foreach::foreach(
     group_id = group_unique,
     .combine = rbind # dplyr::bind_rows
-  ) %do% {
-    # Filter the data for the current group
-    xy_sub <- xy[group_index == group_id, ]
-    h_val <- h[group_id]
-    # Create kernel for each level
-    kde <- kde_one_group(xy_sub,
-      crs = sf::st_crs(x),
-      bbox = bbox,
-      res = res,
-      h = h_val,
-      id = group_id
-    )
-    # row for the table to integrate the results
-    res_tbl <- tibble::tibble(
-      group_id = group_labels[group_id],
-      method = "kde",
-      h = h_val,
-      xmin = bbox[["xmin"]],
-      ymin = bbox[["ymin"]],
-      xmax = bbox[["xmax"]],
-      ymax = bbox[["ymax"]],
-      res = res
-    )
+  ) %do%
+    {
+      # Filter the data for the current group
+      xy_sub <- xy[group_index == group_id, ]
+      h_val <- h[group_id]
+      # Create kernel for each level
+      kde <- kde_one_group(
+        xy_sub,
+        crs = sf::st_crs(x),
+        bbox = bbox,
+        res = res,
+        h = h_val,
+        id = group_id
+      )
+      # row for the table to integrate the results
+      res_tbl <- tibble::tibble(
+        group_id = group_labels[group_id],
+        method = "kde",
+        h = h_val,
+        xmin = bbox[["xmin"]],
+        ymin = bbox[["ymin"]],
+        xmax = bbox[["xmax"]],
+        ymax = bbox[["ymax"]],
+        res = res
+      )
 
-    # if returning the full kde object, we simply add it to the kde column
+      # if returning the full kde object, we simply add it to the kde column
       # add the kde to the tibble as a list column
       res_tbl$ud <- PackedSpatRaster_list(kde)
       names(res_tbl$ud) <- group_labels[group_id]
       # add a class to the tibble
       class(res_tbl) <- c("hr_ud_tbl", class(res_tbl))
-    if (!is.null(levels)) {
-      res_tbl <- hr_ud_iso(res_tbl, levels)
+      if (!is.null(levels)) {
+        res_tbl <- hr_ud_iso(res_tbl, levels)
+      }
+      res_tbl
     }
-    res_tbl
-  }
-  
+
   # # change class of ud column to PackedSpatRaster_list
   # names(kde_results$ud) <- group_labels
   # kde_results$ud <- as_PackedSpatRaster_list(kde_results$ud)
-  
+
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
     kde_results <- kde_results %>%
       dplyr::rename_with(
-        ~ dplyr::group_vars(x), dplyr::all_of("group_id")
+        ~ dplyr::group_vars(x),
+        dplyr::all_of("group_id")
       )
   }
-  
+
   return(kde_results)
 }
 
@@ -200,7 +215,8 @@ hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
 #' @return A PackedSpatRaster.
 #' @keywords internal
 kde_one_group <- function(xy, crs, bbox, res, h, id) {
-  kde <- MASS::kde2d(xy[, 1],
+  kde <- MASS::kde2d(
+    xy[, 1],
     xy[, 2],
     n = round(c(
       (bbox[["xmax"]] - bbox[["xmin"]]) / res,
@@ -212,29 +228,39 @@ kde_one_group <- function(xy, crs, bbox, res, h, id) {
     lims = c(
       # note that the limits in MASS refer to the centroids of the cells, so we
       # need to add res/2 to the min and subtract res/2 from the max
-      bbox[["xmin"]]+res/2, bbox[["xmax"]]-res/2,
-      bbox[["ymin"]]+res/2, bbox[["ymax"]]-res/2
+      bbox[["xmin"]] + res / 2,
+      bbox[["xmax"]] - res / 2,
+      bbox[["ymin"]] + res / 2,
+      bbox[["ymax"]] - res / 2
     )
   )
-  
+
   # estimate the sum of the density
   sum_density <- sum(kde$z, na.rm = TRUE)
-  
+
   # standardise the density values to sum to 1
   kde$z <- kde$z / sum_density
-  
+
   # turn it into a raster (flipping the x axis appropriately)
   kde$z <- t(kde$z)
-  r <- terra::rast(kde$z[nrow(kde$z):1,],
-                   crs = crs$wkt,
-                   extent =terra::ext(bbox[["xmin"]], bbox[["xmax"]], 
-                                      bbox[["ymin"]], bbox[["ymax"]])
+  r <- terra::rast(
+    kde$z[nrow(kde$z):1, ],
+    crs = crs$wkt,
+    extent = terra::ext(
+      bbox[["xmin"]],
+      bbox[["xmax"]],
+      bbox[["ymin"]],
+      bbox[["ymax"]]
+    )
   )
   names(r) <- "ud"
-  terra::metags(r) <- c(paste0("id = ", id), "method = kde", paste0("h = ", h),
-                        paste0("density_sum = ", sum_density))
-  
+  terra::metags(r) <- c(
+    paste0("id = ", id),
+    "method = kde",
+    paste0("h = ", h),
+    paste0("density_sum = ", sum_density)
+  )
+
   # return it wrapped (so that it can be put in a list)
   return(terra::wrap(r))
 }
-

@@ -57,7 +57,6 @@ speedfilter <- function(x, max.speed = NULL, test = FALSE) {
     # DEBUG
     sub <- grps[1]
 
-
     ind <- id == sub
     xy <- matrix(c(x[ind], y[ind]), ncol = 2) # coordinates for this trip
     tms <- time[ind] # time for this trip
@@ -95,16 +94,21 @@ speedfilter <- function(x, max.speed = NULL, test = FALSE) {
 
       # TODO check what these speeds are
       # Calculate speed between consecutive points
-      speed1 <- trackDistance(x1[-nrow(x1), 1], x1[-nrow(x1), 2],
-        x1[-1, 1], x1[-1, 2],
+      speed1 <- trackDistance(
+        x1[-nrow(x1), 1],
+        x1[-nrow(x1), 2],
+        x1[-1, 1],
+        x1[-1, 2],
         longlat = !projected
       ) /
         (diff(unclass(tms[ok])) / 3600)
 
       # Calculate running mean speed
-      speed2 <- trackDistance(x1[-((nrow(x1) - 1):nrow(x1)), 1],
+      speed2 <- trackDistance(
+        x1[-((nrow(x1) - 1):nrow(x1)), 1],
         x1[-((nrow(x1) - 1):nrow(x1)), 2],
-        x1[-(1:2), 1], x1[-(1:2), 2],
+        x1[-(1:2), 1],
+        x1[-(1:2), 2],
         longlat = !projected
       ) /
         ((unclass(tms[ok][-c(1, 2)]) -
@@ -148,9 +152,12 @@ speedfilter <- function(x, max.speed = NULL, test = FALSE) {
       # find contiguous sections of high speed
       segs <- cumsum(c(0, abs(diff(bad))))
       # flag points with highest speed within each contiguous section
-      rmsFlag <- unlist(lapply(split(RMS, segs), function(x) {
-        ifelse((1:length(x)) == which.max(x), TRUE, FALSE)
-      }), use.names = FALSE)
+      rmsFlag <- unlist(
+        lapply(split(RMS, segs), function(x) {
+          ifelse((1:length(x)) == which.max(x), TRUE, FALSE)
+        }),
+        use.names = FALSE
+      )
       rmsFlag[!bad] <- FALSE
       RMS[rmsFlag] <- -10
 
@@ -267,7 +274,6 @@ track_flag_mcconnell <- function(this_track, max_speed) {
       sqrt(rowSums(rmsRows^2) / ncol(rmsRows))
     )
 
-
     # Identify and flag high-speed segments
     root_mean_sq[length(root_mean_sq)] <- 0 # set last value as zero (from NA)
     # set if RMS is greater than max speed allowed
@@ -275,9 +281,12 @@ track_flag_mcconnell <- function(this_track, max_speed) {
     # find contiguous sections of high speed
     segs <- cumsum(c(0, abs(diff(bad))))
     # flag points with highest speed within each contiguous section
-    rmsFlag <- unlist(lapply(split(root_mean_sq, segs), function(x) {
-      ifelse((1:length(x)) == which.max(x), TRUE, FALSE)
-    }), use.names = FALSE)
+    rmsFlag <- unlist(
+      lapply(split(root_mean_sq, segs), function(x) {
+        ifelse((1:length(x)) == which.max(x), TRUE, FALSE)
+      }),
+      use.names = FALSE
+    )
     rmsFlag[!bad] <- FALSE
     root_mean_sq[rmsFlag] <- -10
 

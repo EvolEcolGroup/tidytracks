@@ -13,20 +13,19 @@ hr_ud_iso(x, levels = c(0.5, 0.95))
 \method{hr_ud_iso}{SpatRaster}(x, levels = c(0.5, 0.95))
 }
 \arguments{
-\item{x}{either a tibble of class \code{hr_ud_tbl}, as created by \code{\link[=hr_kde]{hr_kde()}},
-or a \code{SpatRaster} object from the \code{ud} column of a \code{hr_ud_tbl} tibble.}
+\item{x}{either a tibble of class \code{hr_ud_tbl}, as created by \code{\link[=hr_kde]{hr_kde()}}, or a
+\code{SpatRaster} object from the \code{ud} column of a \code{hr_ud_tbl} tibble.}
 
 \item{levels}{numeric vector of isopleth levels to create. Default is
-\code{c(0.50, 0.95)}, which will create 50\% and 95\% isopleths. Levels should be between
-0 and 1.}
+\code{c(0.50, 0.95)}, which will create 50\% and 95\% isopleths. Levels should be
+between 0 and 1.}
 }
 \value{
 If \code{x} is a tibble, a tibble of class \code{hr_poly_tbl} with columns
-\code{id}, \code{level}, and \code{geometry}. If \code{x} is a \code{hr_ud} object,
-a \code{sfc_GEOMETRYCOLLECTION} object.
+\code{id}, \code{level}, and \code{geometry}. If \code{x} is a \code{hr_ud} object, a
+\code{sfc_GEOMETRYCOLLECTION} object.
 }
 \description{
-This method can be applied to a whole tibble of UDs, or to an individual
-UD.
+This method can be applied to a whole tibble of UDs, or to an individual UD.
 }
 \concept{home_range}

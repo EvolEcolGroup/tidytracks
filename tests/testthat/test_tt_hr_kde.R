@@ -1,6 +1,6 @@
 test_that("hr_kde works with multiple tracks", {
   # load a simple dataset originally from adehabitat
-  boar_tt <- readRDS(file.path( test_path("testdata"),"wildboar_tt.rds"))
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   # group by name
   boar_tt <- boar_tt %>%
     dplyr::group_by(name)
@@ -12,7 +12,6 @@ test_that("hr_kde works with multiple tracks", {
   # the group_id column should have been renamed to "name"
   expect_true("name" %in% names(boar_kde))
 
-
   # test autoplot for the hr_ud_tbl object
   p <- autoplot(boar_kde)
   expect_true(inherits(p, "ggplot"))
@@ -20,27 +19,23 @@ test_that("hr_kde works with multiple tracks", {
   # it should have 4 elements
   expect_equal(length(p), 4)
   # plot just two plots
-  p2 <- autoplot(boar_kde, id_to_plot = c(1,3))
+  p2 <- autoplot(boar_kde, id_to_plot = c(1, 3))
   # it should have 2 elements
   expect_equal(length(p2), 2)
   # now plot just one
   p3 <- autoplot(boar_kde, id_to_plot = 2)
   # it should have 1 element
   expect_equal(length(p3), 1)
-  
+
   # use a tt that is not grouped
-  boar_tt2 <- readRDS(file.path( test_path("testdata"),"wildboar_tt.rds"))
+  boar_tt2 <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   boar_kde2 <- hr_kde(boar_tt2, res = 50)
   # this should be the same as the previous one
   expect_equal(boar_kde, boar_kde2, ignore_attr = TRUE)
-  
-  
+
   # simple plotting example to check the geometry
   #  ggplot(boar_kde) +
   #    geom_sf(aes(fill=group_id), alpha = 0.7)
-  
-
-  
 })
 
 test_that("hr_kde bbox columns are always numeric (not list-cols)", {

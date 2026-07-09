@@ -15,8 +15,11 @@
 #' @export
 #'
 
-resaveRDSfiles <- function(paths, compress = c("auto", "gzip", "bzip2", "xz", "zstd"),
-                           version = NULL) {
+resaveRDSfiles <- function(
+  paths,
+  compress = c("auto", "gzip", "bzip2", "xz", "zstd"),
+  version = NULL
+) {
   if (length(paths) == 1L && dir.exists(paths)) {
     paths <- Sys.glob(c(file.path(paths, "*.rds")))
   }
@@ -31,10 +34,10 @@ resaveRDSfiles <- function(paths, compress = c("auto", "gzip", "bzip2", "xz", "z
       compress_options <- c("gzip", "bzip2", "xz", "zstd")
       compress_files <- c()
       # we try all compression options and pick the smallest one
-      for (i_compress in compress_options)
-      {
+      for (i_compress in compress_options) {
         f_temp <- tempfile()
-        saveRDS(this_obj,
+        saveRDS(
+          this_obj,
           file = f_temp,
           compress = i_compress,
           version = version
@@ -46,10 +49,7 @@ resaveRDSfiles <- function(paths, compress = c("auto", "gzip", "bzip2", "xz", "z
       file.copy(compress_files[which_min], p, overwrite = TRUE)
       unlink(compress_files)
     } else {
-      saveRDS(this_obj,
-        file = p, compress = compress,
-        version = ver
-      )
+      saveRDS(this_obj, file = p, compress = compress, version = ver)
     }
   }
 }

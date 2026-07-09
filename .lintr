@@ -1,5 +1,6 @@
 linters: linters_with_defaults(
-    return_linter = NULL
+    return_linter = NULL,
+    pipe_consistency_linter = NULL
   )
 exclusions: list(
     "data-raw",
@@ -10,6 +11,9 @@ exclusions: list(
       object_name_linter = Inf
     ),
     "R/geom_event_path.R" = list( # param names to match ggplot2
+      object_name_linter = Inf
+    ),
+    "R/PackedSpatRaster_list.R" = list( # class name derived from terra
       object_name_linter = Inf
     )
   )

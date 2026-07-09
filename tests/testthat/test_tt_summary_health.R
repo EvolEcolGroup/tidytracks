@@ -9,21 +9,26 @@ test_that("track_summary_health returns a data frame with expected columns", {
   # create the toy dataframe of longitude, latitude, date_time, bird_id
   # this has perfect data, so there should be no missing data in the output
   test_tt <- create_toy_tt()
-  
+
   result <- track_summary_health(test_tt)
-  
+
   # check it's a tibble
   expect_true(inherits(result, "tbl_df"))
   # define the expected columns
-  expected_columns <- c(move2::mt_track_id_column(test_tt),
-                        "median_sampling_interval", "track_duration",
-                        "expected_points", "actual_points", "proportion_missing")
+  expected_columns <- c(
+    move2::mt_track_id_column(test_tt),
+    "median_sampling_interval",
+    "track_duration",
+    "expected_points",
+    "actual_points",
+    "proportion_missing"
+  )
   # expect that all these columns are present
   expect_true(all(expected_columns %in% names(result)))
-  
+
   # there should be no missing data in this
   expect_true(all(result$proportion_missing == 0))
-  
+
   # remove one event to create a gap and missingness in one track
   track_to_edit <- unique(event_track_id(test_tt))[1]
   row_to_remove <- which(event_track_id(test_tt) == track_to_edit)[10]

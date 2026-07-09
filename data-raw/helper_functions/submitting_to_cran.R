@@ -15,7 +15,6 @@ devtools::check(remote = TRUE, manual = TRUE)
 # source("./data-raw/helper_functions/resaveRDSfiles.R")
 # resaveRDSfiles("./inst/extdata/")
 
-
 source("./data-raw/helper_functions/check_returns_in_documentation.R")
 
 # now create a cran_submission branch for the final remote tests
@@ -24,11 +23,9 @@ source("./data-raw/helper_functions/check_returns_in_documentation.R")
 # update version number
 # update news
 
-
 # NEXT SUBMISSION:
 # try removing donttest in examples to check if we have some problems with data.table that
 # we can remove by limiting threads
-
 
 # first check with rhub
 # git config --global credential.helper store
@@ -41,14 +38,12 @@ rhub::rhub_doctor()
 
 # answer 1,2,3,4,5
 
-
 # check on macos and windows via devtools
 devtools::check_mac_release()
 devtools::check_win_devel()
 
 # TO DO MANUALLY: if everything passes, edit the cran-comments.md to explain any notes
 devtools::release()
-
 
 ################################################################################
 ################################################################################

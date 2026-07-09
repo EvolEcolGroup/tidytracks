@@ -20,22 +20,27 @@
 #' @return A clean `move2` object with events removed
 #' @export
 
-tt_clean_mcconnell <- function(x, max_speed = NULL,
-                               flag_action = c("remove", "interpolate", "null"),
-                               check_first_last = FALSE) {
+tt_clean_mcconnell <- function(
+  x,
+  max_speed = NULL,
+  flag_action = c("remove", "interpolate", "null"),
+  check_first_last = FALSE
+) {
   # checking for appropriate x and max_speed is done by event_flag_mcconnell
   flag_action <- match.arg(flag_action)
 
   # Call the event_flag_mcconnell function to get the valid points
-  valid_points <- event_flag_mcconnell(x,
-                                       max_speed = max_speed,
-                                       check_first_last = check_first_last)
+  valid_points <- event_flag_mcconnell(
+    x,
+    max_speed = max_speed,
+    check_first_last = check_first_last
+  )
 
-  if (flag_action=="remove"){
-    x <- x[valid_points,]
-  } else if (flag_action=="null"){
+  if (flag_action == "remove") {
+    x <- x[valid_points, ]
+  } else if (flag_action == "null") {
     sf::st_geometry(x)[!valid_points] <- sf::st_point()
-  } else if (flag_action == "interpolate"){
+  } else if (flag_action == "interpolate") {
     sf::st_geometry(x)[!valid_points] <- sf::st_point()
     x <- move2::mt_interpolate(x)
   }

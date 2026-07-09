@@ -24,10 +24,13 @@
 #' @importFrom foreach %do%
 #' @importFrom rlang :=
 
-tt_split_trips <- function(x, centre_col = NULL,
-                           buffer_outbound = as_units(1000, "m"),
-                           buffer_inbound = as_units(1000, "m"),
-                           complete = TRUE) {
+tt_split_trips <- function(
+  x,
+  centre_col = NULL,
+  buffer_outbound = as_units(1000, "m"),
+  buffer_inbound = as_units(1000, "m"),
+  complete = TRUE
+) {
   # Check if x is a move2 object
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")
@@ -40,28 +43,27 @@ tt_split_trips <- function(x, centre_col = NULL,
 
   # check centre_col input
   if (inherits(centre_col, "character")) {
-      # check if it exists in the metadata
-      if (!centre_col %in% names(show_meta(x))) {
-        stop("centre_col must be a column name in the metadata table")
-      }
-      centre_col <- show_meta(x)[[centre_col]]
-      # cehck that this is an `sfc_POINT` column
-      if (!inherits(centre_col, "sfc_POINT")) {
-        stop("centre_col must be a `sfc_POINT` column in the metadata table")
-      }
-      # check that we have a crs for this column
-      if (is.na(sf::st_crs(centre_col))) {
-        stop("centre_col must have a crs specified")
-      }
-      # project the centre_col to the same crs as x
-      if (!(sf::st_crs(centre_col) == sf::st_crs(x))) {
-        centre_col <- sf::st_transform(centre_col, sf::st_crs(x))
-      }
-      centre_col <- sf::st_coordinates(centre_col)
-    } else {
-      stop("centre_col must be the name of a column in the metadata")
+    # check if it exists in the metadata
+    if (!centre_col %in% names(show_meta(x))) {
+      stop("centre_col must be a column name in the metadata table")
     }
-
+    centre_col <- show_meta(x)[[centre_col]]
+    # cehck that this is an `sfc_POINT` column
+    if (!inherits(centre_col, "sfc_POINT")) {
+      stop("centre_col must be a `sfc_POINT` column in the metadata table")
+    }
+    # check that we have a crs for this column
+    if (is.na(sf::st_crs(centre_col))) {
+      stop("centre_col must have a crs specified")
+    }
+    # project the centre_col to the same crs as x
+    if (!(sf::st_crs(centre_col) == sf::st_crs(x))) {
+      centre_col <- sf::st_transform(centre_col, sf::st_crs(x))
+    }
+    centre_col <- sf::st_coordinates(centre_col)
+  } else {
+    stop("centre_col must be the name of a column in the metadata")
+  }
 
   # Sort out units
   # set the units for the distance
@@ -74,17 +76,11 @@ tt_split_trips <- function(x, centre_col = NULL,
   }
   # convert buffers and drop units
   buffer_out_uless <- units::drop_units(
-    units::set_units(buffer_outbound, dist_units,
-      mode = "standard"
-    )
+    units::set_units(buffer_outbound, dist_units, mode = "standard")
   )
   buffer_in_uless <- units::drop_units(
-    units::set_units(buffer_inbound, dist_units,
-      mode = "standard"
-    )
+    units::set_units(buffer_inbound, dist_units, mode = "standard")
   )
-
-
 
   # TODO in the code above, if given an sf object with multiple rows, we should
   # demand that there is a column with the same name as the track id column in
@@ -97,17 +93,19 @@ tt_split_trips <- function(x, centre_col = NULL,
 
   i <- NULL # avoid global variable warning (i is used by foreach)
   # Loop through each track and split into trips
-  trip_list <- foreach::foreach(i = seq_len(nrow(show_meta(x)))) %do% {
-    split_one_track(unique_ids[i],
-      coords[ids == unique_ids[i], 1],
-      coords[ids == unique_ids[i], 2],
-      is_lonlat = is_longlat,
-      centre_x = centre_col[i, 1],
-      centre_y = centre_col[i, 2],
-      buffer_inbound = buffer_in_uless,
-      buffer_outbound = buffer_out_uless
-    )
-  }
+  trip_list <- foreach::foreach(i = seq_len(nrow(show_meta(x)))) %do%
+    {
+      split_one_track(
+        unique_ids[i],
+        coords[ids == unique_ids[i], 1],
+        coords[ids == unique_ids[i], 2],
+        is_lonlat = is_longlat,
+        centre_x = centre_col[i, 1],
+        centre_y = centre_col[i, 2],
+        buffer_inbound = buffer_in_uless,
+        buffer_outbound = buffer_out_uless
+      )
+    }
 
   # Combine trip IDs into a single vector
   x$trip_id <- unlist(purrr::map_depth(trip_list, 1, "trip_labels"))
@@ -115,16 +113,15 @@ tt_split_trips <- function(x, centre_col = NULL,
   trip_meta <- purrr::map_depth(trip_list, 1, "trip_meta") %>%
     dplyr::bind_rows()
   # replace the track_id col name with the appropriate name for x
-  trip_meta <- trip_meta %>% dplyr::rename_with(
-    ~ move2::mt_track_id_column(x), dplyr::all_of("track_id")
-  )
+  trip_meta <- trip_meta %>%
+    dplyr::rename_with(
+      ~ move2::mt_track_id_column(x),
+      dplyr::all_of("track_id")
+    )
   # join it to the metadata
   x <- move2::mt_set_track_data(
     x,
-    dplyr::full_join(show_meta(x),
-      trip_meta,
-      by = move2::mt_track_id_column(x)
-    )
+    dplyr::full_join(show_meta(x), trip_meta, by = move2::mt_track_id_column(x))
   )
   # change the track_id_column to trip_id
   x <- move2::mt_set_track_id_column(x, "trip_id")
@@ -151,15 +148,24 @@ tt_split_trips <- function(x, centre_col = NULL,
 #' @returns a vector with trip IDs for each event (events to remove are marked
 #' as NA)
 #' @keywords internal
-split_one_track <- function(label,
-                            x, y, is_lonlat,
-                            centre_x, centre_y,
-                            buffer_outbound,
-                            buffer_inbound) {
+split_one_track <- function(
+  label,
+  x,
+  y,
+  is_lonlat,
+  centre_x,
+  centre_y,
+  buffer_outbound,
+  buffer_inbound
+) {
   centre_x_vec <- rep(centre_x, length(x))
   centre_y_vec <- rep(centre_y, length(y))
   # Get distances between events and colony
-  dist_to_centre <- dist_fast(x, y, centre_x_vec, centre_y_vec,
+  dist_to_centre <- dist_fast(
+    x,
+    y,
+    centre_x_vec,
+    centre_y_vec,
     longlat = is_lonlat
   )
   # define distances outside the outbound buffer
@@ -178,7 +184,8 @@ split_one_track <- function(label,
     trip_id = unique(trip_labels),
     trip_type = ifelse(
       unique(trip_labels) != paste0(label, "_trip_na"),
-      "complete", "at_centre"
+      "complete",
+      "at_centre"
     )
   )
   # check if last trip is incomplete (data ends outside colony)

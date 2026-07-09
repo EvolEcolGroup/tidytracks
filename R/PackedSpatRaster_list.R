@@ -1,6 +1,6 @@
 #' Create a PackedSpatRaster_list
 #'
-#' Accepts SpatRaster objects (packed automatically) or already-packed objects. 
+#' Accepts SpatRaster objects (packed automatically) or already-packed objects.
 #' A lightweight S3 class wrapping a named or unnamed list of PackedSpatRaster
 # objects.  Elements are stored wrapped and unpacked on the fly when accessed
 # via [[ or $.
@@ -16,34 +16,41 @@
 #' pl <- PackedSpatRaster_list(a = r1, b = r2)
 PackedSpatRaster_list <- function(...) {
   dots <- list(...)
-  
+
   # Accept a single bare list
-  if (length(dots) == 1L &&
+  if (
+    length(dots) == 1L &&
       is.list(dots[[1L]]) &&
       !inherits(dots[[1L]], "SpatRaster") &&
-      !inherits(dots[[1L]], "PackedSpatRaster")) {
+      !inherits(dots[[1L]], "PackedSpatRaster")
+  ) {
     dots <- dots[[1L]]
   }
-  
+
   if (length(dots) == 0L) {
     return(new_PackedSpatRaster_list(list()))
   }
-  
-  ok <- vapply(dots, function(x) {
-    inherits(x, "SpatRaster") || inherits(x, "PackedSpatRaster")
-  }, logical(1L))
+
+  ok <- vapply(
+    dots,
+    function(x) {
+      inherits(x, "SpatRaster") || inherits(x, "PackedSpatRaster")
+    },
+    logical(1L)
+  )
   if (any(!ok)) {
     stop(
       "All elements must be SpatRaster or PackedSpatRaster objects. ",
-      "Bad positions: ", paste(which(!ok), collapse = ", "),
+      "Bad positions: ",
+      paste(which(!ok), collapse = ", "),
       call. = FALSE
     )
   }
-  
+
   packed <- lapply(dots, function(x) {
     if (inherits(x, "PackedSpatRaster")) x else terra::wrap(x)
   })
-  
+
   new_PackedSpatRaster_list(packed)
 }
 
@@ -65,7 +72,7 @@ new_PackedSpatRaster_list <- function(packed) {
 #' @returns A SpatRaster object, unwrapped from the PackedSpatRaster.
 #' @export
 `[[.PackedSpatRaster_list` <- function(x, i, ...) {
-  item <- NextMethod()          # fetch the PackedSpatRaster from the plain list
+  item <- NextMethod() # fetch the PackedSpatRaster from the plain list
   if (is.null(item)) return(NULL)
   terra::unwrap(item)
 }
@@ -78,7 +85,7 @@ new_PackedSpatRaster_list <- function(packed) {
 #' @returns A SpatRaster object, unwrapped from the PackedSpatRaster.
 #' @export
 `$.PackedSpatRaster_list` <- function(x, name) {
-  item <- .subset2(x, name)    # bypass S3 dispatch to avoid recursion
+  item <- .subset2(x, name) # bypass S3 dispatch to avoid recursion
   if (is.null(item)) return(NULL)
   terra::unwrap(item)
 }
@@ -110,15 +117,7 @@ new_PackedSpatRaster_list <- function(packed) {
 #' @export
 `[[<-.PackedSpatRaster_list` <- function(x, i, value) {
   if (!is.null(value)) {
-    # browser()
-    # if (!inherits(value, "SpatRaster") && !inherits(value, "PackedSpatRaster")) {
-    #   # this is a strange special case raised every so often by terra
-    #   if (value == "<S4 class ‘SpatRaster’ [package “terra”] with 1 slot>"){
-    #     NextMethod()
-    #   }
-    #   stop("value must be a SpatRaster or PackedSpatRaster.", call. = FALSE)
-    # }
-    if (inherits(value, "SpatRaster")){
+    if (inherits(value, "SpatRaster")) {
       value <- terra::wrap(value)
     }
   }
@@ -136,7 +135,7 @@ new_PackedSpatRaster_list <- function(packed) {
 #'   PackedSpatRaster before storage.
 #' @export
 `$<-.PackedSpatRaster_list` <- function(x, name, value) {
-  x[[name]] <- value   # delegate to [[<-
+  x[[name]] <- value # delegate to [[<-
   x
 }
 
@@ -154,23 +153,23 @@ print.PackedSpatRaster_list <- function(x, ...) {
   if (length(list(...)) > 0L) {
     warning("additional arguments ignored", call. = FALSE)
   }
-  n   <- length(x)
+  n <- length(x)
   nms <- names(x)
-  
+
   cat("<PackedSpatRaster_list[", n, "]>\n", sep = "")
-  
+
   if (n > 0L) {
     for (i in seq_len(n)) {
-      r     <- x[[i]]
-      dims  <- paste0(nrow(r), "x", ncol(r), "x", terra::nlyr(r))
-      crs   <- terra::crs(r, describe = TRUE)$name
+      r <- x[[i]]
+      dims <- paste0(nrow(r), "x", ncol(r), "x", terra::nlyr(r))
+      crs <- terra::crs(r, describe = TRUE)$name
       label <- if (!is.na(crs) && nzchar(crs)) crs else "no CRS"
-      tag   <- if (!is.null(nms) && nzchar(nms[i])) paste0("$", nms[i]) else 
+      tag <- if (!is.null(nms) && nzchar(nms[i])) paste0("$", nms[i]) else
         paste0("[[", i, "]]")
       cat(sprintf("  %s <SpatRaster [%s] %s>\n", tag, dims, label))
     }
   }
-  
+
   invisible(x)
 }
 
@@ -206,7 +205,7 @@ as.list.PackedSpatRaster_list <- function(x, ...) {
 #' lst <- list(r1, r2)
 #' pl <- as_PackedSpatRaster_list(lst)
 
-#' 
+#'
 as_PackedSpatRaster_list <- function(x) UseMethod("as_PackedSpatRaster_list")
 
 #' @export
@@ -214,5 +213,3 @@ as_PackedSpatRaster_list.list <- function(x) PackedSpatRaster_list(x)
 
 #' @export
 as_PackedSpatRaster_list.PackedSpatRaster_list <- function(x) x
-
-

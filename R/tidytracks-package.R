@@ -15,5 +15,3 @@ move2::mt_as_move2
 #' @importFrom units as_units
 #' @export
 units::as_units
-
-

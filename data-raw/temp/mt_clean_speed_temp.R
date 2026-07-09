@@ -121,8 +121,6 @@ event_flag_mcconnell <- function(x, max.speed = NULL, test = FALSE) {
       speed2 <- d2 /
         units::as_units(diff(mt_time(this_track)[ok], lag = 2))
 
-
-
       thisIndex <- index[ok] # indices for this iteration
       npts <- length(speed1) # number of points (number of segments, really)
       if (npts < pprm) {
@@ -160,9 +158,12 @@ event_flag_mcconnell <- function(x, max.speed = NULL, test = FALSE) {
       # find contiguous sections of high speed
       segs <- cumsum(c(0, abs(diff(bad))))
       # flag points with highest speed within each contiguous section
-      rmsFlag <- unlist(lapply(split(RMS, segs), function(x) {
-        ifelse((1:length(x)) == which.max(x), TRUE, FALSE)
-      }), use.names = FALSE)
+      rmsFlag <- unlist(
+        lapply(split(RMS, segs), function(x) {
+          ifelse((1:length(x)) == which.max(x), TRUE, FALSE)
+        }),
+        use.names = FALSE
+      )
       rmsFlag[!bad] <- FALSE
       RMS[rmsFlag] <- -10
 

@@ -28,10 +28,15 @@ hr_ud_overlap <- function(x, ..., method = c("ba", "vi", "udoi")) {
 
 #' @export
 #' @rdname hr_ud_overlap
-#' @param y A SpatRaster of the utilisation distribution, if `x` is a single UD. Else, if
-#' `x` is tibble of UDs, `y` is not used.
-hr_ud_overlap.SpatRaster <- function(x, y, ..., method = c("ba", "vi", "udoi"),
-                                     cond_level = NULL) {
+#' @param y A SpatRaster of the utilisation distribution, if `x` is a single UD.
+#'   Else, if `x` is tibble of UDs, `y` is not used.
+hr_ud_overlap.SpatRaster <- function(
+  x,
+  y,
+  ...,
+  method = c("ba", "vi", "udoi"),
+  cond_level = NULL
+) {
   method <- match.arg(method)
   # check that x has a layer named "ud"
   if (!"ud" %in% names(x)) {
@@ -43,21 +48,27 @@ hr_ud_overlap.SpatRaster <- function(x, y, ..., method = c("ba", "vi", "udoi"),
   }
   # compare the two geometries
   if (!terra::compareGeom(x, y, stopOnError = FALSE)) {
-    stop("x and y must have the same geometry (i.e. same extent, ",
-      "resolution, and CRS)")
+    stop(
+      "x and y must have the same geometry (i.e. same extent, ",
+      "resolution, and CRS)"
+    )
   }
   # get x values as a matrix
   x_vals <- as.matrix(x$ud)
   # get y values as a matrix
   y_vals <- as.matrix(y$ud)
-  
+
   if (!is.null(cond_level)) {
     # check that level is just one value between 0 and 1
-    if (length(cond_level) != 1 || !is.numeric(cond_level) ||
-        cond_level <= 0 || cond_level >= 1) {
+    if (
+      length(cond_level) != 1 ||
+        !is.numeric(cond_level) ||
+        cond_level <= 0 ||
+        cond_level >= 1
+    ) {
       stop("cond_level must be a single numeric value between 0 and 1")
     }
-    
+
     # compute the cumulative UD for x and y
     x_cud <- hr_cud(x)
     y_cud <- hr_cud(y)
@@ -71,13 +82,13 @@ hr_ud_overlap.SpatRaster <- function(x, y, ..., method = c("ba", "vi", "udoi"),
     x_vals <- x_vals / sum(x_vals, na.rm = TRUE)
     y_vals <- y_vals / sum(y_vals, na.rm = TRUE)
   }
-  
+
   # missing values should be set to zero
   x_vals[is.na(x_vals)] <- 0
   y_vals[is.na(y_vals)] <- 0
-  
+
   if (method == "ba") {
-    return(sum(sqrt(x_vals)* sqrt(y_vals)))
+    return(sum(sqrt(x_vals) * sqrt(y_vals)))
   } else if (method == "vi") {
     return(sum(pmin(x_vals, y_vals)))
   } else if (method == "udoi") {
@@ -87,8 +98,12 @@ hr_ud_overlap.SpatRaster <- function(x, y, ..., method = c("ba", "vi", "udoi"),
 
 #' @export
 #' @rdname hr_ud_overlap
-hr_ud_overlap.hr_ud_tbl <- function(x, ..., method = c("ba", "vi", "udoi"),
-                                    cond_level = NULL) {
+hr_ud_overlap.hr_ud_tbl <- function(
+  x,
+  ...,
+  method = c("ba", "vi", "udoi"),
+  cond_level = NULL
+) {
   # check that ... are empty
   if (length(list(...)) > 0) {
     stop("additional arguments ... are not used")
@@ -97,19 +112,22 @@ hr_ud_overlap.hr_ud_tbl <- function(x, ..., method = c("ba", "vi", "udoi"),
   overlap_matrix <- matrix(NA, nrow = n, ncol = n)
   # assume that the first column of x is an id column (check that it is
   # character and unique)
-   if (is.character(x[[1]]) && length(unique(x[[1]])) == n) {
-     rownames(overlap_matrix) <- colnames(overlap_matrix) <- x[[1]]
-   } else {
-     stop("the first column of x must be a character vector with unique values")
-   }
-    for (i in 1:(n - 1)) {
-      for (j in (i + 1):n) {
-        overlap_matrix[i, j] <- hr_ud_overlap(x$ud[[i]], x$ud[[j]],
-                                           method = method,
-                                           cond_level = cond_level)
-        overlap_matrix[j, i] <- overlap_matrix[i, j]
-      }
+  if (is.character(x[[1]]) && length(unique(x[[1]])) == n) {
+    rownames(overlap_matrix) <- colnames(overlap_matrix) <- x[[1]]
+  } else {
+    stop("the first column of x must be a character vector with unique values")
+  }
+  for (i in 1:(n - 1)) {
+    for (j in (i + 1):n) {
+      overlap_matrix[i, j] <- hr_ud_overlap(
+        x$ud[[i]],
+        x$ud[[j]],
+        method = method,
+        cond_level = cond_level
+      )
+      overlap_matrix[j, i] <- overlap_matrix[i, j]
     }
-    diag(overlap_matrix) <- 1
-    return(overlap_matrix)
+  }
+  diag(overlap_matrix) <- 1
+  return(overlap_matrix)
 }

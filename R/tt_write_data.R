@@ -35,7 +35,6 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
     event_file <- paste0(file_prefix, "_combined.csv")
   }
 
-
   # Write event table
   time_col <- move2::mt_time_column(x)
   invisible(
@@ -43,8 +42,8 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
       cbind(
         as.data.frame(x) |>
           dplyr::select(
-            -dplyr::all_of("geometry"),  # drop geom column
-            -dplyr::all_of(time_col)     # drop original time column
+            -dplyr::all_of("geometry"), # drop geom column
+            -dplyr::all_of(time_col) # drop original time column
           ) |>
           dplyr::mutate(
             date_time = format(

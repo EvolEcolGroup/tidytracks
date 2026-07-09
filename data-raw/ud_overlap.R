@@ -31,7 +31,11 @@ ud_overlap <- function(x, y = NULL, ud_col = "kde", method = "BA") {
     colnames(overlap_matrix) <- rownames(overlap_matrix) <- rownames(x)
     for (i in 1:(n - 1)) {
       for (j in (i + 1):n) {
-        overlap_matrix[i, j] <- ud_overlap(ud_list[[i]], ud_list[[j]], method = method)
+        overlap_matrix[i, j] <- ud_overlap(
+          ud_list[[i]],
+          ud_list[[j]],
+          method = method
+        )
         overlap_matrix[j, i] <- overlap_matrix[i, j]
       }
     }

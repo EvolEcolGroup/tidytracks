@@ -30,8 +30,13 @@ dist_fast <- function(x1, y1, x2, y2, longlat = TRUE) {
   }
   if (longlat) {
     geodist::geodist_vec(
-      x1 = x1, y = y1, x2 = x2, y2 = y2,
-      sequential = FALSE, paired = TRUE, measure = "geodesic"
+      x1 = x1,
+      y = y1,
+      x2 = x2,
+      y2 = y2,
+      sequential = FALSE,
+      paired = TRUE,
+      measure = "geodesic"
     )
   } else {
     sqrt((x2 - x1)^2 + (y2 - y1)^2)

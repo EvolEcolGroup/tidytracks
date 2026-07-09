@@ -12,19 +12,27 @@ mn <- function(x) units::set_units(x, "min")
 # Three-point track at t = 0, 100, 200 s along (0,0)→(1,0)→(2,0).
 make_track <- function(crs = NA) {
   times <- as.POSIXct("2024-01-01", tz = "UTC") + c(0, 100, 200)
-  coords <- list(sf::st_point(c(0, 0)), sf::st_point(c(1, 0)), sf::st_point(c(2, 0)))
+  coords <- list(
+    sf::st_point(c(0, 0)),
+    sf::st_point(c(1, 0)),
+    sf::st_point(c(2, 0))
+  )
   geom <- if (is.na(crs)) sf::st_sfc(coords) else sf::st_sfc(coords, crs = crs)
   move2::mt_as_move2(
     sf::st_sf(
-      timestamp = times, value = c(0, 10, 20), track_id = "a",
+      timestamp = times,
+      value = c(0, 10, 20),
+      track_id = "a",
       geometry = geom
     ),
-    time_column = "timestamp", track_id_column = "track_id"
+    time_column = "timestamp",
+    track_id_column = "track_id"
   )
 }
 
 # Coordinates of x sorted by time (unnamed matrix for clean comparisons).
-sorted_coords <- function(x) unname(sf::st_coordinates(x[order(move2::mt_time(x)), ]))
+sorted_coords <- function(x)
+  unname(sf::st_coordinates(x[order(move2::mt_time(x)), ]))
 
 # Rows for one track, sorted by time.
 track_slice <- function(out, id) {
@@ -33,15 +41,26 @@ track_slice <- function(out, id) {
 }
 
 # Make a multi-track: straight line track for one animal.
-make_mv <- function(id, x_off, t_offsets = c(0, 100, 200), value = c(0, 10, 20)) {
+make_mv <- function(
+  id,
+  x_off,
+  t_offsets = c(0, 100, 200),
+  value = c(0, 10, 20)
+) {
   times <- as.POSIXct("2024-01-01", tz = "UTC") + t_offsets
-  coords <- lapply(seq_along(times), function(i) sf::st_point(c(i - 1 + x_off, 0)))
+  coords <- lapply(
+    seq_along(times),
+    function(i) sf::st_point(c(i - 1 + x_off, 0))
+  )
   move2::mt_as_move2(
     sf::st_sf(
-      timestamp = times, value = value, track_id = id,
+      timestamp = times,
+      value = value,
+      track_id = id,
       geometry = sf::st_sfc(coords)
     ),
-    time_column = "timestamp", track_id_column = "track_id"
+    time_column = "timestamp",
+    track_id_column = "track_id"
   )
 }
 
@@ -50,7 +69,10 @@ make_mv <- function(id, x_off, t_offsets = c(0, 100, 200), value = c(0, 10, 20))
 # 1. OUTPUT STRUCTURE
 # ─────────────────────────────────────────────────────────────────────────────
 test_that("output is a move2 object", {
-  expect_true(move2::mt_is_move2(tt_regular_time(make_track(), interval = s(100))))
+  expect_true(move2::mt_is_move2(tt_regular_time(
+    make_track(),
+    interval = s(100)
+  )))
 })
 
 test_that("time and track-id column names are preserved", {
@@ -61,7 +83,9 @@ test_that("time and track-id column names are preserved", {
 })
 
 test_that("event attribute columns are preserved", {
-  expect_true("value" %in% names(tt_regular_time(make_track(), interval = s(100))))
+  expect_true(
+    "value" %in% names(tt_regular_time(make_track(), interval = s(100)))
+  )
 })
 
 test_that("geometry type is POINT throughout output", {
@@ -76,7 +100,10 @@ test_that("output CRS matches input CRS", {
 })
 
 test_that("output has no CRS when input has no CRS", {
-  expect_true(is.na(sf::st_crs(tt_regular_time(make_track(crs = NA), interval = s(100)))))
+  expect_true(is.na(sf::st_crs(tt_regular_time(
+    make_track(crs = NA),
+    interval = s(100)
+  ))))
 })
 
 test_that("track-level attributes are preserved", {
@@ -105,7 +132,8 @@ test_that("max_time_lag in minutes works identically to equivalent seconds", {
   geom <- sf::st_sfc(list(sf::st_point(c(0, 0)), sf::st_point(c(3, 0))))
   track <- move2::mt_as_move2(
     sf::st_sf(timestamp = times, track_id = "a", geometry = geom),
-    time_column = "timestamp", track_id_column = "track_id"
+    time_column = "timestamp",
+    track_id_column = "track_id"
   )
   out_s <- tt_regular_time(track, interval = s(100), max_time_lag = s(150))
   out_min <- tt_regular_time(track, interval = s(100), max_time_lag = mn(2.5))
@@ -146,24 +174,33 @@ test_that("[no CRS] midpoint of straight line is correct", {
 })
 
 test_that("[geographic CRS] midpoint of straight line is correct", {
-  co <- sorted_coords(tt_regular_time(make_track(crs = 4326), interval = s(100)))
+  co <- sorted_coords(tt_regular_time(
+    make_track(crs = 4326),
+    interval = s(100)
+  ))
   expect_equal(co[2, 1], 1, tolerance = 1e-4)
   expect_equal(co[2, 2], 0, tolerance = 1e-4)
 })
 
 test_that("[projected CRS] midpoint of straight line is correct", {
   times <- as.POSIXct("2024-01-01", tz = "UTC") + c(0, 100, 200)
-  geom <- sf::st_sfc(list(
-    sf::st_point(c(500000, 0)),
-    sf::st_point(c(501000, 0)),
-    sf::st_point(c(502000, 0))
-  ), crs = 32632)
+  geom <- sf::st_sfc(
+    list(
+      sf::st_point(c(500000, 0)),
+      sf::st_point(c(501000, 0)),
+      sf::st_point(c(502000, 0))
+    ),
+    crs = 32632
+  )
   track <- move2::mt_as_move2(
     sf::st_sf(
-      timestamp = times, value = c(0, 10, 20), track_id = "a",
+      timestamp = times,
+      value = c(0, 10, 20),
+      track_id = "a",
       geometry = geom
     ),
-    time_column = "timestamp", track_id_column = "track_id"
+    time_column = "timestamp",
+    track_id_column = "track_id"
   )
   co <- sorted_coords(tt_regular_time(track, interval = s(100)))
   expect_equal(co[2, 1], 501000, tolerance = 1)
@@ -194,7 +231,8 @@ test_that("first and last output points match input endpoints", {
 # ─────────────────────────────────────────────────────────────────────────────
 test_that("numeric attribute is correct at 100 s grid", {
   out <- tt_regular_time(make_track(crs = NA), interval = s(100))
-  expect_equal(out[order(move2::mt_time(out)), ]$value,
+  expect_equal(
+    out[order(move2::mt_time(out)), ]$value,
     c(0, 10, 20),
     tolerance = TOL_ATTR
   )
@@ -202,7 +240,8 @@ test_that("numeric attribute is correct at 100 s grid", {
 
 test_that("numeric attribute is correct at 50 s grid", {
   out <- tt_regular_time(make_track(crs = NA), interval = s(50))
-  expect_equal(out[order(move2::mt_time(out)), ]$value,
+  expect_equal(
+    out[order(move2::mt_time(out)), ]$value,
     c(0, 5, 10, 15, 20),
     tolerance = TOL_ATTR
   )
@@ -216,8 +255,15 @@ test_that("units attributes keep units class after interpolation", {
   out_sorted <- out[order(move2::mt_time(out)), ]
 
   expect_true(inherits(out_sorted$speed, "units"))
-  expect_true(units::ud_are_convertible(units::deparse_unit(out_sorted$speed), "m/s"))
-  expect_equal(as.numeric(out_sorted$speed), c(1, 2, 3, 4, 5), tolerance = TOL_ATTR)
+  expect_true(units::ud_are_convertible(
+    units::deparse_unit(out_sorted$speed),
+    "m/s"
+  ))
+  expect_equal(
+    as.numeric(out_sorted$speed),
+    c(1, 2, 3, 4, 5),
+    tolerance = TOL_ATTR
+  )
 })
 
 
@@ -235,7 +281,8 @@ test_that("[no CRS] irregular input spacing maps time correctly to space", {
   ))
   track <- move2::mt_as_move2(
     sf::st_sf(timestamp = times, track_id = "a", geometry = geom),
-    time_column = "timestamp", track_id_column = "track_id"
+    time_column = "timestamp",
+    track_id_column = "track_id"
   )
   co <- sorted_coords(tt_regular_time(track, interval = s(100)))
   expected_x <- (0.5 + (40 / 140) * 0.5) * 2
@@ -255,7 +302,8 @@ test_that("[no CRS] midpoint of diagonal path is correct", {
   ))
   track <- move2::mt_as_move2(
     sf::st_sf(timestamp = times, track_id = "a", geometry = geom),
-    time_column = "timestamp", track_id_column = "track_id"
+    time_column = "timestamp",
+    track_id_column = "track_id"
   )
   co <- sorted_coords(tt_regular_time(track, interval = s(100)))
   expect_equal(co[2, 1], 1, tolerance = TOL_COORD)
@@ -267,7 +315,8 @@ test_that("[no CRS] midpoint of diagonal path is correct", {
 # 9. MULTI-TRACK SUPPORT
 # ─────────────────────────────────────────────────────────────────────────────
 test_that("all tracks appear in output", {
-  out <- tt_regular_time(move2::mt_stack(make_mv("a", 0), make_mv("b", 10)),
+  out <- tt_regular_time(
+    move2::mt_stack(make_mv("a", 0), make_mv("b", 10)),
     interval = s(100)
   )
   expect_equal(move2::mt_n_tracks(out), 2L)
@@ -283,15 +332,20 @@ test_that("each track has regular gaps after resampling", {
     interval = s(100)
   )
   for (id in c("a", "b")) {
-    gaps <- as.numeric(diff(move2::mt_time(track_slice(out, id))), units = "secs")
-    expect_true(all(abs(gaps - 100) < 1e-9),
+    gaps <- as.numeric(
+      diff(move2::mt_time(track_slice(out, id))),
+      units = "secs"
+    )
+    expect_true(
+      all(abs(gaps - 100) < 1e-9),
       label = paste("regular gaps for track", id)
     )
   }
 })
 
 test_that("each track's midpoint is geometrically correct", {
-  out <- tt_regular_time(move2::mt_stack(make_mv("a", 0), make_mv("b", 10)),
+  out <- tt_regular_time(
+    move2::mt_stack(make_mv("a", 0), make_mv("b", 10)),
     interval = s(100)
   )
   mid_a <- unname(sorted_coords(track_slice(out, "a"))[2, 1])
@@ -309,15 +363,16 @@ test_that("grid points inside gaps > max_time_lag are dropped", {
   geom <- sf::st_sfc(list(sf::st_point(c(0, 0)), sf::st_point(c(3, 0))))
   track <- move2::mt_as_move2(
     sf::st_sf(timestamp = times, track_id = "a", geometry = geom),
-    time_column = "timestamp", track_id_column = "track_id"
+    time_column = "timestamp",
+    track_id_column = "track_id"
   )
   # No limit: t = 0, 100, 200, 300 → 4 rows
   expect_equal(nrow(tt_regular_time(track, interval = s(100))), 4L)
   # 300 s gap > 150 s limit → interior points t = 100, 200 dropped → 2 rows
-  expect_equal(nrow(tt_regular_time(track,
-    interval = s(100),
-    max_time_lag = s(150)
-  )), 2L)
+  expect_equal(
+    nrow(tt_regular_time(track, interval = s(100), max_time_lag = s(150))),
+    2L
+  )
 })
 
 
@@ -351,7 +406,8 @@ test_that("plain numeric max_time_lag raises an error mentioning 'units'", {
 
 test_that("non-time units for max_time_lag raises an error mentioning 'seconds'", {
   expect_error(
-    tt_regular_time(make_track(),
+    tt_regular_time(
+      make_track(),
       interval = s(100),
       max_time_lag = units::set_units(1, "m")
     ),
@@ -361,7 +417,11 @@ test_that("non-time units for max_time_lag raises an error mentioning 'seconds'"
 
 test_that("vector max_time_lag raises a clear length-1 error", {
   expect_error(
-    tt_regular_time(make_track(), interval = s(100), max_time_lag = s(c(50, 60))),
+    tt_regular_time(
+      make_track(),
+      interval = s(100),
+      max_time_lag = s(c(50, 60))
+    ),
     "length-1"
   )
 })
@@ -380,7 +440,8 @@ test_that("non-move2 input raises an error mentioning 'move2'", {
 
 test_that("non-POSIXct timestamps raise an error mentioning 'POSIXct'", {
   expect_error(
-    tt_regular_time(move2::mt_sim_brownian_motion(t = c(0, 100, 200), tracks = "a"),
+    tt_regular_time(
+      move2::mt_sim_brownian_motion(t = c(0, 100, 200), tracks = "a"),
       interval = s(100)
     ),
     "POSIXct"
@@ -388,7 +449,10 @@ test_that("non-POSIXct timestamps raise an error mentioning 'POSIXct'", {
 })
 
 test_that("single-point track raises an error mentioning 'at least 2'", {
-  expect_error(tt_regular_time(make_track()[1L, ], interval = s(100)), "at least 2")
+  expect_error(
+    tt_regular_time(make_track()[1L, ], interval = s(100)),
+    "at least 2"
+  )
 })
 
 test_that("unsorted input timestamps are handled correctly", {
@@ -438,10 +502,12 @@ make_offset_mv <- function(id, t_start, t_end = 300) {
   coords <- list(sf::st_point(c(0, 0)), sf::st_point(c(3, 0)))
   move2::mt_as_move2(
     sf::st_sf(
-      timestamp = times, track_id = id,
+      timestamp = times,
+      track_id = id,
       geometry = sf::st_sfc(coords)
     ),
-    time_column = "timestamp", track_id_column = "track_id"
+    time_column = "timestamp",
+    track_id_column = "track_id"
   )
 }
 
@@ -476,8 +542,8 @@ test_that("snap_times=TRUE: overlapping tracks share timestamps", {
   # Both cover through t=+300 s. Interval = 100 s.
   # Snapped grids: a → {100, 200, 300}, b → {100, 200, 300}  (identical)
   mv <- move2::mt_stack(
-    make_offset_mv("a", t_start = 40,  t_end = 300),
-    make_offset_mv("b", t_start = 70,  t_end = 300)
+    make_offset_mv("a", t_start = 40, t_end = 300),
+    make_offset_mv("b", t_start = 70, t_end = 300)
   )
   out <- tt_regular_time(mv, interval = s(100), snap_times = TRUE)
   times_a <- sort(as.numeric(move2::mt_time(track_slice(out, "a"))))
@@ -486,7 +552,8 @@ test_that("snap_times=TRUE: overlapping tracks share timestamps", {
   expect_equal(times_a, times_b)
   # And there must be shared timestamps across the combined output
   all_times <- as.numeric(move2::mt_time(out))
-  expect_true(any(duplicated(all_times)),
+  expect_true(
+    any(duplicated(all_times)),
     label = "at least one timestamp shared across tracks when snap_times=TRUE"
   )
 })
@@ -495,12 +562,13 @@ test_that("snap_times=FALSE: overlapping tracks do NOT share timestamps", {
   # Same offsets as above but without snapping — grids start at 40 and 70,
   # producing {40, 140, 240} and {70, 170, 270}: no common values.
   mv <- move2::mt_stack(
-    make_offset_mv("a", t_start = 40,  t_end = 300),
-    make_offset_mv("b", t_start = 70,  t_end = 300)
+    make_offset_mv("a", t_start = 40, t_end = 300),
+    make_offset_mv("b", t_start = 70, t_end = 300)
   )
   out <- tt_regular_time(mv, interval = s(100), snap_times = FALSE)
   all_times <- as.numeric(move2::mt_time(out))
-  expect_false(any(duplicated(all_times)),
+  expect_false(
+    any(duplicated(all_times)),
     label = "no shared timestamps across tracks when snap_times=FALSE"
   )
 })
@@ -512,11 +580,19 @@ test_that("snap_times=TRUE: aligned track starts at the next boundary", {
   # snapped start = 200 + 100 = 300.
   track <- make_offset_mv("a", t_start = 200, t_end = 500)
   out_snap <- tt_regular_time(track, interval = s(100), snap_times = TRUE)
-  out_raw  <- tt_regular_time(track, interval = s(100), snap_times = FALSE)
+  out_raw <- tt_regular_time(track, interval = s(100), snap_times = FALSE)
   epoch <- as.numeric(as.POSIXct("2024-01-01", tz = "UTC"))
   # Raw starts at 200; snapped must start at 300
-  expect_equal(min(as.numeric(move2::mt_time(out_raw)))  - epoch, 200, tolerance = 1e-9)
-  expect_equal(min(as.numeric(move2::mt_time(out_snap))) - epoch, 300, tolerance = 1e-9)
+  expect_equal(
+    min(as.numeric(move2::mt_time(out_raw))) - epoch,
+    200,
+    tolerance = 1e-9
+  )
+  expect_equal(
+    min(as.numeric(move2::mt_time(out_snap))) - epoch,
+    300,
+    tolerance = 1e-9
+  )
 })
 
 test_that("invalid snap_times value raises an error", {

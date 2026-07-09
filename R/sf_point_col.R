@@ -1,5 +1,5 @@
 #' Create a simple feature POINT geometry column
-#' 
+#'
 #' This function creates a simple feature POINT geometry column from
 #' x and y columns in a data frame. The resulting object is
 #' a `sf` geometry set that can be used as an additional spatial column
@@ -32,7 +32,8 @@ sf_point_col <- function(x, y, crs = sf::NA_crs_) {
   sf::st_sfc(
     mapply(
       function(x, y) sf::st_point(c(x, y)),
-      x, y,
+      x,
+      y,
       SIMPLIFY = FALSE
     ),
     crs = crs

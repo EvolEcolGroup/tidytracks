@@ -1,7 +1,9 @@
 x <- boobies_sf
 x <- sf::st_transform(x, 3857)
-x <- sf::st_transform(x, "+proj=aeqd +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=km +no_defs")
-
+x <- sf::st_transform(
+  x,
+  "+proj=aeqd +lat_0=90 +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=km +no_defs"
+)
 
 
 # set the units for the distance
