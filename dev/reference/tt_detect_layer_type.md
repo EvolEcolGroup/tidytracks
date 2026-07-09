@@ -1,0 +1,33 @@
+# Internal helper: detect whether the plot contains a path or point track layer.
+
+Identifies track layers exclusively by the "tidytracks_geom" attribute
+set on their data by geom_event_path() and geom_event_point(). This
+prevents false matches from other sf layers (e.g. land polygons) that
+happen to share a geometry type or carry a POSIXct column. If layer_name
+is provided (the deparsed name of the user's move2 object), only layers
+whose "tidytracks_data_name" attribute matches are considered, allowing
+unambiguous selection when multiple track layers are present. If
+multiple tidytracks layers are found and layer_name is NULL, a warning
+is issued and the first one in the plot's layer stack is used.
+
+## Usage
+
+``` r
+tt_detect_layer_type(p, layer_name = NULL)
+```
+
+## Arguments
+
+- p:
+
+  the plot
+
+- layer_name:
+
+  name of layer
+
+## Value
+
+a list(type, data, time_col) where type is "path" or "point", data is
+the matched layer's sf data frame, and time_col is the name of the
+POSIXct column. Returns NULL if no supported layer is found.
