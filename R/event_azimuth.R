@@ -11,5 +11,4 @@
 #' @export
 #' @examples
 #' event_azimuth(example_tt)
-
 event_azimuth <- move2::mt_azimuth

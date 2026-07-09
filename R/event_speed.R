@@ -19,7 +19,6 @@
 #' event_speed(example_tt)
 #' event_speed(example_tt, units = as_units("m/s"))
 #'
-
 event_speed <- function(x, units = as_units("m/min")) {
   # check that x is a move2 object
   if (!inherits(x, "move2")) {
@@ -36,37 +35,16 @@ event_speed <- function(x, units = as_units("m/min")) {
     stop("x must have a coordinate reference system (CRS) defined")
   }
 
-  coords <- sf::st_coordinates(x)
   track_id <- move2::mt_track_id(x)
   time <- move2::mt_time(x)
 
-  crs <- sf::st_crs(x)
-  longlat <- sf::st_is_longlat(x)
-
-  n <- nrow(coords)
+  n <- length(track_id)
 
   # segment belongs to same track
   same_track <- c(track_id[-1] == track_id[-n], FALSE)
 
   # distances for all consecutive pairs
-  dist <- c(
-    dist_fast(
-      coords[-n, 1],
-      coords[-n, 2],
-      coords[-1, 1],
-      coords[-1, 2],
-      longlat = longlat
-    ),
-    NA_real_
-  )
-
-  # invalidate track boundaries
-  dist[!same_track] <- NA_real_
-
-  # get the units of the distance
-  dist_units <- units(sf::st_distance(x$geometry[1:2]))
-  # set the units for dist
-  dist <- units::as_units(dist, dist_units)
+  dist <- event_distance(x)
 
   dt <- as_units(c(diff(time), NA_real_))
 
@@ -76,7 +54,6 @@ event_speed <- function(x, units = as_units("m/min")) {
 
   if (!is.null(units)) {
     # convert the speed into the reference units of the projection
-
     speed <- units::set_units(
       units::ud_convert(
         x = unclass(speed),

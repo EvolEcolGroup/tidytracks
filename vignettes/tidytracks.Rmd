@@ -13,7 +13,6 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-
 ```
 
 # Tracking data representation in `tidytracks`
@@ -95,8 +94,8 @@ shags_tt <- tt_read_data(
   col_coords = c("lon", "lat"),
   col_date_time = "date_time",
   time_zone = "UTC",
-  crs = 4326)
-
+  crs = 4326
+)
 ```
 
 Inspecting the events table, we have:
@@ -143,12 +142,12 @@ within `theme()`.
 
 ```{r plot_events, fig.width=6, fig.height=4}
 ggplot() +
-  geom_event_point(data = shags_tt, aes(color = bird_id))+
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
-    theme(aspect.ratio = 1, 
-      axis.text.x = element_text(angle = 45, hjust = 1))
-
-
+  geom_event_point(data = shags_tt, aes(color = bird_id)) +
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 We can explore what each individual is doing by plotting the locations of each
@@ -160,9 +159,11 @@ paths between them:
 ggplot() +
   geom_event_path(data = shags_tt, aes(color = bird_id)) +
   facet_wrap(~bird_id) +
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 We can see that bird `'kb_38'` moved very little (or not at all) during
@@ -188,7 +189,7 @@ with a final NA so that we have the same number of rows as the original track.
 
 So, we can add speed to our `shags_tt` object with:
 ```{r speed}
-shags_tt <- shags_tt %>% 
+shags_tt <- shags_tt %>%
   mutate(speed = event_speed(.))
 ```
 
@@ -259,7 +260,7 @@ Let's recalculate them in units that might be more familiar to us.
 
 ```{r units2}
 shags_tt <- shags_tt %>%
-  mutate(speed = set_units(speed, "km/h")) 
+  mutate(speed = set_units(speed, "km/h"))
 
 shags_tt %>%
   summary()
@@ -272,11 +273,14 @@ Let's plot the speed of each event:
 ggplot() +
   geom_event_path(
     data = shags_tt,
-    aes(color = speed)) +
+    aes(color = speed)
+  ) +
   facet_wrap(~bird_id) +
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 It looks like there are a few GPS location errors here, resulting in unrealistic
@@ -290,7 +294,7 @@ we can give the `max_speed` in any units we want, and they will be automatically
 converted to the units in the object.
 
 ```{r mcconnel}
-n_before <- nrow(shags_tt) 
+n_before <- nrow(shags_tt)
 
 shags_tt <- shags_tt %>%
   tt_clean_mcconnell(max_speed = as_units(60, "km/h"))
@@ -349,12 +353,13 @@ When splitting trips and defining the parameters to do so, it is important to co
 the resolution and accuracy of your locations, and the likely movements of your birds.
 
 ```{r split_trips}
-shags_tt_split <- shags_tt  %>%
+shags_tt_split <- shags_tt %>%
   tt_split_trips(
     centre_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(3, "km"),
-    complete = TRUE)
+    complete = TRUE
+  )
 ```
 
 If we now inspect the object, we can see that there is a new column, `trip_id`,
@@ -386,11 +391,12 @@ dataset.
 ```{r plot_split, fig.width=6, fig.height=4}
 ggplot() +
   geom_event_path(data = shags_tt_split, aes(color = trip_id)) +
-  geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20")+
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
-
+  geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20") +
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 
@@ -431,9 +437,11 @@ ggplot() +
     aes(color = bird_id) # can't use trip_id here because not trip splitted data
   ) +
   facet_wrap(~bird_id) +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position="none")
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none"
+  )
 ```
 
 If we wanted, we could also add the track summary statistics into the metadata, 
@@ -442,8 +450,9 @@ were longer than a certain duration or distance threshold.
 
 ```{r add_summary_stats}
 show_meta(shags_tt_split) <- show_meta(shags_tt_split) %>%
-  left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"), 
-            by = "trip_id")
+  left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"),
+    by = "trip_id"
+  )
 
 show_meta(shags_tt_split)
 ```
@@ -518,9 +527,10 @@ We can plot the home ranges:
 ```{r plot_kde, fig.width=6, fig.height=4}
 ggplot(shags_females_kde) +
   geom_sf(aes(fill = bird_id), alpha = 0.7) +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
-
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 We can add actual events with:
@@ -535,8 +545,10 @@ ggplot() +
     size = 0.1
   ) +
   facet_wrap(~bird_id) +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 To get a minimum convex polygon covering 95% of the data, we can use:
@@ -557,16 +569,17 @@ ggplot() +
     data = shags_females_proj,
     size = 0.1
   ) +
-  facet_wrap(~bird_id)+
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  facet_wrap(~bird_id) +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ## Save your data
 We can save our `move2` object with the `tt_write_data()` function, which can save the events and meta data either separately or as a single CSV text file. In this example we will save it to the temporary directory.
 
 ```{r save_data}
-
 # save to temp directory
 tmp_prefix <- file.path(tempdir(), "shags_females")
 
@@ -575,7 +588,6 @@ tt_write_data(
   tmp_prefix,
   combined = TRUE
 )
-
 ```
 
 

@@ -16,9 +16,8 @@
 #' @examples
 #' # order time
 #' shags_ordered_tt <- tt_order_time(shags_tt)
-#' resampled_tt <- tt_regular_time (shags_ordered_tt, every = "20 mins")
+#' resampled_tt <- tt_regular_time(shags_ordered_tt, every = "20 mins")
 #' resampled_tt
-
 tt_regular_time <- function(x, every) {
   # replace minutes with mins in every if present
   every <- gsub("minutes", "mins", every)

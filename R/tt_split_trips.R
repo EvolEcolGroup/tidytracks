@@ -93,19 +93,18 @@ tt_split_trips <- function(
 
   i <- NULL # avoid global variable warning (i is used by foreach)
   # Loop through each track and split into trips
-  trip_list <- foreach::foreach(i = seq_len(nrow(show_meta(x)))) %do%
-    {
-      split_one_track(
-        unique_ids[i],
-        coords[ids == unique_ids[i], 1],
-        coords[ids == unique_ids[i], 2],
-        is_lonlat = is_longlat,
-        centre_x = centre_col[i, 1],
-        centre_y = centre_col[i, 2],
-        buffer_inbound = buffer_in_uless,
-        buffer_outbound = buffer_out_uless
-      )
-    }
+  trip_list <- foreach::foreach(i = seq_len(nrow(show_meta(x)))) %do% {
+    split_one_track(
+      unique_ids[i],
+      coords[ids == unique_ids[i], 1],
+      coords[ids == unique_ids[i], 2],
+      is_lonlat = is_longlat,
+      centre_x = centre_col[i, 1],
+      centre_y = centre_col[i, 2],
+      buffer_inbound = buffer_in_uless,
+      buffer_outbound = buffer_out_uless
+    )
+  }
 
   # Combine trip IDs into a single vector
   x$trip_id <- unlist(purrr::map_depth(trip_list, 1, "trip_labels"))

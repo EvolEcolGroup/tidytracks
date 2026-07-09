@@ -1,9 +1,9 @@
-#' Write a 'tidy_tracks' object to CSV files
+#' Write a tibble of tracks to CSV files
 #'
 #' This function writes the event table and the metadata table of a
 #' 'tidy_tracks' object to CSV files (or one combined CSV file).
 #'
-#' @param x A 'tidy_tracks' object
+#' @param x A `move2` object
 #' @param file_prefix The file path to write the tables, with the prefix for the
 #'   file names. The event table will be saved as '<file_prefix>_events.csv' and
 #'   the metadata table as '<file_prefix>_metadata.csv'. If `combined = TRUE`,

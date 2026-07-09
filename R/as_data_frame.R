@@ -18,7 +18,6 @@
 #' @examples
 #' # example code
 #' as.data.frame(example_tt, include_meta = TRUE, drop_geometry = TRUE)
-
 as.data.frame.move2 <- function(
   x,
   ...,

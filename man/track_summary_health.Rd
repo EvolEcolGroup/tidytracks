@@ -15,7 +15,8 @@ A tibble with one row per track and the following columns:
 \item \code{<track id column>}: The track ID from \code{x}
 \item median_sampling_interval: The median sampling interval in seconds
 \item track_duration: The duration of the track in seconds
-\item expected_points: The expected number of points based on the median sampling interval
+\item expected_points: The expected number of points based on the
+median sampling interval
 \item actual_points: The actual number of points in the track
 \item proportion_missing: The proportion of expected points that are missing
 }

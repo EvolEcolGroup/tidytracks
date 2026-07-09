@@ -1,10 +1,10 @@
-#' Read data from a csv file into a `move2` object
+#' Read data from a CSV file into a `move2` object
 #'
-#' This function reads a csv file containing event data (and possibly metadata)
-#' and converts it into a `move2` object. The csv file should contain contain at
+#' This function reads a CSV file containing event data (and possibly metadata)
+#' and converts it into a `move2` object. The CSV file should contain contain at
 #' least the following columns:
 #'
-#' - one column which is the `track_id` (i.e. the variable that groups 
+#' - one column which is the `track_id` (i.e. the variable that groups
 #' events into a track)
 #' - two columns representing the x and y coordinates (e.g. longitude
 #' and latitude)
@@ -22,13 +22,13 @@
 #'   `move2::mt_as_move2()` function. See the `reading_data` vignette for more
 #'   details.
 #'
-#' @param events A path to a csv file containing the event data, OR a dataframe
+#' @param events A path to a CSV file containing the event data, OR a dataframe
 #'   in R containing the event data.
-#' @param col_track_id The name of the column in the csv file that contains the
+#' @param col_track_id The name of the column in the CSV file that contains the
 #'   track id.
-#' @param col_coords A vector of the x and y coordinate column names in the csv
+#' @param col_coords A vector of the x and y coordinate column names in the CSV
 #'   file.
-#' @param col_date_time The name of the column in the csv file that contains the
+#' @param col_date_time The name of the column in the CSV file that contains the
 #'   date-time information (or a vector of two elements, the names of separate
 #'   date and time columns). Time is assumed to be in UTC.
 #' @param format_date_time optional, a string containing the format of the

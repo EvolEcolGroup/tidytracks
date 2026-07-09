@@ -12,15 +12,17 @@ track_lines(x, ...)
 \item{...}{Arguments passed on to the \code{\link[dplyr:summarise]{dplyr::summarise()}} function}
 }
 \value{
-A \link[sf:sf]{sf::sf} object with a \code{LINESTRING} representing the track as geometry for each track. The
-metadata for each track is included as well as the products from summarize
+A \link[sf:sf]{sf::sf} object with a \code{LINESTRING} representing the track as
+geometry for each track. The metadata for each track is included as well as
+the products from summarize
 }
 \description{
-Converts each track into one line. This function returns a \code{\link[sf:sf]{sf::sf}} object
-with a \code{LINESTRING} representing the trajectory as geometry for each track,
-as well as additional columns of information from the metadata table.
+Converts each track into one line. This function returns a
+\code{\link[sf:sf]{sf::sf}} object with a \code{LINESTRING} representing the trajectory as geometry
+for each track, as well as additional columns of information from the
+metadata table.
 }
 \details{
-Note that all empty points are removed before summarizing. Arguments passed with \code{...} thus only summarize for the
-non empty locations.
+Note that all empty points are removed before summarizing. Arguments
+passed with \code{...} thus only summarize for the non empty locations.
 }

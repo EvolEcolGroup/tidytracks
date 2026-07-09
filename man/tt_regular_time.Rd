@@ -115,8 +115,10 @@ resampled_gapped <- tt_regular_time(
 )
 
 # Resample to one fix per minute, snapping times to whole-minute boundaries
-resampled_snap <- tt_regular_time(track, interval = as_units(1, "min"),
-                                  snap_times = TRUE)
+resampled_snap <- tt_regular_time(track,
+  interval = as_units(1, "min"),
+  snap_times = TRUE
+)
 resampled_snap
 
 }

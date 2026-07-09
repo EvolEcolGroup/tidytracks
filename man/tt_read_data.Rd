@@ -2,7 +2,7 @@
 % Please edit documentation in R/tt_read_data.R
 \name{tt_read_data}
 \alias{tt_read_data}
-\title{Read data from a csv file into a \code{move2} object}
+\title{Read data from a CSV file into a \code{move2} object}
 \usage{
 tt_read_data(
   events,
@@ -17,16 +17,16 @@ tt_read_data(
 )
 }
 \arguments{
-\item{events}{A path to a csv file containing the event data, OR a dataframe
+\item{events}{A path to a CSV file containing the event data, OR a dataframe
 in R containing the event data.}
 
-\item{col_track_id}{The name of the column in the csv file that contains the
+\item{col_track_id}{The name of the column in the CSV file that contains the
 track id.}
 
-\item{col_coords}{A vector of the x and y coordinate column names in the csv
+\item{col_coords}{A vector of the x and y coordinate column names in the CSV
 file.}
 
-\item{col_date_time}{The name of the column in the csv file that contains the
+\item{col_date_time}{The name of the column in the CSV file that contains the
 date-time information (or a vector of two elements, the names of separate
 date and time columns). Time is assumed to be in UTC.}
 
@@ -59,8 +59,8 @@ suffix added to the metadata version.}
 A \code{move2} object containing the event data.
 }
 \description{
-This function reads a csv file containing event data (and possibly metadata)
-and converts it into a \code{move2} object. The csv file should contain contain at
+This function reads a CSV file containing event data (and possibly metadata)
+and converts it into a \code{move2} object. The CSV file should contain contain at
 least the following columns:
 }
 \details{

@@ -66,8 +66,11 @@ animate_map <- function(
   # evaluation. This is used later to match against the "tidytracks_data_name"
   # attribute stamped on layer data by the geoms, allowing unambiguous selection
   # when multiple track layers are present.
-  layer_name <- if (!is.null(layer_to_animate))
-    deparse(substitute(layer_to_animate)) else NULL
+  layer_name <- if (!is.null(layer_to_animate)) {
+    deparse(substitute(layer_to_animate))
+  } else {
+    NULL
+  }
 
   # --- Input validation ---
   if (!inherits(p, "ggplot")) {
@@ -197,7 +200,11 @@ tt_detect_layer_type <- function(p, layer_name = NULL) {
     time_col <- attr(data, "tidytracks_time_col")
 
     # Map the raw tag string to the canonical type label used downstream.
-    type <- base::switch(tag, event_path = "path", event_point = "point", NULL)
+    type <- base::switch(tag,
+      event_path = "path",
+      event_point = "point",
+      NULL
+    )
     if (is.null(type)) next
     # Collect all valid matches; we may need to disambiguate below.
     matches <- c(
@@ -206,7 +213,9 @@ tt_detect_layer_type <- function(p, layer_name = NULL) {
     )
   }
 
-  if (length(matches) == 0L) return(NULL)
+  if (length(matches) == 0L) {
+    return(NULL)
+  }
 
   # If the caller named a specific move2 object to animate, filter the candidate
   # list down to only layers whose data carry a matching "tidytracks_data_name"
@@ -214,8 +223,9 @@ tt_detect_layer_type <- function(p, layer_name = NULL) {
   # more than one track layer.
   if (!is.null(layer_name)) {
     named_matches <- base::Filter(
-      function(m)
-        base::identical(attr(m$data, "tidytracks_data_name"), layer_name),
+      function(m) {
+        base::identical(attr(m$data, "tidytracks_data_name"), layer_name)
+      },
       matches
     )
     if (length(named_matches) == 0L) {

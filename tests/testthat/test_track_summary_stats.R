@@ -72,7 +72,7 @@ test_that("track_summary_stats correctly computes track summaries", {
     bird_id = unique(coords_df$bird_id),
     species = c("species_a", "species_b")
   )
-  meta_df$colony_sf = sf_point_col(x = c(0, 0), y = c(0, 0), crs = 4326)
+  meta_df$colony_sf <- sf_point_col(x = c(0, 0), y = c(0, 0), crs = 4326)
 
   # convert this df to a move2 object
   test_tt <- tt_read_data(
@@ -187,7 +187,7 @@ test_that("track_summary_stats correctly computes track summaries", {
     "centre_col must be a `sfc_POINT` column in the metadata table"
   )
   # remove the crs from the colony_sf column and check that we get the correct error
-  show_meta(test_tt_split)$colony_sf = sf_point_col(x = c(0, 0), y = c(0, 0))
+  show_meta(test_tt_split)$colony_sf <- sf_point_col(x = c(0, 0), y = c(0, 0))
   expect_error(
     track_summary_stats(
       x = test_tt_split,

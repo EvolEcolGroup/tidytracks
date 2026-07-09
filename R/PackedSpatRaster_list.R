@@ -73,7 +73,9 @@ new_PackedSpatRaster_list <- function(packed) {
 #' @export
 `[[.PackedSpatRaster_list` <- function(x, i, ...) {
   item <- NextMethod() # fetch the PackedSpatRaster from the plain list
-  if (is.null(item)) return(NULL)
+  if (is.null(item)) {
+    return(NULL)
+  }
   terra::unwrap(item)
 }
 
@@ -86,7 +88,9 @@ new_PackedSpatRaster_list <- function(packed) {
 #' @export
 `$.PackedSpatRaster_list` <- function(x, name) {
   item <- .subset2(x, name) # bypass S3 dispatch to avoid recursion
-  if (is.null(item)) return(NULL)
+  if (is.null(item)) {
+    return(NULL)
+  }
   terra::unwrap(item)
 }
 
@@ -164,8 +168,11 @@ print.PackedSpatRaster_list <- function(x, ...) {
       dims <- paste0(nrow(r), "x", ncol(r), "x", terra::nlyr(r))
       crs <- terra::crs(r, describe = TRUE)$name
       label <- if (!is.na(crs) && nzchar(crs)) crs else "no CRS"
-      tag <- if (!is.null(nms) && nzchar(nms[i])) paste0("$", nms[i]) else
+      tag <- if (!is.null(nms) && nzchar(nms[i])) {
+        paste0("$", nms[i])
+      } else {
         paste0("[[", i, "]]")
+      }
       cat(sprintf("  %s <SpatRaster [%s] %s>\n", tag, dims, label))
     }
   }

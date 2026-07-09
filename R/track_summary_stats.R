@@ -97,7 +97,7 @@ track_summary_stats <- function(
 
   # 1 - total duration
   # this is a named vector of difftimes
-  tot_duration <- track_duration(x, units = units_duration) 
+  tot_duration <- track_duration(x, units = units_duration)
   # get tot_duration as a tibble with track_id field
   tot_duration_df <- tibble::tibble(
     track_id = names(tot_duration),
@@ -151,8 +151,7 @@ track_summary_stats <- function(
     foreach::foreach(
       i_foreach = seq_len(nrow(show_meta(x))),
       .combine = rbind
-    ) %do%
-    {
+    ) %do% {
       # get the track id
       track_id <- show_meta(x)[[move2::mt_track_id_column(x)]][i_foreach]
       # get the events for this track

@@ -31,8 +31,9 @@ make_track <- function(crs = NA) {
 }
 
 # Coordinates of x sorted by time (unnamed matrix for clean comparisons).
-sorted_coords <- function(x)
+sorted_coords <- function(x) {
   unname(sf::st_coordinates(x[order(move2::mt_time(x)), ]))
+}
 
 # Rows for one track, sorted by time.
 track_slice <- function(out, id) {

@@ -17,12 +17,12 @@ shadow_wake_build(
 )
 }
 \arguments{
-\item{wake_length}{A number between 0 and 1 giving the length of the wake,
-in relation to the total number of frames.}
+\item{wake_length}{A number between 0 and 1 giving the length of the wake, in
+relation to the total number of frames.}
 
 \item{size}{Numeric indicating the size the wake should end on. If \code{NULL}
-then size is not modified. Can also be a boolean, with \code{TRUE} being equal to \code{0}
-and \code{FALSE} being equal to \code{NULL}}
+then size is not modified. Can also be a boolean, with \code{TRUE} being equal
+to \code{0} and \code{FALSE} being equal to \code{NULL}}
 
 \item{alpha}{as \code{size} but for alpha modification of the wake}
 

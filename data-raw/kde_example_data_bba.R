@@ -67,4 +67,4 @@ nine_tracks_kde_2 <- nine_tracks %>%
 sum(sf::st_is_empty(nine_tracks_kde_2))
 
 # still one empty polygone left, on really short track
-#so should maybe have warning here saying empty polygons created
+# so should maybe have warning here saying empty polygons created

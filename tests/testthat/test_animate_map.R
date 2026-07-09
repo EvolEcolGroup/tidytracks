@@ -123,7 +123,8 @@ test_that("tt_detect_layer_type returns NULL when only static sf layers are pres
     name = "colony",
     geometry = sf::st_sfc(sf::st_point(c(0.5, 0.5)), crs = 4326)
   )
-  p <- ggplot2::ggplot() + ggplot2::geom_sf(data = colony_sf)
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_sf(data = colony_sf)
   expect_null(tt_detect_layer_type(p))
 })
 
