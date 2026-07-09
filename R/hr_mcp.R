@@ -6,13 +6,13 @@
 #' @param x A grouped move2 object
 #' @param levels A vector of levels for the contour lines. The default is
 #' `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
-#' @returns A tibble of subclass `tt_hr_tbl` of results, with columns:
-#' - `group_id`: the ids from the groping of `x`
+#' @returns A tibble of subclass `hr_poly_tbl` of results, with columns:
+#' - `group_id`: the ids from the grouping of `x`
 #' - `level`: the level of the contour line
 #' - `geometry`: the geometry of the home range as a list of sf polygons
 #' @export
 
-tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
+hr_mcp <- function(x, levels = c(0.5, 0.95)) {
   # Check if x is a grouped move2 object
   if (!inherits(x, "move2") || !inherits(x, "grouped_df")) {
     stop("x must be a grouped move2 object")
@@ -77,7 +77,7 @@ tt_hr_mcp <- function(x, levels = c(0.5, 0.95)) {
 
 #' Create mcp at multiple levels for a given group
 #'
-#' This is the internal function that is called by `tt_hr_mcp` to create the MCP
+#' This is the internal function that is called by `hr_mcp` to create the MCP
 #' at multiple levels for a given group. It is not intended to be called
 #' directly by the user.
 #'

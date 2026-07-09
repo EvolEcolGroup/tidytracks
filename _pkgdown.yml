@@ -1,0 +1,54 @@
+url: https://evolecolgroup.github.io/tidytracks/
+template:
+  bootstrap: 5
+  bslib:
+    danger: "#A6081A"
+development:
+  mode: auto
+reference:
+  - title: "Tibble of tracks"
+    desc: "Functions for loading, saving and displaying tibble of tracks"
+    contents:
+        - tt_read_data
+        - tt_write_data
+        - as.data.frame.move2
+        - show_meta
+        - as_meta_column
+        - as_event_column
+        - filter_by_meta
+        - mt_as_move2.trip
+        - sf_point_col
+  - title: "Events"
+    desc: "Functions operating on events (return an object of # events)"
+    contents:
+        - starts_with("event_")
+  - title: "Tracks"
+    desc: "Functions operating on tracks."
+    contents:
+        - starts_with("track_")
+  - title: "Full tibble of tracks"
+    desc: "Functions operating on the full tibble (return a tibble)."
+    contents:
+        - tt_split_trips
+        - tt_regular_time
+        - tt_order_time
+        - tt_clean_mcconnell
+        - tt_drop_units
+  - title: "Plotting"
+    desc: "Functions to visualise movement."
+    contents:
+        - starts_with("geom_")
+        - animate_map
+        - autoplot.hr_ud_tbl
+  - title: "Home range"
+    desc: "Estimate home range and habitat use"
+    contents:
+        - starts_with("hr_")
+  - title: "List of PackedRasters"
+    desc: "Process lists of rasters"
+    contents:
+        - matches("PackedSpatRaster")
+  - title: "Example datasets"
+    desc: "Example datasets for testing and demonstration"
+    contents:
+        - example_tt

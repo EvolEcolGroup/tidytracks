@@ -1,7 +1,7 @@
 test_that("hr_ud_overlap works", {
   # load a simple dataset originally from adehabitat
   boar_tt <- readRDS(file.path( test_path("testdata"),"wildboar_tt.rds"))
-  boar_kde <- tt_hr_kde(boar_tt, res = 50)
+  boar_kde <- hr_kde(boar_tt, res = 50)
   # create the overlap
   boar_overlap <- hr_ud_overlap(boar_kde)
   # expect a 4x4 matrix
@@ -13,7 +13,7 @@ test_that("hr_ud_overlap works", {
   
   # create a new SpatRaster with different resolution and test that it throws an
   # error
-  boar_kde_diff_res <- tt_hr_kde(boar_tt, res = 100)
+  boar_kde_diff_res <- hr_kde(boar_tt, res = 100)
   expect_error(hr_ud_overlap(boar_kde$ud[[1]], boar_kde_diff_res$ud[[2]]),
                "x and y must have the same geometry")
   # add an extra layer to one raster and check that it still works correctly

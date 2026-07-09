@@ -4,7 +4,7 @@
 \alias{track_duration}
 \title{Compute the total duration of each track}
 \usage{
-track_duration(x, units = units::as_units(1, "days"))
+track_duration(x, units = as_units(1, "days"))
 }
 \arguments{
 \item{x}{A \code{move2} object}

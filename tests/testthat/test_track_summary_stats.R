@@ -158,6 +158,21 @@ test_that("track_summary_stats correctly computes track summaries", {
     "centre_col must have a crs specified"
   )
   
+  # When centre_col is NULL, the first point of each track is used as the centre.
+  test_no_centre <- track_summary_stats(
+    x = test_tt_split,
+    units_duration = units::as_units(1, "hours")
+  )
+
+  pts <- test_tt_split %>% dplyr::filter(trip_id == "id_1_trip_1")
+  first_pt <- pts[1, ]
+  expected_max <- max(sf::st_distance(pts$geometry, first_pt$geometry), na.rm = TRUE)
+
+  observed_max <- test_no_centre %>%
+    dplyr::filter(trip_id == "id_1_trip_1") %>%
+    dplyr::pull(max_dist_centre)
+
+  expect_equal(expected_max, observed_max)
   
 })
 

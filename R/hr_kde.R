@@ -55,7 +55,7 @@
 #'
 #' @export
 
-tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
+hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
                       res = NULL, levels = NULL) {
   # if x is not grouped, use the track ID column as grouping variable
   if (!inherits(x, "grouped_df")) {
@@ -187,7 +187,7 @@ tt_hr_kde <- function(x, h = "h_ref_mean", bbox = NULL,
 
 #' Compute the kde for a given group
 #'
-#' This is the internal function that is called by `tt_hr_kde` to compute the
+#' This is the internal function that is called by `hr_kde` to compute the
 #' kde for a given group. It is not intended to be called directly by the user.
 #'
 #' @param xy a matrix of coordinates

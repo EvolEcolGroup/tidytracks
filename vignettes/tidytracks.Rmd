@@ -1,10 +1,9 @@
 ---
 title: "tidytracks"
-output: 
-        rmarkdown::html_vignette
-        # pdf_document: default
+output:
+  rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{reading_data}
+  %\VignetteIndexEntry{tidytracks}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -473,10 +472,12 @@ shags_females_proj <- shags_females %>%
   st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
 
-We can now estimate the home range using Kernel Density Estimation (KDE) with the
-function `tt_hr_kde`, which  creates a KDE per trip, normalises them, then combines 
-into one KDE per group that you specify. here we will group by by individual but you 
-could instead group by e.g. sex.
+We can now estimate the home range using Kernel Density Estimation (KDE). The 
+default smoothing parameter (h) in the `hr_kde` function is set to
+"h_ref_mean". The bandwidth for the kernel density estimation can be either a 
+number, or "h_ref_indiv" for using the reference bandwidth
+for each individual, or "h_ref_mean" for using the mean bandwidth for all
+individuals (the default). 
 
 The default smoothing parameter (h) in `tt_hr_kde` 
 is set to "h_ref_mean". The bandwidth for the kernel density estimation can be either a 
@@ -485,9 +486,9 @@ number, or "h_ref_indiv" for using the reference bandwidth for each individual, 
 
 We want to estimate the home range for each bird, so we will group by `bird_id`:
 ```{r}
-shags_females_kde <- shags_females_proj %>% # doesnt work on trip splitted data
-  group_by(bird_id) %>% 
-  tt_hr_kde(levels = c(0.5, 0.95))
+shags_females_kde <- shags_females_proj %>%
+  group_by(bird_id) %>%
+  hr_kde(levels = c(0.5, 0.95))
 ```
 
 We get a warning since one of the dataset is small, and so the 0.50 isopleth could not be computed. This is because the KDE is based on a grid, and if there are too few points, the grid will not be able to capture the distribution of the points.
@@ -542,7 +543,7 @@ To get a minimum convex polygon covering 95% of the data, we can use:
 ```{r compute_mcp}
 shags_females_mcp <- shags_females_proj %>%
   group_by(bird_id) %>%
-  tt_hr_mcp(levels = c(0.95))
+  hr_mcp(levels = c(0.95))
 ```
 
 We can plot the MCPs with:

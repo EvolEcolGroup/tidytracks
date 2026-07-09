@@ -5,7 +5,7 @@
 #' @return A vector of total durations for each track
 #' @export
 
-track_duration <- function(x, units = units::as_units(1, "days")) {
+track_duration <- function(x, units = as_units(1, "days")) {
   # Check if x is a move2 object
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")

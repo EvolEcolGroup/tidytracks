@@ -4,7 +4,10 @@
 ^data-raw$
 .lintr
 ^doc$
+^docs$
 ^Meta$
 ^\.github$
 ^\.positai$
 ^\.claude$
+^_pkgdown\.yml$
+^pkgdown$

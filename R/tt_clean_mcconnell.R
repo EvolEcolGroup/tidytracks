@@ -8,21 +8,28 @@
 #'
 #' @param x A move2 object
 #' @param max_speed speed, provided as a `units` object (e.g.
-#' units::as_units(50, 'm/s').
+#' as_units(50, 'm/s').
 #' @param flag_action One of "remove", "null", or "interpolate", to either
 #' remove the points flagged by the algorithm, keep the time stamp but set
 #' location to NULL, or replace the location with a linearly interpolated
 #' location from the events that were not filtered out.
+#' @param check_first_last Logical. If `TRUE`, also evaluate the first and last
+#'   currently valid point of each track using the endpoint RMS described above.
+#'   If either endpoint is removed, the McConnell filter is rerun on the reduced
+#'   track until the result is stable.
 #' @return A clean `move2` object with events removed
 #' @export
 
 tt_clean_mcconnell <- function(x, max_speed = NULL,
-                               flag_action = c("remove", "interpolate", "null")) {
+                               flag_action = c("remove", "interpolate", "null"),
+                               check_first_last = FALSE) {
   # checking for appropriate x and max_speed is done by event_flag_mcconnell
   flag_action <- match.arg(flag_action)
 
   # Call the event_flag_mcconnell function to get the valid points
-  valid_points <- event_flag_mcconnell(x, max_speed)
+  valid_points <- event_flag_mcconnell(x,
+                                       max_speed = max_speed,
+                                       check_first_last = check_first_last)
 
   if (flag_action=="remove"){
     x <- x[valid_points,]

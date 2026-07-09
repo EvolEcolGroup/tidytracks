@@ -16,7 +16,7 @@
 #'  }
 #' @export
 
-tt_summary_health <- function(x) {
+track_summary_health <- function(x) {
   # Check if x is a move2 object
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")

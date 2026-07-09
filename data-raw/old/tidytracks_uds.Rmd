@@ -24,7 +24,7 @@ show_meta(wildboars_tt)
 Compute the kde
 ```{r}
 wildboars_tt <- wildboars_tt %>% dplyr::group_by(name)
-wildboars_kde <- tt_hr_kde(wildboars_tt, levels = NULL,
+wildboars_kde <- hr_kde(wildboars_tt, levels = NULL,
                            h = "h_ref_indiv",
                            res = 194.7458,
                            bbox = list(xmin = 695842.0, ymin = 3154018.0,

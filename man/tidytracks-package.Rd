@@ -8,6 +8,15 @@
 \description{
 Tidy functions to analyse tracking data, based on the move2 objects.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/EvolEcolGroup/tidytracks}
+  \item \url{https://evolecolgroup.github.io/tidytracks/}
+  \item Report bugs at \url{https://github.com/EvolEcolGroup/tidytracks/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Andrea Manica \email{am315@cam.ac.uk}
 
@@ -15,7 +24,7 @@ Authors:
 \itemize{
   \item Andrea Manica \email{am315@cam.ac.uk}
   \item Lizzie Pearmain
-  \item Paul Whitelow
+  \item Paul Whitelaw
   \item Holly Pickett
 }
 

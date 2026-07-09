@@ -32,7 +32,7 @@ ade_genetta <- adehabitatHR::kernelUD(sp::SpatialPoints(genetta_df),
 ade_genetta_50 <- adehabitatHR::getverticeshr(ade_genetta, 50)
 ade_genetta_95 <- adehabitatHR::getverticeshr(ade_genetta, 95)
 
-# and now repeat it with tt_hr_kde
+# and now repeat it with hr_kde
 # create a move2 object with just one individual
 genetta_sf <- sf::st_as_sf(
   x = genetta_df,
@@ -56,7 +56,7 @@ grid_list <- list(
   xmin = 0.4, ymin = 0.01,
   xmax = 0.7, ymax = 0.4, n = 1240
 )
-genetta_tt_hr <- tt_hr_kde(genetta_tt,
+genetta_tt_hr <- hr_kde(genetta_tt,
   h = NULL, grid = grid_list,
   levels = c(0.5, 0.95), keep_objects = FALSE
 )

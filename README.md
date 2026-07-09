@@ -1,4 +1,4 @@
-# tidytracks <img src="./man/figures/tidytracks_logo_readme.png" align="right" width="150"/>
+# tidytracks <img src="./man/figures/tidytracks_logo_readme.png" align="right" width="150" alt="tidytracks_logo"/>
 
 <!-- badges: start -->
 

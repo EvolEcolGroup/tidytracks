@@ -13,7 +13,7 @@ hr_ud_iso(x, levels = c(0.5, 0.95))
 \method{hr_ud_iso}{SpatRaster}(x, levels = c(0.5, 0.95))
 }
 \arguments{
-\item{x}{either a tibble of class \code{hr_ud_tbl}, as created by \code{\link[=tt_hr_kde]{tt_hr_kde()}},
+\item{x}{either a tibble of class \code{hr_ud_tbl}, as created by \code{\link[=hr_kde]{hr_kde()}},
 or a \code{SpatRaster} object from the \code{ud} column of a \code{hr_ud_tbl} tibble.}
 
 \item{levels}{numeric vector of isopleth levels to create. Default is
@@ -29,3 +29,4 @@ a \code{sfc_GEOMETRYCOLLECTION} object.
 This method can be applied to a whole tibble of UDs, or to an individual
 UD.
 }
+\concept{home_range}

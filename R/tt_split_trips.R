@@ -25,8 +25,8 @@
 #' @importFrom rlang :=
 
 tt_split_trips <- function(x, centre_col = NULL,
-                           buffer_outbound = units::as_units(1000, "m"),
-                           buffer_inbound = units::as_units(1000, "m"),
+                           buffer_outbound = as_units(1000, "m"),
+                           buffer_inbound = as_units(1000, "m"),
                            complete = TRUE) {
   # Check if x is a move2 object
   if (!inherits(x, "move2")) {
