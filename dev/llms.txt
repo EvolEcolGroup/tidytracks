@@ -45,10 +45,10 @@ Functions for loading, saving and displaying tibble of tracks
 - [`tt_read_data()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_read_data.md)
   :
 
-  Read data from a csv file into a `move2` object
+  Read data from a CSV file into a `move2` object
 
 - [`tt_write_data()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_write_data.md)
-  : Write a 'tidy_tracks' object to CSV files
+  : Write a tibble of tracks to CSV files
 
 - [`as.data.frame(`*`<move2>`*`)`](https://evolecolgroup.github.io/tidytracks/dev/reference/as_data_frame_move2.md)
   :
@@ -73,7 +73,9 @@ Functions for loading, saving and displaying tibble of tracks
   : Filter the tracks based on variables from the metadata
 
 - [`mt_as_move2(`*`<trip>`*`)`](https://evolecolgroup.github.io/tidytracks/dev/reference/mt_as_move2.trip.md)
-  : Method to convert trip objects to move2 objects
+  :
+
+  Method to convert `trip` objects to `move2` objects
 
 - [`sf_point_col()`](https://evolecolgroup.github.io/tidytracks/dev/reference/sf_point_col.md)
   : Create a simple feature POINT geometry column

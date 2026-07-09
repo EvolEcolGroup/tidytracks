@@ -96,7 +96,8 @@ shags_tt <- tt_read_data(
   col_coords = c("lon", "lat"),
   col_date_time = "date_time",
   time_zone = "UTC",
-  crs = 4326)
+  crs = 4326
+)
 ```
 
 Inspecting the events table, we have:
@@ -184,10 +185,12 @@ ratio within
 ``` r
 
 ggplot() +
-  geom_event_point(data = shags_tt, aes(color = bird_id))+
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
-    theme(aspect.ratio = 1, 
-      axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_event_point(data = shags_tt, aes(color = bird_id)) +
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_events-1.png)
@@ -203,9 +206,11 @@ to plot the paths between them:
 ggplot() +
   geom_event_path(data = shags_tt, aes(color = bird_id)) +
   facet_wrap(~bird_id) +
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/shags_plot_paths-1.png)
@@ -240,7 +245,7 @@ So, we can add speed to our `shags_tt` object with:
 
 ``` r
 
-shags_tt <- shags_tt %>% 
+shags_tt <- shags_tt %>%
   mutate(speed = event_speed(.))
 ```
 
@@ -368,7 +373,7 @@ Let’s recalculate them in units that might be more familiar to us.
 ``` r
 
 shags_tt <- shags_tt %>%
-  mutate(speed = set_units(speed, "km/h")) 
+  mutate(speed = set_units(speed, "km/h"))
 
 shags_tt %>%
   summary()
@@ -401,11 +406,14 @@ Let’s plot the speed of each event:
 ggplot() +
   geom_event_path(
     data = shags_tt,
-    aes(color = speed)) +
+    aes(color = speed)
+  ) +
   facet_wrap(~bird_id) +
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_speed_new-1.png)
@@ -425,7 +433,7 @@ converted to the units in the object.
 
 ``` r
 
-n_before <- nrow(shags_tt) 
+n_before <- nrow(shags_tt)
 
 shags_tt <- shags_tt %>%
   tt_clean_mcconnell(max_speed = as_units(60, "km/h"))
@@ -501,12 +509,13 @@ the likely movements of your birds.
 
 ``` r
 
-shags_tt_split <- shags_tt  %>%
+shags_tt_split <- shags_tt %>%
   tt_split_trips(
     centre_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(3, "km"),
-    complete = TRUE)
+    complete = TRUE
+  )
 ```
 
 If we now inspect the object, we can see that there is a new column,
@@ -579,10 +588,12 @@ not complete, are removed from the dataset.
 
 ggplot() +
   geom_event_path(data = shags_tt_split, aes(color = trip_id)) +
-  geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20")+
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20") +
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_split-1.png)
@@ -666,9 +677,11 @@ ggplot() +
     aes(color = bird_id) # can't use trip_id here because not trip splitted data
   ) +
   facet_wrap(~bird_id) +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position="none")
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none"
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_females-1.png)
@@ -681,8 +694,9 @@ threshold.
 ``` r
 
 show_meta(shags_tt_split) <- show_meta(shags_tt_split) %>%
-  left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"), 
-            by = "trip_id")
+  left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"),
+    by = "trip_id"
+  )
 
 show_meta(shags_tt_split)
 #>    bird_id colony_lon colony_lat    sex                colony_coord
@@ -927,8 +941,10 @@ We can plot the home ranges:
 
 ggplot(shags_females_kde) +
   geom_sf(aes(fill = bird_id), alpha = 0.7) +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_kde-1.png)
@@ -947,8 +963,10 @@ ggplot() +
     size = 0.1
   ) +
   facet_wrap(~bird_id) +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_kde_points-1.png)
@@ -975,9 +993,11 @@ ggplot() +
     data = shags_females_proj,
     size = 0.1
   ) +
-  facet_wrap(~bird_id)+
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  facet_wrap(~bird_id) +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_mcp-1.png)
@@ -991,7 +1011,6 @@ as a single CSV text file. In this example we will save it to the
 temporary directory.
 
 ``` r
-
 
 # save to temp directory
 tmp_prefix <- file.path(tempdir(), "shags_females")

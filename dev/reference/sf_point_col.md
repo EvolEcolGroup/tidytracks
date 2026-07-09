@@ -34,9 +34,11 @@ A `sf` geometry set of POINT geometries
 ## Examples
 
 ``` r
-sf_point_col(x = show_meta(example_tt)$nest_lon,
-   y = show_meta(example_tt)$nest_lat,
-   crs = 4326)
+sf_point_col(
+  x = show_meta(example_tt)$nest_lon,
+  y = show_meta(example_tt)$nest_lat,
+  crs = 4326
+)
 #> Geometry set for 3 features 
 #> Geometry type: POINT
 #> Dimension:     XY
@@ -57,10 +59,11 @@ library(dplyr)
 #> 
 #>     intersect, setdiff, setequal, union
 show_meta(example_tt) %>%
-   mutate(nest_coord = sf_point_col(
-      x = show_meta(example_tt)$nest_lon,
-      y = show_meta(example_tt)$nest_lat,
-      crs = 4326))
+  mutate(nest_coord = sf_point_col(
+    x = show_meta(example_tt)$nest_lon,
+    y = show_meta(example_tt)$nest_lat,
+    crs = 4326
+  ))
 #>   track_id    sex nest_lon nest_lat          nest_coord
 #> 1        a   male     1.37     0.06   POINT (1.37 0.06)
 #> 2        b   male    -2.44    -1.76 POINT (-2.44 -1.76)

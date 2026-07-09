@@ -1,7 +1,7 @@
-# Read data from a csv file into a `move2` object
+# Read data from a CSV file into a `move2` object
 
-This function reads a csv file containing event data (and possibly
-metadata) and converts it into a `move2` object. The csv file should
+This function reads a CSV file containing event data (and possibly
+metadata) and converts it into a `move2` object. The CSV file should
 contain contain at least the following columns:
 
 ## Usage
@@ -24,20 +24,20 @@ tt_read_data(
 
 - events:
 
-  A path to a csv file containing the event data, OR a dataframe in R
+  A path to a CSV file containing the event data, OR a dataframe in R
   containing the event data.
 
 - col_track_id:
 
-  The name of the column in the csv file that contains the track id.
+  The name of the column in the CSV file that contains the track id.
 
 - col_coords:
 
-  A vector of the x and y coordinate column names in the csv file.
+  A vector of the x and y coordinate column names in the CSV file.
 
 - col_date_time:
 
-  The name of the column in the csv file that contains the date-time
+  The name of the column in the CSV file that contains the date-time
   information (or a vector of two elements, the names of separate date
   and time columns). Time is assumed to be in UTC.
 

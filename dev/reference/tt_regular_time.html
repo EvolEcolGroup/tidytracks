@@ -189,8 +189,10 @@ objects; <code><a href="https://r-spatial.github.io/sf/reference/st_line_sample.
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Resample to one fix per minute, snapping times to whole-minute boundaries</span></span></span>
-<span class="r-in"><span><span class="va">resampled_snap</span> <span class="op">&lt;-</span> <span class="fu">tt_regular_time</span><span class="op">(</span><span class="va">track</span>, interval <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">1</span>, <span class="st">"min"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>                                  snap_times <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">resampled_snap</span> <span class="op">&lt;-</span> <span class="fu">tt_regular_time</span><span class="op">(</span><span class="va">track</span>,</span></span>
+<span class="r-in"><span>  interval <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">1</span>, <span class="st">"min"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  snap_times <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">resampled_snap</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> A <span style="color: #0000BB;">&lt;move2&gt;</span> with `track_id_column` <span style="color: #0000BB;">"track_id"</span> and `time_column` <span style="color: #0000BB;">"timestamp"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Containing 1 track lasting 2 mins in a</span>
