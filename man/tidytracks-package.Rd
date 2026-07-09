@@ -15,7 +15,7 @@ Authors:
 \itemize{
   \item Andrea Manica \email{am315@cam.ac.uk}
   \item Lizzie Pearmain
-  \item Paul Whitelow
+  \item Paul Whitelaw
   \item Holly Pickett
 }
 
