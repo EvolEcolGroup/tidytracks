@@ -2,12 +2,12 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{[.PackedSpatRaster_list}
 \alias{[.PackedSpatRaster_list}
-\title{Subset a PackedSpatRaster_list by position or name}
+\title{Subset a \code{PackedSpatRaster_list} by position or name}
 \usage{
 \method{[}{PackedSpatRaster_list}(x, i, ...)
 }
 \arguments{
-\item{x}{A PackedSpatRaster_list.}
+\item{x}{A \code{PackedSpatRaster_list}.}
 
 \item{i}{The indices or names of the elements to subset.}
 
@@ -15,5 +15,5 @@
 with generic.}
 }
 \description{
-\code{[} subsets and returns a new PackedSpatRaster_list (still packed)
+\code{[} subsets and returns a new \code{PackedSpatRaster_list} (still packed)
 }

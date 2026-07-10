@@ -2,20 +2,20 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{PackedSpatRaster_list}
 \alias{PackedSpatRaster_list}
-\title{Create a PackedSpatRaster_list}
+\title{Create a \code{PackedSpatRaster_list}}
 \usage{
 PackedSpatRaster_list(...)
 }
 \arguments{
-\item{...}{SpatRaster / PackedSpatRaster objects, optionally named.
+\item{...}{\code{SpatRaster} / \code{PackedSpatRaster} objects, optionally named.
 A single plain list is also accepted.}
 }
 \value{
 A \code{PackedSpatRaster_list}.
 }
 \description{
-Accepts SpatRaster objects (packed automatically) or already-packed objects.
-A lightweight S3 class wrapping a named or unnamed list of PackedSpatRaster
+Accepts \code{SpatRaster} objects (packed automatically) or already-packed objects.
+A lightweight S3 class wrapping a named or unnamed list of \code{PackedSpatRaster}
 }
 \examples{
 r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")

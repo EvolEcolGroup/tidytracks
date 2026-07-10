@@ -2,20 +2,20 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{print.PackedSpatRaster_list}
 \alias{print.PackedSpatRaster_list}
-\title{Print a summary of the PackedSpatRaster_list}
+\title{Print a summary of the \code{PackedSpatRaster_list}}
 \usage{
 \method{print}{PackedSpatRaster_list}(x, ...)
 }
 \arguments{
-\item{x}{A PackedSpatRaster_list to print.}
+\item{x}{A \code{PackedSpatRaster_list} to print.}
 
 \item{...}{Not used.}
 }
 \value{
-The original PackedSpatRaster_list, invisibly.
+The original \code{PackedSpatRaster_list}, invisibly.
 }
 \description{
-Print a summary of the PackedSpatRaster_list, showing dimensions and CRS of
+Print a summary of the \code{PackedSpatRaster_list}, showing dimensions and CRS of
 each element. This provides a quick overview of the contents of the list
 without the overhead of unwrapping all rasters.
 }

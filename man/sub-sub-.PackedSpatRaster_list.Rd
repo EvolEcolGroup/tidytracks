@@ -2,12 +2,12 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{[[.PackedSpatRaster_list}
 \alias{[[.PackedSpatRaster_list}
-\title{Returns SpatRaster by position or name from PackedSpatRaster_list}
+\title{Returns \code{SpatRaster} by position or name from \code{PackedSpatRaster_list}}
 \usage{
 \method{[[}{PackedSpatRaster_list}(x, i, ...)
 }
 \arguments{
-\item{x}{A PackedSpatRaster_list.}
+\item{x}{A \code{PackedSpatRaster_list}.}
 
 \item{i}{The index or name of the element to return.}
 
@@ -15,8 +15,8 @@
 ignored.}
 }
 \value{
-A SpatRaster object, unwrapped from the PackedSpatRaster.
+A \code{SpatRaster} object, unwrapped from the \code{PackedSpatRaster}.
 }
 \description{
-\code{[[} returns a SpatRaster by position or name (unwrapping it automatically)
+\code{[[} returns a \code{SpatRaster} by position or name (unwrapping it automatically)
 }

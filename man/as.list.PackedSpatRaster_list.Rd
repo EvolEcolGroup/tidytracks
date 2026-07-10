@@ -2,15 +2,19 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{as.list.PackedSpatRaster_list}
 \alias{as.list.PackedSpatRaster_list}
-\title{Unpack all rasters into a plain list of live SpatRasters}
+\title{Unpack all rasters into a plain list of live \code{SpatRasters}}
 \usage{
 \method{as.list}{PackedSpatRaster_list}(x, ...)
 }
 \arguments{
-\item{x}{PackedSpatRaster_list to convert}
+\item{x}{\code{PackedSpatRaster_list} to convert}
 
 \item{...}{Not used.}
 }
+\value{
+A plain list of \code{SpatRaster} objects, unwrapped from the
+\code{PackedSpatRaster_list}.
+}
 \description{
-Unpack all rasters into a plain list of live SpatRasters
+Unpack all rasters into a plain list of live \code{SpatRasters}
 }

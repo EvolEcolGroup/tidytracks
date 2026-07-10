@@ -1,4 +1,4 @@
-#' A version of units::drop_units that is compatible with move2 and sf objects
+#' Drop units from a tibble of tracks
 #'
 #' @description Many functions in `tidytracks` produced values with units
 #' (implemented via the package `units`). Units are very useful in ensuring that
@@ -10,8 +10,8 @@
 #' units, so there is no need to use this function before plotting if you use
 #' the custom geometries in this package.
 #'
-#' @param x A move2 or sf object
-#' @return A move2 or sf object with units dropped
+#' @param x A `move2` or `sf` object
+#' @return A `move2` or `sf` object with units dropped
 #' @export
 
 tt_drop_units <- function(x) {

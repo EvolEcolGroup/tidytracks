@@ -2,22 +2,22 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{as_PackedSpatRaster_list}
 \alias{as_PackedSpatRaster_list}
-\title{Coerce a plain list of SpatRasters to PackedSpatRaster_list}
+\title{Coerce a plain list of \code{SpatRasters} to \code{PackedSpatRaster_list}}
 \usage{
 as_PackedSpatRaster_list(x)
 }
 \arguments{
-\item{x}{A list of SpatRasters or a PackedSpatRaster_list.}
+\item{x}{A list of \code{SpatRasters} or a \code{PackedSpatRaster_list}.}
 }
 \value{
-A PackedSpatRaster_list.
+A \code{PackedSpatRaster_list}.
 }
 \description{
 This is a convenience function that allows users to easily convert a plain
-list of SpatRasters to a PackedSpatRaster_list. It will check that all
-elements of the list are SpatRasters and then wrap them as PackedSpatRasters
-before creating the PackedSpatRaster_list. If the input is already a
-PackedSpatRaster_list, it will simply return it unchanged.
+list of \code{SpatRasters} to a \code{PackedSpatRaster_list}. It will check that all
+elements of the list are \code{SpatRasters} and then wrap them as \code{PackedSpatRasters}
+before creating the \code{PackedSpatRaster_list}. If the input is already a
+\code{PackedSpatRaster_list}, it will simply return it unchanged.
 }
 \examples{
 r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
