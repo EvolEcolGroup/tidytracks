@@ -49,6 +49,7 @@ Suggests:
     rmarkdown,
     reshape2,
     lwgeom,
+    rnaturalearth,
     testthat (>= 3.0.0),
     trip,
     track2KBA,
