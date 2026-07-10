@@ -1,6 +1,6 @@
-# Add SpatRaster by name to PackedSpatRaster_list
+# Add `SpatRaster` by name to `PackedSpatRaster_list`
 
-`$<-` stores a SpatRaster by name (wrapping it automatically)
+`$<-` stores a `SpatRaster` by name (wrapping it automatically)
 
 ## Usage
 
@@ -13,7 +13,7 @@ x$name <- value
 
 - x:
 
-  A PackedSpatRaster_list to modify.
+  A `PackedSpatRaster_list` to modify.
 
 - name:
 
@@ -21,6 +21,6 @@ x$name <- value
 
 - value:
 
-  A SpatRaster or PackedSpatRaster to store at the specified name. If
-  value is a SpatRaster, it will be automatically wrapped as a
+  A `SpatRaster` or `PackedSpatRaster` to store at the specified name.
+  If value is a SpatRaster, it will be automatically wrapped as a
   PackedSpatRaster before storage.

@@ -1,6 +1,6 @@
-# Add SpatRaster by position or name to PackedSpatRaster_list
+# Add `SpatRaster` by position or name to `PackedSpatRaster_list`
 
-`[[<-` stores a SpatRaster by position or name (wrapping it
+`[[<-` stores a `SpatRaster` by position or name (wrapping it
 automatically)
 
 ## Usage
@@ -14,7 +14,7 @@ x[[i]] <- value
 
 - x:
 
-  A PackedSpatRaster_list to modify.
+  A `PackedSpatRaster_list` to modify.
 
 - i:
 
@@ -22,6 +22,6 @@ x[[i]] <- value
 
 - value:
 
-  A SpatRaster or PackedSpatRaster to store at the specified name. If
-  value is a SpatRaster, it will be automatically wrapped as a
-  PackedSpatRaster before storage.
+  A `SpatRaster` or `PackedSpatRaster` to store at the specified name.
+  If value is a `SpatRaster`, it will be automatically wrapped as a
+  `PackedSpatRaster` before storage.

@@ -1,6 +1,6 @@
-# Subset a PackedSpatRaster_list by position or name
+# Subset a `PackedSpatRaster_list` by position or name
 
-`[` subsets and returns a new PackedSpatRaster_list (still packed)
+`[` subsets and returns a new `PackedSpatRaster_list` (still packed)
 
 ## Usage
 
@@ -13,7 +13,7 @@ x[i, ...]
 
 - x:
 
-  A PackedSpatRaster_list.
+  A `PackedSpatRaster_list`.
 
 - i:
 

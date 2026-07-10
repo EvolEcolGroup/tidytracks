@@ -1,4 +1,4 @@
-# A simple example move2 object
+# A simple example `move2` object
 
 A very simple dataset of 3 individuals, with 5 observations per
 individual, used for examples in the package documentation.

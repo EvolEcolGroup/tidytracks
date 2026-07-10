@@ -1,4 +1,4 @@
-# A version of units::drop_units that is compatible with move2 and sf objects
+# Drop units from a tibble of tracks
 
 Many functions in `tidytracks` produced values with units (implemented
 via the package `units`). Units are very useful in ensuring that
@@ -16,11 +16,11 @@ tt_drop_units(x)
 
 - x:
 
-  A move2 or sf object
+  A `move2` or `sf` object
 
 ## Value
 
-A move2 or sf object with units dropped
+A `move2` or `sf` object with units dropped
 
 ## Details
 

@@ -1,6 +1,6 @@
-# Unpack all rasters into a plain list of live SpatRasters
+# Unpack all rasters into a plain list of live `SpatRasters`
 
-Unpack all rasters into a plain list of live SpatRasters
+Unpack all rasters into a plain list of live `SpatRasters`
 
 ## Usage
 
@@ -13,8 +13,13 @@ as.list(x, ...)
 
 - x:
 
-  PackedSpatRaster_list to convert
+  `PackedSpatRaster_list` to convert
 
 - ...:
 
   Not used.
+
+## Value
+
+A plain list of `SpatRaster` objects, unwrapped from the
+`PackedSpatRaster_list`.

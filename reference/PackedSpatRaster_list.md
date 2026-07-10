@@ -1,8 +1,8 @@
-# Create a PackedSpatRaster_list
+# Create a `PackedSpatRaster_list`
 
-Accepts SpatRaster objects (packed automatically) or already-packed
+Accepts `SpatRaster` objects (packed automatically) or already-packed
 objects. A lightweight S3 class wrapping a named or unnamed list of
-PackedSpatRaster
+`PackedSpatRaster`
 
 ## Usage
 
@@ -14,7 +14,7 @@ PackedSpatRaster_list(...)
 
 - ...:
 
-  SpatRaster / PackedSpatRaster objects, optionally named. A single
+  `SpatRaster` / `PackedSpatRaster` objects, optionally named. A single
   plain list is also accepted.
 
 ## Value

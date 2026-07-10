@@ -1,8 +1,8 @@
-# Print a summary of the PackedSpatRaster_list
+# Print a summary of the `PackedSpatRaster_list`
 
-Print a summary of the PackedSpatRaster_list, showing dimensions and CRS
-of each element. This provides a quick overview of the contents of the
-list without the overhead of unwrapping all rasters.
+Print a summary of the `PackedSpatRaster_list`, showing dimensions and
+CRS of each element. This provides a quick overview of the contents of
+the list without the overhead of unwrapping all rasters.
 
 ## Usage
 
@@ -15,7 +15,7 @@ print(x, ...)
 
 - x:
 
-  A PackedSpatRaster_list to print.
+  A `PackedSpatRaster_list` to print.
 
 - ...:
 
@@ -23,4 +23,4 @@ print(x, ...)
 
 ## Value
 
-The original PackedSpatRaster_list, invisibly.
+The original `PackedSpatRaster_list`, invisibly.

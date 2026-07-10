@@ -2,7 +2,7 @@
 
 ## Tibble of tracks
 
-Functions for loading, saving and displaying tibble of tracks
+Functions for loading, saving and displaying tibbles of tracks.
 
 - [`tt_read_data()`](https://evolecolgroup.github.io/tidytracks/reference/tt_read_data.md)
   :
@@ -40,9 +40,9 @@ Functions for loading, saving and displaying tibble of tracks
 - [`sf_point_col()`](https://evolecolgroup.github.io/tidytracks/reference/sf_point_col.md)
   : Create a simple feature POINT geometry column
 
-## Events
+## Event functions
 
-Functions operating on events (return an object of \# events)
+Functions operating on events (return an object of length \# of events).
 
 - [`event_azimuth()`](https://evolecolgroup.github.io/tidytracks/reference/event_azimuth.md)
   : Measure the azimuth between two events
@@ -61,9 +61,9 @@ Functions operating on events (return an object of \# events)
 - [`event_track_id()`](https://evolecolgroup.github.io/tidytracks/reference/event_track_id.md)
   : Return the track id of each event
 
-## Tracks
+## Track functions
 
-Functions operating on tracks.
+Functions operating on tracks (return an object of length \# of tracks).
 
 - [`track_duration()`](https://evolecolgroup.github.io/tidytracks/reference/track_duration.md)
   : Compute the total duration of each track
@@ -74,9 +74,9 @@ Functions operating on tracks.
 - [`track_summary_stats()`](https://evolecolgroup.github.io/tidytracks/reference/track_summary_stats.md)
   : Compute summary statistics for each track
 
-## Full tibble of tracks
+## Tibble functions
 
-Functions operating on the full tibble (return a tibble).
+Functions operating on the full tibble (return a full tibble of tracks).
 
 - [`tt_split_trips()`](https://evolecolgroup.github.io/tidytracks/reference/tt_split_trips.md)
   : Split tracks into trips for central place foragers
@@ -98,8 +98,7 @@ Functions operating on the full tibble (return a tibble).
   Clean a `move2` object using McConnell's algorithm
 
 - [`tt_drop_units()`](https://evolecolgroup.github.io/tidytracks/reference/tt_drop_units.md)
-  : A version of units::drop_units that is compatible with move2 and sf
-  objects
+  : Drop units from a tibble of tracks
 
 ## Plotting
 
@@ -128,7 +127,7 @@ Functions to visualise movement.
 
 ## Home range
 
-Estimate home range and habitat use
+Estimate home range and habitat use from movement data.
 
 - [`hr_kde()`](https://evolecolgroup.github.io/tidytracks/reference/hr_kde.md)
   : Quantify the home range using kernel density estimation
@@ -141,30 +140,58 @@ Estimate home range and habitat use
 
 ## List of PackedRasters
 
-Process lists of rasters
+Process lists of rasters (used to represent UDs for home ranges).
 
 - [`PackedSpatRaster_list()`](https://evolecolgroup.github.io/tidytracks/reference/PackedSpatRaster_list.md)
-  : Create a PackedSpatRaster_list
+  :
+
+  Create a `PackedSpatRaster_list`
+
 - [`as.list(`*`<PackedSpatRaster_list>`*`)`](https://evolecolgroup.github.io/tidytracks/reference/as.list.PackedSpatRaster_list.md)
-  : Unpack all rasters into a plain list of live SpatRasters
+  :
+
+  Unpack all rasters into a plain list of live `SpatRasters`
+
 - [`as_PackedSpatRaster_list()`](https://evolecolgroup.github.io/tidytracks/reference/as_PackedSpatRaster_list.md)
-  : Coerce a plain list of SpatRasters to PackedSpatRaster_list
+  :
+
+  Coerce a plain list of `SpatRasters` to `PackedSpatRaster_list`
+
 - [`` `$`( ``*`<PackedSpatRaster_list>`*`)`](https://evolecolgroup.github.io/tidytracks/reference/cash-.PackedSpatRaster_list.md)
-  : Returns SpatRaster by name from PackedSpatRaster_list
+  :
+
+  Returns `SpatRaster` by name from `PackedSpatRaster_list`
+
 - [`` `$<-`( ``*`<PackedSpatRaster_list>`*`)`](https://evolecolgroup.github.io/tidytracks/reference/cash-set-.PackedSpatRaster_list.md)
-  : Add SpatRaster by name to PackedSpatRaster_list
+  :
+
+  Add `SpatRaster` by name to `PackedSpatRaster_list`
+
 - [`print(`*`<PackedSpatRaster_list>`*`)`](https://evolecolgroup.github.io/tidytracks/reference/print.PackedSpatRaster_list.md)
-  : Print a summary of the PackedSpatRaster_list
+  :
+
+  Print a summary of the `PackedSpatRaster_list`
+
 - [`` `[`( ``*`<PackedSpatRaster_list>`*`)`](https://evolecolgroup.github.io/tidytracks/reference/sub-.PackedSpatRaster_list.md)
-  : Subset a PackedSpatRaster_list by position or name
+  :
+
+  Subset a `PackedSpatRaster_list` by position or name
+
 - [`` `[[`( ``*`<PackedSpatRaster_list>`*`)`](https://evolecolgroup.github.io/tidytracks/reference/sub-sub-.PackedSpatRaster_list.md)
-  : Returns SpatRaster by position or name from PackedSpatRaster_list
+  :
+
+  Returns `SpatRaster` by position or name from `PackedSpatRaster_list`
+
 - [`` `[[<-`( ``*`<PackedSpatRaster_list>`*`)`](https://evolecolgroup.github.io/tidytracks/reference/sub-subset-.PackedSpatRaster_list.md)
-  : Add SpatRaster by position or name to PackedSpatRaster_list
+  :
+
+  Add `SpatRaster` by position or name to `PackedSpatRaster_list`
 
 ## Example datasets
 
-Example datasets for testing and demonstration
+Example datasets for testing and demonstration.
 
 - [`example_tt`](https://evolecolgroup.github.io/tidytracks/reference/example_tt.md)
-  : A simple example move2 object
+  :
+
+  A simple example `move2` object
