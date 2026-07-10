@@ -1,6 +1,6 @@
-# Returns SpatRaster by position or name from PackedSpatRaster_list
+# Returns `SpatRaster` by position or name from `PackedSpatRaster_list`
 
-`[[` returns a SpatRaster by position or name (unwrapping it
+`[[` returns a `SpatRaster` by position or name (unwrapping it
 automatically)
 
 ## Usage
@@ -14,7 +14,7 @@ x[[i, ...]]
 
 - x:
 
-  A PackedSpatRaster_list.
+  A `PackedSpatRaster_list`.
 
 - i:
 
@@ -27,4 +27,4 @@ x[[i, ...]]
 
 ## Value
 
-A SpatRaster object, unwrapped from the PackedSpatRaster.
+A `SpatRaster` object, unwrapped from the `PackedSpatRaster`.

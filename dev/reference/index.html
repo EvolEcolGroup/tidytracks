@@ -34,7 +34,7 @@
     <div class="section level2">
       <h2 id="tibble-of-tracks">Tibble of tracks<a class="anchor" aria-label="anchor" href="#tibble-of-tracks"></a></h2>
 
-      <div class="section-desc"><p>Functions for loading, saving and displaying tibble of tracks</p></div>
+      <div class="section-desc"><p>Functions for loading, saving and displaying tibbles of tracks.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -104,9 +104,9 @@
         </dt>
         <dd>Create a simple feature POINT geometry column</dd>
       </dl></div><div class="section level2">
-      <h2 id="events">Events<a class="anchor" aria-label="anchor" href="#events"></a></h2>
+      <h2 id="event-functions">Event functions<a class="anchor" aria-label="anchor" href="#event-functions"></a></h2>
 
-      <div class="section-desc"><p>Functions operating on events (return an object of # events)</p></div>
+      <div class="section-desc"><p>Functions operating on events (return an object of length # of events).</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -162,9 +162,9 @@
         </dt>
         <dd>Return the track id of each event</dd>
       </dl></div><div class="section level2">
-      <h2 id="tracks">Tracks<a class="anchor" aria-label="anchor" href="#tracks"></a></h2>
+      <h2 id="track-functions">Track functions<a class="anchor" aria-label="anchor" href="#track-functions"></a></h2>
 
-      <div class="section-desc"><p>Functions operating on tracks.</p></div>
+      <div class="section-desc"><p>Functions operating on tracks (return an object of length # of tracks).</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -199,9 +199,9 @@
         </dt>
         <dd>Compute summary statistics for each track</dd>
       </dl></div><div class="section level2">
-      <h2 id="full-tibble-of-tracks">Full tibble of tracks<a class="anchor" aria-label="anchor" href="#full-tibble-of-tracks"></a></h2>
+      <h2 id="tibble-functions">Tibble functions<a class="anchor" aria-label="anchor" href="#tibble-functions"></a></h2>
 
-      <div class="section-desc"><p>Functions operating on the full tibble (return a tibble).</p></div>
+      <div class="section-desc"><p>Functions operating on the full tibble (return a full tibble of tracks).</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -241,7 +241,7 @@
           <code><a href="tt_drop_units.html">tt_drop_units()</a></code>
 
         </dt>
-        <dd>A version of units::drop_units that is compatible with move2 and sf objects</dd>
+        <dd>Drop units from a tibble of tracks</dd>
       </dl></div><div class="section level2">
       <h2 id="plotting">Plotting<a class="anchor" aria-label="anchor" href="#plotting"></a></h2>
 
@@ -289,7 +289,7 @@
       </dl></div><div class="section level2">
       <h2 id="home-range">Home range<a class="anchor" aria-label="anchor" href="#home-range"></a></h2>
 
-      <div class="section-desc"><p>Estimate home range and habitat use</p></div>
+      <div class="section-desc"><p>Estimate home range and habitat use from movement data.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -326,7 +326,7 @@
       </dl></div><div class="section level2">
       <h2 id="list-of-packedrasters">List of PackedRasters<a class="anchor" aria-label="anchor" href="#list-of-packedrasters"></a></h2>
 
-      <div class="section-desc"><p>Process lists of rasters</p></div>
+      <div class="section-desc"><p>Process lists of rasters (used to represent UDs for home ranges).</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -338,67 +338,67 @@
           <code><a href="PackedSpatRaster_list.html">PackedSpatRaster_list()</a></code>
 
         </dt>
-        <dd>Create a PackedSpatRaster_list</dd>
+        <dd>Create a <code>PackedSpatRaster_list</code></dd>
 
         <dt>
 
           <code><a href="as.list.PackedSpatRaster_list.html">as.list(<i>&lt;PackedSpatRaster_list&gt;</i>)</a></code>
 
         </dt>
-        <dd>Unpack all rasters into a plain list of live SpatRasters</dd>
+        <dd>Unpack all rasters into a plain list of live <code>SpatRasters</code></dd>
 
         <dt>
 
           <code><a href="as_PackedSpatRaster_list.html">as_PackedSpatRaster_list()</a></code>
 
         </dt>
-        <dd>Coerce a plain list of SpatRasters to PackedSpatRaster_list</dd>
+        <dd>Coerce a plain list of <code>SpatRasters</code> to <code>PackedSpatRaster_list</code></dd>
 
         <dt>
 
           <code><a href="cash-.PackedSpatRaster_list.html">`$`(<i>&lt;PackedSpatRaster_list&gt;</i>)</a></code>
 
         </dt>
-        <dd>Returns SpatRaster by name from PackedSpatRaster_list</dd>
+        <dd>Returns <code>SpatRaster</code> by name from <code>PackedSpatRaster_list</code></dd>
 
         <dt>
 
           <code><a href="cash-set-.PackedSpatRaster_list.html">`$&lt;-`(<i>&lt;PackedSpatRaster_list&gt;</i>)</a></code>
 
         </dt>
-        <dd>Add SpatRaster by name to PackedSpatRaster_list</dd>
+        <dd>Add <code>SpatRaster</code> by name to <code>PackedSpatRaster_list</code></dd>
 
         <dt>
 
           <code><a href="print.PackedSpatRaster_list.html">print(<i>&lt;PackedSpatRaster_list&gt;</i>)</a></code>
 
         </dt>
-        <dd>Print a summary of the PackedSpatRaster_list</dd>
+        <dd>Print a summary of the <code>PackedSpatRaster_list</code></dd>
 
         <dt>
 
           <code><a href="sub-.PackedSpatRaster_list.html">`[`(<i>&lt;PackedSpatRaster_list&gt;</i>)</a></code>
 
         </dt>
-        <dd>Subset a PackedSpatRaster_list by position or name</dd>
+        <dd>Subset a <code>PackedSpatRaster_list</code> by position or name</dd>
 
         <dt>
 
           <code><a href="sub-sub-.PackedSpatRaster_list.html">`[[`(<i>&lt;PackedSpatRaster_list&gt;</i>)</a></code>
 
         </dt>
-        <dd>Returns SpatRaster by position or name from PackedSpatRaster_list</dd>
+        <dd>Returns <code>SpatRaster</code> by position or name from <code>PackedSpatRaster_list</code></dd>
 
         <dt>
 
           <code><a href="sub-subset-.PackedSpatRaster_list.html">`[[&lt;-`(<i>&lt;PackedSpatRaster_list&gt;</i>)</a></code>
 
         </dt>
-        <dd>Add SpatRaster by position or name to PackedSpatRaster_list</dd>
+        <dd>Add <code>SpatRaster</code> by position or name to <code>PackedSpatRaster_list</code></dd>
       </dl></div><div class="section level2">
       <h2 id="example-datasets">Example datasets<a class="anchor" aria-label="anchor" href="#example-datasets"></a></h2>
 
-      <div class="section-desc"><p>Example datasets for testing and demonstration</p></div>
+      <div class="section-desc"><p>Example datasets for testing and demonstration.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -410,7 +410,7 @@
           <code><a href="example_tt.html">example_tt</a></code>
 
         </dt>
-        <dd>A simple example move2 object</dd>
+        <dd>A simple example <code>move2</code> object</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
