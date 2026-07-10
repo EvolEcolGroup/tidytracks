@@ -3,7 +3,7 @@
 \docType{data}
 \name{example_tt}
 \alias{example_tt}
-\title{A simple example move2 object}
+\title{A simple example \code{move2} object}
 \format{
 A move2 object with 15 events from 3 tracks (one per individual).
 We have 3 columns in the main events table

@@ -2,18 +2,18 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{$.PackedSpatRaster_list}
 \alias{$.PackedSpatRaster_list}
-\title{Returns SpatRaster by name from PackedSpatRaster_list}
+\title{Returns \code{SpatRaster} by name from \code{PackedSpatRaster_list}}
 \usage{
 \method{$}{PackedSpatRaster_list}(x, name)
 }
 \arguments{
-\item{x}{A PackedSpatRaster_list.}
+\item{x}{A \code{PackedSpatRaster_list}.}
 
 \item{name}{The name of the element to return.}
 }
 \value{
-A SpatRaster object, unwrapped from the PackedSpatRaster.
+A \code{SpatRaster} object, unwrapped from the \code{PackedSpatRaster_list}.
 }
 \description{
-\code{$} returns a SpatRaster by position or name (unwrapping it automatically)
+\code{$} returns a \code{SpatRaster} by position or name (unwrapping it automatically)
 }

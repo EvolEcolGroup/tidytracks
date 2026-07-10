@@ -2,15 +2,15 @@
 % Please edit documentation in R/tt_drop_units.R
 \name{tt_drop_units}
 \alias{tt_drop_units}
-\title{A version of units::drop_units that is compatible with move2 and sf objects}
+\title{Drop units from a tibble of tracks}
 \usage{
 tt_drop_units(x)
 }
 \arguments{
-\item{x}{A move2 or sf object}
+\item{x}{A \code{move2} or \code{sf} object}
 }
 \value{
-A move2 or sf object with units dropped
+A \code{move2} or \code{sf} object with units dropped
 }
 \description{
 Many functions in \code{tidytracks} produced values with units

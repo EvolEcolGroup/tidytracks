@@ -7,7 +7,7 @@ development:
   mode: auto
 reference:
   - title: "Tibble of tracks"
-    desc: "Functions for loading, saving and displaying tibble of tracks"
+    desc: "Functions for loading, saving and displaying tibbles of tracks."
     contents:
         - tt_read_data
         - tt_write_data
@@ -18,16 +18,16 @@ reference:
         - filter_by_meta
         - mt_as_move2.trip
         - sf_point_col
-  - title: "Events"
-    desc: "Functions operating on events (return an object of # events)"
+  - title: "Event functions"
+    desc: "Functions operating on events (return an object of length # of events)."
     contents:
         - starts_with("event_")
-  - title: "Tracks"
-    desc: "Functions operating on tracks."
+  - title: "Track functions"
+    desc: "Functions operating on tracks  (return an object of length # of tracks)."
     contents:
         - starts_with("track_")
-  - title: "Full tibble of tracks"
-    desc: "Functions operating on the full tibble (return a tibble)."
+  - title: "Tibble functions"
+    desc: "Functions operating on the full tibble (return a full tibble of tracks)."
     contents:
         - tt_split_trips
         - tt_regular_time
@@ -41,14 +41,14 @@ reference:
         - animate_map
         - autoplot.hr_ud_tbl
   - title: "Home range"
-    desc: "Estimate home range and habitat use"
+    desc: "Estimate home range and habitat use from movement data."
     contents:
         - starts_with("hr_")
   - title: "List of PackedRasters"
-    desc: "Process lists of rasters"
+    desc: "Process lists of rasters (used to represent UDs for home ranges)."
     contents:
         - matches("PackedSpatRaster")
   - title: "Example datasets"
-    desc: "Example datasets for testing and demonstration"
+    desc: "Example datasets for testing and demonstration."
     contents:
         - example_tt

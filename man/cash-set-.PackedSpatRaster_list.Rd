@@ -2,19 +2,19 @@
 % Please edit documentation in R/PackedSpatRaster_list.R
 \name{$<-.PackedSpatRaster_list}
 \alias{$<-.PackedSpatRaster_list}
-\title{Add SpatRaster by name to PackedSpatRaster_list}
+\title{Add \code{SpatRaster} by name to \code{PackedSpatRaster_list}}
 \usage{
 \method{$}{PackedSpatRaster_list}(x, name) <- value
 }
 \arguments{
-\item{x}{A PackedSpatRaster_list to modify.}
+\item{x}{A \code{PackedSpatRaster_list} to modify.}
 
 \item{name}{The name of the element to set.}
 
-\item{value}{A SpatRaster or PackedSpatRaster to store at the specified name.
+\item{value}{A \code{SpatRaster} or \code{PackedSpatRaster} to store at the specified name.
 If value is a SpatRaster, it will be automatically wrapped as a
 PackedSpatRaster before storage.}
 }
 \description{
-\verb{$<-} stores a SpatRaster by name (wrapping it automatically)
+\verb{$<-} stores a \code{SpatRaster} by name (wrapping it automatically)
 }
