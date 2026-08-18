@@ -54,6 +54,15 @@
 #'   the isopleth for the appropriate level
 #'
 #' @export
+#' @examples
+#' # compute the kernels
+#' example_kde <- hr_kde(example_tt)
+#' example_kde
+#' # compute the isopleths for the 50% and 95% home range
+#' example_iso <- hr_kde(example_tt, levels = c(0.5, 0.95))
+#' ggplot(example_iso) +
+#'   geom_sf(aes(fill = track_id), alpha = 0.7)
+#' 
 
 hr_kde <- function(
   x,

@@ -11,7 +11,15 @@
 #'   of groups in `x` (or just one row for an ungrouped tibble), or a single
 #'   SpatRaster if `x` is a list of SpatRaster objects.
 #' @export
-
+#' @examples
+#' example_kde <- hr_kde(example_tt)
+#' # sum the UDs for all tracks in the tibble
+#' hr_ud_sum(example_kde)
+#' # add sex info from metadata and use it to group the UDs
+#' example_kde_grouped <- example_kde %>%
+#'  left_join(show_meta(example_tt)) %>%
+#'  group_by(sex)
+#' hr_ud_sum(example_kde_grouped)
 #' @family home_range
 
 hr_ud_sum <- function(x) {
