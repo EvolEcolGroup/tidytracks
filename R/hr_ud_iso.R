@@ -19,7 +19,12 @@ hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
 
 #' @export
 #' @rdname hr_ud_iso
-hr_ud_iso.hr_ud_tbl <- function(x, levels = c(0.50, 0.95)) {
+# Note that we have a generic method for a tibble as the hr_ud_tbl class is lost
+# on group_map operations
+hr_ud_iso.tbl_df <- function(x, levels = c(0.50, 0.95)) {
+  # check that this is a hr_ud_tbl
+  stopifnot_hr_ud_table(x)
+  
   levels <- sort(levels)
 
   res_tbl <- x %>%

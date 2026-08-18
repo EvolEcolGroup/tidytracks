@@ -99,12 +99,18 @@ hr_ud_overlap.SpatRaster <- function(
 
 #' @export
 #' @rdname hr_ud_overlap
+# Note that we have a generic method for a tibble as the hr_ud_tbl class is lost
+# on group_map operations
+
 hr_ud_overlap.hr_ud_tbl <- function(
   x,
   ...,
   method = c("ba", "vi", "udoi"),
   cond_level = NULL
 ) {
+  # check that this is a hr_ud_tbl
+  stopifnot_hr_ud_table(x)
+  
   # check that ... are empty
   if (length(list(...)) > 0) {
     stop("additional arguments ... are not used")

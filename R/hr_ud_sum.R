@@ -44,14 +44,9 @@ hr_ud_sum.list <- function(x) {
 # Note that we have a generic method for a tibble as the hr_ud_tbl class is lost
 # on group_map operations
 hr_ud_sum.tbl_df <- function(x) {
-  # check that the ud column exists
-  if (!"ud" %in% colnames(x)) {
-    stop("x must have a column named 'ud'")
-  }
-  # check that the ud column is a PackedSpatRaster_list
-  if (!inherits(x$ud, "PackedSpatRaster_list")) {
-    stop("x$ud must be a PackedSpatRaster_list")
-  }
+  # check that this is a hr_ud_tbl
+  stopifnot_hr_ud_table(x)
+  
   # create a new tibble with the summed UD
   sum_tbl <- x %>% 
     dplyr::select(dplyr::all_of(
@@ -72,6 +67,20 @@ hr_ud_sum.tbl_df <- function(x) {
 # Note that we have a generic method for a tibble as the hr_ud_tbl class is lost
 # on group_map operations
 hr_ud_sum.grouped_df <- function(x) {
+  # check that this is a hr_ud_tbl
+  stopifnot_hr_ud_table(x)
+
+  # now we need to group_modify the tibble to sum the UDs for each group
+  hr_grouped_sum <- dplyr::group_modify(
+    x,
+    ~ hr_ud_sum(.x)
+  )
+  class(hr_grouped_sum) <- c("hr_ud_tbl", class(hr_grouped_sum))
+  return(hr_grouped_sum)
+}
+
+
+stopifnot_hr_ud_table <- function(x) {
   # check that the ud column exists
   if (!"ud" %in% colnames(x)) {
     stop("x must have a column named 'ud'")
@@ -80,11 +89,4 @@ hr_ud_sum.grouped_df <- function(x) {
   if (!inherits(x$ud, "PackedSpatRaster_list")) {
     stop("x$ud must be a PackedSpatRaster_list")
   }
-  # now we need to reframe
-  hr_grouped_sum <- dplyr::group_modify(
-    x,
-    ~ hr_ud_sum(.x)
-  )
-  class(hr_grouped_sum) <- c("hr_ud_tbl", class(hr_grouped_sum))
-  return(hr_grouped_sum)
 }

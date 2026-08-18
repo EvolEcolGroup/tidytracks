@@ -2,13 +2,13 @@
 % Please edit documentation in R/hr_ud_iso.R
 \name{hr_ud_iso}
 \alias{hr_ud_iso}
-\alias{hr_ud_iso.hr_ud_tbl}
+\alias{hr_ud_iso.tbl_df}
 \alias{hr_ud_iso.SpatRaster}
 \title{Create isopleths from utilisation distributions}
 \usage{
 hr_ud_iso(x, levels = c(0.5, 0.95))
 
-\method{hr_ud_iso}{hr_ud_tbl}(x, levels = c(0.5, 0.95))
+\method{hr_ud_iso}{tbl_df}(x, levels = c(0.5, 0.95))
 
 \method{hr_ud_iso}{SpatRaster}(x, levels = c(0.5, 0.95))
 }
