@@ -447,14 +447,13 @@ shags_overlap <- shags_kde %>% hr_ud_overlap()
 For a mantel, we need to create a matrix of 1 for same sex and 0 for
 different sex:
 ```{r}
-f <- show_meta(shags_proj)$sex
-same_sex_mat <- outer(f, f, FUN = "==") * 1
+same_sex_mat <- same_category(as.factor(show_meta(shags_proj)$sex))
 ```
 
 ```{r}
 vegan::mantel(shags_overlap, same_sex_mat)
-
 ```
+
 
 Visualise with isopleths
 ```{r}
