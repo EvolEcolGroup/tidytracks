@@ -28,4 +28,8 @@ If \code{x} is a tibble, a tibble of class \code{hr_poly_tbl} with columns
 \description{
 This method can be applied to a whole tibble of UDs, or to an individual UD.
 }
+\seealso{
+Other home_range:
+\code{\link[=hr_ud_sum]{hr_ud_sum()}}
+}
 \concept{home_range}
