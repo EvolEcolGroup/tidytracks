@@ -14,6 +14,16 @@
 \item{...}{Additional arguments passed to \code{NextMethod()}, for compatibility
 with generic.}
 }
+\value{
+A new \code{PackedSpatRaster_list} containing the specified subset of
+elements.
+}
 \description{
 \code{[} subsets and returns a new \code{PackedSpatRaster_list} (still packed)
+}
+\examples{
+r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+pl <- PackedSpatRaster_list(a = r1, b = r2)
+pl["a"] # returns a new PackedSpatRaster_list with only r1
 }

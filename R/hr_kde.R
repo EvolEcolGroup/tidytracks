@@ -223,6 +223,7 @@ hr_kde <- function(
 #' @param id The identifier for the group (used in raster metadata).
 #' @return A PackedSpatRaster.
 #' @keywords internal
+#' @noRd
 kde_one_group <- function(xy, crs, bbox, res, h, id) {
   kde <- MASS::kde2d(
     xy[, 1],

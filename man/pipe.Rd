@@ -17,4 +17,7 @@ The result of calling \code{rhs(lhs)}.
 \description{
 See `magrittr::pipe \\%>\\% for details.
 }
-\keyword{internal}
+\examples{
+example_tt \%>\% event_time() \%>\% head()
+
+}

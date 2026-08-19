@@ -28,6 +28,16 @@ If \code{x} is a tibble, a tibble of class \code{hr_poly_tbl} with columns
 \description{
 This method can be applied to a whole tibble of UDs, or to an individual UD.
 }
+\examples{
+example_kde <- hr_kde(example_tt)
+example_iso <- hr_ud_iso(example_kde)
+example_iso
+
+# now plot the isopleths
+library(ggplot2)
+ggplot(example_iso) +
+  geom_sf(aes(fill = track_id), alpha = 0.7)
+}
 \seealso{
 Other home_range:
 \code{\link[=hr_ud_sum]{hr_ud_sum()}}

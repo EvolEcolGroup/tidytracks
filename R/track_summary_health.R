@@ -16,6 +16,8 @@
 #'  \item proportion_missing: The proportion of expected points that are missing
 #'  }
 #' @export
+#' @examples
+#' track_summary_health(example_tt)
 
 track_summary_health <- function(x) {
   # Check if x is a move2 object

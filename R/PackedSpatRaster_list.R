@@ -71,6 +71,12 @@ new_PackedSpatRaster_list <- function(packed) {
 #'   ignored.
 #' @returns A `SpatRaster` object, unwrapped from the `PackedSpatRaster`.
 #' @export
+#' @examples
+#' r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+#' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+#' pl <- PackedSpatRaster_list(a = r1, b = r2)
+#' pl[[1]] # returns r1 as a SpatRaster
+
 `[[.PackedSpatRaster_list` <- function(x, i, ...) {
   item <- NextMethod() # fetch the PackedSpatRaster from the plain list
   if (is.null(item)) {
@@ -86,6 +92,11 @@ new_PackedSpatRaster_list <- function(packed) {
 #' @param name The name of the element to return.
 #' @returns A `SpatRaster` object, unwrapped from the `PackedSpatRaster_list`.
 #' @export
+#' @examples
+#' r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+#' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+#' pl <- PackedSpatRaster_list(a = r1, b = r2)
+#' pl$a # returns r1 as a SpatRaster
 `$.PackedSpatRaster_list` <- function(x, name) {
   item <- .subset2(x, name) # bypass S3 dispatch to avoid recursion
   if (is.null(item)) {
@@ -101,7 +112,14 @@ new_PackedSpatRaster_list <- function(packed) {
 #' @param i The indices or names of the elements to subset.
 #' @param ... Additional arguments passed to `NextMethod()`, for compatibility
 #'   with generic.
+#' @returns A new `PackedSpatRaster_list` containing the specified subset of
+#'   elements.
 #' @export
+#' @examples
+#' r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+#' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+#' pl <- PackedSpatRaster_list(a = r1, b = r2)
+#' pl["a"] # returns a new PackedSpatRaster_list with only r1
 `[.PackedSpatRaster_list` <- function(x, i, ...) {
   new_PackedSpatRaster_list(NextMethod())
 }
@@ -115,10 +133,18 @@ new_PackedSpatRaster_list <- function(packed) {
 #' `[[<-` stores a `SpatRaster` by position or name (wrapping it automatically)
 #' @param x A `PackedSpatRaster_list` to modify.
 #' @param i The index or name of the element to set.
-#' @param value A `SpatRaster` or `PackedSpatRaster` to store at the specified name.
-#'   If value is a `SpatRaster`, it will be automatically wrapped as a
+#' @param value A `SpatRaster` or `PackedSpatRaster` to store at the specified
+#'   name. If value is a `SpatRaster`, it will be automatically wrapped as a
 #'   `PackedSpatRaster` before storage.
+#' @returns The modified `PackedSpatRaster_list` with the specified element
+#'   replaced.
+#' @examples
+#' r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+#' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+#' pl <- PackedSpatRaster_list(a = r1, b = r2)
+#' pl[[1]] <- r2 # replaces the first element with r2
 #' @export
+
 `[[<-.PackedSpatRaster_list` <- function(x, i, value) {
   if (!is.null(value)) {
     if (inherits(value, "SpatRaster")) {
@@ -134,10 +160,17 @@ new_PackedSpatRaster_list <- function(packed) {
 #' `$<-` stores a `SpatRaster` by name (wrapping it automatically)
 #' @param x A `PackedSpatRaster_list` to modify.
 #' @param name The name of the element to set.
-#' @param value A `SpatRaster` or `PackedSpatRaster` to store at the specified name.
-#'   If value is a SpatRaster, it will be automatically wrapped as a
+#' @param value A `SpatRaster` or `PackedSpatRaster` to store at the specified
+#'   name. If value is a SpatRaster, it will be automatically wrapped as a
 #'   PackedSpatRaster before storage.
+#' @returns The modified `PackedSpatRaster_list` with the specified element
+#'   replaced.
 #' @export
+#' @examples
+#' r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+#' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+#' pl <- PackedSpatRaster_list(a = r1, b = r2)
+#' pl$a <- r2 # replaces the element named "a" with r2
 `$<-.PackedSpatRaster_list` <- function(x, name, value) {
   x[[name]] <- value # delegate to [[<-
   x
@@ -152,6 +185,11 @@ new_PackedSpatRaster_list <- function(packed) {
 #' @param ... Not used.
 #' @return The original `PackedSpatRaster_list`, invisibly.
 #' @export
+#' @examples
+#' r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+#' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+#' pl <- PackedSpatRaster_list(a = r1, b = r2)
+#' pl # prints a summary of the PackedSpatRaster_list
 print.PackedSpatRaster_list <- function(x, ...) {
   # check that ... is empty
   if (length(list(...)) > 0L) {
@@ -190,6 +228,12 @@ print.PackedSpatRaster_list <- function(x, ...) {
 #' @return A plain list of `SpatRaster` objects, unwrapped from the
 #'   `PackedSpatRaster_list`.
 #' @export
+#' @examples
+#' r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+#' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+#' pl <- PackedSpatRaster_list(a = r1, b = r2)
+#' lst <- as.list(pl) # returns a plain list of SpatRasters
+#' lst
 as.list.PackedSpatRaster_list <- function(x, ...) {
   # check that ... is empty
   if (length(list(...)) > 0L) {

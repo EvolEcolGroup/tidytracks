@@ -7,6 +7,7 @@
 #' @return A `terra::SpatRaster` representing the cumulative utilisation
 #'   distribution (UD).
 #' @keywords internal
+#' @noRd
 
 hr_cud <- function(x) {
   # check that x has a layer named "ud"

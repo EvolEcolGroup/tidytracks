@@ -12,6 +12,17 @@
 #'   `sfc_GEOMETRYCOLLECTION` object.
 #' @export
 #' @family home_range
+#' @examples
+#' example_kde <- hr_kde(example_tt)
+#' example_iso <- hr_ud_iso(example_kde)
+#' example_iso
+#' 
+#' # now plot the isopleths
+#' library(ggplot2)
+#' ggplot(example_iso) +
+#'   geom_sf(aes(fill = track_id), alpha = 0.7)
+
+
 
 hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
   UseMethod("hr_ud_iso")

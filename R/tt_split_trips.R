@@ -147,6 +147,7 @@ tt_split_trips <- function(
 #' @returns a vector with trip IDs for each event (events to remove are marked
 #' as NA)
 #' @keywords internal
+#' @noRd
 split_one_track <- function(
   label,
   x,

@@ -94,7 +94,7 @@ hr_mcp <- function(x, levels = c(0.5, 0.95)) {
 #' @param crs the crs of the coordinates (to use in the geometry)
 #' @returns A list of sf polygons representing the MCP at each level
 #' @keywords internal
-
+#' @noRd
 mcp_one_group <- function(xy, levels, crs) {
   mxy <- colMeans(xy)
   sqd <- (xy[, 1] - mxy[1])^2 + (xy[, 2] - mxy[2])^2

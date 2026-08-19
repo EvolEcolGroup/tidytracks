@@ -38,7 +38,7 @@
 #' @importFrom tweenr tween_at
 #' @importFrom vctrs vec_rbind
 #' @keywords internal
-
+#' @noRd
 shadow_wake_build <- function(
   wake_length, # Proportion of total animation (0–1) to show as wake trail
   size = TRUE,

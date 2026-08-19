@@ -43,3 +43,6 @@ total track, and, if a central place location is provided, the maximum
 distance that location, and the latitude at the most distant point from the
 central place location
 }
+\examples{
+track_summary_stats(example_tt)
+}
