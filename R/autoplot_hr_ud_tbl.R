@@ -21,6 +21,10 @@
 #'   the result is a multi-panel plot composition.
 #' @importFrom ggplot2 autoplot
 #' @export
+#' @examples
+#' example_kde <- hr_kde(example_tt)
+#' library(ggplot2)
+#' autoplot(example_kde)
 
 autoplot.hr_ud_tbl <- function(object, id_to_plot = NULL, layout = NULL, ...) {
   ## Get appropriate ids to plot

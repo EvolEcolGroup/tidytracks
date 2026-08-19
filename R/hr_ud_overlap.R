@@ -21,6 +21,9 @@
 #'   according to the specified method, or a matrix of such values if `x` is a
 #'   tibble of multiple UDs.
 #' @export
+#' @examples
+#' example_kde <- hr_kde(example_tt)
+#' hr_ud_overlap(example_kde)
 
 hr_ud_overlap <- function(x, ..., method = c("ba", "vi", "udoi")) {
   UseMethod("hr_ud_overlap")

@@ -44,3 +44,7 @@ overlap between the UDs estimated within a given isopleth level (e.g. 50\%) of
 the UD, rather than the full UD. This can be useful for comparing the core
 areas of the UDs.
 }
+\examples{
+example_kde <- hr_kde(example_tt)
+hr_ud_overlap(example_kde)
+}

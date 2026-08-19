@@ -19,6 +19,10 @@
 #'   track until the result is stable.
 #' @return A clean `move2` object with events removed
 #' @export
+#' @examples
+#' # this removes 3 events from the example dataset
+#' tt_clean_mcconnell(example_tt, max_speed = as_units(50, "km/h"),
+#'   flag_action = "remove")
 
 tt_clean_mcconnell <- function(
   x,

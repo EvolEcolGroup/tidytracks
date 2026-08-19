@@ -39,3 +39,6 @@ last currently valid point of each track using an endpoint Root Mean Square
 If an endpoint is removed, the McConnell filter is rerun on the reduced
 track, and the endpoint check is repeated until the result is stable.
 }
+\examples{
+event_flag_mcconnell(example_tt, max_speed = as_units(50, "m/s"))
+}

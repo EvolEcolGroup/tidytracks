@@ -70,3 +70,14 @@ unprojected, the area is computed in degrees^2, which is not a meaningful
 unit for area. In this case, it is recommended to project \code{x} to an
 appropriate projection before using this function.
 }
+\examples{
+example_kde <- hr_kde(example_tt)
+example_kde
+library(ggplot2)
+autoplot(example_kde)
+# compute the isopleths for the 50\% and 95\% home range
+example_iso <- hr_kde(example_tt, levels = c(0.5, 0.95))
+ggplot(example_iso) +
+  geom_sf(aes(fill = track_id), alpha = 0.7)
+
+}

@@ -36,6 +36,10 @@
 #' @param ... Other arguments passed on to [ggplot2::layer()].
 #' @returns A `ggplot2` layer object.
 #' @export
+#' @examples
+#' library(ggplot2)
+#' ggplot() +
+#'  geom_event_path(data = example_tt, mapping = aes(color = track_id))
 
 geom_event_path <- function(
   mapping = ggplot2::aes(),

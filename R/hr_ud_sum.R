@@ -16,6 +16,7 @@
 #' # sum the UDs for all tracks in the tibble
 #' hr_ud_sum(example_kde)
 #' # add sex info from metadata and use it to group the UDs
+#' library(dplyr)
 #' example_kde_grouped <- example_kde %>%
 #'  left_join(show_meta(example_tt)) %>%
 #'  group_by(sex)

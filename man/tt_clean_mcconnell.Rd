@@ -37,3 +37,8 @@ interval between them (more explanation; give reference TODO). This function
 returns a clean \code{move2} object; to generate a column that flags events to
 remove but does not remove them, use \code{event_flag_mcconnell()}.
 }
+\examples{
+# this removes 3 events from the example dataset
+tt_clean_mcconnell(example_tt, max_speed = as_units(50, "km/h"),
+  flag_action = "remove")
+}

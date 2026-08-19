@@ -12,6 +12,9 @@
 #' @param .track_id A vector of the ids of the tracks to select
 #' @returns A move2 object with only the selected tracks
 #' @export
+#' @examples
+#' subset_tt <- example_tt %>% filter_by_meta(sex == "female")
+#' show_meta(subset_tt)
 
 filter_by_meta <- function(.data, ..., .track_id = NULL) {
   # at this point, .data is a move2 object with track_id_field 'trip_id'

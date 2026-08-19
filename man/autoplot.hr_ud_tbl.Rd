@@ -33,3 +33,8 @@ assumed to be an id column, which is used to identify the UDs to plot. The
 layout of the plots can be specified with the \code{layout} argument, and it is
 assembled with \code{patchwork}.
 }
+\examples{
+example_kde <- hr_kde(example_tt)
+library(ggplot2)
+autoplot(example_kde)
+}

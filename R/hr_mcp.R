@@ -3,7 +3,9 @@
 #' This function estimates the home range of an animal using the minimum convex
 #' polygon (MCP) method.
 #'
-#' @param x A grouped move2 object
+#' @param x A move2 object; if explicitly grouped, the home range is estimated
+#'   for each group, combining all tracks within each group. Otherwise, the
+#'   track id is used as grouping variable.
 #' @param levels A vector of levels for the contour lines. The default is
 #' `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
 #' @returns A tibble of subclass `hr_poly_tbl` of results, with columns:
@@ -11,11 +13,18 @@
 #' - `level`: the level of the contour line
 #' - `geometry`: the geometry of the home range as a list of sf polygons
 #' @export
+#' @examples
+#' example_mcp <- hr_mcp(example_tt)
+#' example_mcp
+#' library(ggplot2)
+#' ggplot(example_mcp) +
+#'   geom_sf(aes(fill = track_id), alpha = 0.7)
+
 
 hr_mcp <- function(x, levels = c(0.5, 0.95)) {
-  # Check if x is a grouped move2 object
-  if (!inherits(x, "move2") || !inherits(x, "grouped_df")) {
-    stop("x must be a grouped move2 object")
+  # if x is not grouped, use the track ID column as grouping variable
+  if (!inherits(x, "grouped_df")) {
+    x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
 
   # Check if levels are valid

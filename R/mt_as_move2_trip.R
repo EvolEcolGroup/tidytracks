@@ -5,7 +5,7 @@
 #' @param ... Additional arguments (currently ignored)
 #' @return A move2 object
 #' @export
-#' @examples
+#' @examplesIf rlang::is_installed("trip")
 #' mt_as_move2(trip::walrus818)
 mt_as_move2.trip <- function(x, ...) {
   if (!requireNamespace("trip", quietly = TRUE)) {

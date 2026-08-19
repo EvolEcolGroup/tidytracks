@@ -53,14 +53,15 @@
 #'   suffix added to the metadata version.
 #' @return A `move2` object containing the event data.
 #' @examples
-#' example_events_csv <- system.file("/extdata/csv_files/dataset_example_birdlife.csv",
+#' shags_csv <- system.file("/extdata/shags_example.csv",
 #'   package = "tidytracks"
 #' )
-#' example_tt <- tt_read_data(example_events_csv,
-#'   col_track_id = "track_id",
-#'   col_coords = c("longitude", "latitude"),
-#'   col_date_time = c("date_gmt", "time_gmt")
+#' shags_tt <- tt_read_data(shags_csv,
+#'   col_track_id = "bird_id",
+#'   col_coords = c("lon", "lat"),
+#'   col_date_time = "date_time"
 #' )
+#' shags_tt
 #' @export
 
 tt_read_data <- function(

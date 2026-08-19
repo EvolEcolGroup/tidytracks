@@ -30,6 +30,17 @@ UDs. The normalised sum is computed by summing the UDs and then dividing by
 the number of UDs so that the resulting UD has a maximum value of 1 (this is
 the same as dividing by the sum of values in the combined UDs).
 }
+\examples{
+example_kde <- hr_kde(example_tt)
+# sum the UDs for all tracks in the tibble
+hr_ud_sum(example_kde)
+# add sex info from metadata and use it to group the UDs
+library(dplyr)
+example_kde_grouped <- example_kde \%>\%
+ left_join(show_meta(example_tt)) \%>\%
+ group_by(sex)
+hr_ud_sum(example_kde_grouped)
+}
 \seealso{
 Other home_range:
 \code{\link[=hr_ud_iso]{hr_ud_iso()}}
