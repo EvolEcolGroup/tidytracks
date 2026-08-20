@@ -1,0 +1,110 @@
+---
+title: "kernel_overlaps"
+output: html_document
+---
+
+Benchmarking kernel overlap functions in `adehabitatHR` (`kerneloverlaphr()`) 
+and in `tidytracks` (`hr_ud_overlap()`).
+
+Compare speed using the wild boars dataset from `adehabitatHR` package.
+
+# set up adehabitat
+
+```{r}
+library(adehabitatHR)
+
+# get example boar data
+data(puechabonsp)
+class(puechabonsp)
+names(puechabonsp)
+
+# make kernels
+kud <- kernelUD(xy = puechabonsp$relocs[,1], # the coordinates field in the spdf
+                h = "href") # using default params for everything else
+kud
+class(kud)
+names(kud)
+
+# kernels using same grid for all animals
+kus <- kernelUD(puechabonsp$relocs[,1], same4all=TRUE)
+image(kus)
+
+```
+
+# set up tidytracks
+
+```{r}
+library(tidytracks)
+
+# code from data-raw/make_testdata/make_boar.R
+boar_sf <- sf::st_as_sf(puechabonsp$relocs)
+sf::st_crs(boar_sf) <- 27573
+boar_sf$Date <- as.POSIXct(
+  (boar_sf$Date - max(boar_sf$Date)) * 8640,
+  tz = "UTC"
+)
+names(boar_sf) <- tolower(names(boar_sf))
+wildboars_tt <- move2::mt_as_move2(
+  boar_sf,
+  track_id_column = "name",
+  time_column = "date"
+)
+wildboars_tt
+show_meta(wildboars_tt)
+
+# compute the kde
+wildboars_tt <- wildboars_tt %>% dplyr::group_by(name)
+wildboars_kde <- hr_kde(wildboars_tt, levels = NULL,
+                           h = "h_ref_indiv",
+                           res = 194.7458,
+                           bbox = list(xmin = 695842.0, ymin = 3154018.0,
+                                    xmax = 704216.0, ymax = 3165702))
+wildboars_kde
+plot(as.list(wildboars_kde$ud)[[c(1)]])
+
+```
+
+# overlaps
+
+At 90%.
+
+## adehabitat
+
+```{r}
+?kerneloverlaphr
+class(kus)
+# run overlap
+t1 <- Sys.time()
+ovl_ade <- kerneloverlaphr(x = kus,
+                           method = "BA",
+                           percent = 90,
+                           conditional = TRUE) # max overlap is 0.9 for 90 percent
+t2 <- Sys.time()
+t2-t1
+rm(t1, t2)
+
+```
+
+## tidytracks
+
+```{r}
+?hr_ud_overlap
+class(wildboars_kde)
+# run overlap
+t1 <- Sys.time()
+ovl_tt <- hr_ud_overlap(x = wildboars_kde,
+                        method = "ba",
+                        cond_level = 0.9)
+t2 <- Sys.time()
+t2-t1
+rm(t1, t2)
+```
+
+## compare overlap scores
+
+```{r}
+ovl_ade/0.9 # rescale so max is 1
+
+ovl_tt
+```
+
