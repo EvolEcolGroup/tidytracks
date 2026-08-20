@@ -29,6 +29,14 @@ names(kud)
 kus <- kernelUD(puechabonsp$relocs[,1], same4all=TRUE)
 image(kus)
 
+# repeat to make the dataset bigger
+idx <- rep(seq_along(kus), length.out = 100)
+kus_100 <- kus[idx]
+names(kus_100) <- paste0("animal_", 1:100)
+# restore estUDm class
+if (!inherits(kus_100, "estUDm")) class(kus_100) <- "estUDm"
+kus_100
+
 ```
 
 # set up tidytracks
@@ -62,6 +70,12 @@ wildboars_kde <- hr_kde(wildboars_tt, levels = NULL,
 wildboars_kde
 plot(as.list(wildboars_kde$ud)[[c(1)]])
 
+# copy out to N individuals
+library(dplyr)
+wildboars_kde_100 <- wildboars_kde |>
+  slice(rep(seq_len(nrow(wildboars_kde)), length.out = 100)) |>
+  mutate(name = paste0("animal_", 1:100))
+
 ```
 
 # overlaps
@@ -75,7 +89,7 @@ At 90%.
 class(kus)
 # run overlap
 t1 <- Sys.time()
-ovl_ade <- kerneloverlaphr(x = kus,
+ovl_ade <- kerneloverlaphr(x = kus_100,
                            method = "BA",
                            percent = 90,
                            conditional = TRUE) # max overlap is 0.9 for 90 percent
@@ -92,7 +106,7 @@ rm(t1, t2)
 class(wildboars_kde)
 # run overlap
 t1 <- Sys.time()
-ovl_tt <- hr_ud_overlap(x = wildboars_kde,
+ovl_tt <- hr_ud_overlap(x = wildboars_kde_100,
                         method = "ba",
                         cond_level = 0.9)
 t2 <- Sys.time()
