@@ -161,15 +161,14 @@ basemap <- readRDS(
 
 ggplot() +
   # add in basemap
-  ggplot() +
-  
-  geom_event_path(data = shags_tt, aes(color = bird_id)) +
+  geom_spatraster_rgb(data = basemap) +
+   geom_event_path(data = shags_tt, aes(color = bird_id)) +
   facet_wrap(~bird_id) +
   coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
   theme(
     aspect.ratio = 1,
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  )
+    axis.text.x = element_text(angle = 45, hjust = 1) )
+
 ```
 
 We can see that bird `'kb_38'` moved very little (or not at all) during
@@ -277,10 +276,10 @@ shags usually fly at speeds around 50–65 km/h; see e.g. Wanless et al. 1997).
 Let's plot the speed of each event:
 ```{r plot_speed_new, fig.width=6, fig.height=4}
 ggplot() +
+    geom_spatraster(data = basemap) +
   geom_event_path(
     data = shags_tt,
-    aes(color = speed)
-  ) +
+    aes(color = speed) ) +
   facet_wrap(~bird_id) +
   coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
   theme(

@@ -27,8 +27,7 @@ res(bmap_coarse)
 
 # spot check the map
 # check memory size of bmap
-basemap_shags <- bmap
-saveRDS(
-  basemap_shags,
-  file = "inst/extdata/basemap_shags.rds")
 
+# write to file as terra
+
+terra::writeRaster(bmap_coarse, filename = "inst/extdata/basemap_shags.tif", overwrite = TRUE)
