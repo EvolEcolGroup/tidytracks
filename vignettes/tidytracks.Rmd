@@ -76,17 +76,24 @@ the tracks (`sex` and colony coordinates split into `colony_lat` and `colony_lon
 These are repeated for each event, so they will be moved to the metadata table when 
 we create the `tidytracks` object.
 
+Also load a basemap for the plots
 ```{r read_events}
 library(tidytracks)
 library(dplyr)
 library(ggplot2)
 library(sf)
+library(terra)
 
 shags_csv <- system.file(
   "extdata",
   "shags_example.csv",
   package = "tidytracks"
 )
+
+# read tif file
+
+basemap <- system.file("extdata", "basemap_shags.tif", package ="tidytracks")
+basemap <- rast(basemap)
 
 shags_tt <- tt_read_data(
   events = shags_csv,
@@ -156,11 +163,7 @@ locations as points, we will use `geom_event_path()` to plot the
 paths between them:
 
 ```{r shags_plot_paths, fig.width=6, fig.height=4}
-basemap <- readRDS(
-  system.file("extdata", "basemap_shags.rds", package = "tidytracks"))
-
 ggplot() +
-  # add in basemap
   geom_spatraster_rgb(data = basemap) +
    geom_event_path(data = shags_tt, aes(color = bird_id)) +
   facet_wrap(~bird_id) +
@@ -274,18 +277,21 @@ Hmm, 904 km/h is much faster than typical flight speed for a shag (European
 shags usually fly at speeds around 50–65 km/h; see e.g. Wanless et al. 1997).
 
 Let's plot the speed of each event:
-```{r plot_speed_new, fig.width=6, fig.height=4}
+```{r plot_speed_new, fig.width=7, fig.height=4}
 ggplot() +
-    geom_spatraster(data = basemap) +
+  geom_spatraster_rgb(data = basemap) +
   geom_event_path(
     data = shags_tt,
-    aes(color = speed) ) +
-  facet_wrap(~bird_id) +
+    aes(color = speed)
+  ) +
+ scale_color_gradient(low = "yellow", high = "red")  +
+  facet_wrap(~bird_id, ncol = 3) +
   coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
   theme(
-    aspect.ratio = 1,
-    axis.text.x = element_text(angle = 45, hjust = 1)
+    axis.text.x = element_text(angle = 45, hjust = 1),
+      aspect.ratio = 1
   )
+
 ```
 
 It looks like there are a few GPS location errors here, resulting in unrealistic
@@ -395,6 +401,7 @@ dataset.
 
 ```{r plot_split, fig.width=6, fig.height=4}
 ggplot() +
+  geom_spatraster_rgb(data = basemap) +
   geom_event_path(data = shags_tt_split, aes(color = trip_id)) +
   geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20") +
   coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
@@ -437,6 +444,7 @@ show_meta(shags_females)
 We can now plot the trips:
 ```{r plot_females, fig.width=6, fig.height=4}
 ggplot() +
+  geom_spatraster_rgb(data = basemap) +
   geom_event_path(
     data = shags_females,
     aes(color = bird_id) # can't use trip_id here because not trip splitted data
@@ -531,6 +539,7 @@ We can plot the home ranges:
 
 ```{r plot_kde, fig.width=6, fig.height=4}
 ggplot(shags_females_kde) +
+  geom_spatraster_rgb(data = basemap) +
   geom_sf(aes(fill = bird_id), alpha = 0.7) +
   theme(
     aspect.ratio = 1,
@@ -541,6 +550,7 @@ ggplot(shags_females_kde) +
 We can add actual events with:
 ```{r plot_kde_points, fig.width=6, fig.height=4}
 ggplot() +
+  geom_spatraster_rgb(data = basemap) +
   geom_sf(
     data = shags_females_kde,
     aes(fill = bird_id), alpha = 0.7
@@ -566,13 +576,15 @@ shags_females_mcp <- shags_females_proj %>%
 We can plot the MCPs with:
 ```{r plot_mcp, fig.width=6, fig.height=4}
 ggplot() +
+  geom_spatraster_rgb(data = basemap) +
   geom_sf(
     data = shags_females_mcp,
-    aes(fill = bird_id), alpha = 0.7
+    aes(fill = bird_id), alpha = 0.9
   ) +
   geom_event_point(
     data = shags_females_proj,
-    size = 0.1
+    size = 0.1,
+    col = "white"
   ) +
   facet_wrap(~bird_id) +
   theme(
