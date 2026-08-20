@@ -156,7 +156,13 @@ locations as points, we will use `geom_event_path()` to plot the
 paths between them:
 
 ```{r shags_plot_paths, fig.width=6, fig.height=4}
+basemap <- readRDS(
+  system.file("extdata", "basemap_shags.rds", package = "tidytracks"))
+
 ggplot() +
+  # add in basemap
+  ggplot() +
+  
   geom_event_path(data = shags_tt, aes(color = bird_id)) +
   facet_wrap(~bird_id) +
   coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
