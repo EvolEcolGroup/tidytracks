@@ -52,8 +52,9 @@ hr_ud_sum.list <- function(x) {
 # Note that we have a generic method for a tibble as the hr_ud_tbl class is lost
 # on group_map operations
 hr_ud_sum.tbl_df <- function(x) {
-  # check that this is a hr_ud_tbl
   stopifnot_hr_ud_table(x)
+  # Work with a plain list locally while preserving a loaded object's packing.
+  x <- unwrap_ud_column(x)
   
   # create a new tibble with the summed UD
   sum_tbl <- x %>% 
@@ -75,8 +76,9 @@ hr_ud_sum.tbl_df <- function(x) {
 # Note that we have a generic method for a tibble as the hr_ud_tbl class is lost
 # on group_map operations
 hr_ud_sum.grouped_df <- function(x) {
-  # check that this is a hr_ud_tbl
   stopifnot_hr_ud_table(x)
+  # Work with a plain list locally while preserving a loaded object's packing.
+  x <- unwrap_ud_column(x)
 
   # now we need to group_modify the tibble to sum the UDs for each group
   hr_grouped_sum <- dplyr::group_modify(
@@ -94,7 +96,7 @@ stopifnot_hr_ud_table <- function(x) {
     stop("x must have a column named 'ud'")
   }
   if (inherits(x$ud, "PackedSpatRaster_list")) {
-    stop("x$ud is wrapped; use hr_ud_unwrap() before using this table")
+    return(invisible(NULL))
   }
   # check that the ud column is a plain list of SpatRasters
   if (!is.list(x$ud) ||

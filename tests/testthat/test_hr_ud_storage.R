@@ -29,19 +29,45 @@ test_that("UD storage helpers validate table and raster columns", {
 })
 
 test_that(
-  "hr_ud_save writes a wrapped copy that can be unwrapped after loading",
+  "hr_ud_saveRDS writes a wrapped copy that can be used after loading",
   {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   boar_kde <- hr_kde(boar_tt, res = 50)
   output_file <- tempfile(fileext = ".rds")
   on.exit(unlink(output_file), add = TRUE)
 
-  expect_silent(hr_ud_save(boar_kde, output_file))
+  expect_silent(hr_ud_saveRDS(boar_kde, output_file))
   saved_kde <- readRDS(output_file)
 
   expect_s3_class(saved_kde, "hr_ud_tbl")
   expect_true(inherits(saved_kde$ud, "PackedSpatRaster_list"))
   expect_false(inherits(boar_kde$ud, "PackedSpatRaster_list"))
+
+  expect_equal(
+    as.matrix(hr_ud_sum(saved_kde)$ud[[1]]),
+    as.matrix(hr_ud_sum(boar_kde)$ud[[1]])
+  )
+  expect_equal(
+    hr_ud_overlap(saved_kde),
+    hr_ud_overlap(boar_kde)
+  )
+  expect_equal(
+    hr_ud_iso(saved_kde, levels = 0.5),
+    hr_ud_iso(boar_kde, levels = 0.5)
+  )
+  expect_equal(length(autoplot(saved_kde)), length(autoplot(boar_kde)))
+
+  saved_grouped <- saved_kde %>%
+    dplyr::mutate(sex = c("male", "female", "female", "male")) %>%
+    dplyr::group_by(sex)
+  plain_grouped <- boar_kde %>%
+    dplyr::mutate(sex = c("male", "female", "female", "male")) %>%
+    dplyr::group_by(sex)
+  expect_equal(
+    lapply(hr_ud_sum(saved_grouped)$ud, terra::values),
+    lapply(hr_ud_sum(plain_grouped)$ud, terra::values)
+  )
+  expect_true(inherits(saved_kde$ud, "PackedSpatRaster_list"))
 
   loaded_kde <- hr_ud_unwrap(saved_kde)
   expect_true(all(vapply(loaded_kde$ud, inherits, logical(1), "SpatRaster")))

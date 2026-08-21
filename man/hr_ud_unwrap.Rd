@@ -16,7 +16,10 @@ A copy of \code{x} with an unwrapped \code{ud} column.
 Converts the \code{ud} column of an \code{hr_ud_tbl} from a
 wrapped \code{PackedSpatRaster_list} to the standard plain list of
 \code{terra::SpatRaster} objects. This is needed after loading a file created
-with \code{\link[=hr_ud_save]{hr_ud_save()}}.
+with \code{\link[=hr_ud_saveRDS]{hr_ud_saveRDS()}}.
+Functions that operate on \code{hr_ud_tbl} objects unwrap their input
+automatically, but explicitly unwrapping avoids repeating that work across
+multiple operations.
 }
 \examples{
 example_kde <- hr_kde(example_tt)

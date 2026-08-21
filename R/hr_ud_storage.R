@@ -31,7 +31,10 @@ hr_ud_wrap <- function(x) {
 #' Converts the `ud` column of an `hr_ud_tbl` from a
 #' wrapped `PackedSpatRaster_list` to the standard plain list of
 #' `terra::SpatRaster` objects. This is needed after loading a file created
-#' with [hr_ud_save()].
+#' with [hr_ud_saveRDS()].
+#' Functions that operate on `hr_ud_tbl` objects unwrap their input
+#' automatically, but explicitly unwrapping avoids repeating that work across
+#' multiple operations.
 #'
 #' @param x An `hr_ud_tbl` with a `ud` list-column.
 #' @returns A copy of `x` with an unwrapped `ud` column.
@@ -55,7 +58,23 @@ hr_ud_unwrap <- function(x) {
     return(x)
   }
 
-  x$ud <- as.list(x$ud)
+  unwrap_ud_column(x)
+}
+
+#' Unwrap a UD column without class validation
+#'
+#' Converts a wrapped `ud` list-column to a plain list of
+#' `terra::SpatRaster` objects. This internal helper supports tibble methods
+#' whose `hr_ud_tbl` class was removed by dplyr grouping operations.
+#'
+#' @param x A tibble with a `ud` column.
+#' @returns A copy of `x` with an unwrapped `ud` column when necessary.
+#' @keywords internal
+#' @noRd
+unwrap_ud_column <- function(x) {
+  if (inherits(x$ud, "PackedSpatRaster_list")) {
+    x$ud <- as.list(x$ud)
+  }
   x
 }
 
@@ -63,8 +82,9 @@ hr_ud_unwrap <- function(x) {
 #'
 #' Wraps an `hr_ud_tbl` before saving it with [base::saveRDS()]. This avoids
 #' writing live `terra::SpatRaster` objects to disk. The object returned by
-#' [base::readRDS()] has a wrapped `ud` column; use [hr_ud_unwrap()] before
-#' further analysis.
+#' [base::readRDS()] has a wrapped `ud` column. Functions that operate on an
+#' `hr_ud_tbl` unwrap this column automatically; use [hr_ud_unwrap()] to
+#' restore it explicitly for repeated analyses.
 #'
 #' @param x An `hr_ud_tbl` with a `ud` list-column.
 #' @param file A connection or character string naming the RDS file.
@@ -77,10 +97,10 @@ hr_ud_unwrap <- function(x) {
 #' @examples
 #' \dontrun{
 #' example_kde <- hr_kde(example_tt)
-#' hr_ud_save(example_kde, "example-kde.rds")
-#' loaded_kde <- hr_ud_unwrap(readRDS("example-kde.rds"))
+#' hr_ud_saveRDS(example_kde, "example-kde.rds")
+#' loaded_kde <- readRDS("example-kde.rds")
 #' }
-hr_ud_save <- function(x, file, compress = TRUE, version = NULL, ...) {
+hr_ud_saveRDS <- function(x, file, compress = TRUE, version = NULL, ...) { # nolint
   base::saveRDS(
     hr_ud_wrap(x),
     file = file,

@@ -75,8 +75,9 @@ hr_ud_overlap.hr_ud_tbl <- function(
   method = c("ba", "vi", "udoi"),
   cond_level = NULL
 ) {
-  # check that this is a hr_ud_tbl
   stopifnot_hr_ud_table(x)
+  # Work with a plain list locally while preserving a loaded object's packing.
+  x <- unwrap_ud_column(x)
 
   # check that ... are empty
   if (length(list(...)) > 0) {

@@ -5,13 +5,10 @@ EPSG
 Leucocarbo
 MCP
 MCPs
-POSIXct
 PackedSpatRaster
-PackedSpatRasters
 RMS
 Reprojection
 SpatRaster
-SpatRasters
 UD
 UDs
 Wanless
@@ -20,7 +17,6 @@ autoplot
 basemap
 bransfieldensis
 codecov
-crs
 csv
 dist
 etc
@@ -33,9 +29,7 @@ lat
 linestring
 linewidth
 lon
-lonlat
 magrittr
-mcp
 multilines
 multipolygons
 nd
@@ -48,6 +42,7 @@ tibble
 tidyselect
 tidyverse
 tt
+ud
 unprojected
 xmax
 xmin
