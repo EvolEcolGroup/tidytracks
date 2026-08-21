@@ -72,12 +72,9 @@ hr_ud_overlap.SpatRaster <- function(
       stop("cond_level must be a single numeric value between 0 and 1")
     }
 
-    # compute the cumulative UD for x and y
-    x_cud <- hr_cud(x)
-    y_cud <- hr_cud(y)
-    # get the values of the cumulative UD as a matrix
-    x_cud_vals <- as.matrix(x_cud$cud)
-    y_cud_vals <- as.matrix(y_cud$cud)
+    # compute the cumulative UD for x and y directly from the matrix values
+    x_cud_vals <- hr_cud(x_vals, return_matrix = TRUE)
+    y_cud_vals <- hr_cud(y_vals, return_matrix = TRUE)
     # set values to NA where the cumulative UD is greater than the specified
     # level
     x_vals[x_cud_vals > cond_level] <- NA
