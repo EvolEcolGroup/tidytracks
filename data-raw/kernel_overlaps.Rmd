@@ -30,9 +30,9 @@ kus <- kernelUD(puechabonsp$relocs[,1], same4all=TRUE)
 image(kus)
 
 # repeat to make the dataset bigger
-idx <- rep(seq_along(kus), length.out = 100)
+idx <- rep(seq_along(kus), length.out = 20)
 kus_100 <- kus[idx]
-names(kus_100) <- paste0("animal_", 1:100)
+names(kus_100) <- paste0("animal_", 1:20)
 # restore estUDm class
 if (!inherits(kus_100, "estUDm")) class(kus_100) <- "estUDm"
 kus_100
@@ -73,8 +73,8 @@ plot(as.list(wildboars_kde$ud)[[c(1)]])
 # copy out to N individuals
 library(dplyr)
 wildboars_kde_100 <- wildboars_kde |>
-  slice(rep(seq_len(nrow(wildboars_kde)), length.out = 100)) |>
-  mutate(name = paste0("animal_", 1:100))
+  slice(rep(seq_len(nrow(wildboars_kde)), length.out = 20)) |>
+  mutate(name = paste0("animal_", 1:20))
 
 ```
 

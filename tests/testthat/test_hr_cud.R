@@ -21,7 +21,7 @@ test_that("hr_cud works with a SpatRaster input", {
   expect_equal(dim(cud_mat), c(terra::nrow(ud_raster), terra::ncol(ud_raster)))
 
   # SpatRaster and matrix results are numerically identical
-  expect_equal(as.numeric(cud_mat), as.numeric(terra::values(cud)))
+  expect_equal(as.vector(t(cud_mat)), as.numeric(terra::values(cud)))
 })
 
 test_that("hr_cud works with a matrix input", {
@@ -75,7 +75,7 @@ test_that("hr_cud SpatRaster and matrix paths are numerically equivalent", {
   ud_raster <- boar_kde$ud[[1]]
 
   # extract the UD values as a matrix and compute CUD both ways
-  ud_mat <- as.matrix(ud_raster[["ud"]])
+  ud_mat <- as.matrix(ud_raster[["ud"]], wide = TRUE)
   cud_from_raster <- hr_cud(ud_raster, return_matrix = TRUE)
   cud_from_matrix <- hr_cud(ud_mat)
 

@@ -30,9 +30,8 @@ hr_ud_sum <- function(x) {
 #' @export
 #' @rdname hr_ud_sum
 hr_ud_sum.list <- function(x) {
-  # if this is a list of packedSpatRasters, unpack it
   if (inherits(x, "PackedSpatRaster_list")) {
-    x <- as.list(x)
+    stop("x is wrapped; use hr_ud_unwrap() before calculating the sum")
   }
   # check that all elements of the list are SpatRaster objects
   if (!all(vapply(x, inherits, logical(1), "SpatRaster"))) {
@@ -66,7 +65,7 @@ hr_ud_sum.tbl_df <- function(x) {
     stop("all UDs should have the same extent and resolution")
   }
   # we can use the hr_ud_sum.list method to sum the UDs
-  sum_tbl$ud <- PackedSpatRaster_list(hr_ud_sum(x$ud))
+  sum_tbl$ud <- list(hr_ud_sum(x$ud))
   
   return(sum_tbl)
 }
@@ -94,8 +93,12 @@ stopifnot_hr_ud_table <- function(x) {
   if (!"ud" %in% colnames(x)) {
     stop("x must have a column named 'ud'")
   }
-  # check that the ud column is a PackedSpatRaster_list
-  if (!inherits(x$ud, "PackedSpatRaster_list")) {
-    stop("x$ud must be a PackedSpatRaster_list")
+  if (inherits(x$ud, "PackedSpatRaster_list")) {
+    stop("x$ud is wrapped; use hr_ud_unwrap() before using this table")
+  }
+  # check that the ud column is a plain list of SpatRasters
+  if (!is.list(x$ud) ||
+        !all(vapply(x$ud, inherits, logical(1), "SpatRaster"))) {
+    stop("x$ud must be a list of SpatRaster objects")
   }
 }

@@ -515,6 +515,30 @@ shags_females_kde %>%
   select(bird_id, level, area)
 ```
 
+To retain the full utilisation distributions instead, omit `levels`. The
+result contains live `SpatRaster` objects, so use `hr_ud_save()` rather than
+`saveRDS()` to save it. `hr_ud_save()` wraps the rasters before writing the
+RDS file:
+
+```{r save_full_ud}
+shags_females_ud <- shags_females_proj %>%
+  group_by(bird_id) %>%
+  hr_kde()
+
+ud_file <- file.path(tempdir(), "shags_females_ud.rds")
+hr_ud_save(shags_females_ud, ud_file)
+```
+
+When the object is loaded again, its `ud` column is wrapped. Unwrap it before
+using it in further analyses:
+
+```{r load_full_ud}
+shags_females_ud <- readRDS(ud_file)
+inherits(shags_females_ud$ud, "PackedSpatRaster_list")
+
+shags_females_ud <- hr_ud_unwrap(shags_females_ud)
+```
+
 If you want to NOT do KDE per trip, you need to change the track_id field of your 
 tidytracks object. For example if you already trip splitted, the unit of tt object 
 is now trip, and kernels will always be created per trip and aggregated to your 
@@ -589,7 +613,6 @@ tt_write_data(
   combined = TRUE
 )
 ```
-
 
 
 

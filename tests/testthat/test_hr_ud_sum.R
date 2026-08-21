@@ -2,6 +2,7 @@ test_that("hr_ud_sum works", {
 # load a simple dataset originally from adehabitat
 boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
 boar_kde <- hr_kde(boar_tt, res = 50)
+expect_false(inherits(boar_kde$ud, "PackedSpatRaster_list"))
 rast_sum <- hr_ud_sum(boar_kde$ud)
 # check that this is a raster
 expect_s4_class(rast_sum, "SpatRaster")

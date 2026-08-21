@@ -16,8 +16,9 @@
 #'   matrix and `FALSE` when `x` is a `SpatRaster` (i.e. returns the same type
 #'   as the input by default).
 #' @return A `terra::SpatRaster` representing the cumulative utilisation
-#'   distribution (UD) when `return_matrix = FALSE`, or a numeric matrix of
-#'   the same dimensions when `return_matrix = TRUE`.
+#'   distribution (UD) when `return_matrix = FALSE`, or a numeric matrix when
+#'   `return_matrix = TRUE`. Matrices returned from a `SpatRaster` have the
+#'   same number of rows and columns as the raster.
 #' @keywords internal
 #' @noRd
 
@@ -26,12 +27,12 @@ hr_cud <- function(x, return_matrix = !inherits(x, "SpatRaster")) {
     stop("cannot return a SpatRaster when x is a matrix; use return_matrix = TRUE")
   }
   if (inherits(x, "SpatRaster")) {
-    # extract the UD values as a matrix from the raster
+    # Extract the UD values as a matrix with the raster's row and column layout.
     if (!"ud" %in% names(x)) {
       stop("x must have a layer named 'ud'")
     }
     ud <- x[["ud"]]
-    vals <- as.matrix(ud)
+    vals <- as.matrix(ud, wide = TRUE)
   } else {
     # x is already a numeric matrix or vector
     ud <- NULL
@@ -51,6 +52,6 @@ hr_cud <- function(x, return_matrix = !inherits(x, "SpatRaster")) {
   # store the cumulative UD values back into a SpatRaster
   cud <- ud
   names(cud) <- "cud"
-  terra::values(cud) <- cud_flat
+  terra::values(cud) <- as.vector(t(cud_mat))
   return(cud)
 }
