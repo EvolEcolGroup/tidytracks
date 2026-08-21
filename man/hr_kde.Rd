@@ -42,7 +42,8 @@ grouping of \code{x}
 \item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}: the bounding box used for the KDE
 \item \code{res}: the resolution used for the KDE
 If \code{levels} is NULL:
-\item \code{kde}: the full KDE object is returned in a list column
+\item \code{ud}: the full utilisation distribution is returned as a list-column of
+\code{terra::SpatRaster} objects
 Else, if \code{levels} is not NULL, the following columns are added:
 \item \code{area}: the area of the home range at this level (in the units
 of the projection of \code{x}, e.g. m^2 for a UTM projection)

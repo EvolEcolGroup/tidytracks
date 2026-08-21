@@ -11,6 +11,32 @@ test_that("hr_ud_overlap works", {
   boar_overlap_2 <- hr_ud_overlap(boar_kde$ud[[1]], boar_kde$ud[[2]])
   expect_equal(boar_overlap_2, boar_overlap[1, 2])
 
+  pairwise_overlap <- function(method, cond_level = NULL) {
+    n <- nrow(boar_kde)
+    result <- diag(1, n)
+    for (i in seq_len(n - 1L)) {
+      for (j in seq.int(i + 1L, n)) {
+        result[i, j] <- result[j, i] <- hr_ud_overlap(
+          boar_kde$ud[[i]],
+          boar_kde$ud[[j]],
+          method = method,
+          cond_level = cond_level
+        )
+      }
+    }
+    rownames(result) <- colnames(result) <- boar_kde$name
+    result
+  }
+
+  for (method in c("ba", "vi", "udoi")) {
+    for (cond_level in list(NULL, 0.5)) {
+      expect_equal(
+        hr_ud_overlap(boar_kde, method = method, cond_level = cond_level),
+        pairwise_overlap(method, cond_level)
+      )
+    }
+  }
+
   # create a new SpatRaster with different resolution and test that it throws an
   # error
   boar_kde_diff_res <- hr_kde(boar_tt, res = 100)
@@ -28,6 +54,12 @@ test_that("hr_ud_overlap works", {
     boar_kde$ud[[2]]
   )
   expect_equal(boar_overlap_extra_layer, boar_overlap[1, 2])
+  boar_kde_extra_layer <- boar_kde
+  boar_kde_extra_layer$ud[[1]] <- boar_kde_1_extra_layer
+  expect_equal(
+    hr_ud_overlap(boar_kde_extra_layer),
+    pairwise_overlap("ba")
+  )
   # now rename the ud layer to something else and check that it throws an error
   names(boar_kde_1_extra_layer) <- c("extra_layer", "not_ud")
   expect_error(
@@ -42,10 +74,24 @@ test_that("hr_ud_overlap works", {
   # the overlap should still be a number between 0 and 1
   expect_false(is.na(boar_overlap_na))
   expect_true(boar_overlap_na >= 0 && boar_overlap_na <= 1)
+  boar_kde_na_tbl <- boar_kde
+  boar_kde_na_tbl$ud[[1]] <- boar_kde_na
+  expect_false(is.na(hr_ud_overlap(boar_kde_na_tbl)[1, 2]))
+
+  boar_kde_bad_geom <- boar_kde
+  boar_kde_bad_geom$ud[[2]] <- boar_kde_diff_res$ud[[2]]
+  expect_error(
+    hr_ud_overlap(boar_kde_bad_geom),
+    "all UDs must have the same geometry"
+  )
 
   # get error if we set cond_level to a value outside of 0 and 1
   expect_error(
     hr_ud_overlap(boar_kde$ud[[1]], boar_kde$ud[[2]], cond_level = 1.5),
+    "cond_level must be a single numeric value between 0 and 1"
+  )
+  expect_error(
+    hr_ud_overlap(boar_kde, cond_level = 1.5),
     "cond_level must be a single numeric value between 0 and 1"
   )
   # error if we have more than one value for cond_level

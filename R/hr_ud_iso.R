@@ -33,8 +33,9 @@ hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
 # Note that we have a generic method for a tibble as the hr_ud_tbl class is lost
 # on group_map operations
 hr_ud_iso.tbl_df <- function(x, levels = c(0.50, 0.95)) {
-  # check that this is a hr_ud_tbl
   stopifnot_hr_ud_table(x)
+  # Work with a plain list locally while preserving a loaded object's packing.
+  x <- unwrap_ud_column(x)
   
   levels <- sort(levels)
 

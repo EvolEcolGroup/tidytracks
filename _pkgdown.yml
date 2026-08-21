@@ -48,7 +48,7 @@ reference:
     desc: "Process lists of rasters (used to represent UDs for home ranges)."
     contents:
         - matches("PackedSpatRaster")
-    title: "Helper functions"
+  - title: "Helper functions"
     desc: "Helper functions to manipulate and convert data."
     contents:
         - dist_category

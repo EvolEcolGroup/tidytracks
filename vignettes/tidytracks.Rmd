@@ -515,13 +515,6 @@ shags_females_kde %>%
   select(bird_id, level, area)
 ```
 
-If you want to NOT do KDE per trip, you need to change the track_id field of your 
-tidytracks object. For example if you already trip splitted, the unit of tt object 
-is now trip, and kernels will always be created per trip and aggregated to your 
-grouping. If you're then doing something else like analysis of the whole incubation 
-period and you want to compare the kernels at the whole-bird level, you need to 
-change your inherent tt object track_id to the bird_id instead.
-
 We can plot the home ranges:
 
 ```{r plot_kde, fig.width=6, fig.height=4}
@@ -550,6 +543,54 @@ ggplot() +
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
 ```
+
+To retain the full utilisation distributions instead, omit `levels`:
+```{r full_ud}
+shags_females_ud <- shags_females_proj %>%
+  group_by(bird_id) %>%
+  hr_kde()
+```
+
+We can visualise the UD with a simple `autoplot`:
+```{r}
+autoplot(shags_females_ud)
+```
+
+Note that the UD tibble contains live `SpatRaster` objects. These can not be
+saved directly, so need to use `hr_ud_saveRDS()` rather than
+`saveRDS()` to save it. `hr_ud_saveRDS()` wraps the rasters before writing the
+RDS file (see the help page for the `wrap()` function in `terra` for details):
+
+```{r save_full_ud}
+ud_file <- file.path(tempdir(), "shags_females_ud.rds")
+hr_ud_saveRDS(shags_females_ud, ud_file)
+```
+
+When the object is loaded again, its `ud` column is wrapped (we can see that
+it says `<PckSpR>`, indicating that it is a list of Packed Rasters (i.e. wrapped).
+
+```{r load_full_ud}
+shags_females_ud <- readRDS(ud_file)
+shags_females_ud
+```
+
+Functions in `tidytracks` are able to automatically unwrap the column on the
+fly, but if you plan extensive analysis, it will be faster if you unwrap it
+explicitly before running further analyses:
+
+```{r}
+shags_females_ud <- hr_ud_unwrap(shags_females_ud)
+shags_females_ud
+```
+
+TODO: this needs a better explanation!
+
+If you want to NOT do KDE per trip, you need to change the track_id field of your 
+`tidytracks` object. For example if you already trip splitted, the unit of tt object 
+is now trip, and kernels will always be created per trip and aggregated to your 
+grouping. If you're then doing something else like analysis of the whole incubation 
+period and you want to compare the kernels at the whole-bird level, you need to 
+change your inherent tt object track_id to the bird_id instead.
 
 To get a minimum convex polygon covering 95% of the data, we can use:
 ```{r compute_mcp}
@@ -589,8 +630,6 @@ tt_write_data(
   combined = TRUE
 )
 ```
-
-
 
 
 
