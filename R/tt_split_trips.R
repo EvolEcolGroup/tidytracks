@@ -5,10 +5,8 @@
 #'
 #' @param x A move2 object
 #' @param centre_col the column name for the centre of the colony/nest of each
-#'   track as found in the metadata table. Alternatively, an `sf` object of
-#'   either length 1 or the same length as the number of tracks in the move2
-#'   object. If a single geometry object is provided, it will be used as the
-#'   centre for all tracks.
+#'   track as found in an `sf` column the metadata table. The function
+#'   `sf_point_col()` can be used to create it.
 #' @param buffer_outbound the distance from the centre to define outbound trips,
 #'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
 #'   "km")`.
@@ -81,10 +79,6 @@ tt_split_trips <- function(
   buffer_in_uless <- units::drop_units(
     units::set_units(buffer_inbound, dist_units, mode = "standard")
   )
-
-  # TODO in the code above, if given an sf object with multiple rows, we should
-  # demand that there is a column with the same name as the track id column in
-  # the move2 object and make sure that we match up to avoid confusion
 
   # Get coordinates and metadata
   coords <- sf::st_coordinates(x)

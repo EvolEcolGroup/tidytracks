@@ -65,13 +65,17 @@ export(tt_split_trips)
 export(tt_write_data)
 importFrom(dplyr,"%>%")
 importFrom(foreach,"%do%")
-importFrom(ggplot2,autoplot)
-importFrom(ggplot2,ggproto)
+importFrom(ggplot2,
+  autoplot,
+  ggproto
+)
 importFrom(move2,mt_as_move2)
-importFrom(rlang,"!!!")
-importFrom(rlang,"!!")
-importFrom(rlang,":=")
-importFrom(rlang,.data)
+importFrom(rlang,
+  "!!!",
+  "!!",
+  ":=",
+  .data
+)
 importFrom(scales,alpha)
 importFrom(tweenr,tween_at)
 importFrom(units,as_units)
