@@ -34,7 +34,7 @@ away from the central place. In this case, the unit of tracking (i.e. the new
 The **metadata** that describes each of these tracks is stored in a separate
 table, which is linked to the event table by a `track_id_column`. This means we
 do not have to repeat information (such as the **ring_number** or **sex** of the
-animal, or the tracking deployment information) for each **event**. I nstead, we
+animal, or the tracking deployment information) for each **event**. Instead, we
 store this track-level information in the **metadata** of the **track**.
 
 # Reading data into a tibble of tracks

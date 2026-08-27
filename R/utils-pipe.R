@@ -4,6 +4,8 @@
 #'
 #' @name %>%
 #' @rdname pipe
+#' @aliases pipe
+#' @export
 #' @keywords internal
 #' @importFrom dplyr %>%
 #' @usage lhs \%>\% rhs

@@ -57,3 +57,8 @@ reference:
     desc: "Example datasets for testing and demonstration."
     contents:
         - example_tt
+  - title: internal
+    desc: Exported but hidden from the index
+    contents:
+      - reexports
+      - pipe

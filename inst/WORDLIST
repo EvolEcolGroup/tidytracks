@@ -22,7 +22,6 @@ dist
 etc
 framerate
 gganimate
-ggplot
 indiv
 kde
 lat
@@ -37,11 +36,10 @@ polyline
 proj
 res
 spatiotemporal
-splitted
 tibble
+tibbles
 tidyselect
 tidyverse
-tt
 ud
 unprojected
 xmax

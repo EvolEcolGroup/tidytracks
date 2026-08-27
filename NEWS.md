@@ -3,9 +3,6 @@
 * Optimisation for `hr_` functions and UD raster storage in tibbles to improve 
 speed of `hr_ud_overlap()` 
 * Minor bug fixes and documentation updates.
-
-# tidytracks dev
-
 * Implement `hr_ud_sum()` to sum multiple UDs.
 
 # tidytracks 0.0.1
