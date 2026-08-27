@@ -21,3 +21,4 @@ See `magrittr::pipe \\%>\\% for details.
 example_tt \%>\% event_time() \%>\% head()
 
 }
+\keyword{internal}
