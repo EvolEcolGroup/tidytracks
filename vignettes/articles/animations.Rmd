@@ -1,9 +1,9 @@
 ---
-title: "Animating your maps"
+title: "Animations and maps"
 output: 
   rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Animating your maps}
+  %\VignetteIndexEntry{Animations and maps}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
