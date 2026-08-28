@@ -74,9 +74,9 @@ hr_ud_overlap.hr_ud_tbl <- function(
   method = c("ba", "vi", "udoi"),
   cond_level = NULL
 ) {
-  stopifnot_hr_ud_table(x)
+  stopifnot_hr_ud_table(x) # nolint: object_usage_linter.
   # Work with a plain list locally while preserving a loaded object's packing.
-  x <- unwrap_ud_column(x)
+  x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
   # check that ... are empty
   if (length(list(...)) > 0) {
@@ -170,9 +170,9 @@ check_cond_level <- function(cond_level) {
   if (
     !is.null(cond_level) &&
       (length(cond_level) != 1 ||
-        !is.numeric(cond_level) ||
-        cond_level <= 0 ||
-        cond_level >= 1)
+         !is.numeric(cond_level) ||
+         cond_level <= 0 ||
+         cond_level >= 1)
   ) {
     stop("cond_level must be a single numeric value between 0 and 1")
   }

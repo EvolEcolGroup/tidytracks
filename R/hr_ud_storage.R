@@ -104,8 +104,13 @@ unwrap_ud_column <- function(x) {
 #' hr_ud_saveRDS(example_kde, "example-kde.rds")
 #' loaded_kde <- readRDS("example-kde.rds")
 #' }
-hr_ud_saveRDS <- function(x, file, compress = TRUE, version = NULL, ...) {
-  # nolint
+hr_ud_saveRDS <- function( # nolint: object_name_linter.
+  x,
+  file,
+  compress = TRUE,
+  version = NULL,
+  ...
+) {
   base::saveRDS(
     hr_ud_wrap(x),
     file = file,

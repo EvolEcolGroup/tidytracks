@@ -39,9 +39,6 @@ test_that("hr_kde works with multiple tracks", {
     terra::values(boar_kde2$ud[[1]])
   )
 
-  # simple plotting example to check the geometry
-  #  ggplot(boar_kde) +
-  #    geom_sf(aes(fill=group_id), alpha = 0.7)
 })
 
 test_that("hr_kde bbox columns are always numeric (not list-cols)", {

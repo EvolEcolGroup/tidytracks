@@ -81,7 +81,7 @@ shadow_wake_build <- function(
 }
 
 # modified ggproto to go with the new shadow wake
-ShadowWakeBuild <- ggplot2::ggproto(
+ShadowWakeBuild <- ggplot2::ggproto( # nolint: object_name_linter.
   "ShadowWakeBuild",
   gganimate::Shadow,
   setup_params = function(self, data, params) {

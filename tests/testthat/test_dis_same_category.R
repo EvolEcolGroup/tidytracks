@@ -1,4 +1,4 @@
-test_that("dist_category returns 0 for same category and 1 for different categories", {
+test_that("dist_category distinguishes categories", {
   x <- factor(c("A", "A", "B", "C"))
 
   expected <- matrix(
@@ -28,7 +28,7 @@ test_that("dist_category returns 0 for same category and 1 for different categor
 })
 
 
-test_that("same_category returns 1 for same category and 0 for different categories", {
+test_that("same_category identifies matching categories", {
   x <- factor(c("A", "A", "B", "C"))
 
   expected <- matrix(

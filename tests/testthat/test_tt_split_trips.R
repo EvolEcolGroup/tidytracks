@@ -1,4 +1,4 @@
-test_that("tt_split_trips works with centre_col as an sf object of same length as number of tracks", {
+test_that("tt_split_trips accepts one centre per track", {
   # create the toy dataframe of longitude, latitude, date_time, bird_id
   coords_df <- create_toy_df()
 
@@ -9,12 +9,6 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
     col_coords = c("longitude", "latitude"),
     col_date_time = "date_time"
   )
-  # quick plot to check it
-  # ggplot2::ggplot(test_mt) +
-  #   # ggplot2::geom_sf(ggplot2::aes(color = date_time)) +
-  #   ggplot2::geom_sf(ggplot2::aes(color = bird_id)) +
-  #   ggplot2::geom_sf(data = move2::mt_track_lines(test_mt))
-
   show_meta(test_mt)$centre_sf <- sf_point_col(
     x = c(0, 0),
     y = c(0, 0),
@@ -101,7 +95,7 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
   # the last trip of id_1 is incomplete
   expect_true(
     (show_meta(test_mt_split) %>%
-      dplyr::filter(trip_id == "id_1_trip_3"))$trip_type ==
+       dplyr::filter(trip_id == "id_1_trip_3"))$trip_type ==
       "incomplete"
   )
 
@@ -140,7 +134,7 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
   # the last trip of id_1 is incomplete
   expect_true(
     (show_meta(test_mt_split3) %>%
-      dplyr::filter(trip_id == "id_1_trip_3"))$trip_type ==
+       dplyr::filter(trip_id == "id_1_trip_3"))$trip_type ==
       "complete"
   )
 
@@ -179,7 +173,7 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
     "centre_col must be a `sfc_POINT` column in the metadata table"
   )
 
-  # remove the crs from the center_sf column and check that we get the correct error
+  # Remove the CRS from center_sf and check that the expected error is raised.
   show_meta(test_mt)$centre_sf <- sf_point_col(x = c(0, 0), y = c(0, 0))
   expect_error(
     tt_split_trips(
@@ -193,7 +187,7 @@ test_that("tt_split_trips works with centre_col as an sf object of same length a
   )
 })
 
-test_that("tt_split_trips marks first trip as incomplete when data starts outside colony", {
+test_that("tt_split_trips marks trips starting outside incomplete", {
   # Create a track that starts far from the colony (outside the buffer) and
   # returns to the colony at the end. Without checking the start, this trip
   # would be falsely classified as "complete".

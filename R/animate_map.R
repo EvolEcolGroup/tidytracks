@@ -203,7 +203,11 @@ tt_detect_layer_type <- function(p, layer_name = NULL) {
     time_col <- attr(data, "tidytracks_time_col")
 
     # Map the raw tag string to the canonical type label used downstream.
-    type <- base::switch(tag, event_path = "path", event_point = "point", NULL)
+    type <- base::switch(tag,
+      event_path = "path",
+      event_point = "point",
+      NULL
+    )
     if (is.null(type)) {
       next
     }

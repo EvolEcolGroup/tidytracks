@@ -108,9 +108,12 @@ track_summary_stats <- function(
   # 2 - total distance travelled
   # TODO write a cum_distance function that works on coords
   tot_distance_df <- x %>%
-    dplyr::mutate(distance = move2::mt_distance(x)) %>% # add distance to next point (end-of-track is NA)
-    sf::st_drop_geometry() %>% # otherwise we end up with a geometry field in the output
-    dplyr::group_by(.data[[.group_var]]) %>% # group by the track id field (whatever it's called)
+    dplyr::mutate(distance = move2::mt_distance(x)) %>%
+    # Add distance to the next point (end-of-track is NA).
+    sf::st_drop_geometry() %>%
+    # Drop geometry to avoid retaining a geometry field in the output.
+    dplyr::group_by(.data[[.group_var]]) %>%
+    # Group by the track ID field, whatever its name.
     dplyr::summarise(tot_distance = sum(.data[["distance"]], na.rm = TRUE)) %>%
     # instead of extracting just tot_distance, extract as df including track_id
     dplyr::select(
@@ -152,8 +155,7 @@ track_summary_stats <- function(
     foreach::foreach(
       i_foreach = seq_len(nrow(show_meta(x))),
       .combine = rbind
-    ) %do%
-    {
+    ) %do% {
       # get the track id
       track_id <- show_meta(x)[[move2::mt_track_id_column(x)]][i_foreach]
       # get the events for this track

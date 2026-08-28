@@ -1,6 +1,7 @@
 #' Create a `PackedSpatRaster_list`
 #'
-#' Accepts `SpatRaster` objects (packed automatically) or already-packed objects.
+#' Accepts `SpatRaster` objects (packed automatically) or already-packed
+#' objects.
 #' A lightweight S3 class wrapping a named or unnamed list of `PackedSpatRaster`
 # objects.  Elements are stored wrapped and unpacked on the fly when accessed
 # via [[ or $.
@@ -245,7 +246,8 @@ as.list.PackedSpatRaster_list <- function(x, ...) {
 #'
 #' This is a convenience function that allows users to easily convert a plain
 #' list of `SpatRasters` to a `PackedSpatRaster_list`. It will check that all
-#' elements of the list are `SpatRasters` and then wrap them as `PackedSpatRasters`
+#' elements of the list are `SpatRasters` and then wrap them as
+#' `PackedSpatRasters`
 #' before creating the `PackedSpatRaster_list`. If the input is already a
 #' `PackedSpatRaster_list`, it will simply return it unchanged.
 #' @param x A list of `SpatRasters` or a `PackedSpatRaster_list`.

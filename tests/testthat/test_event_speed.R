@@ -1,5 +1,3 @@
-# tests/testthat/test-event_speed.R
-
 test_that("event_speed matches move2::mt_speed for geographic coordinates", {
   sf::sf_use_s2(FALSE) # force the use of geodesic distances
 
@@ -28,7 +26,7 @@ test_that("event_speed matches move2::mt_speed with custom units", {
   )
 })
 
-test_that("event_speed matches move2::mt_speed for projected coordinates with custom units", {
+test_that("event_speed matches mt_speed with projected custom units", {
   x_proj <- sf::st_transform(example_tt, 3857)
 
   expect_equal(

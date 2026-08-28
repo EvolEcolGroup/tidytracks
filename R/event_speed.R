@@ -10,7 +10,7 @@
 #' Euclidean distance is used.
 #'
 #' @param x A move2 object
-#' @param units Optional, the units to use for the speed. The default is "m/min".
+#' @param units Optional units to use for speed. The default is `"m/min"`.
 #'   Other speed units supported by the `units` package can also be supplied.
 #' @returns a vector of speeds of the same length as the number of events in
 #' `x`, with the last value set to NA for each track.

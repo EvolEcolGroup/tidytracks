@@ -83,12 +83,6 @@ test_that("track_summary_stats correctly computes track summaries", {
     meta = meta_df
   )
 
-  # plot to check
-  # ggplot2::ggplot(test_tt) +
-  #   # ggplot2::geom_sf(ggplot2::aes(color = date_time)) +
-  #   ggplot2::geom_sf(ggplot2::aes(color = bird_id)) +
-  #   ggplot2::geom_sf(data = move2::mt_track_lines(test_tt))
-
   # run the trip splitting with complete = FALSE (includes incomplete trips
   # and locations at centre)
   test_tt_split <- tt_split_trips(
@@ -124,7 +118,7 @@ test_that("track_summary_stats correctly computes track summaries", {
   )
   expect_true(all(expected_cols %in% colnames(test_sums)))
 
-  # check that trip_nas have been removed, so number of trips is no longer the same
+  # Check that trip NAs were removed, so the number of trips changes.
   expect_true(nrow(test_sums) < nrow(show_meta(test_tt_split)))
 
   # if we remove trip_nas from show_meta(test_tt_split), then the trip_ids in
@@ -133,7 +127,7 @@ test_that("track_summary_stats correctly computes track summaries", {
   trip_na_ids <- trip_ids[grepl("_trip_na$", trip_ids)]
   meta_no_nas <- show_meta(test_tt_split)[
     !(show_meta(test_tt_split)[[move2::mt_track_id_column(test_tt_split)]] %in%
-      trip_na_ids),
+        trip_na_ids),
   ]
   expect_equal(
     test_sums[[move2::mt_track_id_column(test_tt_split)]],
@@ -186,7 +180,7 @@ test_that("track_summary_stats correctly computes track summaries", {
     ),
     "centre_col must be a `sfc_POINT` column in the metadata table"
   )
-  # remove the crs from the colony_sf column and check that we get the correct error
+  # Remove the CRS from colony_sf and check that the expected error is raised.
   show_meta(test_tt_split)$colony_sf <- sf_point_col(x = c(0, 0), y = c(0, 0))
   expect_error(
     track_summary_stats(
@@ -197,7 +191,7 @@ test_that("track_summary_stats correctly computes track summaries", {
     "centre_col must have a crs specified"
   )
 
-  # When centre_col is NULL, the first point of each track is used as the centre.
+  # When centre_col is NULL, each track's first point is used as its centre.
   test_no_centre <- track_summary_stats(
     x = test_tt_split,
     units_duration = units::as_units(1, "hours")

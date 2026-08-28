@@ -35,7 +35,7 @@ tt_clean_mcconnell <- function(
   flag_action <- match.arg(flag_action)
 
   # Call the event_flag_mcconnell function to get the valid points
-  valid_points <- event_flag_mcconnell(
+  valid_points <- event_flag_mcconnell( # nolint: object_usage_linter.
     x,
     max_speed = max_speed,
     check_first_last = check_first_last

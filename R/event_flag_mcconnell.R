@@ -105,8 +105,7 @@ event_flag_mcconnell <- function(
   # ---------------------------------------------------------------------------
   # Helper: speed between two points i and j
   # ---------------------------------------------------------------------------
-  # Computes speed using:
-  #   speed = distance / elapsed_time
+  # Computes speed as distance divided by elapsed time.
   #
   # Elapsed time is expressed in hours, ensuring consistency with the
   # original McConnell implementation.
@@ -151,7 +150,7 @@ event_flag_mcconnell <- function(
 
     # Initialise RMS values larger than max_speed so the loop runs at least
     # once.
-    RMS <- rep(max_speed + 1, npts)
+    rms <- rep(max_speed + 1, npts)
 
     # Offset used in the original algorithm.
     offset <- pprm - 1
@@ -178,7 +177,7 @@ event_flag_mcconnell <- function(
     }
 
     # Continue until all RMS values are below the threshold.
-    while (any(RMS > max_speed, na.rm = TRUE)) {
+    while (any(rms > max_speed, na.rm = TRUE)) {
       # Number of currently valid points.
       n <- length(which(valid_track))
 
@@ -210,16 +209,17 @@ event_flag_mcconnell <- function(
       #   ...
       #
       # These help identify isolated spikes.
+      elapsed_time2 <- (
+        unclass(track_time[valid_track][-c(1, 2)]) -
+          unclass(track_time[valid_track][-c(n - 1, n)])
+      ) / 3600
       speed2 <- dist_fast(
         x1[-((nrow(x1) - 1):nrow(x1)), 1],
         x1[-((nrow(x1) - 1):nrow(x1)), 2],
         x1[-(1:2), 1],
         x1[-(1:2), 2],
         longlat = !projected
-      ) /
-        ((unclass(track_time[valid_track][-c(1, 2)]) -
-          unclass(track_time[valid_track][-c(n - 1, n)])) /
-          3600)
+      ) / elapsed_time2
 
       # Indices corresponding to currently retained points.
       this_index <- index[valid_track]
@@ -250,16 +250,16 @@ event_flag_mcconnell <- function(
       )
 
       # Calculate RMS value for each window.
-      RMS <- c(
+      rms <- c(
         rep(0, offset),
         sqrt(rowSums(rms_rows^2) / ncol(rms_rows))
       )
 
       # Original implementation forces final position to zero.
-      RMS[length(RMS)] <- 0
+      rms[length(rms)] <- 0
 
       # Identify windows exceeding maximum speed.
-      bad <- RMS > max_speed
+      bad <- rms > max_speed
 
       # Group contiguous bad windows.
       segs <- cumsum(c(0, abs(diff(bad))))
@@ -270,7 +270,7 @@ event_flag_mcconnell <- function(
       # Within each contiguous bad region, select only the point with
       # the highest RMS value.
       rms_flag <- unlist(
-        lapply(split(RMS, segs), function(z) {
+        lapply(split(rms, segs), function(z) {
           ifelse(seq_along(z) == which.max(z), TRUE, FALSE)
         }),
         use.names = FALSE
@@ -280,7 +280,7 @@ event_flag_mcconnell <- function(
       rms_flag[!bad] <- FALSE
 
       # Mark candidate RMS values.
-      RMS[rms_flag] <- -10
+      rms[rms_flag] <- -10
 
       # Remove selected points from the valid set.
       valid_track[this_index][rms_flag > 0] <- FALSE
@@ -294,11 +294,8 @@ event_flag_mcconnell <- function(
   # ---------------------------------------------------------------------------
   # Evaluates current first and last valid points.
   #
-  # First point:
-  #   RMS(speed(1,2), speed(1,3))
-  #
-  # Last point:
-  #   RMS(speed(n-1,n), speed(n-2,n))
+  # Endpoint speeds are the root mean squares of the adjacent and skip-one
+  # segments.
   #
   # If either RMS exceeds max_speed, the endpoint is flagged.
   # ---------------------------------------------------------------------------

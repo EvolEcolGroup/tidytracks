@@ -37,7 +37,7 @@
 #'   \code{\link[base]{findInterval}}. Track-level attributes stored in
 #'   \code{\link[move2]{mt_track_data}} are preserved unchanged.
 #'
-#' @param x A `move2` object.  Timestamps (as returned by [event_time()]) must be
+#' @param x A `move2` object. Timestamps (as returned by [event_time()]) must be
 #'   [base::POSIXct].
 #' @param interval Resampling interval as a [`units::units`] object
 #'   carrying time units convertible to seconds (e.g. \code{as_units(60,
@@ -126,7 +126,10 @@ tt_regular_time <- function(
   if (!inherits(move2::mt_time(x), "POSIXct")) {
     stop(
       "`tt_regular_time` requires POSIXct timestamps. ",
-      "Convert the time column with `mt_set_time()` before calling this function.",
+      paste0(
+        "Convert the time column with `mt_set_time()` before calling ",
+        "this function."
+      ),
       call. = FALSE
     )
   }
@@ -182,8 +185,7 @@ tt_regular_time <- function(
   )
   out_track_ids <- unique(as.character(combined[[track_col]]))
   out_track_data <- track_data[
-    as.character(track_data[[track_col]]) %in% out_track_ids,
-    ,
+    as.character(track_data[[track_col]]) %in% out_track_ids, ,
     drop = FALSE
   ]
   move2::mt_set_track_data(out, out_track_data)

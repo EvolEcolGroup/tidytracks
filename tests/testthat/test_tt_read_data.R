@@ -17,7 +17,10 @@ test_that("tt_read_data throws error if NAs in events table", {
       col_coords = c("lon", "lat"),
       col_date_time = "date_time"
     ),
-    regexp = "Column lon contains missing values (NAs). Please remove or impute these before proceeding.",
+    regexp = paste0(
+      "Column lon contains missing values (NAs). Please remove or ",
+      "impute these before proceeding."
+    ),
     fixed = TRUE
   )
 })
@@ -200,7 +203,7 @@ test_that("tt_read_data works with verbose events dataframe and no meta", {
 })
 
 # test with events CSV with separate date and time fields
-test_that("tt_read_data works with events CSV with separate date and time fields", {
+test_that("tt_read_data combines separate CSV date and time fields", {
   example_tt <- tt_read_data(
     events = test_path("testdata/test_tt_read_data_separate_date_time.csv"),
     col_track_id = "track_id",
@@ -222,7 +225,11 @@ test_that("tt_read_data works with events CSV with separate date and time fields
   # check that the date and time in the first row are correct
   expect_equal(
     example_tt$date_time[1],
-    as.POSIXct("2024-01-01 12:00:00", format = "%Y-%m-%d %H:%M:%S", tz = "UTC")
+    as.POSIXct(
+      "2024-01-01 12:00:00",
+      format = "%Y-%m-%d %H:%M:%S",
+      tz = "UTC"
+    )
   )
 })
 
@@ -413,7 +420,7 @@ test_that("tt_read_data works with format_date_time parameter", {
     c("trackid", "date_time_posix", "geometry")
   )
 
-  # as above, but without specifying format_date_time - does it choose the correct format?
+  # Repeat without format_date_time to check auto-detection.
   example_tt <- tt_read_data(
     events = test_path("testdata/test_tt_read_data_diff_date_times.csv"),
     col_track_id = "trackid",
@@ -438,9 +445,13 @@ test_that("tt_read_data works with format_date_time parameter", {
       col_track_id = "trackid",
       col_coords = c("lon", "lat"),
       col_date_time = "date_time_posix",
-      format_date_time = "%d-%m-%Y %H:%M" # a subtle but important formatting difference!
+      # This subtle format difference is intentional.
+      format_date_time = "%d-%m-%Y %H:%M"
     ),
-    regexp = "Some date-time values could not be parsed using the provided format_date_time",
+    regexp = paste0(
+      "Some date-time values could not be parsed using the provided ",
+      "format_date_time"
+    ),
     fixed = TRUE
   )
 })
@@ -472,7 +483,7 @@ test_that("tt_read_data works with multiple date_time_xyz fields", {
     as.POSIXct("2024-01-01 12:00:00", format = "%Y-%m-%d %H:%M:%S", tz = "UTC")
   )
 
-  # test again, this time there is no date_time field but multiple date_time_xyz field
+  # Repeat when date_time is absent but multiple date_time_xyz fields exist.
   test_df <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
   test_df$date_time_real <- test_df$date_time
   test_df$date_time <- NULL
@@ -492,7 +503,7 @@ test_that("tt_read_data works with multiple date_time_xyz fields", {
 })
 
 # test error when some date_times have a different format
-test_that("tt_read_data gives error when the provided date_time format is wrong", {
+test_that("tt_read_data rejects an incorrect date_time format", {
   expect_error(
     tt_read_data(
       events = read.csv(test_path("testdata/test_tt_read_data_simple.csv")),
@@ -501,7 +512,10 @@ test_that("tt_read_data gives error when the provided date_time format is wrong"
       col_date_time = "date_time",
       format_date_time = "%d/%m/%Y %H:%M:%S"
     ),
-    regexp = "Some date-time values could not be parsed using the provided format_date_time",
+    regexp = paste0(
+      "Some date-time values could not be parsed using the provided ",
+      "format_date_time"
+    ),
     fixed = TRUE
   )
 })

@@ -125,7 +125,10 @@ area before making the plot). `coord_sf` can also change the projection.
 
 ```{r map_add_proj_lims, collapse=TRUE, warning=FALSE}
 # define south polar LAEA projection for plotting
-my_crs <- "+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
+my_crs <- paste0(
+  "+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 ",
+  "+datum=WGS84 +units=m +no_defs"
+)
 
 # you can use st_coordinates to get min/max coordinates of your tracking data
 range(st_coordinates(df)[, "X"])
@@ -189,7 +192,8 @@ software to bind them into a video.
 ```{r animate_map_2, message=FALSE, warning=FALSE, fig.width=5.4, fig.height=4}
 gganimate::animate(
   plot = map_anim, # our ggplot with added animation
-  nframes = attr(map_anim, "n_timesteps"), # number of frames = time steps in data
+  # Number of frames equals time steps in the data.
+  nframes = attr(map_anim, "n_timesteps"),
   duration = 5, # video duration in seconds
   renderer = av_renderer(), # default is gifski_renderer()
   # optionally, specify width and height of output animation
@@ -385,4 +389,3 @@ gganimate::animate(
 
 
 ***
-
