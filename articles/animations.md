@@ -113,11 +113,6 @@ library(rnaturalearth)
 land <- ne_countries(scale = "medium", returnclass = "sf")
 ```
 
-    ## The rnaturalearthdata package needs to be installed.
-    ## Installing the rnaturalearthdata package.
-    ## Installing package into '/home/runner/work/_temp/Library'
-    ## (as 'lib' is unspecified)
-
 ### subset data to test
 
 We’re going to test out our maps and animations on the first 30 days of

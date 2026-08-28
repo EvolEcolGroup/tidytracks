@@ -2,8 +2,8 @@
 
 This functions takes a tibble of UDs and computes the normalised sum of
 the UDs. The normalised sum is computed by summing the UDs and then
-dividing by the number of UDs so that the resulting UD inegrates (sums)
-to 1 (since each input UD sums to 1). Thsi is equivalent to dividing by
+dividing by the number of UDs so that the resulting UD integrates (sums)
+to 1 (since each input UD sums to 1). This is equivalent to dividing by
 the sum of values in the combined UDs).
 
 ## Usage
