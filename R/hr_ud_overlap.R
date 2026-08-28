@@ -29,7 +29,6 @@
 #' @examples
 #' example_kde <- hr_kde(example_tt)
 #' hr_ud_overlap(example_kde)
-
 hr_ud_overlap <- function(x, ..., method = c("ba", "vi", "udoi")) {
   UseMethod("hr_ud_overlap")
 }
@@ -170,12 +169,10 @@ check_ud_raster <- function(x, argument) {
 check_cond_level <- function(cond_level) {
   if (
     !is.null(cond_level) &&
-      (
-        length(cond_level) != 1 ||
-          !is.numeric(cond_level) ||
-          cond_level <= 0 ||
-          cond_level >= 1
-      )
+      (length(cond_level) != 1 ||
+        !is.numeric(cond_level) ||
+        cond_level <= 0 ||
+        cond_level >= 1)
   ) {
     stop("cond_level must be a single numeric value between 0 and 1")
   }

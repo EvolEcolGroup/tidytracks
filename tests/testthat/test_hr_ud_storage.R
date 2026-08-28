@@ -28,9 +28,7 @@ test_that("UD storage helpers validate table and raster columns", {
   expect_error(hr_ud_unwrap(invalid_tbl), "x must be an hr_ud_tbl")
 })
 
-test_that(
-  "hr_ud_saveRDS writes a wrapped copy that can be used after loading",
-  {
+test_that("hr_ud_saveRDS writes a wrapped copy that can be used after loading", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   boar_kde <- hr_kde(boar_tt, res = 50)
   output_file <- tempfile(fileext = ".rds")
@@ -75,5 +73,4 @@ test_that(
     terra::values(loaded_kde$ud[[1]]),
     terra::values(boar_kde$ud[[1]])
   )
-  }
-)
+})

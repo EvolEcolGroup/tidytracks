@@ -36,12 +36,12 @@ same_category <- function(x) {
   if (!is.factor(x)) {
     stop("`x` must be a factor vector.", call. = FALSE)
   }
-  
+
   out <- outer(x, x, FUN = function(a, b) as.numeric(a == b))
-  
+
   if (!is.null(names(x))) {
     dimnames(out) <- list(names(x), names(x))
   }
-  
+
   out
 }

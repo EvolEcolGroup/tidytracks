@@ -17,8 +17,10 @@ hr_ud_wrap <- function(x) {
     return(x)
   }
 
-  if (!is.list(x$ud) ||
-        !all(vapply(x$ud, inherits, logical(1), "SpatRaster"))) {
+  if (
+    !is.list(x$ud) ||
+      !all(vapply(x$ud, inherits, logical(1), "SpatRaster"))
+  ) {
     stop("x$ud must be a list of SpatRaster objects")
   }
 
@@ -46,8 +48,10 @@ hr_ud_unwrap <- function(x) {
   stopifnot_hr_ud_tbl(x)
 
   if (!inherits(x$ud, "PackedSpatRaster_list")) {
-    if (!is.list(x$ud) ||
-          !all(vapply(x$ud, inherits, logical(1), "SpatRaster"))) {
+    if (
+      !is.list(x$ud) ||
+        !all(vapply(x$ud, inherits, logical(1), "SpatRaster"))
+    ) {
       stop(
         paste(
           "x$ud must be a wrapped PackedSpatRaster_list",
@@ -100,7 +104,8 @@ unwrap_ud_column <- function(x) {
 #' hr_ud_saveRDS(example_kde, "example-kde.rds")
 #' loaded_kde <- readRDS("example-kde.rds")
 #' }
-hr_ud_saveRDS <- function(x, file, compress = TRUE, version = NULL, ...) { # nolint
+hr_ud_saveRDS <- function(x, file, compress = TRUE, version = NULL, ...) {
+  # nolint
   base::saveRDS(
     hr_ud_wrap(x),
     file = file,

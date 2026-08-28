@@ -10,7 +10,7 @@
 #'  \item \code{<track id column>}: The track ID from \code{x}
 #'  \item median_sampling_interval: The median sampling interval in seconds
 #'  \item track_duration: The duration of the track in seconds
-#'  \item expected_points: The expected number of points based on the 
+#'  \item expected_points: The expected number of points based on the
 #'  median sampling interval
 #'  \item actual_points: The actual number of points in the track
 #'  \item proportion_missing: The proportion of expected points that are missing
@@ -18,7 +18,6 @@
 #' @export
 #' @examples
 #' track_summary_health(example_tt)
-
 track_summary_health <- function(x) {
   # Check if x is a move2 object
   if (!inherits(x, "move2")) {

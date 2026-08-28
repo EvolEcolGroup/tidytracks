@@ -16,14 +16,11 @@
 #' example_kde <- hr_kde(example_tt)
 #' example_iso <- hr_ud_iso(example_kde)
 #' example_iso
-#' 
+#'
 #' # now plot the isopleths
 #' library(ggplot2)
 #' ggplot(example_iso) +
 #'   geom_sf(aes(fill = track_id), alpha = 0.7)
-
-
-
 hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
   UseMethod("hr_ud_iso")
 }
@@ -36,7 +33,7 @@ hr_ud_iso.tbl_df <- function(x, levels = c(0.50, 0.95)) {
   stopifnot_hr_ud_table(x)
   # Work with a plain list locally while preserving a loaded object's packing.
   x <- unwrap_ud_column(x)
-  
+
   levels <- sort(levels)
 
   res_tbl <- x %>%

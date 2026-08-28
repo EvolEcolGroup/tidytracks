@@ -53,8 +53,12 @@ shadow_wake_build <- function(
   # Convert boolean shorthand to the numeric target values expected by tween_at:
   # TRUE  -> 0  (fade/shrink completely to nothing at the tail of the wake)
   # FALSE -> NULL (leave that aesthetic unchanged throughout the wake)
-  if (is.logical(size)) size <- if (size) 0 else NULL
-  if (is.logical(alpha)) alpha <- if (alpha) 0 else NULL
+  if (is.logical(size)) {
+    size <- if (size) 0 else NULL
+  }
+  if (is.logical(alpha)) {
+    alpha <- if (alpha) 0 else NULL
+  }
 
   # Construct a one-off ggproto instance of ShadowWakeBuild, carrying the
   # user's parameters. gganimate will call this object's methods at render time

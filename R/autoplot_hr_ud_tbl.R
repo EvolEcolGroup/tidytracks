@@ -25,7 +25,6 @@
 #' example_kde <- hr_kde(example_tt)
 #' library(ggplot2)
 #' autoplot(example_kde)
-
 autoplot.hr_ud_tbl <- function(object, id_to_plot = NULL, layout = NULL, ...) {
   # Work with a plain list locally while preserving a loaded object's packing.
   object <- hr_ud_unwrap(object)

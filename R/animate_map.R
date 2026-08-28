@@ -195,18 +195,18 @@ tt_detect_layer_type <- function(p, layer_name = NULL) {
     # won't have it and are skipped.
     data <- layer$data
     tag <- attr(data, "tidytracks_geom")
-    if (is.null(tag)) next
+    if (is.null(tag)) {
+      next
+    }
     # The geom also stamps the name of the time column on the data, saving us
     # from having to guess which POSIXct column to animate over.
     time_col <- attr(data, "tidytracks_time_col")
 
     # Map the raw tag string to the canonical type label used downstream.
-    type <- base::switch(tag,
-      event_path = "path",
-      event_point = "point",
-      NULL
-    )
-    if (is.null(type)) next
+    type <- base::switch(tag, event_path = "path", event_point = "point", NULL)
+    if (is.null(type)) {
+      next
+    }
     # Collect all valid matches; we may need to disambiguate below.
     matches <- c(
       matches,

@@ -76,7 +76,6 @@ new_PackedSpatRaster_list <- function(packed) {
 #' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
 #' pl <- PackedSpatRaster_list(a = r1, b = r2)
 #' pl[[1]] # returns r1 as a SpatRaster
-
 `[[.PackedSpatRaster_list` <- function(x, i, ...) {
   item <- NextMethod() # fetch the PackedSpatRaster from the plain list
   if (is.null(item)) {

@@ -33,7 +33,6 @@
 #' @export
 #' @examples
 #' track_summary_stats(example_tt)
-
 track_summary_stats <- function(
   x,
   centre_col = NULL,
@@ -153,7 +152,8 @@ track_summary_stats <- function(
     foreach::foreach(
       i_foreach = seq_len(nrow(show_meta(x))),
       .combine = rbind
-    ) %do% {
+    ) %do%
+    {
       # get the track id
       track_id <- show_meta(x)[[move2::mt_track_id_column(x)]][i_foreach]
       # get the events for this track

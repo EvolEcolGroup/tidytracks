@@ -13,6 +13,8 @@
 #' @param rhs A function call using the magrittr semantics.
 #' @return The result of calling `rhs(lhs)`.
 #' @examples
-#' example_tt %>% event_time() %>% head()
-#' 
+#' example_tt %>%
+#'   event_time() %>%
+#'   head()
+#'
 NULL

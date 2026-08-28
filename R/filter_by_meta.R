@@ -15,7 +15,6 @@
 #' @examples
 #' subset_tt <- example_tt %>% filter_by_meta(sex == "female")
 #' show_meta(subset_tt)
-
 filter_by_meta <- function(.data, ..., .track_id = NULL) {
   # at this point, .data is a move2 object with track_id_field 'trip_id'
   # metadata table may or may not have a geometry column

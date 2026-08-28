@@ -26,8 +26,7 @@
 #' @examples
 #' library(ggplot2)
 #' ggplot() +
-#'  geom_event_point(data = example_tt, mapping = aes(color = track_id))
-
+#'   geom_event_point(data = example_tt, mapping = aes(color = track_id))
 geom_event_point <- function(
   mapping = ggplot2::aes(),
   data = NULL,

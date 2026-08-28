@@ -64,8 +64,7 @@
 #' example_iso <- hr_kde(example_tt, levels = c(0.5, 0.95))
 #' ggplot(example_iso) +
 #'   geom_sf(aes(fill = track_id), alpha = 0.7)
-#' 
-
+#'
 hr_kde <- function(
   x,
   h = "h_ref_mean",
@@ -156,42 +155,43 @@ hr_kde <- function(
   kde_results <- foreach::foreach(
     group_id = group_unique,
     .combine = rbind # dplyr::bind_rows
-  ) %do% {
-    # Filter the data for the current group
-    xy_sub <- xy[group_index == group_id, ]
-    h_val <- h[group_id]
-    # Create kernel for each level
-    kde <- kde_one_group(
-      xy_sub,
-      crs = sf::st_crs(x),
-      bbox = bbox,
-      res = res,
-      h = h_val,
-      id = group_id
-    )
-    # row for the table to integrate the results
-    res_tbl <- tibble::tibble(
-      group_id = group_labels[group_id],
-      method = "kde",
-      h = h_val,
-      xmin = bbox[["xmin"]],
-      ymin = bbox[["ymin"]],
-      xmax = bbox[["xmax"]],
-      ymax = bbox[["ymax"]],
-      res = res
-    )
+  ) %do%
+    {
+      # Filter the data for the current group
+      xy_sub <- xy[group_index == group_id, ]
+      h_val <- h[group_id]
+      # Create kernel for each level
+      kde <- kde_one_group(
+        xy_sub,
+        crs = sf::st_crs(x),
+        bbox = bbox,
+        res = res,
+        h = h_val,
+        id = group_id
+      )
+      # row for the table to integrate the results
+      res_tbl <- tibble::tibble(
+        group_id = group_labels[group_id],
+        method = "kde",
+        h = h_val,
+        xmin = bbox[["xmin"]],
+        ymin = bbox[["ymin"]],
+        xmax = bbox[["xmax"]],
+        ymax = bbox[["ymax"]],
+        res = res
+      )
 
-    # if returning the full kde object, we simply add it to the kde column
-    # add the kde to the tibble as a list column
-    res_tbl$ud <- list(kde)
-    names(res_tbl$ud) <- group_labels[group_id]
-    # add a class to the tibble
-    class(res_tbl) <- c("hr_ud_tbl", class(res_tbl))
-    if (!is.null(levels)) {
-      res_tbl <- hr_ud_iso(res_tbl, levels)
+      # if returning the full kde object, we simply add it to the kde column
+      # add the kde to the tibble as a list column
+      res_tbl$ud <- list(kde)
+      names(res_tbl$ud) <- group_labels[group_id]
+      # add a class to the tibble
+      class(res_tbl) <- c("hr_ud_tbl", class(res_tbl))
+      if (!is.null(levels)) {
+        res_tbl <- hr_ud_iso(res_tbl, levels)
+      }
+      res_tbl
     }
-    res_tbl
-  }
 
   # # change class of ud column to PackedSpatRaster_list
   # names(kde_results$ud) <- group_labels

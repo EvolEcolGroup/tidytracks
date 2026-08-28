@@ -19,7 +19,7 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
   if (!dir.exists(base_path)) {
     stop("The directory ", base_path, " does not exist.")
   }
-  
+
   # drop any sfc geometry columns (such as colony/nest location) from meta
   show_meta(x) <- show_meta(x) %>%
     dplyr::select(-dplyr::where(~ inherits(.x, "sfc")))
@@ -39,7 +39,8 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
     x <- x %>%
       as_event_column(dplyr::any_of(
         # except for any column names that are in both events and meta
-        base::setdiff(names(show_meta(x)), names(x))))
+        base::setdiff(names(show_meta(x)), names(x))
+      ))
     event_file <- paste0(file_prefix, "_combined.csv")
   }
 

@@ -57,7 +57,7 @@ test_that("hr_kde is equivalent to adehabitatHR", {
   brock_std_ud <- brock_ade$ud / sum(brock_ade$ud, na.rm = TRUE)
   expect_true(
     sum(abs(
-      as.vector(terra::as.array(wildboars_kde$ud[[1]])[, , 1]) -
+      as.vector(terra::as.array(wildboars_kde$ud[[1]])[,, 1]) -
         brock_std_ud
     )) <
       1e-3

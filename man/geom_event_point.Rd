@@ -51,5 +51,5 @@ projections to be set using the \code{\link[ggplot2:coord_sf]{ggplot2::coord_sf(
 \examples{
 library(ggplot2)
 ggplot() +
- geom_event_point(data = example_tt, mapping = aes(color = track_id))
+  geom_event_point(data = example_tt, mapping = aes(color = track_id))
 }

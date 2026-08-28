@@ -103,7 +103,7 @@
 #'   max_time_lag = as_units(2, "min")
 #' )
 #' resampled_gapped
-#' 
+#'
 #' # Resample to one fix per minute, snapping times to whole-minute boundaries
 #' resampled_snap <- tt_regular_time(track,
 #'   interval = as_units(1, "min"),
@@ -182,7 +182,8 @@ tt_regular_time <- function(
   )
   out_track_ids <- unique(as.character(combined[[track_col]]))
   out_track_data <- track_data[
-    as.character(track_data[[track_col]]) %in% out_track_ids, ,
+    as.character(track_data[[track_col]]) %in% out_track_ids,
+    ,
     drop = FALSE
   ]
   move2::mt_set_track_data(out, out_track_data)

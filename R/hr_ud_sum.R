@@ -19,8 +19,8 @@
 #' # add sex info from metadata and use it to group the UDs
 #' library(dplyr)
 #' example_kde_grouped <- example_kde %>%
-#'  left_join(show_meta(example_tt)) %>%
-#'  group_by(sex)
+#'   left_join(show_meta(example_tt)) %>%
+#'   group_by(sex)
 #' hr_ud_sum(example_kde_grouped)
 #' @family home_range
 
@@ -56,11 +56,12 @@ hr_ud_sum.tbl_df <- function(x) {
   stopifnot_hr_ud_table(x)
   # Work with a plain list locally while preserving a loaded object's packing.
   x <- unwrap_ud_column(x)
-  
+
   # create a new tibble with the summed UD
-  sum_tbl <- x %>% 
+  sum_tbl <- x %>%
     dplyr::select(dplyr::all_of(
-      c("method", "h", "xmin", "ymin", "xmax", "ymax", "res"))) %>%
+      c("method", "h", "xmin", "ymin", "xmax", "ymax", "res")
+    )) %>%
     dplyr::distinct()
   # check that we only have one row in the sum_tbl
   if (nrow(sum_tbl) != 1) {
@@ -68,7 +69,7 @@ hr_ud_sum.tbl_df <- function(x) {
   }
   # we can use the hr_ud_sum.list method to sum the UDs
   sum_tbl$ud <- list(hr_ud_sum(x$ud))
-  
+
   return(sum_tbl)
 }
 
@@ -100,8 +101,10 @@ stopifnot_hr_ud_table <- function(x) {
     return(invisible(NULL))
   }
   # check that the ud column is a plain list of SpatRasters
-  if (!is.list(x$ud) ||
-        !all(vapply(x$ud, inherits, logical(1), "SpatRaster"))) {
+  if (
+    !is.list(x$ud) ||
+      !all(vapply(x$ud, inherits, logical(1), "SpatRaster"))
+  ) {
     stop("x$ud must be a list of SpatRaster objects")
   }
 }

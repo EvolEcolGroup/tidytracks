@@ -10,7 +10,6 @@
 #' @export
 #' @examples
 #' tt_order_time(example_tt)
-
 tt_order_time <- function(x) {
   return(x[order(event_track_id(x), event_time(x)), ])
 }

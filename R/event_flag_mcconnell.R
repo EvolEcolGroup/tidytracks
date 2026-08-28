@@ -26,7 +26,6 @@
 #' @export
 #' @examples
 #' event_flag_mcconnell(example_tt, max_speed = as_units(50, "m/s"))
-
 event_flag_mcconnell <- function(
   x,
   max_speed = NULL,
@@ -150,7 +149,8 @@ event_flag_mcconnell <- function(
     # Track validity vector; starts with all points considered valid.
     valid_track <- rep(TRUE, npts)
 
-    # Initialise RMS values larger than max_speed so the loop runs at least once.
+    # Initialise RMS values larger than max_speed so the loop runs at least
+    # once.
     RMS <- rep(max_speed + 1, npts)
 
     # Offset used in the original algorithm.

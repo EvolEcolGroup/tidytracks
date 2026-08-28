@@ -58,5 +58,5 @@ internally drops units before creating a \code{ggplot2} layer.
 \examples{
 library(ggplot2)
 ggplot() +
- geom_track_path(data = example_tt, mapping = aes(color = track_id))
+  geom_track_path(data = example_tt, mapping = aes(color = track_id))
 }
