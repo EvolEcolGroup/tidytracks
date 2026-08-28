@@ -177,7 +177,10 @@ area.)
 
 ggplot() +
   geom_event_point(data = shags_tt, aes(color = bird_id)) +
-  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  coord_sf(crs = paste0(
+    "+proj=aeqd +lon_0=-68 +lat_0=-67 ",
+    "+units=m +datum=WGS84 +no_defs"
+  )) +
   theme(
     aspect.ratio = 1,
     axis.text.x = element_text(angle = 45, hjust = 1)
@@ -197,7 +200,10 @@ to plot the paths between them:
 ggplot() +
   geom_event_path(data = shags_tt, aes(color = bird_id)) +
   facet_wrap(~bird_id) +
-  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  coord_sf(crs = paste0(
+    "+proj=aeqd +lon_0=-68 +lat_0=-67 ",
+    "+units=m +datum=WGS84 +no_defs"
+  )) +
   theme(
     aspect.ratio = 1,
     axis.text.x = element_text(angle = 45, hjust = 1)
@@ -402,7 +408,10 @@ ggplot() +
     aes(color = speed)
   ) +
   facet_wrap(~bird_id) +
-  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  coord_sf(crs = paste0(
+    "+proj=aeqd +lon_0=-68 +lat_0=-67 ",
+    "+units=m +datum=WGS84 +no_defs"
+  )) +
   theme(
     aspect.ratio = 1,
     axis.text.x = element_text(angle = 45, hjust = 1)
@@ -591,7 +600,10 @@ complete, are removed from the dataset.
 ggplot() +
   geom_event_path(data = shags_tt_split, aes(color = trip_id)) +
   geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20") +
-  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  coord_sf(crs = paste0(
+    "+proj=aeqd +lon_0=-68 +lat_0=-67 ",
+    "+units=m +datum=WGS84 +no_defs"
+  )) +
   theme(
     aspect.ratio = 1,
     axis.text.x = element_text(angle = 45, hjust = 1)
@@ -796,7 +808,10 @@ function to do this:
 ``` r
 
 shags_females_proj <- shags_females %>%
-  st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
+  st_transform(crs = paste0(
+    "+proj=aeqd +lon_0=-68 +lat_0=-67 ",
+    "+units=m +datum=WGS84 +no_defs"
+  ))
 ```
 
 ### Kernel UDs

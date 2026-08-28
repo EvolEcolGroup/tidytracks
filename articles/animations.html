@@ -215,7 +215,10 @@ you can crop all your layers to the required area before making the
 plot). <code>coord_sf</code> can also change the projection.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># define south polar LAEA projection for plotting</span></span>
-<span><span class="va">my_crs</span> <span class="op">&lt;-</span> <span class="st">"+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"</span></span>
+<span><span class="va">my_crs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
+<span>  <span class="st">"+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 "</span>,</span>
+<span>  <span class="st">"+datum=WGS84 +units=m +no_defs"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># you can use st_coordinates to get min/max coordinates of your tracking data</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span><span class="op">[</span>, <span class="st">"X"</span><span class="op">]</span><span class="op">)</span></span>
@@ -288,7 +291,8 @@ and use your own software to bind them into a video.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">gganimate</span><span class="fu">::</span><span class="fu"><a href="https://gganimate.com/reference/animate.html" class="external-link">animate</a></span><span class="op">(</span></span>
 <span>  plot <span class="op">=</span> <span class="va">map_anim</span>, <span class="co"># our ggplot with added animation</span></span>
-<span>  nframes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">map_anim</span>, <span class="st">"n_timesteps"</span><span class="op">)</span>, <span class="co"># number of frames = time steps in data</span></span>
+<span>  <span class="co"># Number of frames equals time steps in the data.</span></span>
+<span>  nframes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">map_anim</span>, <span class="st">"n_timesteps"</span><span class="op">)</span>,</span>
 <span>  duration <span class="op">=</span> <span class="fl">5</span>, <span class="co"># video duration in seconds</span></span>
 <span>  renderer <span class="op">=</span> <span class="fu"><a href="https://gganimate.com/reference/renderers.html" class="external-link">av_renderer</a></span><span class="op">(</span><span class="op">)</span>, <span class="co"># default is gifski_renderer()</span></span>
 <span>  <span class="co"># optionally, specify width and height of output animation</span></span>
