@@ -25,12 +25,14 @@
 #'   "h_ref_indiv" for using the reference bandwidth for each individual, or
 #'   "h_ref_mean" for using the mean bandwidth for all individuals (the
 #'   default).
-#' @param bbox a named vector of four elements: xmin, ymin, xmax, ymax to define
-#'   the bounding box of the grid over which to compute the KDE. If NULL, the
-#'   extent is taken by combining all points in `x` (expanded by 100% of the
-#'   range on each side).
+#' @param bbox A named vector of four elements (`xmin`, `ymin`, `xmax`, `ymax`)
+#'   defining a grid shared by all groups, or a list of one such vector per
+#'   group. If `NULL`, a shared grid is created from the extent of all points in
+#'   `x`, expanded by 100% of the range on each side.
 #' @param res The resolution of the grid (in the units of the projection of x).
-#'   If NULL, res is set to obtained ~ 1000 cells.
+#'   Supply one value for a shared resolution or one value per group when
+#'   `bbox` contains one grid per group. If `NULL`, each grid is assigned a
+#'   resolution that produces approximately 1000 cells.
 #' @param levels A vector of levels for the isopleths (i.e. contour lines), as
 #'   numbers between 0 and 1. If set to NULL (the default), the full utilisation
 #'   distribution is returned; otherwise just the isopleths are returned. It is
@@ -112,45 +114,43 @@ hr_kde <- function(
     )
   }
 
-  # Check if grid is provided
+  # Create a shared grid by default.
   if (is.null(bbox)) {
-    # get extend of x, which is an sf object
     bbox <- sf::st_bbox(x)
-    # extend the grid by a fixed factor
-    # TODO compare to amt (extending by 50%), adehabitatHR (extending by 1)
-    # and track2kba (extending by 0.05 or h*2000, whichever is larger))
-    extend_x <- (bbox[["xmax"]] - bbox[["xmin"]]) * 1
-    extend_y <- (bbox[["ymax"]] - bbox[["ymin"]]) * 1
-
-    bbox["xmin"] <- bbox[["xmin"]] - extend_x
-    bbox["ymin"] <- bbox[["ymin"]] - extend_y
-    bbox["xmax"] <- bbox[["xmax"]] + extend_x
-    bbox["ymax"] <- bbox[["ymax"]] + extend_y
+    bbox <- expand_kde_bbox(bbox)
+    bbox <- rep(list(bbox), length(group_unique))
+  } else if (is_kde_bbox(bbox)) {
+    bbox <- rep(
+      list(normalise_kde_bbox(bbox)),
+      length(group_unique)
+    )
+  } else {
+    if (!is.list(bbox) || length(bbox) != length(group_unique)) {
+      stop(
+        "bbox must be a named vector of length 4 or a list with one ",
+        "named vector per group"
+      )
+    }
+    bbox <- lapply(bbox, normalise_kde_bbox)
   }
-  # check that bbox is a vector of four correctly named elements
-  if (
-    length(bbox) != 4 ||
-      !all(c("xmin", "ymin", "xmax", "ymax") %in% names(bbox))
-  ) {
-    stop("bbox must be a named vector of length 4")
-  }
-  # coerce to plain numeric named vector (handles list inputs gracefully)
-  bbox <- unlist(bbox)
 
   if (is.null(res)) {
-    # set resolution to get a 1000 cells
-    res <- sqrt(
-      (bbox[["xmax"]] - bbox[["xmin"]]) *
-        (bbox[["ymax"]] - bbox[["ymin"]]) /
-        1000
+    res <- vapply(bbox, kde_resolution, numeric(1))
+  } else if (
+    !is.numeric(res) ||
+      !(length(res) %in% c(1, length(group_unique)))
+  ) {
+    stop(
+      "res must be a single numeric value or a vector with one value per group"
     )
   }
-
-  # update the max to be an exact multiple of res
-  bbox["xmax"] <- bbox[["xmin"]] +
-    ceiling((bbox[["xmax"]] - bbox[["xmin"]]) / res) * res
-  bbox["ymax"] <- bbox[["ymin"]] +
-    ceiling((bbox[["ymax"]] - bbox[["ymin"]]) / res) * res
+  if (length(res) == 1) {
+    res <- rep(res, length(group_unique))
+  }
+  if (any(!is.finite(res) | res <= 0)) {
+    stop("res must contain finite, positive values")
+  }
+  bbox <- Map(align_kde_bbox, bbox, res)
   group_id <- NULL # hack to avoid it being flagged as global in checks
   kde_results <- foreach::foreach(
     group_id = group_unique,
@@ -159,12 +159,14 @@ hr_kde <- function(
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, ]
     h_val <- h[group_id]
+    bbox_val <- bbox[[group_id]]
+    res_val <- res[group_id]
     # Create kernel for each level
     kde <- kde_one_group(
       xy_sub,
       crs = sf::st_crs(x),
-      bbox = bbox,
-      res = res,
+      bbox = bbox_val,
+      res = res_val,
       h = h_val,
       id = group_id
     )
@@ -173,11 +175,11 @@ hr_kde <- function(
       group_id = group_labels[group_id],
       method = "kde",
       h = h_val,
-      xmin = bbox[["xmin"]],
-      ymin = bbox[["ymin"]],
-      xmax = bbox[["xmax"]],
-      ymax = bbox[["ymax"]],
-      res = res
+      xmin = bbox_val[["xmin"]],
+      ymin = bbox_val[["ymin"]],
+      xmax = bbox_val[["xmax"]],
+      ymax = bbox_val[["ymax"]],
+      res = res_val
     )
 
     # if returning the full kde object, we simply add it to the kde column
@@ -202,6 +204,56 @@ hr_kde <- function(
   }
 
   return(kde_results)
+}
+
+is_kde_bbox <- function(x) {
+  length(x) == 4 &&
+    all(c("xmin", "ymin", "xmax", "ymax") %in% names(x))
+}
+
+normalise_kde_bbox <- function(bbox) {
+  if (!is_kde_bbox(bbox)) {
+    stop("each bbox must be a named vector of length 4")
+  }
+  bbox <- unlist(bbox, use.names = TRUE)
+  bbox <- bbox[c("xmin", "ymin", "xmax", "ymax")]
+  if (
+    !is.numeric(bbox) ||
+      any(!is.finite(bbox)) ||
+      bbox[["xmin"]] >= bbox[["xmax"]] ||
+      bbox[["ymin"]] >= bbox[["ymax"]]
+  ) {
+    stop("each bbox must contain finite xmin < xmax and ymin < ymax values")
+  }
+  bbox
+}
+
+expand_kde_bbox <- function(bbox) {
+  bbox <- normalise_kde_bbox(bbox)
+  extend_x <- bbox[["xmax"]] - bbox[["xmin"]]
+  extend_y <- bbox[["ymax"]] - bbox[["ymin"]]
+
+  bbox["xmin"] <- bbox[["xmin"]] - extend_x
+  bbox["ymin"] <- bbox[["ymin"]] - extend_y
+  bbox["xmax"] <- bbox[["xmax"]] + extend_x
+  bbox["ymax"] <- bbox[["ymax"]] + extend_y
+  bbox
+}
+
+kde_resolution <- function(bbox) {
+  sqrt(
+    (bbox[["xmax"]] - bbox[["xmin"]]) *
+      (bbox[["ymax"]] - bbox[["ymin"]]) /
+      1000
+  )
+}
+
+align_kde_bbox <- function(bbox, res) {
+  bbox["xmax"] <- bbox[["xmin"]] +
+    ceiling((bbox[["xmax"]] - bbox[["xmin"]]) / res) * res
+  bbox["ymax"] <- bbox[["ymin"]] +
+    ceiling((bbox[["ymax"]] - bbox[["ymin"]]) / res) * res
+  bbox
 }
 
 

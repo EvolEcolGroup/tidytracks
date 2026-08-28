@@ -1,6 +1,6 @@
 Package: tidytracks
 Title: Functions to Analyse Tracking Data
-Version: 0.1.0
+Version: 0.1.0.9001
 Authors@R: c(
     person("Andrea", "Manica", , "am315@cam.ac.uk", role = c("aut", "cre")),
     person("Lizzie", "Pearmain", role = c("aut")),

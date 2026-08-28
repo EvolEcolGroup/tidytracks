@@ -16,13 +16,15 @@ track id is used as grouping variable.}
 "h_ref_mean" for using the mean bandwidth for all individuals (the
 default).}
 
-\item{bbox}{a named vector of four elements: xmin, ymin, xmax, ymax to define
-the bounding box of the grid over which to compute the KDE. If NULL, the
-extent is taken by combining all points in \code{x} (expanded by 100\% of the
-range on each side).}
+\item{bbox}{A named vector of four elements (\code{xmin}, \code{ymin}, \code{xmax}, \code{ymax})
+defining a grid shared by all groups, or a list of one such vector per
+group. If \code{NULL}, a shared grid is created from the extent of all points in
+\code{x}, expanded by 100\% of the range on each side.}
 
 \item{res}{The resolution of the grid (in the units of the projection of x).
-If NULL, res is set to obtained ~ 1000 cells.}
+Supply one value for a shared resolution or one value per group when
+\code{bbox} contains one grid per group. If \code{NULL}, each grid is assigned a
+resolution that produces approximately 1000 cells.}
 
 \item{levels}{A vector of levels for the isopleths (i.e. contour lines), as
 numbers between 0 and 1. If set to NULL (the default), the full utilisation

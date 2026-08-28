@@ -1,3 +1,7 @@
+# tidytracks dev
+
+* Allow group specific grids for `hr_kde()`
+
 # tidytracks 0.1.0
 
 * Optimisation for `hr_` functions and UD raster storage in tibbles to improve 

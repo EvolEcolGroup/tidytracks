@@ -14,6 +14,11 @@ test_that("hr_kde works with multiple tracks", {
   expect_true(all(vapply(boar_kde$ud, inherits, logical(1), "SpatRaster")))
   # the group_id column should have been renamed to "name"
   expect_true("name" %in% names(boar_kde))
+  expect_equal(length(unique(boar_kde$xmin)), 1)
+  expect_equal(length(unique(boar_kde$ymin)), 1)
+  expect_equal(length(unique(boar_kde$xmax)), 1)
+  expect_equal(length(unique(boar_kde$ymax)), 1)
+  expect_equal(length(unique(boar_kde$res)), 1)
 
   # test autoplot for the hr_ud_tbl object
   p <- autoplot(boar_kde)
@@ -66,4 +71,43 @@ test_that("hr_kde bbox columns are always numeric (not list-cols)", {
   expect_true(is.numeric(boar_kde_list$xmax))
   expect_true(is.numeric(boar_kde_list$ymin))
   expect_true(is.numeric(boar_kde_list$ymax))
+})
+
+test_that("hr_kde accepts a separate grid for each group", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds")) %>%
+    dplyr::group_by(name)
+  group_names <- dplyr::group_keys(boar_tt)$name
+  bbox <- lapply(seq_along(group_names), function(i) {
+    c(
+      xmin = i * 1000,
+      ymin = i * 2000,
+      xmax = i * 1000 + 500,
+      ymax = i * 2000 + 1000
+    )
+  })
+
+  boar_kde <- hr_kde(boar_tt, bbox = bbox, res = c(25, 50, 100, 125))
+
+  expect_equal(boar_kde$xmin, c(1000, 2000, 3000, 4000))
+  expect_equal(boar_kde$xmax, c(1500, 2500, 3500, 4500))
+  expect_equal(boar_kde$res, c(25, 50, 100, 125))
+  expect_equal(
+    unname(vapply(boar_kde$ud, terra::ncell, numeric(1))),
+    c(800, 200, 50, 32)
+  )
+})
+
+test_that("hr_kde validates a collection of group-specific grids", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds")) %>%
+    dplyr::group_by(name)
+  bbox <- list(c(xmin = 0, ymin = 0, xmax = 100, ymax = 100))
+
+  expect_error(
+    hr_kde(boar_tt, bbox = bbox, res = 10),
+    "one named vector per group"
+  )
+  expect_error(
+    hr_kde(boar_tt, bbox = rep(bbox, 4), res = c(10, 10)),
+    "one value per group"
+  )
 })
