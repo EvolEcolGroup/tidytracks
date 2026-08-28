@@ -16,5 +16,7 @@
 #' @details Note that all empty points are removed before summarizing. Arguments
 #' passed with `...` thus only summarize for the non empty locations.
 #' @export
+#' @examples
+#' track_lines(example_tt)
 
 track_lines <- move2::mt_track_lines

@@ -25,3 +25,13 @@ function is primarily called for its side effect of writing CSV files.
 This function writes the event table and the metadata table of a
 'tidy_tracks' object to CSV files (or one combined CSV file).
 }
+\examples{
+# Save to temp directory
+tmp_prefix <- file.path(tempdir(), "example_tt_data")
+tt_write_data(
+  example_tt,
+  tmp_prefix,
+  combined = TRUE
+  )
+
+}

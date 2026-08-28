@@ -13,6 +13,13 @@
 #' @param x A `move2` or `sf` object
 #' @return A `move2` or `sf` object with units dropped
 #' @export
+#' @examples
+#' # Add speed column (with units) to example_tt
+#' example_tt$speed <- event_speed(example_tt)
+#' class(example_tt$speed)
+#' # Drop the units from any columns with units
+#' result <- tt_drop_units(example_tt)
+#' class(result$speed)
 
 tt_drop_units <- function(x) {
   for (i in seq_along(names(x))) {

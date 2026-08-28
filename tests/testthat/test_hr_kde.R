@@ -34,9 +34,10 @@ test_that("hr_kde works with multiple tracks", {
   boar_tt2 <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   boar_kde2 <- hr_kde(boar_tt2, res = 50)
   # this should be the same as the previous one
+  # test updated to check all 4 UDs are the same, rather than just the first
   expect_equal(
-    terra::values(boar_kde$ud[[1]]),
-    terra::values(boar_kde2$ud[[1]])
+    stats::setNames(lapply(boar_kde$ud, terra::values), boar_kde$name),
+    stats::setNames(lapply(boar_kde2$ud, terra::values), boar_kde2$name)
   )
 
 })

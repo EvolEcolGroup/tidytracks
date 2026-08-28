@@ -9,7 +9,7 @@ event_speed(x, units = as_units("m/min"))
 \arguments{
 \item{x}{A move2 object}
 
-\item{units}{Optional, the units to use for the speed. The default is "m/min".
+\item{units}{Optional units to use for speed. The default is \code{"m/min"}.
 Other speed units supported by the \code{units} package can also be supplied.}
 }
 \value{

@@ -26,3 +26,6 @@ metadata table.
 Note that all empty points are removed before summarizing. Arguments
 passed with \code{...} thus only summarize for the non empty locations.
 }
+\examples{
+track_lines(example_tt)
+}

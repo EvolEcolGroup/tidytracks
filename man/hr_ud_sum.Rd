@@ -25,11 +25,11 @@ of groups in \code{x} (or just one row for an ungrouped tibble), or a single
 SpatRaster if \code{x} is a list of SpatRaster objects.
 }
 \description{
-This functions takes a tibble of UDs and computes the normalised sum of the
+This function takes a tibble of UDs and computes the normalised sum of the
 UDs. The normalised sum is computed by summing the UDs and then dividing by
 the number of UDs so that the resulting UD integrates (sums) to 1 (since each
 input UD sums to 1). This is equivalent to dividing by the sum of values in
-the combined UDs).
+the combined UDs.
 }
 \examples{
 example_kde <- hr_kde(example_tt)

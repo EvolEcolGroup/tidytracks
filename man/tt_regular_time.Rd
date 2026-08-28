@@ -7,7 +7,7 @@
 tt_regular_time(x, interval, max_time_lag = NULL, snap_times = FALSE)
 }
 \arguments{
-\item{x}{A \code{move2} object.  Timestamps (as returned by \code{\link[=event_time]{event_time()}}) must be
+\item{x}{A \code{move2} object. Timestamps (as returned by \code{\link[=event_time]{event_time()}}) must be
 \link[base:POSIXct]{base::POSIXct}.}
 
 \item{interval}{Resampling interval as a \code{\link[units:units]{units::units}} object

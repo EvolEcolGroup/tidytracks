@@ -13,6 +13,15 @@
 #' @return Invisibly, the result of the final [utils::write.csv()] call; this
 #'   function is primarily called for its side effect of writing CSV files.
 #' @export
+#' @examples
+#' # Save to temp directory
+#' tmp_prefix <- file.path(tempdir(), "example_tt_data")
+#' tt_write_data(
+#'   example_tt,
+#'   tmp_prefix,
+#'   combined = TRUE
+#'   )
+#' 
 tt_write_data <- function(x, file_prefix, combined = FALSE) {
   # check that the base path of these files exists
   base_path <- dirname(file_prefix)

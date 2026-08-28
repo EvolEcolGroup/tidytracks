@@ -23,6 +23,24 @@
 #' @export
 #' @importFrom foreach %do%
 #' @importFrom rlang :=
+#' @examples
+#' # First, add a sf point column to metadata giving nest location
+#' show_meta(example_tt) <- show_meta(example_tt) %>%
+#'   dplyr::mutate(nest_location = sf_point_col(nest_lon, nest_lat, crs = 4326))
+#' # Now split the tracks into trips
+#' example_tt_split <- tt_split_trips(
+#'   x = example_tt,
+#'   centre_col = "nest_location",
+#'   buffer_outbound = as_units(1, "km"),
+#'   buffer_inbound = as_units(1, "km"),
+#'   complete = FALSE
+#'   )
+#' # Now the unit of tracking is `trip_id` column
+#' move2::mt_track_id_column(example_tt_split)
+#' # Three incomplete trips were identified
+#' show_meta(example_tt_split) %>%
+#'   dplyr::group_by(track_id, trip_id, trip_type) %>%
+#'   dplyr::summarise(.groups = "drop")
 
 tt_split_trips <- function(
   x,

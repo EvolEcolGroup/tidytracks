@@ -1,10 +1,10 @@
 #' Compute the normalised sum of multiple UDs
 #'
-#' This functions takes a tibble of UDs and computes the normalised sum of the
+#' This function takes a tibble of UDs and computes the normalised sum of the
 #' UDs. The normalised sum is computed by summing the UDs and then dividing by
 #' the number of UDs so that the resulting UD integrates (sums) to 1 (since each
 #' input UD sums to 1). This is equivalent to dividing by the sum of values in
-#' the combined UDs).
+#' the combined UDs.
 #'
 #' @param x A tibble of UDs (potentially grouped), where each row is a UD in the
 #'   column named "ud", or a list of SpatRaster objects representing UDs.

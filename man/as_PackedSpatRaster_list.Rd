@@ -15,7 +15,8 @@ A \code{PackedSpatRaster_list}.
 \description{
 This is a convenience function that allows users to easily convert a plain
 list of \code{SpatRasters} to a \code{PackedSpatRaster_list}. It will check that all
-elements of the list are \code{SpatRasters} and then wrap them as \code{PackedSpatRasters}
+elements of the list are \code{SpatRasters} and then wrap them as
+\code{PackedSpatRasters}
 before creating the \code{PackedSpatRaster_list}. If the input is already a
 \code{PackedSpatRaster_list}, it will simply return it unchanged.
 }

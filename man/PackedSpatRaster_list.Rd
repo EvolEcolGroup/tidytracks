@@ -14,7 +14,8 @@ A single plain list is also accepted.}
 A \code{PackedSpatRaster_list}.
 }
 \description{
-Accepts \code{SpatRaster} objects (packed automatically) or already-packed objects.
+Accepts \code{SpatRaster} objects (packed automatically) or already-packed
+objects.
 A lightweight S3 class wrapping a named or unnamed list of \code{PackedSpatRaster}
 }
 \examples{
