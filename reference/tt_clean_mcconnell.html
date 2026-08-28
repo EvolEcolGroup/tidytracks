@@ -99,8 +99,10 @@ track until the result is stable.</p></dd>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># this removes 3 events from the example dataset</span></span></span>
-<span class="r-in"><span><span class="fu">tt_clean_mcconnell</span><span class="op">(</span><span class="va">example_tt</span>, max_speed <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">50</span>, <span class="st">"km/h"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  flag_action <span class="op">=</span> <span class="st">"remove"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">tt_clean_mcconnell</span><span class="op">(</span><span class="va">example_tt</span>,</span></span>
+<span class="r-in"><span>  max_speed <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">50</span>, <span class="st">"km/h"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  flag_action <span class="op">=</span> <span class="st">"remove"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> A <span style="color: #0000BB;">&lt;move2&gt;</span> with `track_id_column` <span style="color: #0000BB;">"track_id"</span> and `time_column` <span style="color: #0000BB;">"date_time"</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Containing 3 tracks lasting on average 1.33 hours in a</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simple feature collection with 12 features and 2 fields</span>

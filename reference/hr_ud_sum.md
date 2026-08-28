@@ -60,8 +60,8 @@ library(dplyr)
 #> 
 #>     intersect, setdiff, setequal, union
 example_kde_grouped <- example_kde %>%
- left_join(show_meta(example_tt)) %>%
- group_by(sex)
+  left_join(show_meta(example_tt)) %>%
+  group_by(sex)
 #> Joining with `by = join_by(track_id)`
 hr_ud_sum(example_kde_grouped)
 #> # A tibble: 2 × 9

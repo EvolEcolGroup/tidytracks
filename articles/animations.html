@@ -83,10 +83,12 @@ tracks from Bird Island, South Georgia, each lasting approximately 1
 year.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># load data from CSV file into tidytracks</span></span>
-<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tt_read_data.html">tt_read_data</a></span><span class="op">(</span>events <span class="op">=</span> <span class="st">"data/wanderer_example_tracks.csv"</span>,</span>
-<span>                   col_track_id <span class="op">=</span> <span class="st">"bird_id"</span>,</span>
-<span>                   col_coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lon"</span>, <span class="st">"lat"</span><span class="op">)</span>,</span>
-<span>                   col_date_time <span class="op">=</span> <span class="st">"date_time"</span><span class="op">)</span></span>
+<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tt_read_data.html">tt_read_data</a></span><span class="op">(</span></span>
+<span>  events <span class="op">=</span> <span class="st">"data/wanderer_example_tracks.csv"</span>,</span>
+<span>  col_track_id <span class="op">=</span> <span class="st">"bird_id"</span>,</span>
+<span>  col_coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lon"</span>, <span class="st">"lat"</span><span class="op">)</span>,</span>
+<span>  col_date_time <span class="op">=</span> <span class="st">"date_time"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># inspect the data</span></span>
 <span><span class="va">df</span></span>
@@ -118,9 +120,11 @@ multiple individuals, matching timestamps across individuals that were
 tracked concurrently. Therefore we regularise our timestamps if we
 haven’t already:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tt_regular_time.html">tt_regular_time</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">df</span>,</span>
-<span>                      interval <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">12</span>, <span class="st">"hour"</span><span class="op">)</span>,</span>
-<span>                      snap_times <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tt_regular_time.html">tt_regular_time</a></span><span class="op">(</span></span>
+<span>  x <span class="op">=</span> <span class="va">df</span>,</span>
+<span>  interval <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">12</span>, <span class="st">"hour"</span><span class="op">)</span>,</span>
+<span>  snap_times <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
 <span><span class="va">df</span></span>
 <span><span class="co">## A <span style="color: #0000BB;">&lt;move2&gt;</span> with `track_id_column` <span style="color: #0000BB;">"bird_id"</span> and `time_column` <span style="color: #0000BB;">"date_time"</span></span></span>
 <span><span class="co">## Containing 10 tracks lasting on average 354 days in a</span></span>
@@ -192,8 +196,10 @@ paths or <code>geom_event_point</code> for points.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># make the map</span></span>
 <span><span class="va">map</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="../reference/geom_event_path.html">geom_event_path</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df_sub</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>col <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span>,  <span class="co"># tracks layer</span></span>
-<span>                  size <span class="op">=</span> <span class="fl">1.5</span>, lineend<span class="op">=</span><span class="st">"round"</span><span class="op">)</span> <span class="op">+</span>  <span class="co"># rounded line ends look smoother</span></span>
+<span>  <span class="fu"><a href="../reference/geom_event_path.html">geom_event_path</a></span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="va">df_sub</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>col <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span>, <span class="co"># tracks layer</span></span>
+<span>    size <span class="op">=</span> <span class="fl">1.5</span>, lineend <span class="op">=</span> <span class="st">"round"</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span> <span class="co"># rounded line ends look smoother</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">land</span>, fill <span class="op">=</span> <span class="st">"grey50"</span>, col <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span> <span class="op">+</span> <span class="co"># land polygons</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">colony</span>, pch <span class="op">=</span> <span class="fl">24</span>, fill <span class="op">=</span> <span class="st">"yellow"</span><span class="op">)</span> <span class="co"># add colony layer</span></span>
 <span><span class="co"># print the map</span></span>
@@ -212,18 +218,20 @@ plot). <code>coord_sf</code> can also change the projection.</p>
 <span><span class="va">my_crs</span> <span class="op">&lt;-</span> <span class="st">"+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"</span></span>
 <span></span>
 <span><span class="co"># you can use st_coordinates to get min/max coordinates of your tracking data</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span><span class="op">[</span> ,<span class="st">"X"</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span><span class="op">[</span>, <span class="st">"X"</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">## [1] -179.8794  179.7600</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span><span class="op">[</span> ,<span class="st">"Y"</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span><span class="op">[</span>, <span class="st">"Y"</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">## [1] -63.10255 -30.57208</span></span>
 <span></span>
 <span><span class="co"># update extent of map using extent of tracking data</span></span>
 <span><span class="va">map</span> <span class="op">&lt;-</span> <span class="va">map</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="va">my_crs</span>, <span class="co"># change projection to LAEA South Polar</span></span>
-<span>           <span class="co"># NB. lims must be in the units of the target CRS, so we need to</span></span>
-<span>           <span class="co"># transform the data to that crs using st_transform</span></span>
-<span>           xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">df_sub</span>, <span class="va">my_crs</span><span class="op">)</span><span class="op">)</span><span class="op">[</span> ,<span class="st">"X"</span><span class="op">]</span><span class="op">)</span>,</span>
-<span>           ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">df_sub</span>, <span class="va">my_crs</span><span class="op">)</span><span class="op">)</span><span class="op">[</span> ,<span class="st">"Y"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span></span>
+<span>    crs <span class="op">=</span> <span class="va">my_crs</span>, <span class="co"># change projection to LAEA South Polar</span></span>
+<span>    <span class="co"># NB. lims must be in the units of the target CRS, so we need to</span></span>
+<span>    <span class="co"># transform the data to that crs using st_transform</span></span>
+<span>    xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">df_sub</span>, <span class="va">my_crs</span><span class="op">)</span><span class="op">)</span><span class="op">[</span>, <span class="st">"X"</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>    ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">df_sub</span>, <span class="va">my_crs</span><span class="op">)</span><span class="op">)</span><span class="op">[</span>, <span class="st">"Y"</span><span class="op">]</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="va">map</span></span></code></pre></div>
 <p><img src="figures/animations/map_add_proj_lims-1.png" class="r-plt" alt="" width="700"></p>
 </div>
@@ -241,12 +249,13 @@ tracking data used to make the plot. To ensure a smooth animation, we
 need to render it with <strong>at least as many frames as there are time
 steps</strong> in the tracking data.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">map_anim</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/animate_map.html">animate_map</a></span><span class="op">(</span>p <span class="op">=</span> <span class="va">map</span>,           <span class="co"># our ggplot map</span></span>
-<span>                        wake_length <span class="op">=</span> <span class="fl">0.3</span>, <span class="co"># proportion of total animation time</span></span>
-<span>                        label_format <span class="op">=</span> <span class="st">"%B %d"</span> <span class="co"># month and date</span></span>
-<span><span class="op">)</span> </span>
+<code class="sourceCode R"><span><span class="va">map_anim</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/animate_map.html">animate_map</a></span><span class="op">(</span></span>
+<span>  p <span class="op">=</span> <span class="va">map</span>, <span class="co"># our ggplot map</span></span>
+<span>  wake_length <span class="op">=</span> <span class="fl">0.3</span>, <span class="co"># proportion of total animation time</span></span>
+<span>  label_format <span class="op">=</span> <span class="st">"%B %d"</span> <span class="co"># month and date</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">map_anim</span><span class="op">)</span>               <span class="co"># the gganim object</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">map_anim</span><span class="op">)</span> <span class="co"># the gganim object</span></span>
 <span><span class="co">## [1] "gganim"          "ggplot2::ggplot" "ggplot"          "ggplot2::gg"    </span></span>
 <span><span class="co">## [5] "S7_object"       "gg"</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">map_anim</span>, <span class="st">"n_timesteps"</span><span class="op">)</span> <span class="co"># number of time steps in animation</span></span>
@@ -278,9 +287,9 @@ for making your animation. You can also save each frame as an image file
 and use your own software to bind them into a video.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">gganimate</span><span class="fu">::</span><span class="fu"><a href="https://gganimate.com/reference/animate.html" class="external-link">animate</a></span><span class="op">(</span></span>
-<span>  plot <span class="op">=</span> <span class="va">map_anim</span>,         <span class="co"># our ggplot with added animation</span></span>
+<span>  plot <span class="op">=</span> <span class="va">map_anim</span>, <span class="co"># our ggplot with added animation</span></span>
 <span>  nframes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">map_anim</span>, <span class="st">"n_timesteps"</span><span class="op">)</span>, <span class="co"># number of frames = time steps in data</span></span>
-<span>  duration <span class="op">=</span> <span class="fl">5</span>,            <span class="co"># video duration in seconds</span></span>
+<span>  duration <span class="op">=</span> <span class="fl">5</span>, <span class="co"># video duration in seconds</span></span>
 <span>  renderer <span class="op">=</span> <span class="fu"><a href="https://gganimate.com/reference/renderers.html" class="external-link">av_renderer</a></span><span class="op">(</span><span class="op">)</span>, <span class="co"># default is gifski_renderer()</span></span>
 <span>  <span class="co"># optionally, specify width and height of output animation</span></span>
 <span>  width <span class="op">=</span> <span class="fl">540</span>, height <span class="op">=</span> <span class="fl">400</span>,</span>
@@ -305,17 +314,21 @@ paths and points by re-creating it using
 <span>  <span class="fu"><a href="../reference/geom_event_point.html">geom_event_point</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df_sub</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>col <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">+</span> <span class="co"># tracks layer</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">land</span>, fill <span class="op">=</span> <span class="st">"grey50"</span>, col <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span> <span class="op">+</span> <span class="co"># land polygons</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">colony</span>, pch <span class="op">=</span> <span class="fl">24</span>, fill <span class="op">=</span> <span class="st">"yellow"</span><span class="op">)</span> <span class="op">+</span> <span class="co"># add colony layer</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="va">my_crs</span>, <span class="co"># change projection and define limits</span></span>
-<span>           xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">df_sub</span>, <span class="va">my_crs</span><span class="op">)</span><span class="op">)</span><span class="op">[</span> ,<span class="st">"X"</span><span class="op">]</span><span class="op">)</span>,</span>
-<span>           ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">df_sub</span>, <span class="va">my_crs</span><span class="op">)</span><span class="op">)</span><span class="op">[</span> ,<span class="st">"Y"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span></span>
+<span>    crs <span class="op">=</span> <span class="va">my_crs</span>, <span class="co"># change projection and define limits</span></span>
+<span>    xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">df_sub</span>, <span class="va">my_crs</span><span class="op">)</span><span class="op">)</span><span class="op">[</span>, <span class="st">"X"</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>    ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span><span class="va">df_sub</span>, <span class="va">my_crs</span><span class="op">)</span><span class="op">)</span><span class="op">[</span>, <span class="st">"Y"</span><span class="op">]</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="co"># print to check</span></span>
 <span><span class="va">map</span></span></code></pre></div>
 <p><img src="figures/animations/anim_points-1.png" class="r-plt" alt="" width="700"></p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># add animation</span></span>
-<span><span class="va">map_anim2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/animate_map.html">animate_map</a></span><span class="op">(</span>p <span class="op">=</span> <span class="va">map</span>, </span>
-<span>                         wake_length <span class="op">=</span> <span class="fl">0.3</span>,</span>
-<span>                         label_format <span class="op">=</span> <span class="st">"%B %d"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">map_anim2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/animate_map.html">animate_map</a></span><span class="op">(</span></span>
+<span>  p <span class="op">=</span> <span class="va">map</span>,</span>
+<span>  wake_length <span class="op">=</span> <span class="fl">0.3</span>,</span>
+<span>  label_format <span class="op">=</span> <span class="st">"%B %d"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># render the animation</span></span>
 <span><span class="fu">gganimate</span><span class="fu">::</span><span class="fu"><a href="https://gganimate.com/reference/animate.html" class="external-link">animate</a></span><span class="op">(</span></span>
@@ -361,10 +374,12 @@ your data.</p>
 <span></span>
 <span><span class="co"># option 2: specify the rectangle manually. I want the whole Southern Ocean</span></span>
 <span><span class="co"># and up to the northern extent of my data (plus a 15 degree buffer)</span></span>
-<span><span class="va">rect_coords</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">180</span>, <span class="co"># define the corners</span></span>
-<span>                 xmax <span class="op">=</span> <span class="fl">180</span>,</span>
-<span>                 ymin <span class="op">=</span> <span class="op">-</span><span class="fl">90</span>,</span>
-<span>                 ymax <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span><span class="op">[</span>, <span class="st">"Y"</span><span class="op">]</span><span class="op">)</span> <span class="op">+</span> <span class="fl">15</span><span class="op">)</span> <span class="co"># add buffer</span></span>
+<span><span class="va">rect_coords</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  xmin <span class="op">=</span> <span class="op">-</span><span class="fl">180</span>, <span class="co"># define the corners</span></span>
+<span>  xmax <span class="op">=</span> <span class="fl">180</span>,</span>
+<span>  ymin <span class="op">=</span> <span class="op">-</span><span class="fl">90</span>,</span>
+<span>  ymax <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span><span class="op">[</span>, <span class="st">"Y"</span><span class="op">]</span><span class="op">)</span> <span class="op">+</span> <span class="fl">15</span></span>
+<span><span class="op">)</span> <span class="co"># add buffer</span></span>
 <span><span class="co"># convert to an sfc object and set the CRS</span></span>
 <span><span class="va">rect</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sfc.html" class="external-link">st_as_sfc</a></span><span class="op">(</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_bbox.html" class="external-link">st_bbox</a></span><span class="op">(</span><span class="va">rect_coords</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_crs.html" class="external-link">st_set_crs</a></span><span class="op">(</span><span class="fl">4326</span><span class="op">)</span></span>
@@ -406,12 +421,14 @@ single layer e.g. bathymetry raster) or <code>geom_spatraster_rgb</code>
 <span></span>
 <span><span class="co"># assemble map</span></span>
 <span><span class="va">map</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://dieghernan.github.io/tidyterra/reference/geom_spatraster_rgb.html" class="external-link">geom_spatraster_rgb</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">bmap</span><span class="op">)</span> <span class="op">+</span>                       <span class="co"># basemap</span></span>
-<span>  <span class="fu"><a href="../reference/geom_event_path.html">geom_event_path</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>col <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">2</span>, <span class="co"># tracks</span></span>
-<span>                  lineend <span class="op">=</span> <span class="st">"round"</span><span class="op">)</span> <span class="op">+</span> </span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_colour_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="va">track_colours</span><span class="op">)</span> <span class="op">+</span>            <span class="co"># track colours</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">colony</span>, pch <span class="op">=</span> <span class="fl">24</span>, fill <span class="op">=</span> <span class="st">"yellow"</span><span class="op">)</span> <span class="op">+</span>      <span class="co"># colony</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="va">my_crs</span><span class="op">)</span>                                   <span class="co"># projection</span></span>
+<span>  <span class="fu"><a href="https://dieghernan.github.io/tidyterra/reference/geom_spatraster_rgb.html" class="external-link">geom_spatraster_rgb</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">bmap</span><span class="op">)</span> <span class="op">+</span> <span class="co"># basemap</span></span>
+<span>  <span class="fu"><a href="../reference/geom_event_path.html">geom_event_path</a></span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="va">df</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>col <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">2</span>, <span class="co"># tracks</span></span>
+<span>    lineend <span class="op">=</span> <span class="st">"round"</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_colour_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="va">track_colours</span><span class="op">)</span> <span class="op">+</span> <span class="co"># track colours</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">colony</span>, pch <span class="op">=</span> <span class="fl">24</span>, fill <span class="op">=</span> <span class="st">"yellow"</span><span class="op">)</span> <span class="op">+</span> <span class="co"># colony</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="va">my_crs</span><span class="op">)</span> <span class="co"># projection</span></span>
 <span></span>
 <span><span class="co"># remove axes and gridlines so it looks neater</span></span>
 <span><span class="va">map</span> <span class="op">&lt;-</span> <span class="va">map</span> <span class="op">+</span></span>
@@ -419,7 +436,9 @@ single layer e.g. bathymetry raster) or <code>geom_spatraster_rgb</code>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
 <span>    plot.background <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_rect</a></span><span class="op">(</span></span>
 <span>      fill <span class="op">=</span> <span class="st">"white"</span>,</span>
-<span>      colour <span class="op">=</span> <span class="st">"white"</span><span class="op">)</span><span class="op">)</span></span>
+<span>      colour <span class="op">=</span> <span class="st">"white"</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="va">map</span></span></code></pre></div>
 <p><img src="figures/animations/make_raster_map-1.png" class="r-plt" alt="" width="700"></p>
 </div>
@@ -431,10 +450,12 @@ the suggested number of frames.</p>
 <p>This time we’ll add the animation by piping the <code>ggplot</code>
 to <code>animate_map</code> - both ways of using the function work.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># add animation to the map, this time with pipe </span></span>
+<code class="sourceCode R"><span><span class="co"># add animation to the map, this time with pipe</span></span>
 <span><span class="va">map_anim</span> <span class="op">&lt;-</span> <span class="va">map</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="../reference/animate_map.html">animate_map</a></span><span class="op">(</span>wake_length <span class="op">=</span> <span class="fl">0.1</span>,</span>
-<span>              label_format <span class="op">=</span> <span class="st">"%B %Y"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/animate_map.html">animate_map</a></span><span class="op">(</span></span>
+<span>    wake_length <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>    label_format <span class="op">=</span> <span class="st">"%B %Y"</span></span>
+<span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="co"># render the animation</span></span>
 <span><span class="fu">gganimate</span><span class="fu">::</span><span class="fu"><a href="https://gganimate.com/reference/animate.html" class="external-link">animate</a></span><span class="op">(</span></span>

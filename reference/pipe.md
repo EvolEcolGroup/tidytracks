@@ -25,7 +25,9 @@ The result of calling `rhs(lhs)`.
 ## Examples
 
 ``` r
-example_tt %>% event_time() %>% head()
+example_tt %>%
+  event_time() %>%
+  head()
 #> [1] "2024-01-01 12:00:00 UTC" "2024-01-01 12:20:00 UTC"
 #> [3] "2024-01-01 12:40:00 UTC" "2024-01-01 13:00:00 UTC"
 #> [5] "2024-01-01 13:20:00 UTC" "2024-01-01 12:00:00 UTC"

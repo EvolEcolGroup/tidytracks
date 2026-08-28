@@ -74,5 +74,5 @@ A `ggplot2` layer object.
 ``` r
 library(ggplot2)
 ggplot() +
- geom_event_point(data = example_tt, mapping = aes(color = track_id))
+  geom_event_point(data = example_tt, mapping = aes(color = track_id))
 ```
