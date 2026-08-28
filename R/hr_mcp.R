@@ -64,9 +64,6 @@ hr_mcp <- function(x, levels = c(0.5, 0.95)) {
 
   # now cast the results to an sf object
   mcp_results <- sf::st_as_sf(mcp_results, crs = sf::st_crs(x))
-  # add a method attribute
-  attr(mcp_results, "hr_method") <- c("mcp")
-  class(mcp_results) <- c("hr_poly_tbl", class(mcp_results))
 
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
@@ -76,6 +73,10 @@ hr_mcp <- function(x, levels = c(0.5, 0.95)) {
         dplyr::all_of("group_id")
       )
   }
+
+  # add a method attribute
+  attr(mcp_results, "hr_method") <- "mcp"
+  class(mcp_results) <- c("hr_poly_tbl", class(mcp_results))
 
   # Return the results as a tt_hr_tbl
   return(mcp_results)
