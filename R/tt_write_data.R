@@ -36,7 +36,6 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
     event_file <- paste0(file_prefix, "_events.csv")
   } else {
     # move all metadata into events table
-    meta_cols <- base::setdiff(names(show_meta(x)), names(x))
     x <- x %>%
       as_event_column(dplyr::any_of(
         # except for any column names that are in both events and meta

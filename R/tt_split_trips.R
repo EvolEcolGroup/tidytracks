@@ -4,9 +4,11 @@
 #'   foragers by identifying the trips based on a distance from the colony/nest.
 #'
 #' @param x A move2 object
-#' @param centre_col the column name for the centre of the colony/nest of each
-#'   track as found in an `sf` column the metadata table. The function
-#'   `sf_point_col()` can be used to create it.
+#' @param centre_col character string, the name of the column in the metadata
+#'   table that contains the centre of the colony/nest for each track. This
+#'   column must be of class `sfc_POINT` and should have a valid coordinate
+#'   reference system (CRS) specified. The function `sf_point_col()` can be used
+#'   to create this column.
 #' @param buffer_outbound the distance from the centre to define outbound trips,
 #'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
 #'   "km")`.

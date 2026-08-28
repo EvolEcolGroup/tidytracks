@@ -2,8 +2,9 @@
 #'
 #' This functions takes a tibble of UDs and computes the normalised sum of the
 #' UDs. The normalised sum is computed by summing the UDs and then dividing by
-#' the number of UDs so that the resulting UD has a maximum value of 1 (this is
-#' the same as dividing by the sum of values in the combined UDs).
+#' the number of UDs so that the resulting UD inegrates (sums) to 1 (since each
+#' input UD sums to 1). Thsi is equivalent to dividing by the sum of values in
+#' the combined UDs).
 #'
 #' @param x A tibble of UDs (potentially grouped), where each row is a UD in the
 #'   column named "ud", or a list of SpatRaster objects representing UDs.
@@ -39,7 +40,7 @@ hr_ud_sum.list <- function(x) {
   }
   # sum the rasters with terra
   sum_raster <- sum(terra::rast(x))
-  # normalise the sum raster to have a maximum value of 1 this assumes that all
+  # normalise the sum raster to sum to 1. This assumes that all
   # UDs sum to 1, so the sum of the UDs will be equal to the number of UDs
   sum_raster <- sum_raster / length(x)
   # set the name of the layer to "ud"

@@ -15,9 +15,11 @@ tt_split_trips(
 \arguments{
 \item{x}{A move2 object}
 
-\item{centre_col}{the column name for the centre of the colony/nest of each
-track as found in an \code{sf} column the metadata table. The function
-\code{sf_point_col()} can be used to create it.}
+\item{centre_col}{character string, the name of the column in the metadata
+table that contains the centre of the colony/nest for each track. This
+column must be of class \code{sfc_POINT} and should have a valid coordinate
+reference system (CRS) specified. The function \code{sf_point_col()} can be used
+to create this column.}
 
 \item{buffer_outbound}{the distance from the centre to define outbound trips,
 specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
