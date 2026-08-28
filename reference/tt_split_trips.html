@@ -94,6 +94,36 @@ in-between trips) are collected into a dummy trip labelled "trip_na".</p></dd>
     <p>a move2 object with the trips split.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># First, add a sf point column to metadata giving nest location</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">example_tt</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">example_tt</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>nest_location <span class="op">=</span> <span class="fu"><a href="sf_point_col.html">sf_point_col</a></span><span class="op">(</span><span class="va">nest_lon</span>, <span class="va">nest_lat</span>, crs <span class="op">=</span> <span class="fl">4326</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Now split the tracks into trips</span></span></span>
+<span class="r-in"><span><span class="va">example_tt_split</span> <span class="op">&lt;-</span> <span class="fu">tt_split_trips</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  x <span class="op">=</span> <span class="va">example_tt</span>,</span></span>
+<span class="r-in"><span>  centre_col <span class="op">=</span> <span class="st">"nest_location"</span>,</span></span>
+<span class="r-in"><span>  buffer_outbound <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">1</span>, <span class="st">"km"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  buffer_inbound <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">1</span>, <span class="st">"km"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  complete <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Now the unit of tracking is `trip_id` column</span></span></span>
+<span class="r-in"><span><span class="fu">move2</span><span class="fu">::</span><span class="fu"><a href="https://bartk.gitlab.io/move2/reference/column_name.html" class="external-link">mt_track_id_column</a></span><span class="op">(</span><span class="va">example_tt_split</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "trip_id"</span>
+<span class="r-in"><span><span class="co"># Three incomplete trips were identified</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">example_tt_split</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">track_id</span>, <span class="va">trip_id</span>, <span class="va">trip_type</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>.groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   track_id trip_id   trip_type </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> a        a_trip_1  incomplete</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> b        b_trip_1  incomplete</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> b        b_trip_na at_centre </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> c        c_trip_1  incomplete</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> c        c_trip_na at_centre </span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

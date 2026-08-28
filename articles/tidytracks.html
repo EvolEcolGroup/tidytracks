@@ -69,7 +69,7 @@
 <div class="section level2">
 <h2 id="tracking-data-representation-in-tidytracks">Tracking data representation in <code>tidytracks</code><a class="anchor" aria-label="anchor" href="#tracking-data-representation-in-tidytracks"></a>
 </h2>
-<p><code>tidytracks</code> uses tidy tables to represent movement, We
+<p><code>tidytracks</code> uses tidy tables to represent movement. We
 refer to such a table as a <strong>tibble of tracks</strong>
 (technically, such tables are <code>move2</code> objects from the <a href="https://bartk.gitlab.io/move2/" class="external-link">move2</a> package).</p>
 <p>In a tibble of <strong>tracks</strong>, each row represents an
@@ -197,7 +197,7 @@ inspect the meta data table as follows:</p>
 <span><span class="co">#&gt; 8   kb_43  -68.06893  -67.57072 female</span></span>
 <span><span class="co">#&gt; 9   kb_45  -68.06893  -67.57072 female</span></span></code></pre></div>
 <p>We have a <code>bird_id</code> column that links back to the events
-table, and then information about the sex of each bird, as well two
+table, and then information about the sex of each bird, as well as two
 columns giving lon and lat coordinates for the colony location.</p>
 <p>Note that <code>move2</code> objects don’t have to be ordered by
 time, but for many analyses, this is a requirement. We can order the
@@ -473,8 +473,8 @@ this we need to define the colony location, and a buffer around it.
 point column in the metadata</p>
 <p>In <code>tidytracks</code>, all locations should be stored as
 <code>sfc_POINT</code> geometries with a defined coordinate reference
-system (CRS). Whilst this is done automatically for locations events,
-location information in the metadata needs to converted after reading
+system (CRS). Whilst this is done automatically for location events,
+location information in the metadata needs to be converted after reading
 the file:</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">shags_tt</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">shags_tt</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>

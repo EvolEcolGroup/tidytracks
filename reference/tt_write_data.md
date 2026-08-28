@@ -34,3 +34,15 @@ Invisibly, the result of the final
 [`utils::write.csv()`](https://rdrr.io/r/utils/write.table.html) call;
 this function is primarily called for its side effect of writing CSV
 files.
+
+## Examples
+
+``` r
+# Save to temp directory
+tmp_prefix <- file.path(tempdir(), "example_tt_data")
+tt_write_data(
+  example_tt,
+  tmp_prefix,
+  combined = TRUE
+  )
+```

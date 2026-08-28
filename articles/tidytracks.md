@@ -2,7 +2,7 @@
 
 ## Tracking data representation in `tidytracks`
 
-`tidytracks` uses tidy tables to represent movement, We refer to such a
+`tidytracks` uses tidy tables to represent movement. We refer to such a
 table as a **tibble of tracks** (technically, such tables are `move2`
 objects from the [move2](https://bartk.gitlab.io/move2/) package).
 
@@ -138,8 +138,8 @@ show_meta(shags_tt)
 ```
 
 We have a `bird_id` column that links back to the events table, and then
-information about the sex of each bird, as well two columns giving lon
-and lat coordinates for the colony location.
+information about the sex of each bird, as well as two columns giving
+lon and lat coordinates for the colony location.
 
 Note that `move2` objects don’t have to be ordered by time, but for many
 analyses, this is a requirement. We can order the data by time (within
@@ -490,8 +490,8 @@ takes one nest location per track as a point column in the metadata
 
 In `tidytracks`, all locations should be stored as `sfc_POINT`
 geometries with a defined coordinate reference system (CRS). Whilst this
-is done automatically for locations events, location information in the
-metadata needs to converted after reading the file:
+is done automatically for location events, location information in the
+metadata needs to be converted after reading the file:
 
 ``` r
 
