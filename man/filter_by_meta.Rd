@@ -24,3 +24,7 @@ It allows you to filter tracks based on any variables in the metadata table,
 including the track ID column (which you can specify using the track ID
 column name, or the shorthand \code{.track_id}).
 }
+\examples{
+subset_tt <- example_tt \%>\% filter_by_meta(sex == "female")
+show_meta(subset_tt)
+}

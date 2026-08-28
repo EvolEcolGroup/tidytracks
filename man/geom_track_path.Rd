@@ -55,3 +55,8 @@ Units (implemented via the package \code{units}) are produced by many
 operations, but are not fully compatible with \code{ggplot2}. This function
 internally drops units before creating a \code{ggplot2} layer.
 }
+\examples{
+library(ggplot2)
+ggplot() +
+ geom_track_path(data = example_tt, mapping = aes(color = track_id))
+}

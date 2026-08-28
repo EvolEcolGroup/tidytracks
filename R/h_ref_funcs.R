@@ -6,6 +6,7 @@
 #' @param group_index A vector of group indices
 #' @returns A vector of bandwidths, one for each group
 #' @keywords internal
+#' @noRd
 
 h_ref_indiv <- function(xy, group_index) {
   # compute the bandwidth for each group (i.e. subset xy by group_index)
@@ -31,6 +32,7 @@ h_ref_indiv <- function(xy, group_index) {
 #' @param group_index A vector of group indices
 #' @returns A single value, the mean of the bandwidths for each group
 #' @keywords internal
+#' @noRd
 
 h_ref_mean <- function(xy, group_index) {
   h_ref <- h_ref_indiv(xy, group_index)

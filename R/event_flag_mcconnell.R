@@ -24,6 +24,8 @@
 #' @return A logical vector of the same length as the number of events in `x`,
 #'   indicating which points are valid.
 #' @export
+#' @examples
+#' event_flag_mcconnell(example_tt, max_speed = as_units(50, "m/s"))
 
 event_flag_mcconnell <- function(
   x,

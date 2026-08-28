@@ -31,6 +31,8 @@
 #'  distance from the central place location (or the starting point)
 #'  }
 #' @export
+#' @examples
+#' track_summary_stats(example_tt)
 
 track_summary_stats <- function(
   x,

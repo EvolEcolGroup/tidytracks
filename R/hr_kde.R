@@ -46,7 +46,8 @@
 #' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
 #' - `res`: the resolution used for the KDE
 #' If `levels` is NULL:
-#' - `kde`: the full KDE object is returned in a list column
+#' - `ud`: the full utilisation distribution is returned as a list-column of
+#'   `terra::SpatRaster` objects
 #' Else, if `levels` is not NULL, the following columns are added:
 #' - `area`: the area of the home range at this level (in the units
 #'   of the projection of `x`, e.g. m^2 for a UTM projection)
@@ -54,6 +55,16 @@
 #'   the isopleth for the appropriate level
 #'
 #' @export
+#' @examples
+#' example_kde <- hr_kde(example_tt)
+#' example_kde
+#' library(ggplot2)
+#' autoplot(example_kde)
+#' # compute the isopleths for the 50% and 95% home range
+#' example_iso <- hr_kde(example_tt, levels = c(0.5, 0.95))
+#' ggplot(example_iso) +
+#'   geom_sf(aes(fill = track_id), alpha = 0.7)
+#' 
 
 hr_kde <- function(
   x,
@@ -172,7 +183,7 @@ hr_kde <- function(
 
     # if returning the full kde object, we simply add it to the kde column
     # add the kde to the tibble as a list column
-    res_tbl$ud <- PackedSpatRaster_list(kde)
+    res_tbl$ud <- list(kde)
     names(res_tbl$ud) <- group_labels[group_id]
     # add a class to the tibble
     class(res_tbl) <- c("hr_ud_tbl", class(res_tbl))
@@ -211,8 +222,9 @@ hr_kde <- function(
 #' @param res The resolution of the grid (in the units of the projection of x).
 #' @param h The bandwidth for the kernel density estimation.
 #' @param id The identifier for the group (used in raster metadata).
-#' @return A PackedSpatRaster.
+#' @return A `terra::SpatRaster`.
 #' @keywords internal
+#' @noRd
 kde_one_group <- function(xy, crs, bbox, res, h, id) {
   kde <- MASS::kde2d(
     xy[, 1],
@@ -260,6 +272,5 @@ kde_one_group <- function(xy, crs, bbox, res, h, id) {
     paste0("density_sum = ", sum_density)
   )
 
-  # return it wrapped (so that it can be put in a list)
-  return(terra::wrap(r))
+  r
 }

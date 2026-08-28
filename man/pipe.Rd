@@ -2,6 +2,7 @@
 % Please edit documentation in R/utils-pipe.R
 \name{\%>\%}
 \alias{\%>\%}
+\alias{pipe}
 \title{Pipe operator}
 \usage{
 lhs \%>\% rhs
@@ -16,5 +17,9 @@ The result of calling \code{rhs(lhs)}.
 }
 \description{
 See `magrittr::pipe \\%>\\% for details.
+}
+\examples{
+example_tt \%>\% event_time() \%>\% head()
+
 }
 \keyword{internal}

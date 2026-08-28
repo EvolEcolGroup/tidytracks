@@ -102,7 +102,8 @@
 #'   interval     = as_units(30, "s"),
 #'   max_time_lag = as_units(2, "min")
 #' )
-#'
+#' resampled_gapped
+#' 
 #' # Resample to one fix per minute, snapping times to whole-minute boundaries
 #' resampled_snap <- tt_regular_time(track,
 #'   interval = as_units(1, "min"),

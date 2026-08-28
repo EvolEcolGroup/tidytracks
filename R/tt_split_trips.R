@@ -4,11 +4,11 @@
 #'   foragers by identifying the trips based on a distance from the colony/nest.
 #'
 #' @param x A move2 object
-#' @param centre_col the column name for the centre of the colony/nest of each
-#'   track as found in the metadata table. Alternatively, an `sf` object of
-#'   either length 1 or the same length as the number of tracks in the move2
-#'   object. If a single geometry object is provided, it will be used as the
-#'   centre for all tracks.
+#' @param centre_col character string, the name of the column in the metadata
+#'   table that contains the centre of the colony/nest for each track. This
+#'   column must be of class `sfc_POINT` and should have a valid coordinate
+#'   reference system (CRS) specified. The function `sf_point_col()` can be used
+#'   to create this column.
 #' @param buffer_outbound the distance from the centre to define outbound trips,
 #'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
 #'   "km")`.
@@ -82,10 +82,6 @@ tt_split_trips <- function(
     units::set_units(buffer_inbound, dist_units, mode = "standard")
   )
 
-  # TODO in the code above, if given an sf object with multiple rows, we should
-  # demand that there is a column with the same name as the track id column in
-  # the move2 object and make sure that we match up to avoid confusion
-
   # Get coordinates and metadata
   coords <- sf::st_coordinates(x)
   ids <- event_track_id(x)
@@ -147,6 +143,7 @@ tt_split_trips <- function(
 #' @returns a vector with trip IDs for each event (events to remove are marked
 #' as NA)
 #' @keywords internal
+#' @noRd
 split_one_track <- function(
   label,
   x,

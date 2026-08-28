@@ -27,3 +27,6 @@ object. It calculates the median sampling interval, track duration, expected
 number of points, actual number of points, and the proportion of expected
 points that are missing (due to gaps in track).
 }
+\examples{
+track_summary_health(example_tt)
+}

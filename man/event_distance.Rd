@@ -10,7 +10,7 @@ event_distance(x, units = as_units("m"))
 \item{x}{A move2 object.}
 
 \item{units}{Optional, the units to use for the distance. The default is "m".
-' Other distance units supported by the \code{units} package can also be supplied.}
+Other distance units supported by the \code{units} package can also be supplied.}
 }
 \value{
 A vector of distances of the same length as the number of events in

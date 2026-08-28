@@ -10,7 +10,7 @@
 #'
 #' @param x A move2 object.
 #' @param units Optional, the units to use for the distance. The default is "m".
-#'' Other distance units supported by the `units` package can also be supplied.
+#' Other distance units supported by the `units` package can also be supplied.
 #' @returns A vector of distances of the same length as the number of events in
 #' `x`, with the last value set to NA for each track.
 #' @export

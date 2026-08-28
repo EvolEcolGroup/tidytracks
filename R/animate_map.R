@@ -184,6 +184,7 @@ animate_map <- function(
 #'   is the matched layer's sf data frame, and time_col is the name of the
 #'   POSIXct column. Returns NULL if no supported layer is found.
 #' @keywords internal
+#' @noRd
 tt_detect_layer_type <- function(p, layer_name = NULL) {
   matches <- list()
 

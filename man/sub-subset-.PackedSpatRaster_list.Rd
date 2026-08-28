@@ -11,10 +11,20 @@
 
 \item{i}{The index or name of the element to set.}
 
-\item{value}{A \code{SpatRaster} or \code{PackedSpatRaster} to store at the specified name.
-If value is a \code{SpatRaster}, it will be automatically wrapped as a
+\item{value}{A \code{SpatRaster} or \code{PackedSpatRaster} to store at the specified
+name. If value is a \code{SpatRaster}, it will be automatically wrapped as a
 \code{PackedSpatRaster} before storage.}
+}
+\value{
+The modified \code{PackedSpatRaster_list} with the specified element
+replaced.
 }
 \description{
 \verb{[[<-} stores a \code{SpatRaster} by position or name (wrapping it automatically)
+}
+\examples{
+r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+pl <- PackedSpatRaster_list(a = r1, b = r2)
+pl[[1]] <- r2 # replaces the first element with r2
 }

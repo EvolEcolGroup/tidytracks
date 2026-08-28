@@ -1,26 +1,57 @@
 #' Compute the cumulative Utilisation Distribution (UD)
 #'
-#' @description This function takes a SpatRaster representing the UD and returns
-#' a SpatRaster containing the cumulative utilisation distribution (UD).
+#' @description This function computes the cumulative utilisation distribution
+#' (CUD). `x` can be either a `SpatRaster` with a layer named `"ud"` or a
+#' numeric matrix of UD values. `return_matrix` controls the return type: when
+#' `TRUE` a numeric matrix is returned; when `FALSE` a `SpatRaster` is
+#' returned. By default the return type matches the input type. A `SpatRaster`
+#' is only created when required for the return value.
 #'
-#' @param x A SpatRaster of the UD.
+#' @param x A `SpatRaster` with a layer named `"ud"`, or a numeric matrix of
+#'   UD values.
+#' @param return_matrix Logical. If `TRUE`, a numeric matrix of cumulative UD
+#'   values is returned. If `FALSE`, a `terra::SpatRaster` is returned. When
+#'   `x` is a matrix and `return_matrix = FALSE`, a SpatRaster cannot be
+#'   constructed and an error is raised. Defaults to `TRUE` when `x` is a
+#'   matrix and `FALSE` when `x` is a `SpatRaster` (i.e. returns the same type
+#'   as the input by default).
 #' @return A `terra::SpatRaster` representing the cumulative utilisation
-#'   distribution (UD).
+#'   distribution (UD) when `return_matrix = FALSE`, or a numeric matrix when
+#'   `return_matrix = TRUE`. Matrices returned from a `SpatRaster` have the
+#'   same number of rows and columns as the raster.
 #' @keywords internal
+#' @noRd
 
-hr_cud <- function(x) {
-  # check that x has a layer named "ud"
-  if (!"ud" %in% names(x)) {
-    stop("x must have a layer named 'ud'")
+hr_cud <- function(x, return_matrix = !inherits(x, "SpatRaster")) {
+  if (!inherits(x, "SpatRaster") && !return_matrix) {
+    stop("cannot return a SpatRaster when x is a matrix; use return_matrix = TRUE")
   }
-  # create a single-layer copy of the UD raster to store the cumulative UD
-  # values
-  ud <- x[["ud"]]
+  if (inherits(x, "SpatRaster")) {
+    # Extract the UD values as a matrix with the raster's row and column layout.
+    if (!"ud" %in% names(x)) {
+      stop("x must have a layer named 'ud'")
+    }
+    ud <- x[["ud"]]
+    vals <- as.matrix(ud, wide = TRUE)
+  } else {
+    # x is already a numeric matrix or vector
+    ud <- NULL
+    vals <- x
+  }
+
+  # compute the cumulative sum of the UD values, ordered from highest to lowest
+  flat <- as.numeric(vals)
+  ord <- order(-flat)
+  cud_flat <- cumsum(flat[ord])[order(ord)]
+  cud_mat <- matrix(cud_flat, nrow = nrow(vals), ncol = ncol(vals))
+
+  if (return_matrix) {
+    return(cud_mat)
+  }
+
+  # store the cumulative UD values back into a SpatRaster
   cud <- ud
   names(cud) <- "cud"
-  # compute the cumulative sum of the UD values, ordered from highest to lowest
-  cud_vals <- terra::values(ud)
-  cud_vals <- cumsum(cud_vals[order(-cud_vals)])[order(order(-cud_vals))]
-  terra::values(cud) <- cud_vals
+  terra::values(cud) <- as.vector(t(cud_mat))
   return(cud)
 }

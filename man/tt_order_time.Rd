@@ -18,3 +18,6 @@ Note that it also reorders
 the track_ids. Several functions require tracks to be ordered by time to work
 properly
 }
+\examples{
+tt_order_time(example_tt)
+}

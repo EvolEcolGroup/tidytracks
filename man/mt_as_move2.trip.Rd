@@ -18,5 +18,7 @@ A move2 object
 Convert \code{trip} objects to \code{move2} objects.
 }
 \examples{
+\dontshow{if (rlang::is_installed("trip")) withAutoprint(\{ # examplesIf}
 mt_as_move2(trip::walrus818)
+\dontshow{\}) # examplesIf}
 }

@@ -11,10 +11,20 @@
 
 \item{name}{The name of the element to set.}
 
-\item{value}{A \code{SpatRaster} or \code{PackedSpatRaster} to store at the specified name.
-If value is a SpatRaster, it will be automatically wrapped as a
+\item{value}{A \code{SpatRaster} or \code{PackedSpatRaster} to store at the specified
+name. If value is a SpatRaster, it will be automatically wrapped as a
 PackedSpatRaster before storage.}
+}
+\value{
+The modified \code{PackedSpatRaster_list} with the specified element
+replaced.
 }
 \description{
 \verb{$<-} stores a \code{SpatRaster} by name (wrapping it automatically)
+}
+\examples{
+r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+pl <- PackedSpatRaster_list(a = r1, b = r2)
+pl$a <- r2 # replaces the element named "a" with r2
 }
