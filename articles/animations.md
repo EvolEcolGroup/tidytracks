@@ -1,4 +1,4 @@
-# Animating your maps
+# Animations and maps
 
 `tidytracks` also includes a function for animating maps of animal
 movement data over time.

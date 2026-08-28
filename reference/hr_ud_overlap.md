@@ -54,3 +54,22 @@ hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi"), cond_level = NULL)
 A numeric value representing the overlap between the two UDs according
 to the specified method, or a matrix of such values if `x` is a tibble
 of multiple UDs.
+
+## Details
+
+When `x` is an `hr_ud_tbl`, each UD is validated, converted to cell
+values, and conditionally masked once before all pairwise comparisons
+are calculated. This avoids repeated raster reads and
+cumulative-distribution calculations for UDs that occur in multiple
+pairs.
+
+## Examples
+
+``` r
+example_kde <- hr_kde(example_tt)
+hr_ud_overlap(example_kde)
+#>           a         b         c
+#> a 1.0000000 0.2287909 0.1684975
+#> b 0.2287909 1.0000000 0.5419589
+#> c 0.1684975 0.5419589 1.0000000
+```

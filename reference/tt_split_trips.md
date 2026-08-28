@@ -23,11 +23,12 @@ tt_split_trips(
 
 - centre_col:
 
-  the column name for the centre of the colony/nest of each track as
-  found in the metadata table. Alternatively, an `sf` object of either
-  length 1 or the same length as the number of tracks in the move2
-  object. If a single geometry object is provided, it will be used as
-  the centre for all tracks.
+  character string, the name of the column in the metadata table that
+  contains the centre of the colony/nest for each track. This column
+  must be of class `sfc_POINT` and should have a valid coordinate
+  reference system (CRS) specified. The function
+  [`sf_point_col()`](https://evolecolgroup.github.io/tidytracks/reference/sf_point_col.md)
+  can be used to create this column.
 
 - buffer_outbound:
 

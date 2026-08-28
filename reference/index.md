@@ -7,10 +7,10 @@ Functions for loading, saving and displaying tibbles of tracks.
 - [`tt_read_data()`](https://evolecolgroup.github.io/tidytracks/reference/tt_read_data.md)
   :
 
-  Read data from a csv file into a `move2` object
+  Read data from a CSV file into a `move2` object
 
 - [`tt_write_data()`](https://evolecolgroup.github.io/tidytracks/reference/tt_write_data.md)
-  : Write a 'tidy_tracks' object to CSV files
+  : Write a tibble of tracks to CSV files
 
 - [`as.data.frame(`*`<move2>`*`)`](https://evolecolgroup.github.io/tidytracks/reference/as_data_frame_move2.md)
   :
@@ -35,7 +35,9 @@ Functions for loading, saving and displaying tibbles of tracks.
   : Filter the tracks based on variables from the metadata
 
 - [`mt_as_move2(`*`<trip>`*`)`](https://evolecolgroup.github.io/tidytracks/reference/mt_as_move2.trip.md)
-  : Method to convert trip objects to move2 objects
+  :
+
+  Method to convert `trip` objects to `move2` objects
 
 - [`sf_point_col()`](https://evolecolgroup.github.io/tidytracks/reference/sf_point_col.md)
   : Create a simple feature POINT geometry column
@@ -137,6 +139,14 @@ Estimate home range and habitat use from movement data.
   : Create isopleths from utilisation distributions
 - [`hr_ud_overlap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_overlap.md)
   : Compute overlap for utilisation distributions
+- [`hr_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_saveRDS.md)
+  : Save utilisation distributions as an RDS file
+- [`hr_ud_sum()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_sum.md)
+  : Compute the normalised sum of multiple UDs
+- [`hr_ud_unwrap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_unwrap.md)
+  : Unwrap utilisation distributions after loading
+- [`hr_ud_wrap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_wrap.md)
+  : Wrap utilisation distributions for storage
 
 ## List of PackedRasters
 
@@ -186,6 +196,15 @@ Process lists of rasters (used to represent UDs for home ranges).
   :
 
   Add `SpatRaster` by position or name to `PackedSpatRaster_list`
+
+## Helper functions
+
+Helper functions to manipulate and convert data.
+
+- [`dist_category()`](https://evolecolgroup.github.io/tidytracks/reference/dist_category.md)
+  : Create a categorical distance matrix
+- [`same_category()`](https://evolecolgroup.github.io/tidytracks/reference/same_category.md)
+  : Create a categorical similarity matrix
 
 ## Example datasets
 

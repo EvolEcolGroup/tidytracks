@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,8 +19,9 @@
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animating your maps</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/EvolEcolGroup/tidytracks/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -33,7 +34,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Create isopleths from utilisation distributions</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/hr_ud_iso.R" class="external-link"><code>R/hr_ud_iso.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/hr_ud_iso.R" class="external-link"><code>R/hr_ud_iso.R</code></a></small>
       <div class="d-none name"><code>hr_ud_iso.Rd</code></div>
     </div>
 
@@ -45,7 +46,7 @@
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">hr_ud_iso</span><span class="op">(</span><span class="va">x</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># S3 method for class 'hr_ud_tbl'</span></span>
+<span><span class="co"># S3 method for class 'tbl_df'</span></span>
 <span><span class="fu">hr_ud_iso</span><span class="op">(</span><span class="va">x</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'SpatRaster'</span></span>
@@ -73,7 +74,40 @@ between 0 and 1.</p></dd>
 <code>id</code>, <code>level</code>, and <code>geometry</code>. If <code>x</code> is a <code>hr_ud</code> object, a
 <code>sfc_GEOMETRYCOLLECTION</code> object.</p>
     </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p>Other home_range:
+<code><a href="hr_ud_sum.html">hr_ud_sum()</a></code></p></div>
+    </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">example_kde</span> <span class="op">&lt;-</span> <span class="fu"><a href="hr_kde.html">hr_kde</a></span><span class="op">(</span><span class="va">example_tt</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">example_iso</span> <span class="op">&lt;-</span> <span class="fu">hr_ud_iso</span><span class="op">(</span><span class="va">example_kde</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">example_iso</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Simple feature collection with 6 features and 10 fields</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Geometry type: MULTIPOLYGON</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Dimension:     XY</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Bounding box:  xmin: -7.624955 ymin: -4.28871 xmax: 7.82745 ymax: 5.792261</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Geodetic CRS:  WGS 84</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 11</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   track_id method     h  xmin  ymin  xmax  ymax   res level          area</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>         <span style="color: #949494;">[m^2]</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> a        kde     1.06 -<span style="color: #BB0000;">16.5</span> -<span style="color: #BB0000;">7.42</span>  16.6  9.54 0.737  0.5  <span style="text-decoration: underline;">165</span>392<span style="text-decoration: underline;">600</span>801.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> a        kde     1.06 -<span style="color: #BB0000;">16.5</span> -<span style="color: #BB0000;">7.42</span>  16.6  9.54 0.737  0.95 <span style="text-decoration: underline;">656</span>939<span style="text-decoration: underline;">585</span>304.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> b        kde     1.06 -<span style="color: #BB0000;">16.5</span> -<span style="color: #BB0000;">7.42</span>  16.6  9.54 0.737  0.5   <span style="text-decoration: underline;">95</span>349<span style="text-decoration: underline;">646</span>303.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> b        kde     1.06 -<span style="color: #BB0000;">16.5</span> -<span style="color: #BB0000;">7.42</span>  16.6  9.54 0.737  0.95 <span style="text-decoration: underline;">418</span>935<span style="text-decoration: underline;">814</span>644.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> c        kde     1.06 -<span style="color: #BB0000;">16.5</span> -<span style="color: #BB0000;">7.42</span>  16.6  9.54 0.737  0.5  <span style="text-decoration: underline;">112</span>048<span style="text-decoration: underline;">649</span>312.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> c        kde     1.06 -<span style="color: #BB0000;">16.5</span> -<span style="color: #BB0000;">7.42</span>  16.6  9.54 0.737  0.95 <span style="text-decoration: underline;">508</span>659<span style="text-decoration: underline;">872</span>486.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 1 more variable: geometry &lt;MULTIPOLYGON [°]&gt;</span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># now plot the isopleths</span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">example_iso</span><span class="op">)</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">track_id</span><span class="op">)</span>, alpha <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="hr_ud_iso-1.png" alt="" width="700" height="433"></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

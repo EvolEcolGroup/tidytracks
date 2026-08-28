@@ -40,8 +40,9 @@ geom_track_path(
 - data:
 
   The `move2` object to be displayed. For this geometry, there is no
-  inheritance from the main `ggplot()` call, and data has to be
-  specified.
+  inheritance from the main
+  [`ggplot()`](https://ggplot2.tidyverse.org/reference/ggplot.html)
+  call, and data has to be specified.
 
 - stat:
 
@@ -79,3 +80,11 @@ A `ggplot2` layer object.
 Units (implemented via the package `units`) are produced by many
 operations, but are not fully compatible with `ggplot2`. This function
 internally drops units before creating a `ggplot2` layer.
+
+## Examples
+
+``` r
+library(ggplot2)
+ggplot() +
+ geom_track_path(data = example_tt, mapping = aes(color = track_id))
+```

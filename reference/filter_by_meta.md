@@ -31,3 +31,12 @@ filter_by_meta(.data, ..., .track_id = NULL)
 ## Value
 
 A move2 object with only the selected tracks
+
+## Examples
+
+``` r
+subset_tt <- example_tt %>% filter_by_meta(sex == "female")
+show_meta(subset_tt)
+#>   track_id    sex nest_lon nest_lat
+#> 1        c female    -0.78     0.43
+```

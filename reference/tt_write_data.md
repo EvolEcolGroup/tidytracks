@@ -1,4 +1,4 @@
-# Write a 'tidy_tracks' object to CSV files
+# Write a tibble of tracks to CSV files
 
 This function writes the event table and the metadata table of a
 'tidy_tracks' object to CSV files (or one combined CSV file).
@@ -13,7 +13,7 @@ tt_write_data(x, file_prefix, combined = FALSE)
 
 - x:
 
-  A 'tidy_tracks' object
+  A `move2` object
 
 - file_prefix:
 

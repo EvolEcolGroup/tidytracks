@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,8 +19,9 @@
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animating your maps</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/EvolEcolGroup/tidytracks/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -33,7 +34,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Unpack all rasters into a plain list of live <code>SpatRasters</code></h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/PackedSpatRaster_list.R" class="external-link"><code>R/PackedSpatRaster_list.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/PackedSpatRaster_list.R" class="external-link"><code>R/PackedSpatRaster_list.R</code></a></small>
       <div class="d-none name"><code>as.list.PackedSpatRaster_list.Rd</code></div>
     </div>
 
@@ -65,6 +66,37 @@
 <code>PackedSpatRaster_list</code>.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">r1</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span>nrows <span class="op">=</span> <span class="fl">4</span>, ncols <span class="op">=</span> <span class="fl">4</span>, vals <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">16</span>, crs <span class="op">=</span> <span class="st">"EPSG:4326"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">r2</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span>nrows <span class="op">=</span> <span class="fl">4</span>, ncols <span class="op">=</span> <span class="fl">4</span>, vals <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">16</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">pl</span> <span class="op">&lt;-</span> <span class="fu"><a href="PackedSpatRaster_list.html">PackedSpatRaster_list</a></span><span class="op">(</span>a <span class="op">=</span> <span class="va">r1</span>, b <span class="op">=</span> <span class="va">r2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">lst</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">as.list</a></span><span class="op">(</span><span class="va">pl</span><span class="op">)</span> <span class="co"># returns a plain list of SpatRasters</span></span></span>
+<span class="r-in"><span><span class="va">lst</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $a</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> class       : SpatRaster</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> size        : 4, 4, 1  (nrow, ncol, nlyr)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> resolution  : 90, 45  (x, y)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> extent      : -180, 180, -90, 90  (xmin, xmax, ymin, ymax)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> coord. ref. : lon/lat WGS 84 (EPSG:4326)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> source(s)   : memory</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> name        : lyr.1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> min value   :     1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> max value   :    16</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $b</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> class       : SpatRaster</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> size        : 4, 4, 1  (nrow, ncol, nlyr)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> resolution  : 90, 45  (x, y)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> extent      : -180, 180, -90, 90  (xmin, xmax, ymin, ymax)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> coord. ref. : lon/lat WGS 84 (CRS84) (OGC:CRS84)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> source(s)   : memory</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> name        :    lyr.1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> min value   :  -1.5124</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> max value   : 1.888505</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

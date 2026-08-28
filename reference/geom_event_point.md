@@ -68,3 +68,11 @@ geom_event_point(
 ## Value
 
 A `ggplot2` layer object.
+
+## Examples
+
+``` r
+library(ggplot2)
+ggplot() +
+ geom_event_point(data = example_tt, mapping = aes(color = track_id))
+```

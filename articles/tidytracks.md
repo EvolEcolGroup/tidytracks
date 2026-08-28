@@ -4,7 +4,7 @@
 
 `tidytracks` uses tidy tables to represent movement, We refer to such a
 table as a **tibble of tracks** (technically, such tables are `move2`
-objects from the `move2` package).
+objects from the [move2](https://bartk.gitlab.io/move2/) package).
 
 In a tibble of **tracks**, each row represents an **event**, which is a
 time-stamped observation, associated with a location (and, optionally,
@@ -20,8 +20,9 @@ the full deployment.
 The **metadata** that describes each of these tracks is stored in a
 separate table, which is linked to the event table by a
 `track_id_column`. This means we do not have to repeat information (such
-as the **ring_number** or *sex* of an animal) for each **event**, but we
-can use the **metadata** of the **track** to store that information.
+as the **ring_number** or **sex** of the animal, or the tracking
+deployment information) for each **event**. Instead, we store this
+track-level information in the **metadata** of the **track**.
 
 ## Reading data into a tibble of tracks
 
@@ -30,9 +31,10 @@ locations) from a CSV file or as existing `data.frame` in R.
 
 This table should contain at least the following columns: - one column
 which is the `track_id` (i.e. the variable that groups events into a
-track, e.g. `bird_id` or `logger_id`) - two columns representing the `x`
-and `y` coordinates (e.g. `longitude` and `latitude`) - a `date-time`
-column (or separate `date` and `time` columns)
+track, e.g. `bird_id`, `logger_id`, or `deployment_id`) - two columns
+representing the `x` and `y` coordinates (e.g. `longitude` and
+`latitude`) - a `date-time` column (or separate `date` and `time`
+columns)
 
 Additional columns of data will be stored in the **events** table if
 they have information that is specific to each event (i.e. the values
@@ -51,11 +53,10 @@ modified to show the functionality of `tidytracks`. Please do not use
 them for any real analyses of shag movement!
 
 We have a single CSV. Each row includes information about the locations
-(in this case `lat` and `lon`) and time (in this case, one `date_time`
+(in this case `lon` and `lat`) and time (in this case, one `date_time`
 column). Locations belonging to the same bird’s track are identified by
 the same value in the `bird_id` column (in this example, as we only have
-one track per bird, the `bird_id` is the individual ID number of the
-bird).
+one track per bird, the unit of tracking is `bird_id`).
 
 The CSV also contains other columns of information about the tracks
 (`sex` and colony coordinates split into `colony_lat` and `colony_lon`).
@@ -65,24 +66,9 @@ table when we create the `tidytracks` object.
 ``` r
 
 library(tidytracks)
-#> Loading required package: move2
-#> Loading required package: units
-#> udunits database from /usr/share/xml/udunits/udunits2.xml
-#> Registered S3 method overwritten by 'tidytracks':
-#>   method      from 
-#>   print.move2 move2
 library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
 library(ggplot2)
 library(sf)
-#> Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.4.0; sf_use_s2() is TRUE
 
 shags_csv <- system.file(
   "extdata",
@@ -96,7 +82,8 @@ shags_tt <- tt_read_data(
   col_coords = c("lon", "lat"),
   col_date_time = "date_time",
   time_zone = "UTC",
-  crs = 4326)
+  crs = 4326
+)
 ```
 
 Inspecting the events table, we have:
@@ -151,11 +138,12 @@ show_meta(shags_tt)
 ```
 
 We have a `bird_id` column that links back to the events table, and then
-information about the sex of the bird, as well as a column of
-coordinates for the colony location.
+information about the sex of each bird, as well two columns giving lon
+and lat coordinates for the colony location.
 
 Note that `move2` objects don’t have to be ordered by time, but for many
-analyses, this is a requirement. We can order the data by time using the
+analyses, this is a requirement. We can order the data by time (within
+each track) using the
 [`tt_order_time()`](https://evolecolgroup.github.io/tidytracks/reference/tt_order_time.md)
 function:
 
@@ -181,13 +169,19 @@ of `ggplot2` can be used; in this case, we will also adjust the aspect
 ratio within
 [`theme()`](https://ggplot2.tidyverse.org/reference/theme.html).
 
+(This projection string is for an Azimuthal Equidistant projection
+centred on the colony location, which is appropriate for this small
+area.)
+
 ``` r
 
 ggplot() +
-  geom_event_point(data = shags_tt, aes(color = bird_id))+
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs')+
-    theme(aspect.ratio = 1, 
-      axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_event_point(data = shags_tt, aes(color = bird_id)) +
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_events-1.png)
@@ -203,9 +197,11 @@ to plot the paths between them:
 ggplot() +
   geom_event_path(data = shags_tt, aes(color = bird_id)) +
   facet_wrap(~bird_id) +
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/shags_plot_paths-1.png)
@@ -216,16 +212,17 @@ the tracked period.
 ## A grammar of movement
 
 As we saw above, `tt_*` functions are specific to and operate on the
-whole table of tracks (aka the `move2` object), and often will return
-either a complete table of tracks or different tibble (e.g. a tibble of
-kernels). For example, there are functions to clean the data using a
-given algorithm (e.g. `tt_clean_mcconnell`), or to split the data into
-trips for central place foragers (e.g. `tt_split_trips`). We will see
-those functions in action in a later section.
+whole table of tracks (aka the `move2` object), and return a complete
+table of tracks. For example, there are functions to clean the data
+using a given algorithm (e.g.
+[`tt_clean_mcconnell()`](https://evolecolgroup.github.io/tidytracks/reference/tt_clean_mcconnell.md)),
+or to split the data into trips for central place foragers
+(e.g. [`tt_split_trips()`](https://evolecolgroup.github.io/tidytracks/reference/tt_split_trips.md)).
+We will see those functions in action in a later section.
 
 `event_*` functions, on the other hand, operate on events, and return a
 vector of the same length as number of rows in the event table (and thus
-can be use in
+can be used in
 [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html)
 operations). For example, we can use
 [`event_speed()`](https://evolecolgroup.github.io/tidytracks/reference/event_speed.md)
@@ -233,14 +230,14 @@ to calculate the speed of each event. Note that, technically, the speed
 pertains to the segment between two events, but for simplicity we will
 refer to it as the speed of the event. For each track,
 [`event_speed()`](https://evolecolgroup.github.io/tidytracks/reference/event_speed.md)
-returns the speed of each segment, padded with a final NA so that we
+returns the speed of each segment, padded with a final `NA` so that we
 have the same number of rows as the original track.
 
 So, we can add speed to our `shags_tt` object with:
 
 ``` r
 
-shags_tt <- shags_tt %>% 
+shags_tt <- shags_tt %>%
   mutate(speed = event_speed(.))
 ```
 
@@ -262,16 +259,17 @@ shags_tt %>%
 
 ![](tidytracks_files/figure-html/plot_speed-1.png)
 
-Note the message about 9 rows having been dropped; those are the 9 last
-events for which there is no distance. Also, when appropriate, functions
-in `tidytracks` return values with units, to avoid conversion problems
-(in this case, meters per minute). Functions usually have a `units`
-parameter that allows to change the units that are returned (more
-details about working with units below).
+Note the message about 9 rows having been dropped; those are the last
+events (for which speed is `NA`) of each of the 9 tracks.
 
-The histogram above suggests that there might be outliers in the data,
-as we seem to have a few events with very high speeds. We will see later
-how we can clean up the data using McConnell’s algorithm.
+When appropriate, functions in `tidytracks` return values with units, to
+avoid conversion problems (in this case, meters per minute). Functions
+usually have a `units` parameter that allows you to change the units
+that are returned (more details about working with units below).
+
+The histogram above suggests that there might be outliers or errors in
+the data, as we seem to have a few events with very high speeds. We will
+see later how we can clean up the data using McConnell’s algorithm.
 
 Finally, there are `track_*` functions, which operate on the whole
 track, and will return a vector of length equal to the number of tracks
@@ -312,7 +310,7 @@ For example,
 will return a logical vector indicating whether events are valid or
 whether they should be filtered out using McConnell’s algorithm, whilst
 [`tt_clean_mcconnell()`](https://evolecolgroup.github.io/tidytracks/reference/tt_clean_mcconnell.md)
-will return tibble of tracks with the invalid events removed.
+will return a tibble of tracks with the invalid events removed.
 
 Similarly,
 [`event_distance()`](https://evolecolgroup.github.io/tidytracks/reference/event_distance.md)
@@ -368,7 +366,7 @@ Let’s recalculate them in units that might be more familiar to us.
 ``` r
 
 shags_tt <- shags_tt %>%
-  mutate(speed = set_units(speed, "km/h")) 
+  mutate(speed = set_units(speed, "km/h"))
 
 shags_tt %>%
   summary()
@@ -401,11 +399,14 @@ Let’s plot the speed of each event:
 ggplot() +
   geom_event_path(
     data = shags_tt,
-    aes(color = speed)) +
+    aes(color = speed)
+  ) +
   facet_wrap(~bird_id) +
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_speed_new-1.png)
@@ -419,13 +420,13 @@ McConnell’s algorithm (the same used by
 [`trip::speedfilter()`](https://rdrr.io/pkg/trip/man/speedfilter.html)).
 Max speed can be set to an appropriate number for the species we are
 working with. Shags have been observed flying at 58km/h (Yukihisa et
-al. 2016) we will set the maximum to 60. Note that we can give the
+al. 2016) so we will set the maximum to 60. Note that we can give the
 `max_speed` in any units we want, and they will be automatically
 converted to the units in the object.
 
 ``` r
 
-n_before <- nrow(shags_tt) 
+n_before <- nrow(shags_tt)
 
 shags_tt <- shags_tt %>%
   tt_clean_mcconnell(max_speed = as_units(60, "km/h"))
@@ -472,12 +473,11 @@ be remedied by recalculating speeds and then running the filter again.
 
 ## Splitting trips
 
-Shags are central place foragers, and we now want to split the track
-into trips. For this we need to define the colony location, and a buffer
-around it.
+Shags are central place foragers, and so we now want to split each
+bird’s track into foraging trips away from and back to the colony. For
+this we need to define the colony location, and a buffer around it.
 [`tt_split_trips()`](https://evolecolgroup.github.io/tidytracks/reference/tt_split_trips.md)
-can take either a single colony point, or one nest location per track as
-a point column in the metadata
+takes one nest location per track as a point column in the metadata
 
 In `tidytracks`, all locations should be stored as `sfc_POINT`
 geometries with a defined coordinate reference system (CRS). Whilst this
@@ -492,21 +492,22 @@ show_meta(shags_tt) <- show_meta(shags_tt) %>%
 
 Note that we use
 [`sf_point_col()`](https://evolecolgroup.github.io/tidytracks/reference/sf_point_col.md)
-to create a column. Do not replace the metadata with a full sf tibble,
+to create a column. Do not replace the metadata with a full `sf` tibble,
 as that creates problems with certain functions.
 
-When splitting trips and defining the parameters to do so, it is
+When defining the outbound and inbound buffers for trip splitting, it is
 important to consider the resolution and accuracy of your locations, and
 the likely movements of your birds.
 
 ``` r
 
-shags_tt_split <- shags_tt  %>%
+shags_tt_split <- shags_tt %>%
   tt_split_trips(
     centre_col = "colony_coord",
     buffer_outbound = as_units(3, "km"),
     buffer_inbound = as_units(3, "km"),
-    complete = TRUE)
+    complete = TRUE
+  )
 ```
 
 If we now inspect the object, we can see that there is a new column,
@@ -515,28 +516,37 @@ If we now inspect the object, we can see that there is a new column,
 
 ``` r
 
-head(shags_tt_split)
+shags_tt_split
 #> A <move2> with `track_id_column` "trip_id" and `time_column` "date_time"
-#> Containing 1 track lasting 49.8 mins in a
-#> Simple feature collection with 6 features and 4 fields
+#> Containing 12 tracks lasting on average 15410 secs in a
+#> Simple feature collection with 565 features and 4 fields
 #> Geometry type: POINT
 #> Dimension:     XY
-#> Bounding box:  xmin: -68.05746 ymin: -67.54373 xmax: -68.00905 ymax: -67.50906
+#> Bounding box:  xmin: -68.23206 ymin: -67.56682 xmax: -67.60288 ymax: -67.28459
 #> Geodetic CRS:  WGS 84
-#>   bird_id           date_time             speed                    geometry
-#> 1   kb_17 2022-01-04 10:26:41  8.9664714 [km/h] POINT (-68.05746 -67.54373)
-#> 2   kb_17 2022-01-04 10:36:39  0.7707836 [km/h] POINT (-68.03354 -67.53401)
-#> 3   kb_17 2022-01-04 10:46:33  5.1435552 [km/h] POINT (-68.03125 -67.53328)
-#> 4   kb_17 2022-01-04 10:56:41 11.5193175 [km/h] POINT (-68.03423 -67.52557)
-#> 5   kb_17 2022-01-04 11:06:32  2.8492170 [km/h] POINT (-68.02001 -67.50951)
-#> 6   kb_17 2022-01-04 11:16:27  1.3453614 [km/h] POINT (-68.00905 -67.50906)
-#>        trip_id
-#> 1 kb_17_trip_1
-#> 2 kb_17_trip_1
-#> 3 kb_17_trip_1
-#> 4 kb_17_trip_1
-#> 5 kb_17_trip_1
-#> 6 kb_17_trip_1
+#> First 10 features:
+#>    bird_id           date_time             speed                    geometry
+#> 1    kb_17 2022-01-04 10:26:41  8.9664714 [km/h] POINT (-68.05746 -67.54373)
+#> 2    kb_17 2022-01-04 10:36:39  0.7707836 [km/h] POINT (-68.03354 -67.53401)
+#> 3    kb_17 2022-01-04 10:46:33  5.1435552 [km/h] POINT (-68.03125 -67.53328)
+#> 4    kb_17 2022-01-04 10:56:41 11.5193175 [km/h] POINT (-68.03423 -67.52557)
+#> 5    kb_17 2022-01-04 11:06:32  2.8492170 [km/h] POINT (-68.02001 -67.50951)
+#> 6    kb_17 2022-01-04 11:16:27  1.3453614 [km/h] POINT (-68.00905 -67.50906)
+#> 7    kb_17 2022-01-04 11:27:31 11.7768735 [km/h]  POINT (-68.00369 -67.5082)
+#> 8    kb_17 2022-01-04 11:37:30 64.8821529 [km/h] POINT (-67.98762 -67.49174)
+#> 9    kb_17 2022-01-04 11:47:24 68.3477219 [km/h] POINT (-67.86887 -67.40727)
+#> 10   kb_17 2022-01-04 11:57:23 15.6500440 [km/h] POINT (-67.81108 -67.30776)
+#>         trip_id
+#> 1  kb_17_trip_1
+#> 2  kb_17_trip_1
+#> 3  kb_17_trip_1
+#> 4  kb_17_trip_1
+#> 5  kb_17_trip_1
+#> 6  kb_17_trip_1
+#> 7  kb_17_trip_1
+#> 8  kb_17_trip_1
+#> 9  kb_17_trip_1
+#> 10 kb_17_trip_1
 #> To see track metadata, use `show_meta()`
 
 unique(shags_tt_split$trip_id)
@@ -560,36 +570,47 @@ str(show_meta(shags_tt_split))
 #>  $ trip_type   : chr  "complete" "complete" "complete" "complete" ...
 ```
 
-We can see that all the birds except for kb_38 and kb_40 made between 1
-and 3 central place foraging trips. kb_38 didn’t move and was therefore
-filtered out. kb_40 migrated away from the colony and did not return so
-was also removed.
+We can see that all the birds except for `'kb_38'` and `'kb_40'` made
+between 1 and 3 central place foraging trips. `'kb_38'` didn’t move and
+was therefore filtered out. `'kb_40'` migrated away from the colony and
+did not return so was also removed.
 
 **How the trip splitting works:**
 
-Essentially, the `buffer_outbound` and `buffer_inbound` arguments in
-`tt_split_trips` define zones around the central place (colony) that an
-animal must cross to be considered as starting or ending a trip. The
-`complete = TRUE` argument ensures that only trips which both leave and
-return to the colony (i.e., complete round trips) are retained. As a
-result, any tracks that do not leave the buffer zone, or trips that are
-not complete, are removed from the dataset.
+The `buffer_outbound` and `buffer_inbound` arguments in
+[`tt_split_trips()`](https://evolecolgroup.github.io/tidytracks/reference/tt_split_trips.md)
+define zones around the central place (colony) that an animal must cross
+to be considered as starting or ending a trip. The `complete = TRUE`
+argument ensures that only trips which both leave and return to the
+colony (i.e., complete round trips) are retained. As a result, any
+tracks that do not leave the buffer zone, or trips that are not
+complete, are removed from the dataset.
 
 ``` r
 
 ggplot() +
   geom_event_path(data = shags_tt_split, aes(color = trip_id)) +
-  geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20")+
-  coord_sf(crs = '+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs') +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  geom_sf(data = show_meta(shags_tt_split)$colony_coord, color = "grey20") +
+  coord_sf(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs") +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_split-1.png)
 
 ## Summarising tracks
 
-We can get a summary of our tracks with:
+We can get summary statistics for each of our tracks using
+[`track_summary_stats()`](https://evolecolgroup.github.io/tidytracks/reference/track_summary_stats.md).
+
+Because some of these stats involve distances from the centre, we can
+either specify `centre_col` as a `sf` metadata column in the same was as
+for
+[`tt_split_trips()`](https://evolecolgroup.github.io/tidytracks/reference/tt_split_trips.md)
+above, or leave it as `NULL` to use the first point of each track as the
+centre.
 
 ``` r
 
@@ -616,18 +637,20 @@ shags_tt_split %>%
 
 Note that
 [`track_summary_stats()`](https://evolecolgroup.github.io/tidytracks/reference/track_summary_stats.md)
-will return a tibble with one row per track, rather than the usual
-vector with one element per track that is produced by most `track_*`
-functions. Note that these distance calculations are being done on
-unprojected data in Euclidean distance. Reprojection within the ggplot
-maps only applies within the map itself and doesn’t change the
-tidytracks object.
+will return a tibble with one row per track, rather than the vector with
+one element per track that is produced by
+[`track_duration()`](https://evolecolgroup.github.io/tidytracks/reference/track_duration.md)
+above.
+
+Note that these distance calculations are being done on unprojected data
+in Euclidean distance. Reprojection within the `ggplot` map only applies
+within the map itself and doesn’t change the `tidytracks` object.
 
 ### Filter trips
 
 We will now filter the data set to leave only the females, so that we
-can then perform some analysis. This information is the meta table, so
-we will use
+can then perform some analysis. This information is the metadata table,
+so we will use
 [`filter_by_meta()`](https://evolecolgroup.github.io/tidytracks/reference/filter_by_meta.md)
 to filter the dataset:
 
@@ -666,9 +689,11 @@ ggplot() +
     aes(color = bird_id) # can't use trip_id here because not trip splitted data
   ) +
   facet_wrap(~bird_id) +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position="none")
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none"
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_females-1.png)
@@ -681,8 +706,9 @@ threshold.
 ``` r
 
 show_meta(shags_tt_split) <- show_meta(shags_tt_split) %>%
-  left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"), 
-            by = "trip_id")
+  left_join(track_summary_stats(shags_tt_split, centre_col = "colony_coord"),
+    by = "trip_id"
+  )
 
 show_meta(shags_tt_split)
 #>    bird_id colony_lon colony_lat    sex                colony_coord
@@ -743,6 +769,7 @@ We may wish to move metadata to the events table (using
 [`as_event_column()`](https://evolecolgroup.github.io/tidytracks/reference/as_event_column.md))
 or vice versa (using
 [`as_meta_column()`](https://evolecolgroup.github.io/tidytracks/reference/as_meta_column.md)).
+
 For example, to count the number of points available for males and
 females, we can move the sex information into the event table, and count
 how many events we have for males and females:
@@ -772,21 +799,33 @@ shags_females_proj <- shags_females %>%
   st_transform(crs = "+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs")
 ```
 
-We can now estimate the home range using Kernel Density Estimation
-(KDE). The default smoothing parameter (h) in the `hr_kde` function is
-set to “h_ref_mean”. The bandwidth for the kernel density estimation can
-be either a number, or “h_ref_indiv” for using the reference bandwidth
-for each individual, or “h_ref_mean” for using the mean bandwidth for
-all individuals (the default).
+### Kernel UDs
 
-The default smoothing parameter (h) in `tt_hr_kde` is set to
-“h_ref_mean”. The bandwidth for the kernel density estimation can be
-either a number, or “h_ref_indiv” for using the reference bandwidth for
-each individual, or “h_ref_mean” for using the mean bandwidth for all
-individuals (the default).
+We can now estimate the home range using **Kernel Density Estimation
+(KDE)**. The default smoothing parameter (*h*) in the
+[`hr_kde()`](https://evolecolgroup.github.io/tidytracks/reference/hr_kde.md)
+function is set to `'h_ref_mean'`. The bandwidth for the kernel density
+estimation can be either a number, or `'h_ref_indiv'` for using the
+reference bandwidth for each individual, or `'h_ref_mean'` for using the
+mean bandwidth for all individuals (the default).
 
-We want to estimate the home range for each bird, so we will group by
-`bird_id`:
+Note the `levels` parameter: if `NULL`, a tibble with the full
+utilisation distribution (UD) for each track is returned. Alternatively
+you can specify a vector of levels between 0 and 1 to return a tibble
+with the isopleths for each track. In this case, we will use 0.5 and
+0.95 as the levels (the core and general use areas).
+
+By default, the UD will be calculated at the current unit of tracking,
+as given by the `track_id_column` in the `move2` object. In this case,
+that is `trip_id`, as we can see when we print the object:
+
+    A <move2> with `track_id_column` "trip_id" and `time_column` "date_time"
+
+To override this behaviour, use
+[`dplyr::group_by()`](https://dplyr.tidyverse.org/reference/group_by.html)
+to group by a different variable. Here, we want to estimate the home
+range for each bird (rather than each central-place foraging trip), so
+we will group by `bird_id`:
 
 ``` r
 
@@ -795,16 +834,18 @@ shags_females_kde <- shags_females_proj %>%
   hr_kde(levels = c(0.5, 0.95))
 ```
 
-We get a warning since one of the dataset is small, and so the 0.50
-isopleth could not be computed. This is because the KDE is based on a
-grid, and if there are too few points, the grid will not be able to
-capture the distribution of the points.
+If you get a warning here, it may be because one of the datasets is
+small, and so the 0.50 isopleth could not be computed. This is because
+the KDE is based on a grid, and if there are too few points, the grid
+will not be able to capture the distribution of the points.
 
 `shags_females_kde` is an `sf` object, with estimates of the area (in
 the units of the projection, in this case m^2) and a geometry column:
 
 ``` r
 
+class(shags_females_kde)
+#> [1] "sf"         "tbl_df"     "tbl"        "data.frame"
 shags_females_kde
 #> Simple feature collection with 7 features and 10 fields
 #> Geometry type: MULTIPOLYGON
@@ -855,6 +896,10 @@ shags_females_kde
 #> 7 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95 135138832.
 #> # ℹ 1 more variable: geometry <MULTIPOLYGON [m]>
 ```
+
+Note that because we used a custom projection, the `Projected CRS`
+section of the output is very long. We can ignore this, and focus on the
+`tibble` printed below it.
 
 We could easily change the units of the area with
 [`set_units()`](https://r-quantities.github.io/units/reference/units.html):
@@ -913,22 +958,16 @@ shags_females_kde %>%
 #> 7 kb_45    0.95 135.   (((-3240.529 -59680.11, -3980.504 -58346.82, -3240.529 -…
 ```
 
-If you want to NOT do KDE per trip, you need to change the track_id
-field of your tidytracks object. For example if you already trip
-splitted, the unit of tt object is now trip, and kernels will always be
-created per trip and aggregated to your grouping. If you’re then doing
-something else like analysis of the whole incubation period and you want
-to compare the kernels at the whole-bird level, you need to change your
-inherent tt object track_id to the bird_id instead.
-
 We can plot the home ranges:
 
 ``` r
 
 ggplot(shags_females_kde) +
   geom_sf(aes(fill = bird_id), alpha = 0.7) +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_kde-1.png)
@@ -947,11 +986,92 @@ ggplot() +
     size = 0.1
   ) +
   facet_wrap(~bird_id) +
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_kde_points-1.png)
+
+To retain the full utilisation distributions instead, omit `levels`:
+
+``` r
+
+shags_females_ud <- shags_females_proj %>%
+  group_by(bird_id) %>%
+  hr_kde()
+shags_females_ud
+#> # A tibble: 4 × 9
+#>   bird_id method     h    xmin    ymin   xmax   ymax   res ud               
+#>   <chr>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <named list>     
+#> 1 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+#> 2 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+#> 3 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+#> 4 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+```
+
+We can visualise the UD with a simple `autoplot`:
+
+``` r
+
+autoplot(shags_females_ud)
+```
+
+![](tidytracks_files/figure-html/unnamed-chunk-5-1.png)
+
+Note that the UD tibble contains live `SpatRaster` objects. These can
+not be saved directly, so we need to use
+[`hr_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_saveRDS.md)
+rather than
+[`saveRDS()`](https://rspatial.github.io/terra/reference/serialize.html)
+to save it.
+[`hr_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_saveRDS.md)
+wraps the rasters before writing the RDS file (see the help page for the
+[`wrap()`](https://rspatial.github.io/terra/reference/wrap.html)
+function in `terra` for details):
+
+``` r
+
+ud_file <- file.path(tempdir(), "shags_females_ud.rds")
+hr_ud_saveRDS(shags_females_ud, ud_file)
+```
+
+When the object is loaded again, its `ud` column is wrapped (we can see
+that it says `<PckSpR>`, indicating that it is a list of Packed Rasters
+(i.e. wrapped).
+
+``` r
+
+shags_females_ud <- readRDS(ud_file)
+shags_females_ud
+#> # A tibble: 4 × 9
+#>   bird_id method     h    xmin    ymin   xmax   ymax   res ud               
+#>   <chr>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <PckdSpR_>       
+#> 1 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+#> 2 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+#> 3 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+#> 4 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+```
+
+Functions in `tidytracks` are able to automatically unwrap the column on
+the fly, but if you plan extensive analysis, it will be faster if you
+unwrap it explicitly before running further analyses:
+
+``` r
+
+shags_females_ud <- hr_ud_unwrap(shags_females_ud)
+shags_females_ud
+#> # A tibble: 4 × 9
+#>   bird_id method     h    xmin    ymin   xmax   ymax   res ud               
+#>   <chr>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <named list>     
+#> 1 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+#> 2 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+#> 3 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+#> 4 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
+```
+
+### Minimum Convex Polygons
 
 To get a minimum convex polygon covering 95% of the data, we can use:
 
@@ -975,9 +1095,11 @@ ggplot() +
     data = shags_females_proj,
     size = 0.1
   ) +
-  facet_wrap(~bird_id)+
-  theme(aspect.ratio = 1, 
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  facet_wrap(~bird_id) +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 ![](tidytracks_files/figure-html/plot_mcp-1.png)
@@ -991,7 +1113,6 @@ as a single CSV text file. In this example we will save it to the
 temporary directory.
 
 ``` r
-
 
 # save to temp directory
 tmp_prefix <- file.path(tempdir(), "shags_females")

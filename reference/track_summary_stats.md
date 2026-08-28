@@ -57,3 +57,17 @@ A tibble of summary statistics, with one row per track. The columns are:
 
 - lon_at_max_dist_centre: The longitude at the point of maximum distance
   from the central place location (or the starting point)
+
+## Examples
+
+``` r
+track_summary_stats(example_tt)
+#> # A tibble: 3 × 10
+#>   track_id tot_duration tot_distance max_latitude min_latitude max_longitude
+#>   <chr>             [d]          [m]        <dbl>        <dbl>         <dbl>
+#> 1 a              0.0556     1174866.        3.53        -0.577         5.54 
+#> 2 b              0.0556      870933.       -0.357       -1.94         -0.270
+#> 3 c              0.0556      813408.        3.05         0.433        -0.784
+#> # ℹ 4 more variables: min_longitude <dbl>, max_dist_centre [m],
+#> #   lat_at_max_dist_centre <dbl>, lon_at_max_dist_centre <dbl>
+```

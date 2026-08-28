@@ -21,7 +21,7 @@ areas of the UDs."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,8 +33,9 @@ areas of the UDs."></head><body>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animating your maps</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/EvolEcolGroup/tidytracks/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -47,7 +48,7 @@ areas of the UDs."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Compute overlap for utilisation distributions</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/hr_ud_overlap.R" class="external-link"><code>R/hr_ud_overlap.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/hr_ud_overlap.R" class="external-link"><code>R/hr_ud_overlap.R</code></a></small>
       <div class="d-none name"><code>hr_ud_overlap.Rd</code></div>
     </div>
 
@@ -109,7 +110,24 @@ is computed.</p></dd>
 according to the specified method, or a matrix of such values if <code>x</code> is a
 tibble of multiple UDs.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>When <code>x</code> is an <code>hr_ud_tbl</code>, each UD is validated, converted to cell
+values, and conditionally masked once before all pairwise comparisons are
+calculated. This avoids repeated raster reads and cumulative-distribution
+calculations for UDs that occur in multiple pairs.</p>
+    </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">example_kde</span> <span class="op">&lt;-</span> <span class="fu"><a href="hr_kde.html">hr_kde</a></span><span class="op">(</span><span class="va">example_tt</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">hr_ud_overlap</span><span class="op">(</span><span class="va">example_kde</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           a         b         c</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a 1.0000000 0.2287909 0.1684975</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b 0.2287909 1.0000000 0.5419589</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> c 0.1684975 0.5419589 1.0000000</span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

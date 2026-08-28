@@ -1,7 +1,7 @@
-# Read data from a csv file into a `move2` object
+# Read data from a CSV file into a `move2` object
 
-This function reads a csv file containing event data (and possibly
-metadata) and converts it into a `move2` object. The csv file should
+This function reads a CSV file containing event data (and possibly
+metadata) and converts it into a `move2` object. The CSV file should
 contain contain at least the following columns:
 
 ## Usage
@@ -24,20 +24,20 @@ tt_read_data(
 
 - events:
 
-  A path to a csv file containing the event data, OR a dataframe in R
+  A path to a CSV file containing the event data, OR a dataframe in R
   containing the event data.
 
 - col_track_id:
 
-  The name of the column in the csv file that contains the track id.
+  The name of the column in the CSV file that contains the track id.
 
 - col_coords:
 
-  A vector of the x and y coordinate column names in the csv file.
+  A vector of the x and y coordinate column names in the CSV file.
 
 - col_date_time:
 
-  The name of the column in the csv file that contains the date-time
+  The name of the column in the CSV file that contains the date-time
   information (or a vector of two elements, the names of separate date
   and time columns). Time is assumed to be in UTC.
 
@@ -107,12 +107,33 @@ function. See the `reading_data` vignette for more details.
 ## Examples
 
 ``` r
-example_events_csv <- system.file("/extdata/csv_files/dataset_example_birdlife.csv",
+shags_csv <- system.file("/extdata/shags_example.csv",
   package = "tidytracks"
 )
-example_tt <- tt_read_data(example_events_csv,
-  col_track_id = "track_id",
-  col_coords = c("longitude", "latitude"),
-  col_date_time = c("date_gmt", "time_gmt")
+shags_tt <- tt_read_data(shags_csv,
+  col_track_id = "bird_id",
+  col_coords = c("lon", "lat"),
+  col_date_time = "date_time"
 )
+shags_tt
+#> A <move2> with `track_id_column` "bird_id" and `time_column` "date_time"
+#> Containing 9 tracks lasting on average 109052 secs in a
+#> Simple feature collection with 3762 features and 3 fields
+#> Geometry type: POINT
+#> Dimension:     XY
+#> Bounding box:  xmin: -68.26967 ymin: -67.58061 xmax: -67.39642 ymax: -67.0557
+#> Geodetic CRS:  WGS 84
+#> First 10 features:
+#>    bird_id           date_time      speed                    geometry
+#> 1    kb_17 2022-01-04 00:09:13 0.06112442 POINT (-68.06908 -67.57072)
+#> 2    kb_17 2022-01-04 00:19:07 0.09105526 POINT (-68.06889 -67.57077)
+#> 3    kb_17 2022-01-04 00:29:06 0.06175330 POINT (-68.06904 -67.57065)
+#> 4    kb_17 2022-01-04 00:39:05 0.04324262 POINT (-68.06894 -67.57073)
+#> 5    kb_17 2022-01-04 00:49:04 0.03435565 POINT (-68.06892 -67.57067)
+#> 6    kb_17 2022-01-04 00:59:03 0.04847599 POINT (-68.06903 -67.57064)
+#> 7    kb_17 2022-01-04 01:09:02 0.04014556 POINT (-68.06888 -67.57059)
+#> 8    kb_17 2022-01-04 01:19:01 0.02357237 POINT (-68.06892 -67.57065)
+#> 9    kb_17 2022-01-04 01:29:01 0.04011861 POINT (-68.06884 -67.57064)
+#> 10   kb_17 2022-01-04 01:39:00 0.02165668 POINT (-68.06892 -67.57069)
+#> To see track metadata, use `show_meta()`
 ```

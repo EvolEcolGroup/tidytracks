@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,9 +34,10 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/animations.html">Animating your maps</a></li>
+<li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -59,7 +60,7 @@
       <h1>tidytracks</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/vignettes/tidytracks.Rmd" class="external-link"><code>vignettes/tidytracks.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/vignettes/tidytracks.Rmd" class="external-link"><code>vignettes/tidytracks.Rmd</code></a></small>
       <div class="d-none name"><code>tidytracks.Rmd</code></div>
     </div>
 
@@ -70,8 +71,7 @@
 </h2>
 <p><code>tidytracks</code> uses tidy tables to represent movement, We
 refer to such a table as a <strong>tibble of tracks</strong>
-(technically, such tables are <code>move2</code> objects from the
-<code>move2</code> package).</p>
+(technically, such tables are <code>move2</code> objects from the <a href="https://bartk.gitlab.io/move2/" class="external-link">move2</a> package).</p>
 <p>In a tibble of <strong>tracks</strong>, each row represents an
 <strong>event</strong>, which is a time-stamped observation, associated
 with a location (and, optionally, extra data such as activity
@@ -86,10 +86,11 @@ deployment.</p>
 <p>The <strong>metadata</strong> that describes each of these tracks is
 stored in a separate table, which is linked to the event table by a
 <code>track_id_column</code>. This means we do not have to repeat
-information (such as the <strong>ring_number</strong> or <em>sex</em> of
-an animal) for each <strong>event</strong>, but we can use the
-<strong>metadata</strong> of the <strong>track</strong> to store that
-information.</p>
+information (such as the <strong>ring_number</strong> or
+<strong>sex</strong> of the animal, or the tracking deployment
+information) for each <strong>event</strong>. Instead, we store this
+track-level information in the <strong>metadata</strong> of the
+<strong>track</strong>.</p>
 </div>
 <div class="section level2">
 <h2 id="reading-data-into-a-tibble-of-tracks">Reading data into a tibble of tracks<a class="anchor" aria-label="anchor" href="#reading-data-into-a-tibble-of-tracks"></a>
@@ -99,11 +100,12 @@ information.</p>
 <code>data.frame</code> in R.</p>
 <p>This table should contain at least the following columns: - one
 column which is the <code>track_id</code> (i.e. the variable that groups
-events into a track, e.g. <code>bird_id</code> or
-<code>logger_id</code>) - two columns representing the <code>x</code>
-and <code>y</code> coordinates (e.g. <code>longitude</code> and
-<code>latitude</code>) - a <code>date-time</code> column (or separate
-<code>date</code> and <code>time</code> columns)</p>
+events into a track, e.g. <code>bird_id</code>, <code>logger_id</code>,
+or <code>deployment_id</code>) - two columns representing the
+<code>x</code> and <code>y</code> coordinates
+(e.g. <code>longitude</code> and <code>latitude</code>) - a
+<code>date-time</code> column (or separate <code>date</code> and
+<code>time</code> columns)</p>
 <p>Additional columns of data will be stored in the
 <strong>events</strong> table if they have information that is specific
 to each event (i.e. the values are not the same within a given track,
@@ -121,12 +123,11 @@ a central-place forager. This dataset contains 9 tracks with nearly
 modified to show the functionality of <code>tidytracks</code>. Please do
 not use them for any real analyses of shag movement!</p>
 <p>We have a single CSV. Each row includes information about the
-locations (in this case <code>lat</code> and <code>lon</code>) and time
+locations (in this case <code>lon</code> and <code>lat</code>) and time
 (in this case, one <code>date_time</code> column). Locations belonging
 to the same bird’s track are identified by the same value in the
 <code>bird_id</code> column (in this example, as we only have one track
-per bird, the <code>bird_id</code> is the individual ID number of the
-bird).</p>
+per bird, the unit of tracking is <code>bird_id</code>).</p>
 <p>The CSV also contains other columns of information about the tracks
 (<code>sex</code> and colony coordinates split into
 <code>colony_lat</code> and <code>colony_lon</code>). These are repeated
@@ -134,24 +135,9 @@ for each event, so they will be moved to the metadata table when we
 create the <code>tidytracks</code> object.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/EvolEcolGroup/tidytracks" class="external-link">tidytracks</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; Loading required package: move2</span></span>
-<span><span class="co">#&gt; Loading required package: units</span></span>
-<span><span class="co">#&gt; udunits database from /usr/share/xml/udunits/udunits2.xml</span></span>
-<span><span class="co">#&gt; Registered S3 method overwritten by 'tidytracks':</span></span>
-<span><span class="co">#&gt;   method      from </span></span>
-<span><span class="co">#&gt;   print.move2 move2</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     filter, lag</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.4.0; sf_use_s2() is TRUE</span></span>
 <span></span>
 <span><span class="va">shags_csv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
 <span>  <span class="st">"extdata"</span>,</span>
@@ -165,7 +151,8 @@ create the <code>tidytracks</code> object.</p>
 <span>  col_coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"lon"</span>, <span class="st">"lat"</span><span class="op">)</span>,</span>
 <span>  col_date_time <span class="op">=</span> <span class="st">"date_time"</span>,</span>
 <span>  time_zone <span class="op">=</span> <span class="st">"UTC"</span>,</span>
-<span>  crs <span class="op">=</span> <span class="fl">4326</span><span class="op">)</span></span></code></pre></div>
+<span>  crs <span class="op">=</span> <span class="fl">4326</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <p>Inspecting the events table, we have:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_tt</span></span>
@@ -210,11 +197,12 @@ inspect the meta data table as follows:</p>
 <span><span class="co">#&gt; 8   kb_43  -68.06893  -67.57072 female</span></span>
 <span><span class="co">#&gt; 9   kb_45  -68.06893  -67.57072 female</span></span></code></pre></div>
 <p>We have a <code>bird_id</code> column that links back to the events
-table, and then information about the sex of the bird, as well as a
-column of coordinates for the colony location.</p>
+table, and then information about the sex of each bird, as well two
+columns giving lon and lat coordinates for the colony location.</p>
 <p>Note that <code>move2</code> objects don’t have to be ordered by
 time, but for many analyses, this is a requirement. We can order the
-data by time using the <code><a href="../reference/tt_order_time.html">tt_order_time()</a></code> function:</p>
+data by time (within each track) using the <code><a href="../reference/tt_order_time.html">tt_order_time()</a></code>
+function:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_tt</span> <span class="op">&lt;-</span> <span class="va">shags_tt</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> <span class="fu"><a href="../reference/tt_order_time.html">tt_order_time</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Functions that start with <code>tt_</code> are specific to tidy
@@ -233,12 +221,17 @@ of each event. It is good practice to project data each time we plot it.
 <code>ggplot</code>. All other decorations of <code>ggplot2</code> can
 be used; in this case, we will also adjust the aspect ratio within
 <code><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme()</a></code>.</p>
+<p>(This projection string is for an Azimuthal Equidistant projection
+centred on the colony location, which is appropriate for this small
+area.)</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="../reference/geom_event_point.html">geom_event_point</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">shags_tt</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span><span class="op">)</span><span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="st">'+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs'</span><span class="op">)</span><span class="op">+</span></span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>aspect.ratio <span class="op">=</span> <span class="fl">1</span>, </span>
-<span>      axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/geom_event_point.html">geom_event_point</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">shags_tt</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="st">"+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
+<span>    aspect.ratio <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
 <p><img src="tidytracks_files/figure-html/plot_events-1.png" class="r-plt" alt="" width="576"></p>
 <p>We can explore what each individual is doing by plotting the
 locations of each individual separately with <code>facet_wrap</code>. In
@@ -248,9 +241,11 @@ this example, instead of plotting locations as points, we will use
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/geom_event_path.html">geom_event_path</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">shags_tt</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">bird_id</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="st">'+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs'</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>aspect.ratio <span class="op">=</span> <span class="fl">1</span>, </span>
-<span>        axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="st">"+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
+<span>    aspect.ratio <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
 <p><img src="tidytracks_files/figure-html/shags_plot_paths-1.png" class="r-plt" alt="" width="576"></p>
 <p>We can see that bird <code>'kb_38'</code> moved very little (or not
 at all) during the tracked period.</p>
@@ -260,24 +255,23 @@ at all) during the tracked period.</p>
 </h2>
 <p>As we saw above, <code>tt_*</code> functions are specific to and
 operate on the whole table of tracks (aka the <code>move2</code>
-object), and often will return either a complete table of tracks or
-different tibble (e.g. a tibble of kernels). For example, there are
-functions to clean the data using a given algorithm
-(e.g. <code>tt_clean_mcconnell</code>), or to split the data into trips
-for central place foragers (e.g. <code>tt_split_trips</code>). We will
-see those functions in action in a later section.</p>
+object), and return a complete table of tracks. For example, there are
+functions to clean the data using a given algorithm (e.g.
+<code><a href="../reference/tt_clean_mcconnell.html">tt_clean_mcconnell()</a></code>), or to split the data into trips for
+central place foragers (e.g. <code><a href="../reference/tt_split_trips.html">tt_split_trips()</a></code>). We will see
+those functions in action in a later section.</p>
 <p><code>event_*</code> functions, on the other hand, operate on events,
 and return a vector of the same length as number of rows in the event
-table (and thus can be use in <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> operations). For
+table (and thus can be used in <code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate()</a></code> operations). For
 example, we can use <code><a href="../reference/event_speed.html">event_speed()</a></code> to calculate the speed of
 each event. Note that, technically, the speed pertains to the segment
 between two events, but for simplicity we will refer to it as the speed
 of the event. For each track, <code><a href="../reference/event_speed.html">event_speed()</a></code> returns the
-speed of each segment, padded with a final NA so that we have the same
-number of rows as the original track.</p>
+speed of each segment, padded with a final <code>NA</code> so that we
+have the same number of rows as the original track.</p>
 <p>So, we can add speed to our <code>shags_tt</code> object with:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">shags_tt</span> <span class="op">&lt;-</span> <span class="va">shags_tt</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span> </span>
+<code class="sourceCode R"><span><span class="va">shags_tt</span> <span class="op">&lt;-</span> <span class="va">shags_tt</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>speed <span class="op">=</span> <span class="fu"><a href="../reference/event_speed.html">event_speed</a></span><span class="op">(</span><span class="va">.</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Note the use of the <code>.</code> place-holder in the brackets of
 <code><a href="../reference/event_speed.html">event_speed()</a></code> to pass the whole <code>move2</code> object
@@ -292,15 +286,17 @@ to the function. This is only possible with a <code>magrittr</code> pipe
 <span><span class="co">#&gt; Warning: Removed 9 rows containing non-finite outside the scale range</span></span>
 <span><span class="co">#&gt; (`stat_bin()`).</span></span></code></pre></div>
 <p><img src="tidytracks_files/figure-html/plot_speed-1.png" class="r-plt" alt="" width="576"></p>
-<p>Note the message about 9 rows having been dropped; those are the 9
-last events for which there is no distance. Also, when appropriate,
-functions in <code>tidytracks</code> return values with units, to avoid
-conversion problems (in this case, meters per minute). Functions usually
-have a <code>units</code> parameter that allows to change the units that
-are returned (more details about working with units below).</p>
-<p>The histogram above suggests that there might be outliers in the
-data, as we seem to have a few events with very high speeds. We will see
-later how we can clean up the data using McConnell’s algorithm.</p>
+<p>Note the message about 9 rows having been dropped; those are the last
+events (for which speed is <code>NA</code>) of each of the 9 tracks.</p>
+<p>When appropriate, functions in <code>tidytracks</code> return values
+with units, to avoid conversion problems (in this case, meters per
+minute). Functions usually have a <code>units</code> parameter that
+allows you to change the units that are returned (more details about
+working with units below).</p>
+<p>The histogram above suggests that there might be outliers or errors
+in the data, as we seem to have a few events with very high speeds. We
+will see later how we can clean up the data using McConnell’s
+algorithm.</p>
 <p>Finally, there are <code>track_*</code> functions, which operate on
 the whole track, and will return a vector of length equal to the number
 of tracks in the object. For example, <code><a href="../reference/track_duration.html">track_duration()</a></code>
@@ -328,8 +324,8 @@ function, avoiding ambiguities.</p>
 <p>For example, <code><a href="../reference/event_flag_mcconnell.html">event_flag_mcconnell()</a></code> will return a
 logical vector indicating whether events are valid or whether they
 should be filtered out using McConnell’s algorithm, whilst
-<code><a href="../reference/tt_clean_mcconnell.html">tt_clean_mcconnell()</a></code> will return tibble of tracks with the
-invalid events removed.</p>
+<code><a href="../reference/tt_clean_mcconnell.html">tt_clean_mcconnell()</a></code> will return a tibble of tracks with
+the invalid events removed.</p>
 <p>Similarly, <code><a href="../reference/event_distance.html">event_distance()</a></code> will return a vector of
 distances between events (a vector of the same length as the rows of the
 event column), while <code>track_distance()</code> will return the total
@@ -375,7 +371,7 @@ check the units (to make sure we have them right):</p>
 us.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_tt</span> <span class="op">&lt;-</span> <span class="va">shags_tt</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>speed <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">set_units</a></span><span class="op">(</span><span class="va">speed</span>, <span class="st">"km/h"</span><span class="op">)</span><span class="op">)</span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>speed <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">set_units</a></span><span class="op">(</span><span class="va">speed</span>, <span class="st">"km/h"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">shags_tt</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://rspatial.github.io/terra/reference/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -403,11 +399,14 @@ e.g. Wanless et al. 1997).</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/geom_event_path.html">geom_event_path</a></span><span class="op">(</span></span>
 <span>    data <span class="op">=</span> <span class="va">shags_tt</span>,</span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="va">speed</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="va">speed</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">bird_id</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="st">'+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs'</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>aspect.ratio <span class="op">=</span> <span class="fl">1</span>, </span>
-<span>        axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="st">"+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
+<span>    aspect.ratio <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
 <p><img src="tidytracks_files/figure-html/plot_speed_new-1.png" class="r-plt" alt="" width="576"></p>
 <p>It looks like there are a few GPS location errors here, resulting in
 unrealistic speeds (we can easily see the very fast outlier is at the
@@ -416,12 +415,12 @@ end of a track).</p>
 McConnell’s algorithm (the same used by
 <code><a href="https://rdrr.io/pkg/trip/man/speedfilter.html" class="external-link">trip::speedfilter()</a></code>). Max speed can be set to an
 appropriate number for the species we are working with. Shags have been
-observed flying at 58km/h (Yukihisa et al. 2016) we will set the maximum
-to 60. Note that we can give the <code>max_speed</code> in any units we
-want, and they will be automatically converted to the units in the
-object.</p>
+observed flying at 58km/h (Yukihisa et al. 2016) so we will set the
+maximum to 60. Note that we can give the <code>max_speed</code> in any
+units we want, and they will be automatically converted to the units in
+the object.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">n_before</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">shags_tt</span><span class="op">)</span> </span>
+<code class="sourceCode R"><span><span class="va">n_before</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">shags_tt</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">shags_tt</span> <span class="op">&lt;-</span> <span class="va">shags_tt</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/tt_clean_mcconnell.html">tt_clean_mcconnell</a></span><span class="op">(</span>max_speed <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">60</span>, <span class="st">"km/h"</span><span class="op">)</span><span class="op">)</span></span>
@@ -458,11 +457,11 @@ again.</p>
 <div class="section level2">
 <h2 id="splitting-trips">Splitting trips<a class="anchor" aria-label="anchor" href="#splitting-trips"></a>
 </h2>
-<p>Shags are central place foragers, and we now want to split the track
-into trips. For this we need to define the colony location, and a buffer
-around it. <code><a href="../reference/tt_split_trips.html">tt_split_trips()</a></code> can take either a single colony
-point, or one nest location per track as a point column in the
-metadata</p>
+<p>Shags are central place foragers, and so we now want to split each
+bird’s track into foraging trips away from and back to the colony. For
+this we need to define the colony location, and a buffer around it.
+<code><a href="../reference/tt_split_trips.html">tt_split_trips()</a></code> takes one nest location per track as a
+point column in the metadata</p>
 <p>In <code>tidytracks</code>, all locations should be stored as
 <code>sfc_POINT</code> geometries with a defined coordinate reference
 system (CRS). Whilst this is done automatically for locations events,
@@ -472,44 +471,54 @@ the file:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">shags_tt</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">shags_tt</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>colony_coord <span class="op">=</span> <span class="fu"><a href="../reference/sf_point_col.html">sf_point_col</a></span><span class="op">(</span><span class="va">colony_lon</span>, <span class="va">colony_lat</span>, crs <span class="op">=</span> <span class="fl">4326</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Note that we use <code><a href="../reference/sf_point_col.html">sf_point_col()</a></code> to create a column. Do
-not replace the metadata with a full sf tibble, as that creates problems
-with certain functions.</p>
-<p>When splitting trips and defining the parameters to do so, it is
-important to consider the resolution and accuracy of your locations, and
-the likely movements of your birds.</p>
+not replace the metadata with a full <code>sf</code> tibble, as that
+creates problems with certain functions.</p>
+<p>When defining the outbound and inbound buffers for trip splitting, it
+is important to consider the resolution and accuracy of your locations,
+and the likely movements of your birds.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">shags_tt_split</span> <span class="op">&lt;-</span> <span class="va">shags_tt</span>  <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<code class="sourceCode R"><span><span class="va">shags_tt_split</span> <span class="op">&lt;-</span> <span class="va">shags_tt</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/tt_split_trips.html">tt_split_trips</a></span><span class="op">(</span></span>
 <span>    centre_col <span class="op">=</span> <span class="st">"colony_coord"</span>,</span>
 <span>    buffer_outbound <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">3</span>, <span class="st">"km"</span><span class="op">)</span>,</span>
 <span>    buffer_inbound <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">3</span>, <span class="st">"km"</span><span class="op">)</span>,</span>
-<span>    complete <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span>    complete <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
 <p>If we now inspect the object, we can see that there is a new column,
 <code>trip_id</code>, which is also used as the new
 <code>track_id_column</code> in the <code>move2</code> object:</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">shags_tt_split</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">shags_tt_split</span></span>
 <span><span class="co">#&gt; A <span style="color: #0000BB;">&lt;move2&gt;</span> with `track_id_column` <span style="color: #0000BB;">"trip_id"</span> and `time_column` <span style="color: #0000BB;">"date_time"</span></span></span>
-<span><span class="co">#&gt; Containing 1 track lasting 49.8 mins in a</span></span>
-<span><span class="co">#&gt; Simple feature collection with 6 features and 4 fields</span></span>
+<span><span class="co">#&gt; Containing 12 tracks lasting on average 15410 secs in a</span></span>
+<span><span class="co">#&gt; Simple feature collection with 565 features and 4 fields</span></span>
 <span><span class="co">#&gt; Geometry type: POINT</span></span>
 <span><span class="co">#&gt; Dimension:     XY</span></span>
-<span><span class="co">#&gt; Bounding box:  xmin: -68.05746 ymin: -67.54373 xmax: -68.00905 ymax: -67.50906</span></span>
+<span><span class="co">#&gt; Bounding box:  xmin: -68.23206 ymin: -67.56682 xmax: -67.60288 ymax: -67.28459</span></span>
 <span><span class="co">#&gt; Geodetic CRS:  WGS 84</span></span>
-<span><span class="co">#&gt;   bird_id           date_time             speed                    geometry</span></span>
-<span><span class="co">#&gt; 1   kb_17 2022-01-04 10:26:41  8.9664714 [km/h] POINT (-68.05746 -67.54373)</span></span>
-<span><span class="co">#&gt; 2   kb_17 2022-01-04 10:36:39  0.7707836 [km/h] POINT (-68.03354 -67.53401)</span></span>
-<span><span class="co">#&gt; 3   kb_17 2022-01-04 10:46:33  5.1435552 [km/h] POINT (-68.03125 -67.53328)</span></span>
-<span><span class="co">#&gt; 4   kb_17 2022-01-04 10:56:41 11.5193175 [km/h] POINT (-68.03423 -67.52557)</span></span>
-<span><span class="co">#&gt; 5   kb_17 2022-01-04 11:06:32  2.8492170 [km/h] POINT (-68.02001 -67.50951)</span></span>
-<span><span class="co">#&gt; 6   kb_17 2022-01-04 11:16:27  1.3453614 [km/h] POINT (-68.00905 -67.50906)</span></span>
-<span><span class="co">#&gt;        trip_id</span></span>
-<span><span class="co">#&gt; 1 kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 2 kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 3 kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 4 kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 5 kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 6 kb_17_trip_1</span></span>
+<span><span class="co">#&gt; First 10 features:</span></span>
+<span><span class="co">#&gt;    bird_id           date_time             speed                    geometry</span></span>
+<span><span class="co">#&gt; 1    kb_17 2022-01-04 10:26:41  8.9664714 [km/h] POINT (-68.05746 -67.54373)</span></span>
+<span><span class="co">#&gt; 2    kb_17 2022-01-04 10:36:39  0.7707836 [km/h] POINT (-68.03354 -67.53401)</span></span>
+<span><span class="co">#&gt; 3    kb_17 2022-01-04 10:46:33  5.1435552 [km/h] POINT (-68.03125 -67.53328)</span></span>
+<span><span class="co">#&gt; 4    kb_17 2022-01-04 10:56:41 11.5193175 [km/h] POINT (-68.03423 -67.52557)</span></span>
+<span><span class="co">#&gt; 5    kb_17 2022-01-04 11:06:32  2.8492170 [km/h] POINT (-68.02001 -67.50951)</span></span>
+<span><span class="co">#&gt; 6    kb_17 2022-01-04 11:16:27  1.3453614 [km/h] POINT (-68.00905 -67.50906)</span></span>
+<span><span class="co">#&gt; 7    kb_17 2022-01-04 11:27:31 11.7768735 [km/h]  POINT (-68.00369 -67.5082)</span></span>
+<span><span class="co">#&gt; 8    kb_17 2022-01-04 11:37:30 64.8821529 [km/h] POINT (-67.98762 -67.49174)</span></span>
+<span><span class="co">#&gt; 9    kb_17 2022-01-04 11:47:24 68.3477219 [km/h] POINT (-67.86887 -67.40727)</span></span>
+<span><span class="co">#&gt; 10   kb_17 2022-01-04 11:57:23 15.6500440 [km/h] POINT (-67.81108 -67.30776)</span></span>
+<span><span class="co">#&gt;         trip_id</span></span>
+<span><span class="co">#&gt; 1  kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 2  kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 3  kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 4  kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 5  kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 6  kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 7  kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 8  kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 9  kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 10 kb_17_trip_1</span></span>
 <span><span class="co">#&gt; To see track metadata, use `show_meta()`</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">shags_tt_split</span><span class="op">$</span><span class="va">trip_id</span><span class="op">)</span></span>
@@ -527,32 +536,41 @@ the likely movements of your birds.</p>
 <span><span class="co">#&gt;  $ colony_coord:sfc_POINT of length 12; first list element:  'XY' num  -68.1 -67.6</span></span>
 <span><span class="co">#&gt;  $ trip_id     : chr  "kb_17_trip_1" "kb_19_trip_1" "kb_19_trip_2" "kb_27_trip_1" ...</span></span>
 <span><span class="co">#&gt;  $ trip_type   : chr  "complete" "complete" "complete" "complete" ...</span></span></code></pre></div>
-<p>We can see that all the birds except for kb_38 and kb_40 made between
-1 and 3 central place foraging trips. kb_38 didn’t move and was
-therefore filtered out. kb_40 migrated away from the colony and did not
-return so was also removed.</p>
+<p>We can see that all the birds except for <code>'kb_38'</code> and
+<code>'kb_40'</code> made between 1 and 3 central place foraging trips.
+<code>'kb_38'</code> didn’t move and was therefore filtered out.
+<code>'kb_40'</code> migrated away from the colony and did not return so
+was also removed.</p>
 <p><strong>How the trip splitting works:</strong></p>
-<p>Essentially, the <code>buffer_outbound</code> and
-<code>buffer_inbound</code> arguments in <code>tt_split_trips</code>
-define zones around the central place (colony) that an animal must cross
-to be considered as starting or ending a trip. The
-<code>complete = TRUE</code> argument ensures that only trips which both
-leave and return to the colony (i.e., complete round trips) are
-retained. As a result, any tracks that do not leave the buffer zone, or
-trips that are not complete, are removed from the dataset.</p>
+<p>The <code>buffer_outbound</code> and <code>buffer_inbound</code>
+arguments in <code><a href="../reference/tt_split_trips.html">tt_split_trips()</a></code> define zones around the
+central place (colony) that an animal must cross to be considered as
+starting or ending a trip. The <code>complete = TRUE</code> argument
+ensures that only trips which both leave and return to the colony (i.e.,
+complete round trips) are retained. As a result, any tracks that do not
+leave the buffer zone, or trips that are not complete, are removed from
+the dataset.</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/geom_event_path.html">geom_event_path</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">shags_tt_split</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="va">trip_id</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="fu"><a href="../reference/show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">shags_tt_split</span><span class="op">)</span><span class="op">$</span><span class="va">colony_coord</span>, color <span class="op">=</span> <span class="st">"grey20"</span><span class="op">)</span><span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="st">'+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs'</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>aspect.ratio <span class="op">=</span> <span class="fl">1</span>, </span>
-<span>        axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span>data <span class="op">=</span> <span class="fu"><a href="../reference/show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">shags_tt_split</span><span class="op">)</span><span class="op">$</span><span class="va">colony_coord</span>, color <span class="op">=</span> <span class="st">"grey20"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">coord_sf</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="st">"+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
+<span>    aspect.ratio <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
 <p><img src="tidytracks_files/figure-html/plot_split-1.png" class="r-plt" alt="" width="576"></p>
 </div>
 <div class="section level2">
 <h2 id="summarising-tracks">Summarising tracks<a class="anchor" aria-label="anchor" href="#summarising-tracks"></a>
 </h2>
-<p>We can get a summary of our tracks with:</p>
+<p>We can get summary statistics for each of our tracks using
+<code><a href="../reference/track_summary_stats.html">track_summary_stats()</a></code>.</p>
+<p>Because some of these stats involve distances from the centre, we can
+either specify <code>centre_col</code> as a <code>sf</code> metadata
+column in the same was as for <code><a href="../reference/tt_split_trips.html">tt_split_trips()</a></code> above, or
+leave it as <code>NULL</code> to use the first point of each track as
+the centre.</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_tt_split</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/track_summary_stats.html">track_summary_stats</a></span><span class="op">(</span>centre_col <span class="op">=</span> <span class="st">"colony_coord"</span><span class="op">)</span></span>
@@ -574,17 +592,18 @@ trips that are not complete, are removed from the dataset.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: min_longitude &lt;dbl&gt;, max_dist_centre [m],</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   lat_at_max_dist_centre &lt;dbl&gt;, lon_at_max_dist_centre &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>Note that <code><a href="../reference/track_summary_stats.html">track_summary_stats()</a></code> will return a tibble
-with one row per track, rather than the usual vector with one element
-per track that is produced by most <code>track_*</code> functions. Note
-that these distance calculations are being done on unprojected data in
-Euclidean distance. Reprojection within the ggplot maps only applies
-within the map itself and doesn’t change the tidytracks object.</p>
+with one row per track, rather than the vector with one element per
+track that is produced by <code><a href="../reference/track_duration.html">track_duration()</a></code> above.</p>
+<p>Note that these distance calculations are being done on unprojected
+data in Euclidean distance. Reprojection within the <code>ggplot</code>
+map only applies within the map itself and doesn’t change the
+<code>tidytracks</code> object.</p>
 <div class="section level3">
 <h3 id="filter-trips">Filter trips<a class="anchor" aria-label="anchor" href="#filter-trips"></a>
 </h3>
 <p>We will now filter the data set to leave only the females, so that we
-can then perform some analysis. This information is the meta table, so
-we will use <code><a href="../reference/filter_by_meta.html">filter_by_meta()</a></code> to filter the dataset:</p>
+can then perform some analysis. This information is the metadata table,
+so we will use <code><a href="../reference/filter_by_meta.html">filter_by_meta()</a></code> to filter the dataset:</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_females</span> <span class="op">&lt;-</span> <span class="va">shags_tt_split</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/filter_by_meta.html">filter_by_meta</a></span><span class="op">(</span><span class="va">sex</span> <span class="op">==</span> <span class="st">"female"</span><span class="op">)</span></span>
@@ -615,9 +634,11 @@ we will use <code><a href="../reference/filter_by_meta.html">filter_by_meta()</a
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span> <span class="co"># can't use trip_id here because not trip splitted data</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">bird_id</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>aspect.ratio <span class="op">=</span> <span class="fl">1</span>, </span>
-<span>        axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
-<span>        legend.position<span class="op">=</span><span class="st">"none"</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
+<span>    aspect.ratio <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
+<span>    legend.position <span class="op">=</span> <span class="st">"none"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
 <p><img src="tidytracks_files/figure-html/plot_females-1.png" class="r-plt" alt="" width="576"></p>
 <p>If we wanted, we could also add the track summary statistics into the
 metadata, and use this information to filter the data set, for example
@@ -625,8 +646,9 @@ to only trips that were longer than a certain duration or distance
 threshold.</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">shags_tt_split</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">shags_tt_split</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="fu"><a href="../reference/track_summary_stats.html">track_summary_stats</a></span><span class="op">(</span><span class="va">shags_tt_split</span>, centre_col <span class="op">=</span> <span class="st">"colony_coord"</span><span class="op">)</span>, </span>
-<span>            by <span class="op">=</span> <span class="st">"trip_id"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="fu"><a href="../reference/track_summary_stats.html">track_summary_stats</a></span><span class="op">(</span><span class="va">shags_tt_split</span>, centre_col <span class="op">=</span> <span class="st">"colony_coord"</span><span class="op">)</span>,</span>
+<span>    by <span class="op">=</span> <span class="st">"trip_id"</span></span>
+<span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">shags_tt_split</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    bird_id colony_lon colony_lat    sex                colony_coord</span></span>
@@ -683,10 +705,10 @@ threshold.</p>
 <span><span class="co">#&gt; 12              -67.32233              -67.70420</span></span></code></pre></div>
 <p>We may wish to move metadata to the events table (using
 <code><a href="../reference/as_event_column.html">as_event_column()</a></code>) or vice versa (using
-<code><a href="../reference/as_meta_column.html">as_meta_column()</a></code>). For example, to count the number of
-points available for males and females, we can move the sex information
-into the event table, and count how many events we have for males and
-females:</p>
+<code><a href="../reference/as_meta_column.html">as_meta_column()</a></code>).</p>
+<p>For example, to count the number of points available for males and
+females, we can move the sex information into the event table, and count
+how many events we have for males and females:</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_tt_split</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/as_event_column.html">as_event_column</a></span><span class="op">(</span><span class="va">sex</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
@@ -707,32 +729,47 @@ function to do this:</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_females_proj</span> <span class="op">&lt;-</span> <span class="va">shags_females</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_transform.html" class="external-link">st_transform</a></span><span class="op">(</span>crs <span class="op">=</span> <span class="st">"+proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs"</span><span class="op">)</span></span></code></pre></div>
-<p>We can now estimate the home range using Kernel Density Estimation
-(KDE). The default smoothing parameter (h) in the <code>hr_kde</code>
-function is set to “h_ref_mean”. The bandwidth for the kernel density
-estimation can be either a number, or “h_ref_indiv” for using the
-reference bandwidth for each individual, or “h_ref_mean” for using the
-mean bandwidth for all individuals (the default).</p>
-<p>The default smoothing parameter (h) in <code>tt_hr_kde</code> is set
-to “h_ref_mean”. The bandwidth for the kernel density estimation can be
-either a number, or “h_ref_indiv” for using the reference bandwidth for
-each individual, or “h_ref_mean” for using the mean bandwidth for all
+<div class="section level3">
+<h3 id="kernel-uds">Kernel UDs<a class="anchor" aria-label="anchor" href="#kernel-uds"></a>
+</h3>
+<p>We can now estimate the home range using <strong>Kernel Density
+Estimation (KDE)</strong>. The default smoothing parameter (<em>h</em>)
+in the <code><a href="../reference/hr_kde.html">hr_kde()</a></code> function is set to
+<code>'h_ref_mean'</code>. The bandwidth for the kernel density
+estimation can be either a number, or <code>'h_ref_indiv'</code> for
+using the reference bandwidth for each individual, or
+<code>'h_ref_mean'</code> for using the mean bandwidth for all
 individuals (the default).</p>
-<p>We want to estimate the home range for each bird, so we will group by
-<code>bird_id</code>:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<p>Note the <code>levels</code> parameter: if <code>NULL</code>, a
+tibble with the full utilisation distribution (UD) for each track is
+returned. Alternatively you can specify a vector of levels between 0 and
+1 to return a tibble with the isopleths for each track. In this case, we
+will use 0.5 and 0.95 as the levels (the core and general use
+areas).</p>
+<p>By default, the UD will be calculated at the current unit of
+tracking, as given by the <code>track_id_column</code> in the
+<code>move2</code> object. In this case, that is <code>trip_id</code>,
+as we can see when we print the object:</p>
+<pre><code>A &lt;move2&gt; with `track_id_column` "trip_id" and `time_column` "date_time"</code></pre>
+<p>To override this behaviour, use <code><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">dplyr::group_by()</a></code> to
+group by a different variable. Here, we want to estimate the home range
+for each bird (rather than each central-place foraging trip), so we will
+group by <code>bird_id</code>:</p>
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_females_kde</span> <span class="op">&lt;-</span> <span class="va">shags_females_proj</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">bird_id</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/hr_kde.html">hr_kde</a></span><span class="op">(</span>levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>We get a warning since one of the dataset is small, and so the 0.50
-isopleth could not be computed. This is because the KDE is based on a
-grid, and if there are too few points, the grid will not be able to
-capture the distribution of the points.</p>
+<p>If you get a warning here, it may be because one of the datasets is
+small, and so the 0.50 isopleth could not be computed. This is because
+the KDE is based on a grid, and if there are too few points, the grid
+will not be able to capture the distribution of the points.</p>
 <p><code>shags_females_kde</code> is an <code>sf</code> object, with
 estimates of the area (in the units of the projection, in this case m^2)
 and a geometry column:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">shags_females_kde</span></span>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">shags_females_kde</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "sf"         "tbl_df"     "tbl"        "data.frame"</span></span>
+<span><span class="va">shags_females_kde</span></span>
 <span><span class="co">#&gt; Simple feature collection with 7 features and 10 fields</span></span>
 <span><span class="co">#&gt; Geometry type: MULTIPOLYGON</span></span>
 <span><span class="co">#&gt; Dimension:     XY</span></span>
@@ -781,9 +818,12 @@ and a geometry column:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> kb_45   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378.  0.5    5<span style="text-decoration: underline;">799</span>420.</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> kb_45   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378.  0.95 135<span style="text-decoration: underline;">138</span>832.</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 1 more variable: geometry &lt;MULTIPOLYGON [m]&gt;</span></span></span></code></pre></div>
+<p>Note that because we used a custom projection, the
+<code>Projected CRS</code> section of the output is very long. We can
+ignore this, and focus on the <code>tibble</code> printed below it.</p>
 <p>We could easily change the units of the area with
 <code><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">set_units()</a></code>:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_females_kde</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>area <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">set_units</a></span><span class="op">(</span><span class="va">area</span>, <span class="st">"km^2"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">bird_id</span>, <span class="va">level</span>, <span class="va">area</span><span class="op">)</span></span>
@@ -834,22 +874,17 @@ and a geometry column:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> kb_43    0.95  37.5  (((6272.347 -64237.05, 4150.268 -63103.26, 4375.144 -607…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> kb_45    0.5    5.80 (((11028.78 -37579.89, 10762.96 -36942.85, 11028.78 -364…</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> kb_45    0.95 135.   (((-3240.529 -59680.11, -3980.504 -58346.82, -3240.529 -…</span></span></code></pre></div>
-<p>If you want to NOT do KDE per trip, you need to change the track_id
-field of your tidytracks object. For example if you already trip
-splitted, the unit of tt object is now trip, and kernels will always be
-created per trip and aggregated to your grouping. If you’re then doing
-something else like analysis of the whole incubation period and you want
-to compare the kernels at the whole-bird level, you need to change your
-inherent tt object track_id to the bird_id instead.</p>
 <p>We can plot the home ranges:</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">shags_females_kde</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>fill <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span>, alpha <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>aspect.ratio <span class="op">=</span> <span class="fl">1</span>, </span>
-<span>        axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
+<span>    aspect.ratio <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
 <p><img src="tidytracks_files/figure-html/plot_kde-1.png" class="r-plt" alt="" width="576"></p>
 <p>We can add actual events with:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span></span>
 <span>    data <span class="op">=</span> <span class="va">shags_females_kde</span>,</span>
@@ -860,17 +895,76 @@ inherent tt object track_id to the bird_id instead.</p>
 <span>    size <span class="op">=</span> <span class="fl">0.1</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">bird_id</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>aspect.ratio <span class="op">=</span> <span class="fl">1</span>, </span>
-<span>        axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
+<span>    aspect.ratio <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
 <p><img src="tidytracks_files/figure-html/plot_kde_points-1.png" class="r-plt" alt="" width="576"></p>
+<p>To retain the full utilisation distributions instead, omit
+<code>levels</code>:</p>
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">shags_females_ud</span> <span class="op">&lt;-</span> <span class="va">shags_females_proj</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">bird_id</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="../reference/hr_kde.html">hr_kde</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">shags_females_ud</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 9</span></span></span>
+<span><span class="co">#&gt;   bird_id method     h    xmin    ymin   xmax   ymax   res ud               </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;named list&gt;</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> kb_27   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> kb_42   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> kb_43   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> kb_45   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span></code></pre></div>
+<p>We can visualise the UD with a simple <code>autoplot</code>:</p>
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">shags_females_ud</span><span class="op">)</span></span></code></pre></div>
+<p><img src="tidytracks_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="576"></p>
+<p>Note that the UD tibble contains live <code>SpatRaster</code>
+objects. These can not be saved directly, so we need to use
+<code><a href="../reference/hr_ud_saveRDS.html">hr_ud_saveRDS()</a></code> rather than <code><a href="https://rspatial.github.io/terra/reference/serialize.html" class="external-link">saveRDS()</a></code> to save
+it. <code><a href="../reference/hr_ud_saveRDS.html">hr_ud_saveRDS()</a></code> wraps the rasters before writing the
+RDS file (see the help page for the <code><a href="https://rspatial.github.io/terra/reference/wrap.html" class="external-link">wrap()</a></code> function in
+<code>terra</code> for details):</p>
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ud_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"shags_females_ud.rds"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/hr_ud_saveRDS.html">hr_ud_saveRDS</a></span><span class="op">(</span><span class="va">shags_females_ud</span>, <span class="va">ud_file</span><span class="op">)</span></span></code></pre></div>
+<p>When the object is loaded again, its <code>ud</code> column is
+wrapped (we can see that it says <code>&lt;PckSpR&gt;</code>, indicating
+that it is a list of Packed Rasters (i.e. wrapped).</p>
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">shags_females_ud</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/serialize.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="va">ud_file</span><span class="op">)</span></span>
+<span><span class="va">shags_females_ud</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 9</span></span></span>
+<span><span class="co">#&gt;   bird_id method     h    xmin    ymin   xmax   ymax   res ud               </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;PckdSpR_&gt;</span>       </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> kb_27   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> kb_42   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> kb_43   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> kb_45   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span></code></pre></div>
+<p>Functions in <code>tidytracks</code> are able to automatically unwrap
+the column on the fly, but if you plan extensive analysis, it will be
+faster if you unwrap it explicitly before running further analyses:</p>
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">shags_females_ud</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hr_ud_unwrap.html">hr_ud_unwrap</a></span><span class="op">(</span><span class="va">shags_females_ud</span><span class="op">)</span></span>
+<span><span class="va">shags_females_ud</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 9</span></span></span>
+<span><span class="co">#&gt;   bird_id method     h    xmin    ymin   xmax   ymax   res ud               </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;named list&gt;</span>     </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> kb_27   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> kb_42   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> kb_43   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> kb_45   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="minimum-convex-polygons">Minimum Convex Polygons<a class="anchor" aria-label="anchor" href="#minimum-convex-polygons"></a>
+</h3>
 <p>To get a minimum convex polygon covering 95% of the data, we can
 use:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_females_mcp</span> <span class="op">&lt;-</span> <span class="va">shags_females_proj</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">bird_id</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/hr_mcp.html">hr_mcp</a></span><span class="op">(</span>levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>We can plot the MCPs with:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggsf.html" class="external-link">geom_sf</a></span><span class="op">(</span></span>
 <span>    data <span class="op">=</span> <span class="va">shags_females_mcp</span>,</span>
@@ -880,10 +974,13 @@ use:</p>
 <span>    data <span class="op">=</span> <span class="va">shags_females_proj</span>,</span>
 <span>    size <span class="op">=</span> <span class="fl">0.1</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">bird_id</span><span class="op">)</span><span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>aspect.ratio <span class="op">=</span> <span class="fl">1</span>, </span>
-<span>        axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">bird_id</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
+<span>    aspect.ratio <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    axis.text.x <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
 <p><img src="tidytracks_files/figure-html/plot_mcp-1.png" class="r-plt" alt="" width="576"></p>
+</div>
 <div class="section level3">
 <h3 id="save-your-data">Save your data<a class="anchor" aria-label="anchor" href="#save-your-data"></a>
 </h3>
@@ -891,9 +988,8 @@ use:</p>
 <code><a href="../reference/tt_write_data.html">tt_write_data()</a></code> function, which can save the events and
 meta data either separately or as a single CSV text file. In this
 example we will save it to the temporary directory.</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="co"># save to temp directory</span></span>
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># save to temp directory</span></span>
 <span><span class="va">tmp_prefix</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"shags_females"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/tt_write_data.html">tt_write_data</a></span><span class="op">(</span></span>
