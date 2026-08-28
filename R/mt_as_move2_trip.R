@@ -1,11 +1,11 @@
-#' Method to convert trip objects to move2 objects
+#' Method to convert `trip` objects to `move2` objects
 #'
 #' Convert `trip` objects to `move2` objects.
 #' @param x A trip object
 #' @param ... Additional arguments (currently ignored)
 #' @return A move2 object
 #' @export
-#' @examples
+#' @examplesIf rlang::is_installed("trip")
 #' mt_as_move2(trip::walrus818)
 mt_as_move2.trip <- function(x, ...) {
   if (!requireNamespace("trip", quietly = TRUE)) {

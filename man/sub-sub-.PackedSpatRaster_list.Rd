@@ -20,3 +20,9 @@ A \code{SpatRaster} object, unwrapped from the \code{PackedSpatRaster}.
 \description{
 \code{[[} returns a \code{SpatRaster} by position or name (unwrapping it automatically)
 }
+\examples{
+r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+pl <- PackedSpatRaster_list(a = r1, b = r2)
+pl[[1]] # returns r1 as a SpatRaster
+}

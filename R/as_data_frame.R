@@ -7,18 +7,17 @@
 #' @param x A `move2` object
 #' @param ...	additional arguments to be passed to or from methods.
 #' @param include_meta Logical, whether to include the metadata attributes in
-#'   the resulting data frame. Default is TRUE.
+#'   the resulting data frame. Default is FALSE.
 #' @param drop_geometry Logical, whether to drop the geometry column from the
 #'  resulting data frame. Default is FALSE. If TRUE, the coordinates are stored
 #'  in separate columns (`X` and `Y`).
-#' @return A data frame with one row per event, including the event attributes,
-#'   track
+#' @return A data frame with one row per event, including event attributes, the
+#'   track ID, and optionally metadata attributes.
 #' @export
 #' @rdname as_data_frame_move2
 #' @examples
 #' # example code
 #' as.data.frame(example_tt, include_meta = TRUE, drop_geometry = TRUE)
-
 as.data.frame.move2 <- function(
   x,
   ...,

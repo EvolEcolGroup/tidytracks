@@ -1,8 +1,8 @@
 library(sf)
 
 # tolerances for coordinate and attribute comparison
-TOL_COORD <- 1e-6
-TOL_ATTR <- 1e-6
+tol_coord <- 1e-6
+tol_attr <- 1e-6
 
 # Convenience constructors for units objects
 s <- function(x) units::set_units(x, "s")
@@ -31,8 +31,9 @@ make_track <- function(crs = NA) {
 }
 
 # Coordinates of x sorted by time (unnamed matrix for clean comparisons).
-sorted_coords <- function(x)
+sorted_coords <- function(x) {
   unname(sf::st_coordinates(x[order(move2::mt_time(x)), ]))
+}
 
 # Rows for one track, sorted by time.
 track_slice <- function(out, id) {
@@ -169,8 +170,8 @@ test_that("output spans from first to last input timestamp", {
 # ─────────────────────────────────────────────────────────────────────────────
 test_that("[no CRS] midpoint of straight line is correct", {
   co <- sorted_coords(tt_regular_time(make_track(crs = NA), interval = s(100)))
-  expect_equal(co[2, 1], 1, tolerance = TOL_COORD)
-  expect_equal(co[2, 2], 0, tolerance = TOL_COORD)
+  expect_equal(co[2, 1], 1, tolerance = tol_coord)
+  expect_equal(co[2, 2], 0, tolerance = tol_coord)
 })
 
 test_that("[geographic CRS] midpoint of straight line is correct", {
@@ -218,10 +219,10 @@ test_that("first and last output points match input endpoints", {
     ci <- unname(sf::st_coordinates(track))
     co <- sorted_coords(out)
     n <- nrow(co)
-    expect_equal(co[1, 1], ci[1, 1], tolerance = TOL_COORD)
-    expect_equal(co[1, 2], ci[1, 2], tolerance = TOL_COORD)
-    expect_equal(co[n, 1], ci[nrow(ci), 1], tolerance = TOL_COORD)
-    expect_equal(co[n, 2], ci[nrow(ci), 2], tolerance = TOL_COORD)
+    expect_equal(co[1, 1], ci[1, 1], tolerance = tol_coord)
+    expect_equal(co[1, 2], ci[1, 2], tolerance = tol_coord)
+    expect_equal(co[n, 1], ci[nrow(ci), 1], tolerance = tol_coord)
+    expect_equal(co[n, 2], ci[nrow(ci), 2], tolerance = tol_coord)
   }
 })
 
@@ -234,7 +235,7 @@ test_that("numeric attribute is correct at 100 s grid", {
   expect_equal(
     out[order(move2::mt_time(out)), ]$value,
     c(0, 10, 20),
-    tolerance = TOL_ATTR
+    tolerance = tol_attr
   )
 })
 
@@ -243,7 +244,7 @@ test_that("numeric attribute is correct at 50 s grid", {
   expect_equal(
     out[order(move2::mt_time(out)), ]$value,
     c(0, 5, 10, 15, 20),
-    tolerance = TOL_ATTR
+    tolerance = tol_attr
   )
 })
 
@@ -262,7 +263,7 @@ test_that("units attributes keep units class after interpolation", {
   expect_equal(
     as.numeric(out_sorted$speed),
     c(1, 2, 3, 4, 5),
-    tolerance = TOL_ATTR
+    tolerance = tol_attr
   )
 })
 
@@ -306,8 +307,8 @@ test_that("[no CRS] midpoint of diagonal path is correct", {
     track_id_column = "track_id"
   )
   co <- sorted_coords(tt_regular_time(track, interval = s(100)))
-  expect_equal(co[2, 1], 1, tolerance = TOL_COORD)
-  expect_equal(co[2, 2], 1, tolerance = TOL_COORD)
+  expect_equal(co[2, 1], 1, tolerance = tol_coord)
+  expect_equal(co[2, 2], 1, tolerance = tol_coord)
 })
 
 
@@ -350,8 +351,8 @@ test_that("each track's midpoint is geometrically correct", {
   )
   mid_a <- unname(sorted_coords(track_slice(out, "a"))[2, 1])
   mid_b <- unname(sorted_coords(track_slice(out, "b"))[2, 1])
-  expect_equal(mid_a, 1, tolerance = TOL_COORD)
-  expect_equal(mid_b, 11, tolerance = TOL_COORD)
+  expect_equal(mid_a, 1, tolerance = tol_coord)
+  expect_equal(mid_b, 11, tolerance = tol_coord)
 })
 
 
@@ -404,7 +405,7 @@ test_that("plain numeric max_time_lag raises an error mentioning 'units'", {
   )
 })
 
-test_that("non-time units for max_time_lag raises an error mentioning 'seconds'", {
+test_that("max_time_lag rejects non-time units", {
   expect_error(
     tt_regular_time(
       make_track(),
@@ -468,7 +469,7 @@ test_that("unsorted input timestamps are handled correctly", {
   expect_equal(
     sorted_coords(out_unsorted),
     sorted_coords(out_sorted),
-    tolerance = TOL_COORD
+    tolerance = tol_coord
   )
 })
 
@@ -511,9 +512,9 @@ make_offset_mv <- function(id, t_start, t_end = 300) {
   )
 }
 
-test_that("snap_times=TRUE: first grid point is the next whole-interval boundary", {
+test_that("snap_times starts at the next interval boundary", {
   set.seed(123)
-  # Track starts at t = 40 s; interval = 100 s → first snapped point at t = 100 s
+  # The first snapped point is 100 seconds after the epoch.
   track <- make_offset_mv("a", t_start = 40, t_end = 300)
   out <- tt_regular_time(track, interval = s(100), snap_times = TRUE)
   t_out <- sort(as.numeric(move2::mt_time(out)))
@@ -529,7 +530,7 @@ test_that("snap_times=TRUE: grid remains regularly spaced after snapping", {
   expect_true(all(abs(gaps - 100) < 1e-9))
 })
 
-test_that("snap_times=FALSE: first grid point equals track start (default behaviour)", {
+test_that("default snap_times starts at the track start", {
   track <- make_offset_mv("a", t_start = 40, t_end = 300)
   out <- tt_regular_time(track, interval = s(100), snap_times = FALSE)
   t_out <- sort(as.numeric(move2::mt_time(out)))

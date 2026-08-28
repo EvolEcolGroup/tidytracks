@@ -15,7 +15,8 @@ A tibble with one row per track and the following columns:
 \item \code{<track id column>}: The track ID from \code{x}
 \item median_sampling_interval: The median sampling interval in seconds
 \item track_duration: The duration of the track in seconds
-\item expected_points: The expected number of points based on the median sampling interval
+\item expected_points: The expected number of points based on the
+median sampling interval
 \item actual_points: The actual number of points in the track
 \item proportion_missing: The proportion of expected points that are missing
 }
@@ -25,4 +26,7 @@ This function creates a summary of the quality of each track in a \code{move2}
 object. It calculates the median sampling interval, track duration, expected
 number of points, actual number of points, and the proportion of expected
 points that are missing (due to gaps in track).
+}
+\examples{
+track_summary_health(example_tt)
 }

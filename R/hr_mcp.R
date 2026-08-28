@@ -3,7 +3,9 @@
 #' This function estimates the home range of an animal using the minimum convex
 #' polygon (MCP) method.
 #'
-#' @param x A grouped move2 object
+#' @param x A move2 object; if explicitly grouped, the home range is estimated
+#'   for each group, combining all tracks within each group. Otherwise, the
+#'   track id is used as grouping variable.
 #' @param levels A vector of levels for the contour lines. The default is
 #' `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
 #' @returns A tibble of subclass `hr_poly_tbl` of results, with columns:
@@ -11,11 +13,16 @@
 #' - `level`: the level of the contour line
 #' - `geometry`: the geometry of the home range as a list of sf polygons
 #' @export
-
+#' @examples
+#' example_mcp <- hr_mcp(example_tt)
+#' example_mcp
+#' library(ggplot2)
+#' ggplot(example_mcp) +
+#'   geom_sf(aes(fill = track_id), alpha = 0.7)
 hr_mcp <- function(x, levels = c(0.5, 0.95)) {
-  # Check if x is a grouped move2 object
-  if (!inherits(x, "move2") || !inherits(x, "grouped_df")) {
-    stop("x must be a grouped move2 object")
+  # if x is not grouped, use the track ID column as grouping variable
+  if (!inherits(x, "grouped_df")) {
+    x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
 
   # Check if levels are valid
@@ -37,30 +44,26 @@ hr_mcp <- function(x, levels = c(0.5, 0.95)) {
   mcp_results <- foreach::foreach(
     group_id = group_unique,
     .combine = dplyr::bind_rows
-  ) %do%
-    {
-      # Filter the data for the current group
-      xy_sub <- xy[group_index == group_id, ]
-      # Create MCP for each level
-      geometry <- mcp_one_group(xy_sub, levels, crs = sf::st_crs(x))
-      # Calculate area
-      area <- sf::st_area(geometry)
+  ) %do% {
+    # Filter the data for the current group
+    xy_sub <- xy[group_index == group_id, ]
+    # Create MCP for each level
+    geometry <- mcp_one_group(xy_sub, levels, crs = sf::st_crs(x))
+    # Calculate area
+    area <- sf::st_area(geometry)
 
-      # Create a tibble with the results
-      tibble::tibble(
-        group_id = group_labels[group_id],
-        method = "mcp",
-        level = levels,
-        area = area,
-        geometry = geometry
-      )
-    }
+    # Create a tibble with the results
+    tibble::tibble(
+      group_id = group_labels[group_id],
+      method = "mcp",
+      level = levels,
+      area = area,
+      geometry = geometry
+    )
+  }
 
   # now cast the results to an sf object
   mcp_results <- sf::st_as_sf(mcp_results, crs = sf::st_crs(x))
-  # add a method attribute
-  attr(mcp_results, "hr_method") <- c("mcp")
-  class(mcp_results) <- c("hr_poly_tbl", class(mcp_results))
 
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
@@ -70,6 +73,10 @@ hr_mcp <- function(x, levels = c(0.5, 0.95)) {
         dplyr::all_of("group_id")
       )
   }
+
+  # add a method attribute
+  attr(mcp_results, "hr_method") <- "mcp"
+  class(mcp_results) <- c("hr_poly_tbl", class(mcp_results))
 
   # Return the results as a tt_hr_tbl
   return(mcp_results)
@@ -86,7 +93,7 @@ hr_mcp <- function(x, levels = c(0.5, 0.95)) {
 #' @param crs the crs of the coordinates (to use in the geometry)
 #' @returns A list of sf polygons representing the MCP at each level
 #' @keywords internal
-
+#' @noRd
 mcp_one_group <- function(xy, levels, crs) {
   mxy <- colMeans(xy)
   sqd <- (xy[, 1] - mxy[1])^2 + (xy[, 2] - mxy[2])^2

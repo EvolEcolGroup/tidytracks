@@ -2,12 +2,12 @@
 % Please edit documentation in R/tt_write_data.R
 \name{tt_write_data}
 \alias{tt_write_data}
-\title{Write a 'tidy_tracks' object to CSV files}
+\title{Write a tibble of tracks to CSV files}
 \usage{
 tt_write_data(x, file_prefix, combined = FALSE)
 }
 \arguments{
-\item{x}{A 'tidy_tracks' object}
+\item{x}{A \code{move2} object}
 
 \item{file_prefix}{The file path to write the tables, with the prefix for the
 file names. The event table will be saved as '<file_prefix>_events.csv' and
@@ -24,4 +24,14 @@ function is primarily called for its side effect of writing CSV files.
 \description{
 This function writes the event table and the metadata table of a
 'tidy_tracks' object to CSV files (or one combined CSV file).
+}
+\examples{
+# Save to temp directory
+tmp_prefix <- file.path(tempdir(), "example_tt_data")
+tt_write_data(
+  example_tt,
+  tmp_prefix,
+  combined = TRUE
+  )
+
 }

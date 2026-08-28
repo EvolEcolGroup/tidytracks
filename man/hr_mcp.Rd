@@ -7,7 +7,9 @@
 hr_mcp(x, levels = c(0.5, 0.95))
 }
 \arguments{
-\item{x}{A grouped move2 object}
+\item{x}{A move2 object; if explicitly grouped, the home range is estimated
+for each group, combining all tracks within each group. Otherwise, the
+track id is used as grouping variable.}
 
 \item{levels}{A vector of levels for the contour lines. The default is
 \code{c(0.5, 0.95)}, which corresponds to the 50\% and 95\% home ranges.}
@@ -23,4 +25,11 @@ A tibble of subclass \code{hr_poly_tbl} of results, with columns:
 \description{
 This function estimates the home range of an animal using the minimum convex
 polygon (MCP) method.
+}
+\examples{
+example_mcp <- hr_mcp(example_tt)
+example_mcp
+library(ggplot2)
+ggplot(example_mcp) +
+  geom_sf(aes(fill = track_id), alpha = 0.7)
 }

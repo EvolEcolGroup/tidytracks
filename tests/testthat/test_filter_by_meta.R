@@ -1,6 +1,6 @@
 # Helper with distinct colony coordinates per bird (for geometry-filter test)
 create_toy_tt_geo <- function() {
-  coords_df <- create_toy_df()
+  coords_df <- create_toy_df() # nolint: object_usage_linter.
   meta_df <- data.frame(
     bird_id = unique(coords_df$bird_id),
     species = c("species_a", "species_b"),

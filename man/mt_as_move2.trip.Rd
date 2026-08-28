@@ -2,7 +2,7 @@
 % Please edit documentation in R/mt_as_move2_trip.R
 \name{mt_as_move2.trip}
 \alias{mt_as_move2.trip}
-\title{Method to convert trip objects to move2 objects}
+\title{Method to convert \code{trip} objects to \code{move2} objects}
 \usage{
 \method{mt_as_move2}{trip}(x, ...)
 }
@@ -18,5 +18,7 @@ A move2 object
 Convert \code{trip} objects to \code{move2} objects.
 }
 \examples{
+\dontshow{if (rlang::is_installed("trip")) withAutoprint(\{ # examplesIf}
 mt_as_move2(trip::walrus818)
+\dontshow{\}) # examplesIf}
 }

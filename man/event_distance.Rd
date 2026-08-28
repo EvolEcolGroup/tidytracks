@@ -4,22 +4,30 @@
 \alias{event_distance}
 \title{Measure the distance between pairs of consecutive events within each track}
 \usage{
-event_distance(x, units)
+event_distance(x, units = as_units("m"))
 }
 \arguments{
-\item{x}{A move2 object}
+\item{x}{A move2 object.}
 
-\item{units}{Optional, the units to use for the distance. The default is "m".}
+\item{units}{Optional, the units to use for the distance. The default is "m".
+Other distance units supported by the \code{units} package can also be supplied.}
 }
 \value{
-a vector of distances of the same length as the number of events in
+A vector of distances of the same length as the number of events in
 \code{x}, with the last value set to NA for each track.
 }
 \description{
-This function measures the distance between adjacent pairs of consecutive
-events within each track. It returns a vector of distances of the same length
-as the number of events in \code{x}, with the distance for the last event of each
-track padded with an NA. For unprojected longitudes and latitudes, the
-distance is computed as the geodesic distance, which for projected
-coordinates, the Euclidean distance is used.
+This function returns the distance of each segment between events for each
+track. In order to return a vector with the same number of rows as the event
+table, the distance of the last event is set to NA.
+}
+\details{
+For unprojected longitudes and latitudes, the distance is computed as the
+geodesic distance (via the \code{geodist} package); for projected coordinates, the
+Euclidean distance is used.
+}
+\examples{
+event_distance(example_tt)
+event_distance(example_tt, units = as_units("km"))
+
 }

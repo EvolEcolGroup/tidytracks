@@ -29,35 +29,34 @@ test_that("hr_kde is equivalent to adehabitatHR", {
     kern = "bivnorm"
   )
 
-  # plot(brock_ade)
   ## now with tidytrack
   wildboars_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   wildboars_tt <- wildboars_tt %>% dplyr::group_by(name)
-  mask.xy <- as.data.frame(my_grid)
+  mask_xy <- as.data.frame(my_grid)
   wildboars_kde <- hr_kde(
     wildboars_tt,
     levels = NULL,
     h = "h_ref_indiv",
     res = 50,
     bbox = list(
-      xmin = min(mask.xy$x) - 25,
-      ymin = min(mask.xy$y) - 25,
-      xmax = max(mask.xy$x) + 25,
-      ymax = max(mask.xy$y) + 25
+      xmin = min(mask_xy$x) - 25,
+      ymin = min(mask_xy$y) - 25,
+      xmax = max(mask_xy$x) + 25,
+      ymax = max(mask_xy$y) + 25
     )
   )
   # check that we have the same h value as adehabitat for Brock
   expect_true(brock_ade@h$h == wildboars_kde$h[1])
   # check that we have the correct grid
-  expect_equal(range(terra::xFromCol(wildboars_kde$ud[[1]])), range(mask.xy$x))
-  expect_equal(range(terra::yFromRow(wildboars_kde$ud[[1]])), range(mask.xy$y))
+  expect_equal(range(terra::xFromCol(wildboars_kde$ud[[1]])), range(mask_xy$x))
+  expect_equal(range(terra::yFromRow(wildboars_kde$ud[[1]])), range(mask_xy$y))
   # check that the values are similar (allowing for some differences in the
   # algorithms)
   # we first need to standardise the adehabitat values to 1
   brock_std_ud <- brock_ade$ud / sum(brock_ade$ud, na.rm = TRUE)
   expect_true(
     sum(abs(
-      as.vector(terra::as.array(wildboars_kde$ud[[1]])[,, 1]) -
+      as.vector(terra::as.array(wildboars_kde$ud[[1]])[, , 1]) -
         brock_std_ud
     )) <
       1e-3

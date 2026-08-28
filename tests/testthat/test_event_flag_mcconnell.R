@@ -103,7 +103,7 @@ test_that("event_flag_mcconnell returns a logical vector of event length", {
 })
 
 
-test_that("first point is deterministically flagged when check_first_last = TRUE", {
+test_that("endpoint checks flag the first point deterministically", {
   # Deterministic projected example (meters, hourly timestamps).
   # Without endpoint handling, all points survive.
   # With endpoint handling, only the first point is removed.
@@ -132,7 +132,7 @@ test_that("first point is deterministically flagged when check_first_last = TRUE
 })
 
 
-test_that("last point is deterministically flagged when check_first_last = TRUE", {
+test_that("endpoint checks flag the last point deterministically", {
   # Deterministic projected example (meters, hourly timestamps).
   # Without endpoint handling, all points survive.
   # With endpoint handling, only the last point is removed.
@@ -164,8 +164,7 @@ test_that("last point is deterministically flagged when check_first_last = TRUE"
 test_that("check_first_last = TRUE reruns the algorithm deterministically", {
   # Deterministic rerun example for the endpoint-first implementation.
   #
-  # Full track:
-  #   c(200, 40, 170, 60, 20)
+  # The full track has x coordinates 200, 40, 170, 60, and 20.
   #
   # Expected behaviour:
   # - check_first_last = FALSE (McConnell core only): point 3 is removed

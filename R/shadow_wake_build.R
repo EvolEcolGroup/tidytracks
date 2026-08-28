@@ -14,22 +14,22 @@
 #' from the very beginning.
 #'
 #'
-#' @param wake_length A number between 0 and 1 giving the length of the wake,
-#' in relation to the total number of frames.
+#' @param wake_length A number between 0 and 1 giving the length of the wake, in
+#'   relation to the total number of frames.
 #' @param size Numeric indicating the size the wake should end on. If `NULL`
-#' then size is not modified. Can also be a boolean, with `TRUE` being equal to `0`
-#' and `FALSE` being equal to `NULL`
+#'   then size is not modified. Can also be a boolean, with `TRUE` being equal
+#'   to `0` and `FALSE` being equal to `NULL`
 #' @param alpha as `size` but for alpha modification of the wake
 #' @param colour,fill colour or fill the wake should end on. If `NULL` they are
-#' not modified.
+#'   not modified.
 #' @param falloff An easing function that control how size and/or alpha should
-#' change.
+#'   change.
 #' @param wrap Should the shadow wrap around, so that the first frame will get
-#' shadows from the end of the animation.
+#'   shadows from the end of the animation.
 #' @param exclude_layer Indexes of layers that should be excluded.
 #' @param exclude_phase Element phases that should not get a shadow. Possible
-#' values are `'enter'`, `'exit'`, `'static'`, `'transition'`, and `'raw'`. If
-#' `NULL` all phases will be included. Defaults to `'enter'` and `'exit'`
+#'   values are `'enter'`, `'exit'`, `'static'`, `'transition'`, and `'raw'`. If
+#'   `NULL` all phases will be included. Defaults to `'enter'` and `'exit'`
 #'
 #' @family shadows
 #'
@@ -38,23 +38,27 @@
 #' @importFrom tweenr tween_at
 #' @importFrom vctrs vec_rbind
 #' @keywords internal
-
+#' @noRd
 shadow_wake_build <- function(
   wake_length, # Proportion of total animation (0–1) to show as wake trail
   size = TRUE,
   alpha = TRUE,
   colour = NULL,
   fill = NULL,
-  falloff = 'cubic-in',
+  falloff = "cubic-in",
   wrap = FALSE,
   exclude_layer = NULL,
-  exclude_phase = c('enter', 'exit')
+  exclude_phase = c("enter", "exit")
 ) {
   # Convert boolean shorthand to the numeric target values expected by tween_at:
   # TRUE  -> 0  (fade/shrink completely to nothing at the tail of the wake)
   # FALSE -> NULL (leave that aesthetic unchanged throughout the wake)
-  if (is.logical(size)) size <- if (size) 0 else NULL
-  if (is.logical(alpha)) alpha <- if (alpha) 0 else NULL
+  if (is.logical(size)) {
+    size <- if (size) 0 else NULL
+  }
+  if (is.logical(alpha)) {
+    alpha <- if (alpha) 0 else NULL
+  }
 
   # Construct a one-off ggproto instance of ShadowWakeBuild, carrying the
   # user's parameters. gganimate will call this object's methods at render time
@@ -77,17 +81,15 @@ shadow_wake_build <- function(
 }
 
 # modified ggproto to go with the new shadow wake
-ShadowWakeBuild <- ggplot2::ggproto(
-  'ShadowWakeBuild',
+ShadowWakeBuild <- ggplot2::ggproto( # nolint: object_name_linter.
+  "ShadowWakeBuild",
   gganimate::Shadow,
-
   setup_params = function(self, data, params) {
     # Convert wake_length from a proportion (0–1) to an absolute
     # frame count so all downstream logic works in integer frame units.
     params$wake_length <- round(params$nframes * params$wake_length)
     params
   },
-
   get_frames = function(self, params, i) {
     # CUSTOM: wake grows over time
     # At frame i, only i-1 previous frames exist, so the wake is
@@ -112,13 +114,14 @@ ShadowWakeBuild <- ggplot2::ggproto(
 
     frames
   },
-
   prepare_shadow = function(self, shadow, params) {
     # `shadow` is a list-of-lists: one inner list per layer, each
     # element of which is the rendered data for one past frame.
     # Apply falloff aesthetics to every layer independently.
     lapply(shadow, function(d) {
-      if (length(d) == 0) return(NULL)
+      if (length(d) == 0) {
+        return(NULL)
+      }
 
       # Build a position vector `i` in [0, 1) that encodes each
       # shadow frame's progress through the fade:
@@ -145,33 +148,37 @@ ShadowWakeBuild <- ggplot2::ggproto(
       # tween_at() interpolates from params$colour (target at tail,
       # i=0) to the row's original colour (i=1) using the easing curve.
       if (!is.null(params$colour)) {
-        if (!is.null(d$colour))
+        if (!is.null(d$colour)) {
           d$colour <- tweenr::tween_at(
             params$colour,
             d$colour,
             i,
             params$falloff
           )
-        if (!is.null(d$edge_colour))
+        }
+        if (!is.null(d$edge_colour)) {
           d$edge_colour <- tweenr::tween_at(
             params$colour,
             d$edge_colour,
             i,
             params$falloff
           )
+        }
       }
 
       # --- Apply fill falloff ---
       if (!is.null(params$fill)) {
-        if (!is.null(d$fill))
+        if (!is.null(d$fill)) {
           d$fill <- tweenr::tween_at(params$fill, d$fill, i, params$falloff)
-        if (!is.null(d$edge_fill))
+        }
+        if (!is.null(d$edge_fill)) {
           d$edge_fill <- tweenr::tween_at(
             params$fill,
             d$edge_fill,
             i,
             params$falloff
           )
+        }
       }
 
       # --- Apply alpha falloff ---
@@ -244,30 +251,33 @@ ShadowWakeBuild <- ggplot2::ggproto(
       # --- Apply size falloff ---
       # Shrink all size-related aesthetics toward params$size at the tail.
       if (!is.null(params$size)) {
-        if (!is.null(d$size))
+        if (!is.null(d$size)) {
           d$size <- tweenr::tween_at(params$size, d$size, i, params$falloff)
-        if (!is.null(d$edge_size))
+        }
+        if (!is.null(d$edge_size)) {
           d$edge_size <- tweenr::tween_at(
             params$size,
             d$edge_size,
             i,
             params$falloff
           )
-        if (!is.null(d$edge_width))
+        }
+        if (!is.null(d$edge_width)) {
           d$edge_width <- tweenr::tween_at(
             params$size,
             d$edge_width,
             i,
             params$falloff
           )
-        if (!is.null(d$stroke))
+        }
+        if (!is.null(d$stroke)) {
           d$stroke <- tweenr::tween_at(params$size, d$stroke, i, params$falloff)
+        }
       }
 
       d
     })
   },
-
   prepare_frame_data = function(
     self,
     data,
@@ -283,7 +293,9 @@ ShadowWakeBuild <- ggplot2::ggproto(
       function(d, s, e) {
         # For excluded layers, pass the current frame's data through
         # unchanged — no shadow is added.
-        if (e) return(d[[1]])
+        if (e) {
+          return(d[[1]])
+        }
 
         # Only carry forward shadow rows whose IDs are present in
         # non-excluded phases of the current frame. This prevents

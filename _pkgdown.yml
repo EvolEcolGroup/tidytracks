@@ -48,7 +48,17 @@ reference:
     desc: "Process lists of rasters (used to represent UDs for home ranges)."
     contents:
         - matches("PackedSpatRaster")
+  - title: "Helper functions"
+    desc: "Helper functions to manipulate and convert data."
+    contents:
+        - dist_category
+        - same_category
   - title: "Example datasets"
     desc: "Example datasets for testing and demonstration."
     contents:
         - example_tt
+  - title: internal
+    desc: Exported but hidden from the index
+    contents:
+      - reexports
+      - pipe

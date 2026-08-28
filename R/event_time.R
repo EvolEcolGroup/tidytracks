@@ -9,5 +9,4 @@
 #' @examples
 #' event_time(example_tt)
 #'
-
 event_time <- move2::mt_time

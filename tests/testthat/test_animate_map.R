@@ -26,16 +26,24 @@ x <- make_test_tracks()
 # helpers: minimal ggplots using the tt geoms ----
 make_paths_map <- function(x) {
   ggplot2::ggplot() +
-    geom_event_path(data = x, ggplot2::aes(colour = bird_id), linewidth = 2)
+    geom_event_path(
+      data = x,
+      ggplot2::aes(colour = .data$bird_id),
+      linewidth = 2
+    )
 }
 
 make_points_map <- function(x) {
   ggplot2::ggplot() +
-    geom_event_point(data = x, ggplot2::aes(colour = bird_id), size = 3)
+    geom_event_point(
+      data = x,
+      ggplot2::aes(colour = .data$bird_id),
+      size = 3
+    )
 }
 
 # ===========================================================================
-# geom_event_path (drop_final_point = TRUE)
+# Tests for geom_event_path with drop_final_point = TRUE
 # ===========================================================================
 
 test_that("geom_event_path errors if data is NULL", {
@@ -53,7 +61,7 @@ test_that("geom_event_path can be added to a ggplot without error", {
   )
 })
 
-test_that("geom_event_path with drop_final_point = TRUE contains only LINESTRING geometries", {
+test_that("geom_event_path drops final points as LINESTRINGs", {
   p <- ggplot2::ggplot() +
     geom_event_path(
       data = x,
@@ -65,7 +73,7 @@ test_that("geom_event_path with drop_final_point = TRUE contains only LINESTRING
   expect_equal(geom_types, "LINESTRING")
 })
 
-test_that("geom_event_path with drop_final_point = TRUE has n_events - n_tracks rows", {
+test_that("geom_event_path drops one row per track", {
   # (because the final point of each of track is not included)
   p <- ggplot2::ggplot() +
     geom_event_path(
@@ -78,7 +86,7 @@ test_that("geom_event_path with drop_final_point = TRUE has n_events - n_tracks 
   expect_equal(nrow(layer_data), nrow(x) - n_tracks)
 })
 
-test_that("geom_event_path layer data preserves track ID and datetime columns", {
+test_that("geom_event_path preserves track ID and time columns", {
   p <- ggplot2::ggplot() +
     geom_event_path(data = x, ggplot2::aes(colour = bird_id))
   layer_data <- p$layers[[1]]$data
@@ -102,13 +110,13 @@ test_that("geom_event_point retains tidytracks_geom attribute in layer data", {
   expect_equal(attr(layer_data, "tidytracks_geom"), "event_point")
 })
 
-test_that("geom_event_path retains tidytracks_data_name attribute matching the object name", {
+test_that("geom_event_path retains its data-name attribute", {
   p <- make_paths_map(x)
   layer_data <- p$layers[[1]]$data
   expect_equal(attr(layer_data, "tidytracks_data_name"), "x")
 })
 
-test_that("geom_event_point retains tidytracks_data_name attribute matching the object name", {
+test_that("geom_event_point retains its data-name attribute", {
   p <- make_points_map(x)
   layer_data <- p$layers[[1]]$data
   expect_equal(attr(layer_data, "tidytracks_data_name"), "x")
@@ -118,36 +126,37 @@ test_that("tt_detect_layer_type returns NULL for an empty plot", {
   expect_null(tt_detect_layer_type(ggplot2::ggplot()))
 })
 
-test_that("tt_detect_layer_type returns NULL when only static sf layers are present", {
+test_that("tt_detect_layer_type ignores static sf layers", {
   colony_sf <- sf::st_sf(
     name = "colony",
     geometry = sf::st_sfc(sf::st_point(c(0.5, 0.5)), crs = 4326)
   )
-  p <- ggplot2::ggplot() + ggplot2::geom_sf(data = colony_sf)
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_sf(data = colony_sf)
   expect_null(tt_detect_layer_type(p))
 })
 
-test_that("tt_detect_layer_type returns type 'path' for a geom_event_path layer", {
+test_that("tt_detect_layer_type identifies an event path", {
   result <- tt_detect_layer_type(make_paths_map(x))
   expect_equal(result$type, "path")
 })
 
-test_that("tt_detect_layer_type returns type 'point' for a geom_event_point layer", {
+test_that("tt_detect_layer_type identifies an event point", {
   result <- tt_detect_layer_type(make_points_map(x))
   expect_equal(result$type, "point")
 })
 
-test_that("tt_detect_layer_type returns the correct time_col for a path layer", {
+test_that("tt_detect_layer_type gets path time columns", {
   result <- tt_detect_layer_type(make_paths_map(x))
   expect_equal(result$time_col, move2::mt_time_column(x))
 })
 
-test_that("tt_detect_layer_type returns the correct time_col for a point layer", {
+test_that("tt_detect_layer_type gets point time columns", {
   result <- tt_detect_layer_type(make_points_map(x))
   expect_equal(result$time_col, move2::mt_time_column(x))
 })
 
-test_that("tt_detect_layer_type ignores a static sf layer before the track layer", {
+test_that("tt_detect_layer_type ignores preceding static layers", {
   colony_sf <- sf::st_sf(
     name = "colony",
     geometry = sf::st_sfc(sf::st_point(c(0.5, 0.5)), crs = 4326)
@@ -159,7 +168,7 @@ test_that("tt_detect_layer_type ignores a static sf layer before the track layer
   expect_equal(result$type, "path")
 })
 
-test_that("tt_detect_layer_type ignores a static sf layer after the track layer", {
+test_that("tt_detect_layer_type ignores following static layers", {
   colony_sf <- sf::st_sf(
     name = "colony",
     geometry = sf::st_sfc(sf::st_point(c(0.5, 0.5)), crs = 4326)
@@ -185,7 +194,7 @@ test_that("tt_detect_layer_type warning mentions layer_to_animate", {
   expect_warning(tt_detect_layer_type(p), "layer_to_animate")
 })
 
-test_that("tt_detect_layer_type returns the first track layer when multiple are present", {
+test_that("tt_detect_layer_type selects the first track layer", {
   # path is added first, so it should be returned despite the warning
   p <- ggplot2::ggplot() +
     geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
@@ -195,7 +204,7 @@ test_that("tt_detect_layer_type returns the first track layer when multiple are 
 })
 
 test_that("tt_detect_layer_type selects the correct layer by name", {
-  # Two move2 objects with identical timestamps; x2 is a point layer added second
+  # Two move2 objects have identical timestamps; x2 is added as a point layer.
   x2 <- x
   p <- ggplot2::ggplot() +
     geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
@@ -204,7 +213,7 @@ test_that("tt_detect_layer_type selects the correct layer by name", {
   expect_equal(result$type, "point")
 })
 
-test_that("tt_detect_layer_type errors if layer_name does not match any layer", {
+test_that("tt_detect_layer_type rejects unknown layer names", {
   p <- make_paths_map(x)
   expect_error(
     tt_detect_layer_type(p, layer_name = "nonexistent"),
@@ -217,7 +226,7 @@ test_that("animate_map errors if layer_to_animate is not a move2 object", {
   expect_error(animate_map(p, layer_to_animate = data.frame()), "move2")
 })
 
-test_that("animate_map with layer_to_animate suppresses the multiple-layers warning", {
+test_that("animate_map suppresses the multiple-layers warning", {
   p <- ggplot2::ggplot() +
     geom_event_path(data = x, ggplot2::aes(colour = bird_id)) +
     geom_event_point(data = x, ggplot2::aes(colour = bird_id))
@@ -270,7 +279,7 @@ test_that("animate_map warns when multiple track layers are present", {
   expect_warning(animate_map(p), "Multiple")
 })
 
-test_that("animate_map warns and animates the first layer in the stack when layer_to_animate is not given", {
+test_that("animate_map warns and selects the first layer", {
   # x_fewer has fewer time steps than x, so n_timesteps reveals which was used.
   # x is added first (path), x_fewer second (point).
   x_fewer <- make_test_tracks() |> dplyr::slice(1:5)
@@ -279,7 +288,7 @@ test_that("animate_map warns and animates the first layer in the stack when laye
     geom_event_point(data = x_fewer, ggplot2::aes(colour = bird_id))
   result <- NULL
   expect_warning(result <- animate_map(p), "Multiple")
-  # path layer drops the final event per track (2 tracks, 10 rows -> 8 unique times)
+  # The path layer drops a final event per track, leaving eight unique times.
   expect_equal(attr(result, "n_timesteps"), length(unique(x$date_time)) - 1L)
 })
 
@@ -296,29 +305,29 @@ test_that("animate_map with path layer attaches n_timesteps as an attribute", {
   expect_false(is.null(attr(result, "n_timesteps")))
 })
 
-test_that("animate_map with path layer: n_timesteps reflects dropped final events", {
+test_that("path animation omits final events from n_timesteps", {
   result <- animate_map(make_paths_map(x))
   # geom_event_path drops the final event of each track, so n_timesteps should
   # equal the number of unique timestamps in x minus those that only appear
   # as a final event. In the test data both tracks share the same timestamps,
-  # so the last timestamp is dropped entirely: n_timesteps == n_unique_times - 1.
+  # Thus n_timesteps is one less than the number of unique timestamps.
   expect_equal(attr(result, "n_timesteps"), length(unique(x$date_time)) - 1L)
 })
 
-test_that("animate_map with path layer: custom wake_length produces a gganim object", {
+test_that("path animation supports custom wake lengths", {
   expect_s3_class(animate_map(make_paths_map(x), wake_length = 0.3), "gganim")
 })
 
-test_that("animate_map with path layer: wake_length < 1 uses a shadow_wake_build", {
+test_that("short path wakes use shadow_wake_build", {
   result <- animate_map(make_paths_map(x), wake_length = 0.3)
   expect_true(inherits(result$shadow, "ShadowWakeBuild"))
 })
 
-test_that("animate_map with path layer: wake_length = 1 produces a gganim object", {
+test_that("path animation supports a wake length of one", {
   expect_s3_class(animate_map(make_paths_map(x), wake_length = 1), "gganim")
 })
 
-test_that("animate_map with path layer: wake_length = 1 uses shadow_mark (no fading)", {
+test_that("full path wakes use shadow_mark", {
   result <- animate_map(make_paths_map(x), wake_length = 1)
   expect_true(inherits(result$shadow, "ShadowMark"))
 })
@@ -347,7 +356,7 @@ test_that("animate_map with point layer attaches n_timesteps as an attribute", {
   expect_false(is.null(attr(result, "n_timesteps")))
 })
 
-test_that("animate_map with point layer: n_timesteps matches unique datetimes", {
+test_that("point animation n_timesteps matches unique times", {
   result <- animate_map(make_points_map(x))
   expect_equal(attr(result, "n_timesteps"), length(unique(x$date_time)))
 })
@@ -363,33 +372,16 @@ test_that("animate_map with point layer works when piped from a ggplot", {
   expect_s3_class(make_points_map(x) |> animate_map(), "gganim")
 })
 
-test_that("animate_map with point layer: wake_length < 1 uses a shadow_wake_build", {
+test_that("short point wakes use shadow_wake_build", {
   result <- animate_map(make_points_map(x), wake_length = 0.3)
   expect_true(inherits(result$shadow, "ShadowWakeBuild"))
 })
 
-test_that("animate_map with point layer: wake_length = 1 produces a gganim object", {
+test_that("point animation supports a wake length of one", {
   expect_s3_class(animate_map(make_points_map(x), wake_length = 1), "gganim")
 })
 
-test_that("animate_map with point layer: wake_length = 1 uses shadow_mark (no fading)", {
+test_that("full point wakes use shadow_mark", {
   result <- animate_map(make_points_map(x), wake_length = 1)
   expect_true(inherits(result$shadow, "ShadowMark"))
 })
-
-# for manual testing only (uncomment both lines together):
-# result <- make_paths_map(x) |> animate_map()
-# gganimate::animate(result, nframes = attr(result, "n_timesteps"), fps = 2,
-#                    renderer = gganimate::gifski_renderer())
-#
-# result <- make_paths_map(x) |> animate_map(wake_length = 1)
-# gganimate::animate(result, nframes = attr(result, "n_timesteps"), fps = 2,
-#                    renderer = gganimate::gifski_renderer())
-#
-# result <- make_points_map(x) |> animate_map()
-# gganimate::animate(result, nframes = attr(result, "n_timesteps"), fps = 2,
-#                    renderer = gganimate::gifski_renderer())
-#
-# result <- make_points_map(x) |> animate_map(wake_length = 1)
-# gganimate::animate(result, nframes = attr(result, "n_timesteps"), fps = 2,
-#                    renderer = gganimate::gifski_renderer())

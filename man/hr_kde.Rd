@@ -42,7 +42,8 @@ grouping of \code{x}
 \item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}: the bounding box used for the KDE
 \item \code{res}: the resolution used for the KDE
 If \code{levels} is NULL:
-\item \code{kde}: the full KDE object is returned in a list column
+\item \code{ud}: the full utilisation distribution is returned as a list-column of
+\code{terra::SpatRaster} objects
 Else, if \code{levels} is not NULL, the following columns are added:
 \item \code{area}: the area of the home range at this level (in the units
 of the projection of \code{x}, e.g. m^2 for a UTM projection)
@@ -69,4 +70,15 @@ units of the projection of \code{x} (e.g. m^2 for a UTM projection). If \code{x}
 unprojected, the area is computed in degrees^2, which is not a meaningful
 unit for area. In this case, it is recommended to project \code{x} to an
 appropriate projection before using this function.
+}
+\examples{
+example_kde <- hr_kde(example_tt)
+example_kde
+library(ggplot2)
+autoplot(example_kde)
+# compute the isopleths for the 50\% and 95\% home range
+example_iso <- hr_kde(example_tt, levels = c(0.5, 0.95))
+ggplot(example_iso) +
+  geom_sf(aes(fill = track_id), alpha = 0.7)
+
 }

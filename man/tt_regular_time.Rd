@@ -7,7 +7,7 @@
 tt_regular_time(x, interval, max_time_lag = NULL, snap_times = FALSE)
 }
 \arguments{
-\item{x}{A \code{move2} object.  Timestamps (as returned by \code{\link[=event_time]{event_time()}}) must be
+\item{x}{A \code{move2} object. Timestamps (as returned by \code{\link[=event_time]{event_time()}}) must be
 \link[base:POSIXct]{base::POSIXct}.}
 
 \item{interval}{Resampling interval as a \code{\link[units:units]{units::units}} object
@@ -113,10 +113,13 @@ resampled_gapped <- tt_regular_time(
   interval     = as_units(30, "s"),
   max_time_lag = as_units(2, "min")
 )
+resampled_gapped
 
 # Resample to one fix per minute, snapping times to whole-minute boundaries
-resampled_snap <- tt_regular_time(track, interval = as_units(1, "min"),
-                                  snap_times = TRUE)
+resampled_snap <- tt_regular_time(track,
+  interval = as_units(1, "min"),
+  snap_times = TRUE
+)
 resampled_snap
 
 }

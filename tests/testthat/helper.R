@@ -70,7 +70,7 @@ create_toy_tt <- function() {
     bird_id = unique(coords_df$bird_id),
     species = c("species_a", "species_b")
   )
-  meta_df$colony_sf = sf_point_col(x = c(0, 0), y = c(0, 0), crs = 4326)
+  meta_df$colony_sf <- sf_point_col(x = c(0, 0), y = c(0, 0), crs = 4326)
 
   # make tt (move2) object
   test_tt <- tt_read_data(

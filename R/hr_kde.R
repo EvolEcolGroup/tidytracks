@@ -46,7 +46,8 @@
 #' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
 #' - `res`: the resolution used for the KDE
 #' If `levels` is NULL:
-#' - `kde`: the full KDE object is returned in a list column
+#' - `ud`: the full utilisation distribution is returned as a list-column of
+#'   `terra::SpatRaster` objects
 #' Else, if `levels` is not NULL, the following columns are added:
 #' - `area`: the area of the home range at this level (in the units
 #'   of the projection of `x`, e.g. m^2 for a UTM projection)
@@ -54,7 +55,16 @@
 #'   the isopleth for the appropriate level
 #'
 #' @export
-
+#' @examples
+#' example_kde <- hr_kde(example_tt)
+#' example_kde
+#' library(ggplot2)
+#' autoplot(example_kde)
+#' # compute the isopleths for the 50% and 95% home range
+#' example_iso <- hr_kde(example_tt, levels = c(0.5, 0.95))
+#' ggplot(example_iso) +
+#'   geom_sf(aes(fill = track_id), alpha = 0.7)
+#'
 hr_kde <- function(
   x,
   h = "h_ref_mean",
@@ -145,47 +155,42 @@ hr_kde <- function(
   kde_results <- foreach::foreach(
     group_id = group_unique,
     .combine = rbind # dplyr::bind_rows
-  ) %do%
-    {
-      # Filter the data for the current group
-      xy_sub <- xy[group_index == group_id, ]
-      h_val <- h[group_id]
-      # Create kernel for each level
-      kde <- kde_one_group(
-        xy_sub,
-        crs = sf::st_crs(x),
-        bbox = bbox,
-        res = res,
-        h = h_val,
-        id = group_id
-      )
-      # row for the table to integrate the results
-      res_tbl <- tibble::tibble(
-        group_id = group_labels[group_id],
-        method = "kde",
-        h = h_val,
-        xmin = bbox[["xmin"]],
-        ymin = bbox[["ymin"]],
-        xmax = bbox[["xmax"]],
-        ymax = bbox[["ymax"]],
-        res = res
-      )
+  ) %do% {
+    # Filter the data for the current group
+    xy_sub <- xy[group_index == group_id, ]
+    h_val <- h[group_id]
+    # Create kernel for each level
+    kde <- kde_one_group(
+      xy_sub,
+      crs = sf::st_crs(x),
+      bbox = bbox,
+      res = res,
+      h = h_val,
+      id = group_id
+    )
+    # row for the table to integrate the results
+    res_tbl <- tibble::tibble(
+      group_id = group_labels[group_id],
+      method = "kde",
+      h = h_val,
+      xmin = bbox[["xmin"]],
+      ymin = bbox[["ymin"]],
+      xmax = bbox[["xmax"]],
+      ymax = bbox[["ymax"]],
+      res = res
+    )
 
-      # if returning the full kde object, we simply add it to the kde column
-      # add the kde to the tibble as a list column
-      res_tbl$ud <- PackedSpatRaster_list(kde)
-      names(res_tbl$ud) <- group_labels[group_id]
-      # add a class to the tibble
-      class(res_tbl) <- c("hr_ud_tbl", class(res_tbl))
-      if (!is.null(levels)) {
-        res_tbl <- hr_ud_iso(res_tbl, levels)
-      }
-      res_tbl
+    # if returning the full kde object, we simply add it to the kde column
+    # add the kde to the tibble as a list column
+    res_tbl$ud <- list(kde)
+    names(res_tbl$ud) <- group_labels[group_id]
+    # add a class to the tibble
+    class(res_tbl) <- c("hr_ud_tbl", class(res_tbl))
+    if (!is.null(levels)) {
+      res_tbl <- hr_ud_iso(res_tbl, levels)
     }
-
-  # # change class of ud column to PackedSpatRaster_list
-  # names(kde_results$ud) <- group_labels
-  # kde_results$ud <- as_PackedSpatRaster_list(kde_results$ud)
+    res_tbl
+  }
 
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
@@ -212,8 +217,9 @@ hr_kde <- function(
 #' @param res The resolution of the grid (in the units of the projection of x).
 #' @param h The bandwidth for the kernel density estimation.
 #' @param id The identifier for the group (used in raster metadata).
-#' @return A PackedSpatRaster.
+#' @return A `terra::SpatRaster`.
 #' @keywords internal
+#' @noRd
 kde_one_group <- function(xy, crs, bbox, res, h, id) {
   kde <- MASS::kde2d(
     xy[, 1],
@@ -244,7 +250,7 @@ kde_one_group <- function(xy, crs, bbox, res, h, id) {
   # turn it into a raster (flipping the x axis appropriately)
   kde$z <- t(kde$z)
   r <- terra::rast(
-    kde$z[nrow(kde$z):1, ],
+    kde$z[rev(seq_len(nrow(kde$z))), ],
     crs = crs$wkt,
     extent = terra::ext(
       bbox[["xmin"]],
@@ -261,6 +267,5 @@ kde_one_group <- function(xy, crs, bbox, res, h, id) {
     paste0("density_sum = ", sum_density)
   )
 
-  # return it wrapped (so that it can be put in a list)
-  return(terra::wrap(r))
+  r
 }

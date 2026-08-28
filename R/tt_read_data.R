@@ -1,10 +1,10 @@
-#' Read data from a csv file into a `move2` object
+#' Read data from a CSV file into a `move2` object
 #'
-#' This function reads a csv file containing event data (and possibly metadata)
-#' and converts it into a `move2` object. The csv file should contain contain at
+#' This function reads a CSV file containing event data (and possibly metadata)
+#' and converts it into a `move2` object. The CSV file should contain contain at
 #' least the following columns:
 #'
-#' - one column which is the `track_id` (i.e. the variable that groups 
+#' - one column which is the `track_id` (i.e. the variable that groups
 #' events into a track)
 #' - two columns representing the x and y coordinates (e.g. longitude
 #' and latitude)
@@ -22,13 +22,13 @@
 #'   `move2::mt_as_move2()` function. See the `reading_data` vignette for more
 #'   details.
 #'
-#' @param events A path to a csv file containing the event data, OR a dataframe
+#' @param events A path to a CSV file containing the event data, OR a dataframe
 #'   in R containing the event data.
-#' @param col_track_id The name of the column in the csv file that contains the
+#' @param col_track_id The name of the column in the CSV file that contains the
 #'   track id.
-#' @param col_coords A vector of the x and y coordinate column names in the csv
+#' @param col_coords A vector of the x and y coordinate column names in the CSV
 #'   file.
-#' @param col_date_time The name of the column in the csv file that contains the
+#' @param col_date_time The name of the column in the CSV file that contains the
 #'   date-time information (or a vector of two elements, the names of separate
 #'   date and time columns). Time is assumed to be in UTC.
 #' @param format_date_time optional, a string containing the format of the
@@ -53,14 +53,15 @@
 #'   suffix added to the metadata version.
 #' @return A `move2` object containing the event data.
 #' @examples
-#' example_events_csv <- system.file("/extdata/csv_files/dataset_example_birdlife.csv",
+#' shags_csv <- system.file("/extdata/shags_example.csv",
 #'   package = "tidytracks"
 #' )
-#' example_tt <- tt_read_data(example_events_csv,
-#'   col_track_id = "track_id",
-#'   col_coords = c("longitude", "latitude"),
-#'   col_date_time = c("date_gmt", "time_gmt")
+#' shags_tt <- tt_read_data(shags_csv,
+#'   col_track_id = "bird_id",
+#'   col_coords = c("lon", "lat"),
+#'   col_date_time = "date_time"
 #' )
+#' shags_tt
 #' @export
 
 tt_read_data <- function(
@@ -104,7 +105,7 @@ tt_read_data <- function(
   } else if (
     length(col_date_time) == 2 &&
       (!col_date_time[1] %in% names(events) ||
-        !col_date_time[2] %in% names(events))
+         !col_date_time[2] %in% names(events))
   ) {
     stop(paste(
       "Columns",
@@ -131,7 +132,10 @@ tt_read_data <- function(
       stop(paste(
         "Column",
         col,
-        "contains missing values (NAs). Please remove or impute these before proceeding."
+        paste0(
+          "contains missing values (NAs). Please remove or impute these ",
+          "before proceeding."
+        )
       ))
     }
   }
@@ -140,7 +144,8 @@ tt_read_data <- function(
   if (length(col_date_time) == 1) {
     # already a single date_time column
     date_time_raw <- events[[col_date_time]]
-    col_date_time_original <- col_date_time # store original name(s) for error messages
+    # Store original name(s) for error messages.
+    col_date_time_original <- col_date_time
   } else {
     # combine separate date + time columns into one string, separated by a space
     date_time_raw <- paste(
@@ -153,11 +158,13 @@ tt_read_data <- function(
       dplyr::select(-dplyr::all_of(col_date_time))
 
     # update col_date_time to the new column name
-    col_date_time_original <- col_date_time # store original name(s) for error messages
-    col_date_time <- "date_time" # the combined date_time field will be named 'date_time'
+    # Store original name(s) for error messages.
+    col_date_time_original <- col_date_time
+    # Name the combined date-time field.
+    col_date_time <- "date_time"
   }
 
-  # attempt to parse the date_time column using as.POSIXct, wrapped in a tryCatch
+  # Attempt to parse date-time with as.POSIXct, wrapped in tryCatch.
   # block to provide informative error messages
   events[[col_date_time]] <- tryCatch(
     {
@@ -192,37 +199,40 @@ tt_read_data <- function(
       stop(
         "Failed to parse date-time field(s) '",
         paste(col_date_time_original, collapse = "', '"),
-        "'.\nPlease check that the format is consistent and uses a standard format (e.g. YYYY-mm-dd hh:mm:ss).\n",
-        "Note that you can specify the format using the format_date_time parameter.",
+        "'.\nPlease check that the format is consistent and uses a ",
+        "standard format (e.g. YYYY-mm-dd hh:mm:ss).\n",
+        "You can specify a format with the format_date_time parameter.",
         call. = FALSE
       )
     }
   )
 
-  # Check for any NAs in the parsed date_time values and throw an error if any are
-  #   found, as this indicates the format_date_time may be incorrect
-  # Also get the first two indices where the parsing failed, and find the original
-  #   character strings for date_time so we can print them in the error message
+  # Check parsed date-time values for NAs, which indicate parsing failures.
+  # Get the first two failing original character strings for the error message.
   idx_na <- which(is.na(events[[col_date_time]]))
   if (length(idx_na) > 0) {
     examples <- date_time_raw[utils::head(idx_na, 2)]
     # Adjust error message based on whether format_date_time was supplied or not
     if (!is.null(format_date_time)) {
       stop(
-        "Some date-time values could not be parsed using the provided format_date_time '",
+        "Some date-time values could not be parsed using ",
+        "the provided format_date_time '",
         format_date_time,
         "'.\n",
         "Examples of unparsed date-time values: '",
         paste(examples, collapse = "', '"),
-        "'.\nPlease check that the format_date_time parameter is correct and the data are consistently formatted.",
+        "'.\nPlease check that the format_date_time parameter is correct ",
+        "and the data are consistently formatted.",
         call. = FALSE
       )
     } else {
       stop(
-        "Some date-time values could not be parsed using auto-detected format.\n",
+        "Some date-time values could not be parsed using auto-detected ",
+        "format.\n",
         "Examples of unparsed date-time values: '",
         paste(examples, collapse = "', '"),
-        "'.\nPlease check that the date-time columns are consistently formatted, or specify the format using the format_date_time parameter.",
+        "'.\nPlease check that the date-time columns are consistently ",
+        "formatted, or specify format_date_time.",
         call. = FALSE
       )
     }
@@ -237,7 +247,7 @@ tt_read_data <- function(
 
   # Convert track-specific attributes to meta data if requested
   if (convert_meta) {
-    # Identify columns that might contain track specific info (i.e. unique within a track)
+    # Identify columns that may contain track-specific information.
     candidate_cols <- setdiff(
       names(events),
       c(col_track_id, col_coords, col_date_time)
@@ -291,7 +301,7 @@ tt_read_data <- function(
       by = col_track_id,
       suffix = c("", ".meta")
     )
-    # if column with .meta suffix, remove them if they are identical to the base column
+    # Remove duplicate `.meta` columns that match their base columns.
     for (col in names(updated_meta)) {
       if (grepl("\\.meta$", col)) {
         base_col <- sub("\\.meta$", "", col)

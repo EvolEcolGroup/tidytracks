@@ -17,3 +17,6 @@ A vector of total durations for each track
 \description{
 Compute the total duration of each track
 }
+\examples{
+track_duration(example_tt)
+}

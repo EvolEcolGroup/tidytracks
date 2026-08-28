@@ -17,7 +17,6 @@
 #' @examples
 #' example_tt2 <- as_event_column(example_tt, sex)
 #' example_tt2 # now showing sex in the events table
-
 as_event_column <- function(x, ..., .keep = FALSE) {
   move2::mt_as_event_attribute(x, ..., .keep = .keep)
 }

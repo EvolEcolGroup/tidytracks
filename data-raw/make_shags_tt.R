@@ -6,7 +6,7 @@ library(sf)
 shags_meta <- read.csv("./data-raw/raw_csv/shag_tidytrack_meta.csv")
 
 # make the colony cpords into a geometry col and select only this and track id
-#rename bird_id to keep short and simple
+# rename bird_id to keep short and simple
 # make all lower case
 shags_meta <- shags_meta %>%
   sf::st_as_sf(
@@ -194,7 +194,7 @@ col_coords <- sf::st_coordinates(show_meta(shags_tt)$colony_coord[1]) # get colo
 
 # points all so close tp col and only 1 doesn't move so keep
 
-##Speed Filter
+## Speed Filter
 
 # add speed to df and summarise
 shags_tt <- shags_tt %>%
@@ -204,7 +204,7 @@ shags_tt <- shags_tt %>%
 shags_tt %>%
   summary()
 
-#max speed is 950
+# max speed is 950
 
 hist(shags_tt$speed, breaks = 100, xlim = c(0, 200))
 
@@ -266,7 +266,7 @@ df_check %>%
 kb_40 <- shags_tt %>%
   filter(bird_id == "kb_40")
 
-#add flags
+# add flags
 
 # flag points with speed >100, and the following point (so we can see which is wrong)
 indices_high_speed <- which(as.numeric(kb_40$speed) > 80)
@@ -294,14 +294,12 @@ track_line <- kb_40 %>%
 
 leaflet(data = kb_40) %>%
   addTiles() %>%
-
   # Track line
   addPolylines(
     data = track_line,
     color = "black",
     weight = 2
   ) %>%
-
   # All points
   addCircleMarkers(
     lng = sf::st_coordinates(kb_40)[, 1],
@@ -310,7 +308,6 @@ leaflet(data = kb_40) %>%
     color = ifelse(kb_40$speed_flag, "red", "blue"),
     popup = ~ as.character(date_time)
   ) %>%
-
   # Highlight flagged points
   addCircleMarkers(
     data = subset(kb_40, speed_flag),
@@ -352,7 +349,7 @@ shags_tt_filtered %>%
 speed_filter_check <- shags_tt_filtered %>%
   tidytracks::tt_clean_mcconnell(max_speed = max_speed)
 
-#tidy up
+# tidy up
 rm(
   df_check,
   df_filtered,

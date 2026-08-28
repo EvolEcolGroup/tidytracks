@@ -5,7 +5,6 @@ test_that("PackedSpatRaster_list works with multiple rasters", {
   r3 <- terra::rast(nrows = 4, ncols = 8, nlyr = 3, vals = runif(4 * 8 * 3))
   # create PackedSpatRaster_list
   pl <- PackedSpatRaster_list(a = r1, b = r2, c = r3)
-  # print(pl)
   # check that it has the correct class
   expect_true(inherits(pl, "PackedSpatRaster_list"))
   # check that the accessors return a normal (unpacked) SpatRaster

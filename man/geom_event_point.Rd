@@ -48,3 +48,8 @@ points. It is a wrapper around \verb{[ggplot2::geom_sf()]}, thus allowing for
 projections to be set using the \code{\link[ggplot2:coord_sf]{ggplot2::coord_sf()}}` function. See
 \code{\link[ggplot2:geom_sf]{ggplot2::geom_sf()}} for details
 }
+\examples{
+library(ggplot2)
+ggplot() +
+  geom_event_point(data = example_tt, mapping = aes(color = track_id))
+}

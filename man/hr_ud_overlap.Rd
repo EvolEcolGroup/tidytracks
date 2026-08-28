@@ -44,3 +44,13 @@ overlap between the UDs estimated within a given isopleth level (e.g. 50\%) of
 the UD, rather than the full UD. This can be useful for comparing the core
 areas of the UDs.
 }
+\details{
+When \code{x} is an \code{hr_ud_tbl}, each UD is validated, converted to cell
+values, and conditionally masked once before all pairwise comparisons are
+calculated. This avoids repeated raster reads and cumulative-distribution
+calculations for UDs that occur in multiple pairs.
+}
+\examples{
+example_kde <- hr_kde(example_tt)
+hr_ud_overlap(example_kde)
+}

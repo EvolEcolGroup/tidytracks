@@ -15,11 +15,11 @@ tt_split_trips(
 \arguments{
 \item{x}{A move2 object}
 
-\item{centre_col}{the column name for the centre of the colony/nest of each
-track as found in the metadata table. Alternatively, an \code{sf} object of
-either length 1 or the same length as the number of tracks in the move2
-object. If a single geometry object is provided, it will be used as the
-centre for all tracks.}
+\item{centre_col}{character string, the name of the column in the metadata
+table that contains the centre of the colony/nest for each track. This
+column must be of class \code{sfc_POINT} and should have a valid coordinate
+reference system (CRS) specified. The function \code{sf_point_col()} can be used
+to create this column.}
 
 \item{buffer_outbound}{the distance from the centre to define outbound trips,
 specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
@@ -38,4 +38,23 @@ a move2 object with the trips split.
 \description{
 This function splits tracks into trips for central place
 foragers by identifying the trips based on a distance from the colony/nest.
+}
+\examples{
+# First, add a sf point column to metadata giving nest location
+show_meta(example_tt) <- show_meta(example_tt) \%>\%
+  dplyr::mutate(nest_location = sf_point_col(nest_lon, nest_lat, crs = 4326))
+# Now split the tracks into trips
+example_tt_split <- tt_split_trips(
+  x = example_tt,
+  centre_col = "nest_location",
+  buffer_outbound = as_units(1, "km"),
+  buffer_inbound = as_units(1, "km"),
+  complete = FALSE
+  )
+# Now the unit of tracking is `trip_id` column
+move2::mt_track_id_column(example_tt_split)
+# Three incomplete trips were identified
+show_meta(example_tt_split) \%>\%
+  dplyr::group_by(track_id, trip_id, trip_type) \%>\%
+  dplyr::summarise(.groups = "drop")
 }

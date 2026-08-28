@@ -16,7 +16,6 @@
 #' show_meta(example_tt)
 #' show_meta(example_tt)$age <- c(2, 3, 2)
 #' show_meta(example_tt)
-
 show_meta <- move2::mt_track_data
 
 #' @rdname show_meta

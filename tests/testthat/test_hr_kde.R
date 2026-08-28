@@ -9,6 +9,9 @@ test_that("hr_kde works with multiple tracks", {
   expect_equal(nrow(boar_kde), 4)
   # this should be  a hr_kde_tbl object
   expect_true(inherits(boar_kde, "hr_ud_tbl"))
+  # UDs are stored as live SpatRasters during analysis
+  expect_false(inherits(boar_kde$ud, "PackedSpatRaster_list"))
+  expect_true(all(vapply(boar_kde$ud, inherits, logical(1), "SpatRaster")))
   # the group_id column should have been renamed to "name"
   expect_true("name" %in% names(boar_kde))
 
@@ -31,11 +34,12 @@ test_that("hr_kde works with multiple tracks", {
   boar_tt2 <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   boar_kde2 <- hr_kde(boar_tt2, res = 50)
   # this should be the same as the previous one
-  expect_equal(boar_kde, boar_kde2, ignore_attr = TRUE)
+  # test updated to check all 4 UDs are the same, rather than just the first
+  expect_equal(
+    stats::setNames(lapply(boar_kde$ud, terra::values), boar_kde$name),
+    stats::setNames(lapply(boar_kde2$ud, terra::values), boar_kde2$name)
+  )
 
-  # simple plotting example to check the geometry
-  #  ggplot(boar_kde) +
-  #    geom_sf(aes(fill=group_id), alpha = 0.7)
 })
 
 test_that("hr_kde bbox columns are always numeric (not list-cols)", {

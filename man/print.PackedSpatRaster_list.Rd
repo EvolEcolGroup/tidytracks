@@ -19,3 +19,9 @@ Print a summary of the \code{PackedSpatRaster_list}, showing dimensions and CRS 
 each element. This provides a quick overview of the contents of the list
 without the overhead of unwrapping all rasters.
 }
+\examples{
+r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+pl <- PackedSpatRaster_list(a = r1, b = r2)
+pl # prints a summary of the PackedSpatRaster_list
+}

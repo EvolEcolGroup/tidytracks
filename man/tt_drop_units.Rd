@@ -24,3 +24,11 @@ Note that \verb{geom_*} functions in \code{tidytracks} automatically drop
 units, so there is no need to use this function before plotting if you use
 the custom geometries in this package.
 }
+\examples{
+# Add speed column (with units) to example_tt
+example_tt$speed <- event_speed(example_tt)
+class(example_tt$speed)
+# Drop the units from any columns with units
+result <- tt_drop_units(example_tt)
+class(result$speed)
+}
