@@ -1,4 +1,4 @@
-# Animating your maps
+# Animations and maps
 
 `tidytracks` also includes a function for animating maps of animal
 movement data over time.
@@ -22,10 +22,12 @@ from Bird Island, South Georgia, each lasting approximately 1 year.
 ``` r
 
 # load data from CSV file into tidytracks
-df <- tt_read_data(events = "data/wanderer_example_tracks.csv",
-                   col_track_id = "bird_id",
-                   col_coords = c("lon", "lat"),
-                   col_date_time = "date_time")
+df <- tt_read_data(
+  events = "data/wanderer_example_tracks.csv",
+  col_track_id = "bird_id",
+  col_coords = c("lon", "lat"),
+  col_date_time = "date_time"
+)
 
 # inspect the data
 df
@@ -60,9 +62,11 @@ already:
 
 ``` r
 
-df <- tt_regular_time(x = df,
-                      interval = as_units(12, "hour"),
-                      snap_times = TRUE)
+df <- tt_regular_time(
+  x = df,
+  interval = as_units(12, "hour"),
+  snap_times = TRUE
+)
 df
 ## A <move2> with `track_id_column` "bird_id" and `time_column` "date_time"
 ## Containing 10 tracks lasting on average 354 days in a
@@ -113,11 +117,6 @@ library(rnaturalearth)
 land <- ne_countries(scale = "medium", returnclass = "sf")
 ```
 
-    ## The rnaturalearthdata package needs to be installed.
-    ## Installing the rnaturalearthdata package.
-    ## Installing package into '/home/runner/work/_temp/Library'
-    ## (as 'lib' is unspecified)
-
 ### subset data to test
 
 We’re going to test out our maps and animations on the first 30 days of
@@ -142,8 +141,10 @@ add your `tidytracks` layer using `geom_event_path` for paths or
 
 # make the map
 map <- ggplot() +
-  geom_event_path(data = df_sub, aes(col = bird_id),  # tracks layer
-                  size = 1.5, lineend="round") +  # rounded line ends look smoother
+  geom_event_path(
+    data = df_sub, aes(col = bird_id), # tracks layer
+    size = 1.5, lineend = "round"
+  ) + # rounded line ends look smoother
   geom_sf(data = land, fill = "grey50", col = NA) + # land polygons
   geom_sf(data = colony, pch = 24, fill = "yellow") # add colony layer
 # print the map
@@ -162,21 +163,26 @@ projection.
 ``` r
 
 # define south polar LAEA projection for plotting
-my_crs <- "+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
+my_crs <- paste0(
+  "+proj=laea +lat_0=-90 +lon_0=0 +x_0=0 +y_0=0 ",
+  "+datum=WGS84 +units=m +no_defs"
+)
 
 # you can use st_coordinates to get min/max coordinates of your tracking data
-range(st_coordinates(df)[ ,"X"])
+range(st_coordinates(df)[, "X"])
 ## [1] -179.8794  179.7600
-range(st_coordinates(df)[ ,"Y"])
+range(st_coordinates(df)[, "Y"])
 ## [1] -63.10255 -30.57208
 
 # update extent of map using extent of tracking data
 map <- map +
-  coord_sf(crs = my_crs, # change projection to LAEA South Polar
-           # NB. lims must be in the units of the target CRS, so we need to
-           # transform the data to that crs using st_transform
-           xlim = range(st_coordinates(st_transform(df_sub, my_crs))[ ,"X"]),
-           ylim = range(st_coordinates(st_transform(df_sub, my_crs))[ ,"Y"]))
+  coord_sf(
+    crs = my_crs, # change projection to LAEA South Polar
+    # NB. lims must be in the units of the target CRS, so we need to
+    # transform the data to that crs using st_transform
+    xlim = range(st_coordinates(st_transform(df_sub, my_crs))[, "X"]),
+    ylim = range(st_coordinates(st_transform(df_sub, my_crs))[, "Y"])
+  )
 map
 ```
 
@@ -197,12 +203,13 @@ many frames as there are time steps** in the tracking data.
 
 ``` r
 
-map_anim <- animate_map(p = map,           # our ggplot map
-                        wake_length = 0.3, # proportion of total animation time
-                        label_format = "%B %d" # month and date
-) 
+map_anim <- animate_map(
+  p = map, # our ggplot map
+  wake_length = 0.3, # proportion of total animation time
+  label_format = "%B %d" # month and date
+)
 
-class(map_anim)               # the gganim object
+class(map_anim) # the gganim object
 ## [1] "gganim"          "ggplot2::ggplot" "ggplot"          "ggplot2::gg"    
 ## [5] "S7_object"       "gg"
 attr(map_anim, "n_timesteps") # number of time steps in animation
@@ -236,9 +243,10 @@ to bind them into a video.
 ``` r
 
 gganimate::animate(
-  plot = map_anim,         # our ggplot with added animation
-  nframes = attr(map_anim, "n_timesteps"), # number of frames = time steps in data
-  duration = 5,            # video duration in seconds
+  plot = map_anim, # our ggplot with added animation
+  # Number of frames equals time steps in the data.
+  nframes = attr(map_anim, "n_timesteps"),
+  duration = 5, # video duration in seconds
   renderer = av_renderer(), # default is gifski_renderer()
   # optionally, specify width and height of output animation
   width = 540, height = 400,
@@ -271,9 +279,11 @@ map <- ggplot() +
   geom_event_point(data = df_sub, aes(col = bird_id), size = 3) + # tracks layer
   geom_sf(data = land, fill = "grey50", col = NA) + # land polygons
   geom_sf(data = colony, pch = 24, fill = "yellow") + # add colony layer
-  coord_sf(crs = my_crs, # change projection and define limits
-           xlim = range(st_coordinates(st_transform(df_sub, my_crs))[ ,"X"]),
-           ylim = range(st_coordinates(st_transform(df_sub, my_crs))[ ,"Y"]))
+  coord_sf(
+    crs = my_crs, # change projection and define limits
+    xlim = range(st_coordinates(st_transform(df_sub, my_crs))[, "X"]),
+    ylim = range(st_coordinates(st_transform(df_sub, my_crs))[, "Y"])
+  )
 # print to check
 map
 ```
@@ -283,9 +293,11 @@ map
 ``` r
 
 # add animation
-map_anim2 <- animate_map(p = map, 
-                         wake_length = 0.3,
-                         label_format = "%B %d")
+map_anim2 <- animate_map(
+  p = map,
+  wake_length = 0.3,
+  label_format = "%B %d"
+)
 ```
 
 ``` r
@@ -339,10 +351,12 @@ rect <- st_as_sfc(st_bbox(df))
 
 # option 2: specify the rectangle manually. I want the whole Southern Ocean
 # and up to the northern extent of my data (plus a 15 degree buffer)
-rect_coords <- c(xmin = -180, # define the corners
-                 xmax = 180,
-                 ymin = -90,
-                 ymax = max(st_coordinates(df)[, "Y"]) + 15) # add buffer
+rect_coords <- c(
+  xmin = -180, # define the corners
+  xmax = 180,
+  ymin = -90,
+  ymax = max(st_coordinates(df)[, "Y"]) + 15
+) # add buffer
 # convert to an sfc object and set the CRS
 rect <- st_as_sfc(st_bbox(rect_coords)) %>%
   st_set_crs(4326)
@@ -389,12 +403,14 @@ track_colours <- c(
 
 # assemble map
 map <- ggplot() +
-  geom_spatraster_rgb(data = bmap) +                       # basemap
-  geom_event_path(data = df, aes(col = bird_id), size = 2, # tracks
-                  lineend = "round") + 
-  scale_colour_manual(values = track_colours) +            # track colours
-  geom_sf(data = colony, pch = 24, fill = "yellow") +      # colony
-  coord_sf(crs = my_crs)                                   # projection
+  geom_spatraster_rgb(data = bmap) + # basemap
+  geom_event_path(
+    data = df, aes(col = bird_id), size = 2, # tracks
+    lineend = "round"
+  ) +
+  scale_colour_manual(values = track_colours) + # track colours
+  geom_sf(data = colony, pch = 24, fill = "yellow") + # colony
+  coord_sf(crs = my_crs) # projection
 
 # remove axes and gridlines so it looks neater
 map <- map +
@@ -402,7 +418,9 @@ map <- map +
   theme(
     plot.background = element_rect(
       fill = "white",
-      colour = "white"))
+      colour = "white"
+    )
+  )
 map
 ```
 
@@ -418,10 +436,12 @@ This time we’ll add the animation by piping the `ggplot` to
 
 ``` r
 
-# add animation to the map, this time with pipe 
+# add animation to the map, this time with pipe
 map_anim <- map %>%
-  animate_map(wake_length = 0.1,
-              label_format = "%B %Y")
+  animate_map(
+    wake_length = 0.1,
+    label_format = "%B %Y"
+  )
 
 # render the animation
 gganimate::animate(

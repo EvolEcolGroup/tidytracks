@@ -23,11 +23,12 @@ tt_split_trips(
 
 - centre_col:
 
-  the column name for the centre of the colony/nest of each track as
-  found in the metadata table. Alternatively, an `sf` object of either
-  length 1 or the same length as the number of tracks in the move2
-  object. If a single geometry object is provided, it will be used as
-  the centre for all tracks.
+  character string, the name of the column in the metadata table that
+  contains the centre of the colony/nest for each track. This column
+  must be of class `sfc_POINT` and should have a valid coordinate
+  reference system (CRS) specified. The function
+  [`sf_point_col()`](https://evolecolgroup.github.io/tidytracks/dev/reference/sf_point_col.md)
+  can be used to create this column.
 
 - buffer_outbound:
 
@@ -49,3 +50,34 @@ tt_split_trips(
 ## Value
 
 a move2 object with the trips split.
+
+## Examples
+
+``` r
+# First, add a sf point column to metadata giving nest location
+show_meta(example_tt) <- show_meta(example_tt) %>%
+  dplyr::mutate(nest_location = sf_point_col(nest_lon, nest_lat, crs = 4326))
+# Now split the tracks into trips
+example_tt_split <- tt_split_trips(
+  x = example_tt,
+  centre_col = "nest_location",
+  buffer_outbound = as_units(1, "km"),
+  buffer_inbound = as_units(1, "km"),
+  complete = FALSE
+  )
+# Now the unit of tracking is `trip_id` column
+move2::mt_track_id_column(example_tt_split)
+#> [1] "trip_id"
+# Three incomplete trips were identified
+show_meta(example_tt_split) %>%
+  dplyr::group_by(track_id, trip_id, trip_type) %>%
+  dplyr::summarise(.groups = "drop")
+#> # A tibble: 5 × 3
+#>   track_id trip_id   trip_type 
+#>   <fct>    <chr>     <chr>     
+#> 1 a        a_trip_1  incomplete
+#> 2 b        b_trip_1  incomplete
+#> 3 b        b_trip_na at_centre 
+#> 4 c        c_trip_1  incomplete
+#> 5 c        c_trip_na at_centre 
+```

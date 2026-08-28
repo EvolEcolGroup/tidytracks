@@ -50,14 +50,6 @@ sf_point_col(
 
 # assign to a column in the meta with mutate
 library(dplyr)
-#> 
-#> Attaching package: ‘dplyr’
-#> The following objects are masked from ‘package:stats’:
-#> 
-#>     filter, lag
-#> The following objects are masked from ‘package:base’:
-#> 
-#>     intersect, setdiff, setequal, union
 show_meta(example_tt) %>%
   mutate(nest_coord = sf_point_col(
     x = show_meta(example_tt)$nest_lon,

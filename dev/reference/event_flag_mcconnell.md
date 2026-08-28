@@ -45,3 +45,11 @@ Square (RMS):
 
 If an endpoint is removed, the McConnell filter is rerun on the reduced
 track, and the endpoint check is repeated until the result is stable.
+
+## Examples
+
+``` r
+event_flag_mcconnell(example_tt, max_speed = as_units(50, "m/s"))
+#>  [1]  TRUE  TRUE FALSE  TRUE  TRUE  TRUE  TRUE FALSE  TRUE  TRUE  TRUE  TRUE
+#> [13] FALSE  TRUE  TRUE
+```

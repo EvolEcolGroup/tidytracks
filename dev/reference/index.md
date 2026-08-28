@@ -139,6 +139,14 @@ Estimate home range and habitat use from movement data.
   : Create isopleths from utilisation distributions
 - [`hr_ud_overlap()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_ud_overlap.md)
   : Compute overlap for utilisation distributions
+- [`hr_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_ud_saveRDS.md)
+  : Save utilisation distributions as an RDS file
+- [`hr_ud_sum()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_ud_sum.md)
+  : Compute the normalised sum of multiple UDs
+- [`hr_ud_unwrap()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_ud_unwrap.md)
+  : Unwrap utilisation distributions after loading
+- [`hr_ud_wrap()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_ud_wrap.md)
+  : Wrap utilisation distributions for storage
 
 ## List of PackedRasters
 
@@ -188,6 +196,15 @@ Process lists of rasters (used to represent UDs for home ranges).
   :
 
   Add `SpatRaster` by position or name to `PackedSpatRaster_list`
+
+## Helper functions
+
+Helper functions to manipulate and convert data.
+
+- [`dist_category()`](https://evolecolgroup.github.io/tidytracks/dev/reference/dist_category.md)
+  : Create a categorical distance matrix
+- [`same_category()`](https://evolecolgroup.github.io/tidytracks/dev/reference/same_category.md)
+  : Create a categorical similarity matrix
 
 ## Example datasets
 

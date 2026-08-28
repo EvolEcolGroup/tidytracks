@@ -33,3 +33,16 @@ A tibble with one row per track and the following columns:
 - actual_points: The actual number of points in the track
 
 - proportion_missing: The proportion of expected points that are missing
+
+## Examples
+
+``` r
+track_summary_health(example_tt)
+#> # A tibble: 3 × 6
+#>   track_id median_sampling_interval track_duration expected_points actual_points
+#>   <fct>                       <dbl>          <dbl>           <int>         <int>
+#> 1 a                            1200           4800               5             5
+#> 2 b                            1200           4800               5             5
+#> 3 c                            1200           4800               5             5
+#> # ℹ 1 more variable: proportion_missing <dbl>
+```

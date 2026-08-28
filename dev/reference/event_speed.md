@@ -20,9 +20,8 @@ event_speed(x, units = as_units("m/min"))
 
 - units:
 
-  Optional, the units to use for the speed. The default is "m/min".
-  Other speed units supported by the `units` package can also be
-  supplied.
+  Optional units to use for speed. The default is `"m/min"`. Other speed
+  units supported by the `units` package can also be supplied.
 
 ## Value
 

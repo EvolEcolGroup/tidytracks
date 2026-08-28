@@ -28,3 +28,21 @@ x[[i, ...]]
 ## Value
 
 A `SpatRaster` object, unwrapped from the `PackedSpatRaster`.
+
+## Examples
+
+``` r
+r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+pl <- PackedSpatRaster_list(a = r1, b = r2)
+pl[[1]] # returns r1 as a SpatRaster
+#> class       : SpatRaster
+#> size        : 4, 4, 1  (nrow, ncol, nlyr)
+#> resolution  : 90, 45  (x, y)
+#> extent      : -180, 180, -90, 90  (xmin, xmax, ymin, ymax)
+#> coord. ref. : lon/lat WGS 84 (EPSG:4326)
+#> source(s)   : memory
+#> name        : lyr.1
+#> min value   :     1
+#> max value   :    16
+```

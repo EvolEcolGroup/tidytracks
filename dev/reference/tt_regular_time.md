@@ -159,6 +159,23 @@ resampled_gapped <- tt_regular_time(
   interval     = as_units(30, "s"),
   max_time_lag = as_units(2, "min")
 )
+resampled_gapped
+#> A <move2> with `track_id_column` "track_id" and `time_column` "timestamp"
+#> Containing 1 track lasting 3 mins in a
+#> Simple feature collection with 7 features and 3 fields
+#> Geometry type: POINT
+#> Dimension:     XY
+#> Bounding box:  xmin: -0.1 ymin: 51.5 xmax: -0.006820769 ymax: 51.53727
+#> Geodetic CRS:  WGS 84
+#>             timestamp track_id speed_ms                      geometry
+#> 1 2024-01-01 00:00:05  gull_01 2.100000             POINT (-0.1 51.5)
+#> 2 2024-01-01 00:00:35  gull_01 2.558824  POINT (-0.08235795 51.50706)
+#> 3 2024-01-01 00:01:05  gull_01 3.017647  POINT (-0.06471044 51.51412)
+#> 4 2024-01-01 00:01:35  gull_01 3.327273  POINT (-0.04772823 51.52091)
+#> 5 2024-01-01 00:02:05  gull_01 2.890909  POINT (-0.03409567 51.52637)
+#> 6 2024-01-01 00:02:35  gull_01 2.454545  POINT (-0.02045986 51.53182)
+#> 7 2024-01-01 00:03:05  gull_01 2.018182 POINT (-0.006820769 51.53727)
+#> To see track metadata, use `show_meta()`
 
 # Resample to one fix per minute, snapping times to whole-minute boundaries
 resampled_snap <- tt_regular_time(track,

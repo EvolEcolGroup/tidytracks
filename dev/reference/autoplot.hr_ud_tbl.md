@@ -45,3 +45,11 @@ A patchwork plot object created with
 When one utilisation distribution is selected, the result is a
 single-panel plot composition; when multiple utilisation distributions
 are selected, the result is a multi-panel plot composition.
+
+## Examples
+
+``` r
+example_kde <- hr_kde(example_tt)
+library(ggplot2)
+autoplot(example_kde)
+```
