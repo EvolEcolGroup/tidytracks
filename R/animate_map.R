@@ -60,7 +60,7 @@
 #' # Create a map using example_tt dataset (print map if you want to check it)
 #' library(ggplot2)
 #' map <- ggplot() +
-#'   geom_event_path(data = example_tt, aes(colour = track_id), 
+#'   geom_event_path(data = example_tt, aes(colour = track_id),
 #'                   size = 2, lineend = "round")
 #' # Add animation logic
 #' map_anim <- animate_map(p = map, wake_length = 1)
@@ -73,7 +73,7 @@
 #'                   duration = 2 # video duration in seconds
 #' )
 #' }
-#' 
+#'
 animate_map <- function(
   p,
   layer_to_animate = NULL,

@@ -21,7 +21,7 @@
 #'   tmp_prefix,
 #'   combined = TRUE
 #'   )
-#' 
+#'
 tt_write_data <- function(x, file_prefix, combined = FALSE) {
   # check that the base path of these files exists
   base_path <- dirname(file_prefix)
