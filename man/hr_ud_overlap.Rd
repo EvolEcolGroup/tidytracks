@@ -6,11 +6,22 @@
 \alias{hr_ud_overlap.hr_ud_tbl}
 \title{Compute overlap for utilisation distributions}
 \usage{
-hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi"))
+hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi", "earth_mover"))
 
-\method{hr_ud_overlap}{SpatRaster}(x, y, ..., method = c("ba", "vi", "udoi"), cond_level = NULL)
+\method{hr_ud_overlap}{SpatRaster}(
+  x,
+  y,
+  ...,
+  method = c("ba", "vi", "udoi", "earth_mover"),
+  cond_level = NULL
+)
 
-\method{hr_ud_overlap}{hr_ud_tbl}(x, ..., method = c("ba", "vi", "udoi"), cond_level = NULL)
+\method{hr_ud_overlap}{hr_ud_tbl}(
+  x,
+  ...,
+  method = c("ba", "vi", "udoi", "earth_mover"),
+  cond_level = NULL
+)
 }
 \arguments{
 \item{x}{A SpatRaster of the utilisation distribution (with a layer \code{ud}), or
@@ -20,8 +31,10 @@ a tibble of UDs of class \code{hr_ud_tbl} (e.g. as created with \code{\link[=hr_
 
 \item{method}{A character string specifying the method to use for overlap
 calculation. Options are \code{"ba"} (Bhattacharyya's Affinity), \code{"vi"} (Volume
-of Intersection), and \code{"udoi"} (Utilisation Distribution Overlap Index).
-Default is \code{"ba"}.}
+of Intersection), \code{"udoi"} (Utilisation Distribution Overlap Index), and
+\code{"earth_mover"} (Earth Mover's Distance). \code{"earth_mover"} returns a
+distance, where zero indicates identical UDs, and requires the suggested
+package \code{emdist}. Default is \code{"ba"}.}
 
 \item{y}{A SpatRaster of the utilisation distribution, if \code{x} is a single UD.
 Else, if \code{x} is tibble of UDs, \code{y} is not used.}

@@ -12,15 +12,15 @@
 \item{...}{additional arguments to be passed to or from methods.}
 
 \item{include_meta}{Logical, whether to include the metadata attributes in
-the resulting data frame. Default is TRUE.}
+the resulting data frame. Default is FALSE.}
 
 \item{drop_geometry}{Logical, whether to drop the geometry column from the
 resulting data frame. Default is FALSE. If TRUE, the coordinates are stored
 in separate columns (\code{X} and \code{Y}).}
 }
 \value{
-A data frame with one row per event, including the event attributes,
-track
+A data frame with one row per event, including event attributes, the
+track ID, and optionally metadata attributes.
 }
 \description{
 This function converts a \code{move2} object into a data frame, including the

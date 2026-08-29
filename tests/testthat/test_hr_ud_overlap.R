@@ -111,3 +111,27 @@ test_that("hr_ud_overlap works", {
   )
   expect_true(boar_overlap_cond < boar_overlap[1, 2])
 })
+
+test_that("hr_ud_overlap calculates Earth Mover's Distance when available", {
+  x <- terra::rast(ncols = 3, nrows = 2, xmin = 0, xmax = 3, ymin = 0, ymax = 2)
+  y <- x
+  names(x) <- names(y) <- "ud"
+  terra::values(x) <- c(1, 0, 0, 0, 0, 0)
+  terra::values(y) <- c(0, 0, 1, 0, 0, 0)
+
+  if (!requireNamespace("emdist", quietly = TRUE)) {
+    expect_error(
+      hr_ud_overlap(x, y, method = "earth_mover"),
+      "requires the suggested package 'emdist'"
+    )
+    return()
+  }
+
+  expect_equal(hr_ud_overlap(x, y, method = "earth_mover"), 2)
+  ud_tbl <- tibble::tibble(id = c("x", "y"), ud = list(x, y))
+  class(ud_tbl) <- c("hr_ud_tbl", class(ud_tbl))
+  expect_equal(
+    hr_ud_overlap(ud_tbl, method = "earth_mover"),
+    matrix(c(0, 2, 2, 0), nrow = 2, dimnames = list(c("x", "y"), c("x", "y")))
+  )
+})

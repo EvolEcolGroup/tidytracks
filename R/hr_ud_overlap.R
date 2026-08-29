@@ -17,8 +17,10 @@
 #'   a tibble of UDs of class `hr_ud_tbl` (e.g. as created with [hr_kde()]).
 #' @param method A character string specifying the method to use for overlap
 #'   calculation. Options are `"ba"` (Bhattacharyya's Affinity), `"vi"` (Volume
-#'   of Intersection), and `"udoi"` (Utilisation Distribution Overlap Index).
-#'   Default is `"ba"`.
+#'   of Intersection), `"udoi"` (Utilisation Distribution Overlap Index), and
+#'   `"earth_mover"` (Earth Mover's Distance). `"earth_mover"` returns a
+#'   distance, where zero indicates identical UDs, and requires the suggested
+#'   package `emdist`. Default is `"ba"`.
 #' @param cond_level Optional, the level for which the the conditional overlap
 #'   is computed.
 #' @param ... Additional arguments (not currently used)
@@ -29,7 +31,11 @@
 #' @examples
 #' example_kde <- hr_kde(example_tt)
 #' hr_ud_overlap(example_kde)
-hr_ud_overlap <- function(x, ..., method = c("ba", "vi", "udoi")) {
+hr_ud_overlap <- function(
+  x,
+  ...,
+  method = c("ba", "vi", "udoi", "earth_mover")
+) {
   UseMethod("hr_ud_overlap")
 }
 
@@ -41,10 +47,13 @@ hr_ud_overlap.SpatRaster <- function(
   x,
   y,
   ...,
-  method = c("ba", "vi", "udoi"),
+  method = c("ba", "vi", "udoi", "earth_mover"),
   cond_level = NULL
 ) {
   method <- match.arg(method)
+  if (method == "earth_mover") {
+    check_earth_mover_available()
+  }
   check_ud_raster(x, "x")
   check_ud_raster(y, "y")
   # compare the two geometries
@@ -55,12 +64,13 @@ hr_ud_overlap.SpatRaster <- function(
     )
   }
   check_cond_level(cond_level)
-  # Convert only the requested UD layer to vectors before applying overlap math.
-  overlap_from_values(
-    condition_ud_values(ud_values(x), cond_level),
-    condition_ud_values(ud_values(y), cond_level),
-    method
-  )
+  x_values <- condition_ud_values(ud_values(x), cond_level)
+  y_values <- condition_ud_values(ud_values(y), cond_level)
+  if (method == "earth_mover") {
+    return(earth_mover_distance(x_values, y_values, x))
+  } else {
+    return(overlap_from_values(x_values, y_values, method))
+  }
 }
 
 #' @export
@@ -71,7 +81,7 @@ hr_ud_overlap.SpatRaster <- function(
 hr_ud_overlap.hr_ud_tbl <- function(
   x,
   ...,
-  method = c("ba", "vi", "udoi"),
+  method = c("ba", "vi", "udoi", "earth_mover"),
   cond_level = NULL
 ) {
   stopifnot_hr_ud_table(x) # nolint: object_usage_linter.
@@ -83,6 +93,9 @@ hr_ud_overlap.hr_ud_tbl <- function(
     stop("additional arguments ... are not used")
   }
   method <- match.arg(method)
+  if (method == "earth_mover") {
+    check_earth_mover_available()
+  }
   check_cond_level(cond_level)
   n <- nrow(x)
   # assume that the first column of x is an id column (check that it is
@@ -114,28 +127,40 @@ hr_ud_overlap.hr_ud_tbl <- function(
     ud_values_list[[i]] <- condition_ud_values(ud_values(ud), cond_level)
   }
 
-  # Each column contains one UD in matching cell order, allowing BA and UDOI to
-  # calculate all pairwise products with one matrix cross-product.
-  values_matrix <- do.call(cbind, ud_values_list)
   if (method == "ba") {
+    # Each column contains one UD in matching cell order, allowing BA and UDOI
+    # to calculate all pairwise products with one matrix cross-product.
+    values_matrix <- do.call(cbind, ud_values_list)
     overlap_matrix <- crossprod(sqrt(values_matrix))
   } else if (method == "udoi") {
+    values_matrix <- do.call(cbind, ud_values_list)
     overlap_matrix <- crossprod(values_matrix)
   } else {
-    overlap_matrix <- diag(1, n)
+    diagonal <- if (method == "earth_mover") 0 else 1
+    overlap_matrix <- diag(diagonal, n)
     if (n > 1L) {
-      # VI requires the cell-wise minimum, so it cannot be expressed as a
-      # cross-product. It still reuses the cached vectors.
+      # VI and Earth Mover's Distance are calculated pairwise while reusing
+      # the cached, conditioned cell values.
       for (i in seq_len(n - 1L)) {
         for (j in seq.int(i + 1L, n)) {
-          overlap_matrix[i, j] <- overlap_matrix[j, i] <-
+          value <- if (method == "earth_mover") {
+            earth_mover_distance(
+              ud_values_list[[i]],
+              ud_values_list[[j]],
+              reference
+            )
+          } else {
             sum(pmin(ud_values_list[[i]], ud_values_list[[j]]))
+          }
+          overlap_matrix[i, j] <- overlap_matrix[j, i] <- value
         }
       }
     }
   }
 
-  diag(overlap_matrix) <- 1
+  if (method != "earth_mover") {
+    diag(overlap_matrix) <- 1
+  }
   rownames(overlap_matrix) <- colnames(overlap_matrix) <- ids
   overlap_matrix
 }
@@ -237,4 +262,40 @@ overlap_from_values <- function(x, y, method) {
   } else {
     sum(x * y)
   }
+}
+
+#' Calculate Earth Mover's Distance between two UD value vectors
+#'
+#' @param x A numeric vector of conditioned UD values.
+#' @param y A numeric vector of conditioned UD values.
+#' @param raster A `SpatRaster` defining the grid of `x` and `y`.
+#' @returns The Earth Mover's Distance between `x` and `y`.
+#' @keywords internal
+#' @noRd
+earth_mover_distance <- function(x, y, raster) {
+  check_earth_mover_available()
+  n_rows <- terra::nrow(raster)
+  n_cols <- terra::ncol(raster)
+  resolution <- terra::res(raster)
+  emdist::emd2d(
+    matrix(x, nrow = n_rows, ncol = n_cols, byrow = TRUE),
+    matrix(y, nrow = n_rows, ncol = n_cols, byrow = TRUE),
+    xdist = resolution[1],
+    ydist = resolution[2]
+  )
+}
+
+#' Check that the optional Earth Mover's Distance dependency is installed
+#'
+#' @returns `NULL`, invisibly, when `emdist` is installed.
+#' @keywords internal
+#' @noRd
+check_earth_mover_available <- function() {
+  if (!requireNamespace("emdist", quietly = TRUE)) {
+    stop(
+      "method = 'earth_mover' requires the suggested package 'emdist'. ",
+      "Install it with install.packages('emdist')."
+    )
+  }
+  invisible(NULL)
 }
