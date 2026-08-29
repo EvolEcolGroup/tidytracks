@@ -26,7 +26,7 @@ as.data.frame(x, ..., include_meta = FALSE, drop_geometry = FALSE)
 - include_meta:
 
   Logical, whether to include the metadata attributes in the resulting
-  data frame. Default is TRUE.
+  data frame. Default is FALSE.
 
 - drop_geometry:
 
@@ -36,8 +36,8 @@ as.data.frame(x, ..., include_meta = FALSE, drop_geometry = FALSE)
 
 ## Value
 
-A data frame with one row per event, including the event attributes,
-track
+A data frame with one row per event, including event attributes, the
+track ID, and optionally metadata attributes.
 
 ## Examples
 

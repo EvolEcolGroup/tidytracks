@@ -12,13 +12,24 @@ can be useful for comparing the core areas of the UDs.
 ## Usage
 
 ``` r
-hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi"))
+hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi", "earth_mover"))
 
 # S3 method for class 'SpatRaster'
-hr_ud_overlap(x, y, ..., method = c("ba", "vi", "udoi"), cond_level = NULL)
+hr_ud_overlap(
+  x,
+  y,
+  ...,
+  method = c("ba", "vi", "udoi", "earth_mover"),
+  cond_level = NULL
+)
 
 # S3 method for class 'hr_ud_tbl'
-hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi"), cond_level = NULL)
+hr_ud_overlap(
+  x,
+  ...,
+  method = c("ba", "vi", "udoi", "earth_mover"),
+  cond_level = NULL
+)
 ```
 
 ## Arguments
@@ -37,8 +48,10 @@ hr_ud_overlap(x, ..., method = c("ba", "vi", "udoi"), cond_level = NULL)
 
   A character string specifying the method to use for overlap
   calculation. Options are `"ba"` (Bhattacharyya's Affinity), `"vi"`
-  (Volume of Intersection), and `"udoi"` (Utilisation Distribution
-  Overlap Index). Default is `"ba"`.
+  (Volume of Intersection), `"udoi"` (Utilisation Distribution Overlap
+  Index), and `"earth_mover"` (Earth Mover's Distance). `"earth_mover"`
+  returns a distance, where zero indicates identical UDs, and requires
+  the suggested package `emdist`. Default is `"ba"`.
 
 - y:
 
