@@ -62,8 +62,6 @@ A \code{move2} object containing the event data.
 This function reads a CSV file containing event data (and possibly metadata)
 and converts it into a \code{move2} object. The CSV file should contain contain at
 least the following columns:
-}
-\details{
 \itemize{
 \item one column which is the \code{track_id} (i.e. the variable that groups
 events into a track)
@@ -77,7 +75,8 @@ information that is specific to each event (i.e. the values are not unique
 within a given track), or they will be moved to the meta data table if they
 are track specific (e.g. bird_id, sex of the individual, colony coordinates,
 breeding status, etc.).
-
+}
+\details{
 This function makes a number of assumptions about the data. If your
 data does not meet these assumptions, you may need to preprocess it before
 using this function, or create a \code{move2} object manually using the
