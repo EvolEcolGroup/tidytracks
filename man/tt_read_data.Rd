@@ -59,7 +59,8 @@ suffix added to the metadata version.}
 A \code{move2} object containing the event data.
 }
 \description{
-This function reads a CSV file containing event data (and possibly metadata)
+This function reads a CSV file containing event data
+(and possibly metadata)
 and converts it into a \code{move2} object. The CSV file should contain contain at
 least the following columns:
 \itemize{
