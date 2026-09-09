@@ -13,7 +13,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/EvolEcolGroup/tidytracks/blob/dev/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/EvolEcolGroup/tidytracks/blob/main/DESCRIPTION)
 
 Manica A, Pearmain L, Whitelaw P, Pickett H (2026). *tidytracks:
 Functions to Analyse Tracking Data*. R package version 0.1.0,

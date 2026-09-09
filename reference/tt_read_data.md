@@ -4,6 +4,20 @@ This function reads a CSV file containing event data (and possibly
 metadata) and converts it into a `move2` object. The CSV file should
 contain contain at least the following columns:
 
+- one column which is the `track_id` (i.e. the variable that groups
+  events into a track)
+
+- two columns representing the x and y coordinates (e.g. longitude and
+  latitude)
+
+- a date-time column (or separate date and time columns)
+
+Additional columns of data will be stored in the events table if they
+have information that is specific to each event (i.e. the values are not
+unique within a given track), or they will be moved to the meta data
+table if they are track specific (e.g. bird_id, sex of the individual,
+colony coordinates, breeding status, etc.).
+
 ## Usage
 
 ``` r
@@ -83,20 +97,6 @@ tt_read_data(
 A `move2` object containing the event data.
 
 ## Details
-
-- one column which is the `track_id` (i.e. the variable that groups
-  events into a track)
-
-- two columns representing the x and y coordinates (e.g. longitude and
-  latitude)
-
-- a date-time column (or separate date and time columns)
-
-Additional columns of data will be stored in the events table if they
-have information that is specific to each event (i.e. the values are not
-unique within a given track), or they will be moved to the meta data
-table if they are track specific (e.g. bird_id, sex of the individual,
-colony coordinates, breeding status, etc.).
 
 This function makes a number of assumptions about the data. If your data
 does not meet these assumptions, you may need to preprocess it before

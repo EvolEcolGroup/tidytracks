@@ -40,7 +40,7 @@ the metadata attributes (unless include_meta is set to FALSE)."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Convert a <code>move2</code> object to a data frame</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/as_data_frame.R" class="external-link"><code>R/as_data_frame.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/as_data_frame.R" class="external-link"><code>R/as_data_frame.R</code></a></small>
       <div class="d-none name"><code>as_data_frame_move2.Rd</code></div>
     </div>
 
@@ -71,7 +71,7 @@ the metadata attributes (unless <code>include_meta</code> is set to <code>FALSE<
 
 <dt id="arg-include-meta">include_meta<a class="anchor" aria-label="anchor" href="#arg-include-meta"></a></dt>
 <dd><p>Logical, whether to include the metadata attributes in
-the resulting data frame. Default is TRUE.</p></dd>
+the resulting data frame. Default is FALSE.</p></dd>
 
 
 <dt id="arg-drop-geometry">drop_geometry<a class="anchor" aria-label="anchor" href="#arg-drop-geometry"></a></dt>
@@ -82,8 +82,8 @@ in separate columns (<code>X</code> and <code>Y</code>).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame with one row per event, including the event attributes,
-track</p>
+    <p>A data frame with one row per event, including event attributes, the
+track ID, and optionally metadata attributes.</p>
     </div>
 
     <div class="section level2">
