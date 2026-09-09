@@ -17,7 +17,7 @@ Roxygen: list(markdown = TRUE)
 Depends:
     move2,
     R (>= 4.1.0),
-    units
+    units (>= 1.0-0)
 Imports:
   cli,
   dplyr,
