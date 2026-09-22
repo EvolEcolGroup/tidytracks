@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-Because `tidytracks` is built on the move 2 object, it is possible to use both packages together. 
+`tidytracks` is built on the move 2 object and it is possible to use both packages together. 
 There is some overlap in functionality, but both packages have different philosophies and grammar systems.
 
 
