@@ -19,15 +19,17 @@ There is some overlap in functionality, but both packages have different philoso
 
 - we use the move2 object because ...
 
-- tidytracks builds on this to add extra functionality with the goal of completing a workflow within 1 packagem on one object, however we use a different grammer and naming covention of functions
+- tidytracks builds on this to add extra functionality with the goal of completing a workflow within 1 packagem on one object, however we use a different grammar and naming covention of functions
 
 - we like this prefix tells you object the function works on and the object it produces
-- move 2 used more 'traditional' `sf` grammar. 
+- "a coherent grammar where function names link to the output structure to make it much easier to onboard new people and empower them to build complex piped expressions, as it is clearer what goes where" - AM
+
+- move2 retains more 'traditional' `sf` grammar. 
 
 Many of our functions are the smae as thise in move 2, but with our grammar system.
 A few have bee reworked for speed.
 
-It is up to the user to0 choose which philosophy they prefer. 
+It is up to the user to choose which philosophy they prefer. 
 
 
 Example 1
