@@ -1,0 +1,10 @@
+---
+title: "tidytracks alongside move2"
+output: 
+  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{tidytracks alongside move2}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
