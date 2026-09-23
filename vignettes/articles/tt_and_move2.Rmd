@@ -120,7 +120,7 @@ within `ggplot2` blocks to plot spatial data.
 shags_tt_distance %>%
   mutate(
     speed = units::set_units(event_speed(.), "km/h")) %>%
-  ggplot()+
+  ggplot() +
     geom_sf(data = land, fill = "white") +
     geom_event_path(
       data = shags_tt_distance %>% filter_by_meta(bird_id == "kb_17"), 
