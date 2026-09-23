@@ -8,30 +8,59 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+Set up and load some packages and land for plotting
 ```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidytracks)
 library(dplyr)
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+land <- ne_countries(scale = "medium", returnclass = "sf")
 ```
 
+`tidytracks` is built on the `move2` object, and the two packages are designed 
+to work together, though they have different philosophies and grammars. `move2` 
+is automatically loaded when you load `tidytracks`, so you can use functions from 
+both packages. Which package philosophy you prefer  to use is ultimately up to
+you— the packages are fully inter-operable, and loading one won't mask the other.
 
-`tidytracks` is built on the `move2` object, and the two packages are designed to work together, though they have different philosophies and grammars.
+We use the `move2` object because it's an excellent, tidyverse-friendly data 
+structure that stores metadata memory-efficiently and carries it through the 
+whole analysis alongside the event data (see our vignette for more detail on 
+working with `move2` objects). The `move2` package uses this data structure and
+provides data organisation tools and a limited set of specialised downstream 
+analyses (e.g. those available in `move_2_utils`.
 
-We use the `move2` object because it's an excellent, tidyverse-friendly data structure that stores metadata memory-efficiently and carries it through the whole analysis alongside the event data (see our vignette for more detail on working with `move2` objects). The `move2` package uses this data structure and provides data organisation tools and a limited set of specialised downstream analyses.
+`tidytracks` builds on `move2`'s data structure to add extra functionality, with 
+the goal of completing a full workflow within one package on one object. To do 
+this, it uses a different grammar and function-naming convention. A coherent 
+grammar, where function names reflect both their input and output, makes the 
+package easier to learn and makes complex piped expressions more intuitive to 
+write, since the order of functions follows naturally from their names.
 
-`tidytracks` builds on `move2`'s data structure to add extra functionality, with the goal of completing a full workflow within one package on one object. To do this, it uses a different grammar and function-naming convention. A coherent grammar, where function names reflect both their input and output, makes the package easier to learn and makes complex piped expressions more intuitive to write, since the order of functions follows naturally from their names.
+The core of this grammar is that a `tidytracks` function's prefix tells you both
+the object it operates on and the object it returns. For example, using the 
+common `dplyr` verb `mutate()` to add a new column to a `move2` object requires 
+a vector of the same length as the number of events (points in space and time) —
+so it must operate on the output of an `event` function.
 
-The core of this grammar is that a `tidytracks` function's prefix tells you both the object it operates on and the object it returns. For example, using the common `dplyr` verb `mutate()` to add a new column to a `move2` object requires a vector of the same length as the number of events (points in space and time) — so it must operate on the output of an `event` function.
+Many `tidytracks` functions mirror those in `move2`, often as simple wrappers 
+that bring them into the `tidytracks` grammar; others have been reworked for 
+distance. In contrast, `move2`, follows more traditional `sf` grammar and relies 
+almost exclusively on `sf` under the hood. `tidytracks` departs from this, 
+optimising such functions for speed, distance and home-range analysis 
+(e.g. `event_distance()`). 
 
-Many `tidytracks` functions mirror those in `move2`, often as simple wrappers that bring them into the `tidytracks` grammar; others have been reworked for speed. In contrast, `move2`, follows more traditional `sf` grammar and relies almost exclusively on `sf` under the hood, including for calculations like speed and distance. `tidytracks` departs from this, optimising such functions for speed (e.g. `tt_event_speed()`).
+Because we use the `move2` data structure, events and home-range data are still 
+returned as `sf` geometries, so are interoperable with `sf` functions, and come 
+with a defined crs for easy plotting in `ggplot2`.
 
-Below, we outline a small workflow demonstrating the `tidytracks` grammar and its interoperability with `move2`. Which philosophy you prefer is ultimately up to you — the packages are fully interoperable, and loading one won't mask the other. ( TODO!)
+Below, we outline a simple workflow demonstrating the `tidytracks` grammar. 
 
+First let's read in some example data: 
 
-
-
-1) 
 ```{r read_events, message=FALSE}
 shags_csv <- system.file(
   "extdata",
@@ -48,29 +77,58 @@ shags_tt <- tt_read_data(
 )
 ```
 
-2) Now that we have our data in a `move2` object, we can use `tidytracks` functions
-to manipulate it. For example, we can calculate the speed of each event:
-
-```{r speed}
-shags_tt_speed <- shags_tt %>%
-  event_speed()
+Now that we have our data in a `move2` object, we can use `tidytracks` functions
+to manipulate it. We can use a `tt` function which works on a whole `move2` 
+object and returns another full `move2` table. For example, may want to ensure 
+that the data is ordered by time within each track_id:
+```{r, order time}
+shags_tt_time <- shags_tt %>%
+  tt_order_time()
 ```
 
-As it is an `event` function, it returns a vector of the same length as the number
-of events (padded with an NA as speed is caluculated between two points) which we
-can add to our `move2` object with `mutate()`:
-
-```{r speed_mutate}
-shags_tt <- shags_tt %>%
-  mutate(speed = shags_tt_speed)
-```
-Because we know that the outpuit of `event_speed()` will be a vector, this could
-also be done in one pipe. Note that a `.` is required to pass the `move2` object 
-to the `event_speed()` function. 
-
-```{r speed_mutate_pipe}
-shags_tt <- shags_tt %>%
-  mutate(speed = event_speed(.))
+Next, to use one of our computationally fast `event` functions, we can calculate 
+the distance of each event:
+```{r distance}
+shags_distance <- shags_tt_time %>%
+  event_distance()
 ```
 
+As it is an `event` function, `event_distance()`  returns a vector of the same 
+length as the numberof events (padded with an NA as distance is calculated
+betweentwo points) which we can add to our `move2` object with `mutate()`:
+```{r distance_mutate}
+shags_tt_distance <- shags_tt_time %>%
+  mutate(distance = shags_distance)
+```
+
+Because we know that the `tt` function `tt_order_time()` requires a whole `move2`
+object, then as an `event` function, the output of `event_distance()` 
+will be a vector, these steps could intuitively be implemented in one simple 
+pipe:
+```{r distance_mutate_pipe}
+shags_tt_distance <- shags_tt %>%
+  tt_order_time() %>%
+  mutate(distance = event_distance(.))
+```
+Note that a `.` is required to pass the `move2` object to the `event_distance()` 
+function. 
+
+Lastly, with `sf` and `ggplot2` compatibility, it is easy to use functions 
+such as our special `filter_by_meta()` alongside the `geom` plotting functions 
+within `ggplot2` blocks to plot spatial data.
+```{r plot_track}
+shags_tt_distance %>%
+  mutate(
+    speed = units::set_units(event_speed(.), "km/h")) %>%
+  ggplot()  +
+   geom_sf(data = land, fill = "white") +
+    geom_event_path(
+      data = shags_tt_distance %>% filter_by_meta(bird_id == "kb_17"), 
+      aes(color = speed), linewidth = 1.2) +
+   coord_sf(xlim = c(-68.1, -67.65), ylim = c(-67.6, -67.2)) +
+    scale_color_viridis_c()+
+    labs(color = "Speed (km/hr)") %>%
+     theme(aspect.ratio = 1)
+  
+```
 
