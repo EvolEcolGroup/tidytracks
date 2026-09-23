@@ -115,7 +115,9 @@ function.
 
 Lastly, with `sf` and `ggplot2` compatibility, it is easy to use functions 
 such as our special `filter_by_meta()` alongside the `geom` plotting functions 
-within `ggplot2` blocks to plot spatial data.
+within `ggplot2` blocks to plot spatial data. Again, the grammar guides the user 
+as to the intuitive order to add expressions into the pipe. 
+
 ```{r plot_track, fig.width=6, fig.height=6}
 shags_tt_distance %>%
   mutate(
