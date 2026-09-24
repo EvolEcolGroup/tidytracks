@@ -96,6 +96,23 @@ shags_tt <- tt_read_data(
 )
 ```
 
+By default, `tidytracks` prints out an overview of `move2` objects using the
+default `print()` method from the `move2` package. If you want a print out
+which is more in line with the grammar from `tidytracks`, you can use:
+
+```{r eval = FALSE}
+tidytracks_printing(TRUE)
+```
+```{r echo = FALSE, echo = FALSE}
+# we set an env variable, as on CRAN and CI we don't want to be writing files
+# in the user settings
+Sys.setenv(TIDYTRACKS_PRINTING = "true")
+```
+
+You only need to do this once, and your preference will be remembered in future
+sessions. You can always revert back to the original `move2` implementation
+with `tidytracks_printing(FALSE)`.
+
 Inspecting the events table, we have:
 
 ```{r inspect_events}
