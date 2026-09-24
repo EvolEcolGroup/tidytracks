@@ -1,4 +1,4 @@
-test_that("hr_tt_ud_wrap and hr_tt_ud_unwrap preserve utilisation distributions", {
+test_that("hr_tt_ud_wrap/unwrap preserve utilisation distributions", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   boar_kde <- hr_tt_kde(boar_tt, res = 50) %>%
     dplyr::group_by(name)

@@ -12,11 +12,10 @@
 # configuration helper to a temporary file, so local and CI runs never modify
 # the developer's real tidytracks preference.
 
-
 # Restore both the environment and S3 registration after each test. S3 method
 # registration is process-global, so cleanup prevents one test affecting the
 # next test or another package's tests.
-restore_standard_move2_printing <- function() {
+restore_move2_printing <- function() {
   registerS3method(
     genname = "print",
     class = "move2",
@@ -32,17 +31,20 @@ restore_standard_move2_printing <- function() {
 
 test_that("all true environment-variable values are recognised", {
   old <- Sys.getenv("TIDYTRACKS_PRINTING", unset = NA_character_)
-  on.exit({
-    if (is.na(old)) {
-      Sys.unsetenv("TIDYTRACKS_PRINTING")
-    } else {
-      Sys.setenv(TIDYTRACKS_PRINTING = old)
-    }
-  }, add = TRUE)
+  on.exit(
+    {
+      if (is.na(old)) {
+        Sys.unsetenv("TIDYTRACKS_PRINTING")
+      } else {
+        Sys.setenv(TIDYTRACKS_PRINTING = old)
+      }
+    },
+    add = TRUE
+  )
 
   for (value in c("true", "1", "yes", "TRUE", "Yes", "  true  ")) {
     Sys.setenv(TIDYTRACKS_PRINTING = value)
-    expect_true(tidytracks:::.get_tidytracks_printing_env(), info = value)
+    expect_true(tidytracks:::.get_tt_printing_env(), info = value)
     expect_true(tidytracks:::.get_tidytracks_printing(), info = value)
   }
 })
@@ -50,17 +52,20 @@ test_that("all true environment-variable values are recognised", {
 
 test_that("all false environment-variable values are recognised", {
   old <- Sys.getenv("TIDYTRACKS_PRINTING", unset = NA_character_)
-  on.exit({
-    if (is.na(old)) {
-      Sys.unsetenv("TIDYTRACKS_PRINTING")
-    } else {
-      Sys.setenv(TIDYTRACKS_PRINTING = old)
-    }
-  }, add = TRUE)
+  on.exit(
+    {
+      if (is.na(old)) {
+        Sys.unsetenv("TIDYTRACKS_PRINTING")
+      } else {
+        Sys.setenv(TIDYTRACKS_PRINTING = old)
+      }
+    },
+    add = TRUE
+  )
 
   for (value in c("false", "0", "no", "FALSE", "No", "  false  ")) {
     Sys.setenv(TIDYTRACKS_PRINTING = value)
-    expect_false(tidytracks:::.get_tidytracks_printing_env(), info = value)
+    expect_false(tidytracks:::.get_tt_printing_env(), info = value)
     expect_false(tidytracks:::.get_tidytracks_printing(), info = value)
   }
 })
@@ -68,33 +73,39 @@ test_that("all false environment-variable values are recognised", {
 
 test_that("an unset environment variable has no override", {
   old <- Sys.getenv("TIDYTRACKS_PRINTING", unset = NA_character_)
-  on.exit({
-    if (is.na(old)) {
-      Sys.unsetenv("TIDYTRACKS_PRINTING")
-    } else {
-      Sys.setenv(TIDYTRACKS_PRINTING = old)
-    }
-  }, add = TRUE)
+  on.exit(
+    {
+      if (is.na(old)) {
+        Sys.unsetenv("TIDYTRACKS_PRINTING")
+      } else {
+        Sys.setenv(TIDYTRACKS_PRINTING = old)
+      }
+    },
+    add = TRUE
+  )
 
   Sys.unsetenv("TIDYTRACKS_PRINTING")
-  expect_true(is.na(tidytracks:::.get_tidytracks_printing_env()))
+  expect_true(is.na(tidytracks:::.get_tt_printing_env()))
 })
 
 
 test_that("invalid environment values warn and are ignored", {
   old <- Sys.getenv("TIDYTRACKS_PRINTING", unset = NA_character_)
-  on.exit({
-    if (is.na(old)) {
-      Sys.unsetenv("TIDYTRACKS_PRINTING")
-    } else {
-      Sys.setenv(TIDYTRACKS_PRINTING = old)
-    }
-  }, add = TRUE)
+  on.exit(
+    {
+      if (is.na(old)) {
+        Sys.unsetenv("TIDYTRACKS_PRINTING")
+      } else {
+        Sys.setenv(TIDYTRACKS_PRINTING = old)
+      }
+    },
+    add = TRUE
+  )
 
   for (value in c("maybe", "2", "", "enabled")) {
     Sys.setenv(TIDYTRACKS_PRINTING = value)
     expect_warning(
-      result <- tidytracks:::.get_tidytracks_printing_env(),
+      result <- tidytracks:::.get_tt_printing_env(),
       "Ignoring invalid value of TIDYTRACKS_PRINTING",
       info = value
     )
@@ -105,25 +116,28 @@ test_that("invalid environment values warn and are ignored", {
 
 test_that("environment variable overrides either stored value", {
   old <- Sys.getenv("TIDYTRACKS_PRINTING", unset = NA_character_)
-  on.exit({
-    if (is.na(old)) {
-      Sys.unsetenv("TIDYTRACKS_PRINTING")
-    } else {
-      Sys.setenv(TIDYTRACKS_PRINTING = old)
-    }
-  }, add = TRUE)
+  on.exit(
+    {
+      if (is.na(old)) {
+        Sys.unsetenv("TIDYTRACKS_PRINTING")
+      } else {
+        Sys.setenv(TIDYTRACKS_PRINTING = old)
+      }
+    },
+    add = TRUE
+  )
 
   # Mock only the stored-value reader. This test therefore exercises the
   # precedence logic without reading or writing any persistent file.
   testthat::local_mocked_bindings(
-    .get_tidytracks_printing_stored = function() FALSE,
+    .get_tt_printing_stored = function() FALSE,
     .package = "tidytracks"
   )
   Sys.setenv(TIDYTRACKS_PRINTING = "true")
   expect_true(tidytracks:::.get_tidytracks_printing())
 
   testthat::local_mocked_bindings(
-    .get_tidytracks_printing_stored = function() TRUE,
+    .get_tt_printing_stored = function() TRUE,
     .package = "tidytracks"
   )
   Sys.setenv(TIDYTRACKS_PRINTING = "false")
@@ -133,16 +147,19 @@ test_that("environment variable overrides either stored value", {
 
 test_that("invalid environment value falls back to stored preference", {
   old <- Sys.getenv("TIDYTRACKS_PRINTING", unset = NA_character_)
-  on.exit({
-    if (is.na(old)) {
-      Sys.unsetenv("TIDYTRACKS_PRINTING")
-    } else {
-      Sys.setenv(TIDYTRACKS_PRINTING = old)
-    }
-  }, add = TRUE)
+  on.exit(
+    {
+      if (is.na(old)) {
+        Sys.unsetenv("TIDYTRACKS_PRINTING")
+      } else {
+        Sys.setenv(TIDYTRACKS_PRINTING = old)
+      }
+    },
+    add = TRUE
+  )
 
   testthat::local_mocked_bindings(
-    .get_tidytracks_printing_stored = function() TRUE,
+    .get_tt_printing_stored = function() TRUE,
     .package = "tidytracks"
   )
 
@@ -155,7 +172,7 @@ test_that("invalid environment value falls back to stored preference", {
 
 
 test_that("method registration switches in both directions", {
-  on.exit(restore_standard_move2_printing(), add = TRUE)
+  on.exit(restore_move2_printing(), add = TRUE)
 
   original <- get(
     "print.move2",
@@ -180,19 +197,22 @@ test_that("persistent TRUE preference is saved and read", {
   skip_on_cran()
 
   old_env <- Sys.getenv("TIDYTRACKS_PRINTING", unset = NA_character_)
-  on.exit({
-    if (is.na(old_env)) {
-      Sys.unsetenv("TIDYTRACKS_PRINTING")
-    } else {
-      Sys.setenv(TIDYTRACKS_PRINTING = old_env)
-    }
-  }, add = TRUE)
-  on.exit(restore_standard_move2_printing(), add = TRUE)
+  on.exit(
+    {
+      if (is.na(old_env)) {
+        Sys.unsetenv("TIDYTRACKS_PRINTING")
+      } else {
+        Sys.setenv(TIDYTRACKS_PRINTING = old_env)
+      }
+    },
+    add = TRUE
+  )
+  on.exit(restore_move2_printing(), add = TRUE)
   Sys.unsetenv("TIDYTRACKS_PRINTING")
 
   path <- tempfile(fileext = ".rds")
   testthat::local_mocked_bindings(
-    .tidytracks_printing_config_file = function() path,
+    .tt_printing_config_file = function() path,
     .package = "tidytracks"
   )
 
@@ -213,19 +233,22 @@ test_that("persistent FALSE preference is saved and read", {
   skip_on_cran()
 
   old_env <- Sys.getenv("TIDYTRACKS_PRINTING", unset = NA_character_)
-  on.exit({
-    if (is.na(old_env)) {
-      Sys.unsetenv("TIDYTRACKS_PRINTING")
-    } else {
-      Sys.setenv(TIDYTRACKS_PRINTING = old_env)
-    }
-  }, add = TRUE)
-  on.exit(restore_standard_move2_printing(), add = TRUE)
+  on.exit(
+    {
+      if (is.na(old_env)) {
+        Sys.unsetenv("TIDYTRACKS_PRINTING")
+      } else {
+        Sys.setenv(TIDYTRACKS_PRINTING = old_env)
+      }
+    },
+    add = TRUE
+  )
+  on.exit(restore_move2_printing(), add = TRUE)
   Sys.unsetenv("TIDYTRACKS_PRINTING")
 
   path <- tempfile(fileext = ".rds")
   testthat::local_mocked_bindings(
-    .tidytracks_printing_config_file = function() path,
+    .tt_printing_config_file = function() path,
     .package = "tidytracks"
   )
 
@@ -246,18 +269,21 @@ test_that("environment override wins while setter still saves preference", {
   skip_on_cran()
 
   old_env <- Sys.getenv("TIDYTRACKS_PRINTING", unset = NA_character_)
-  on.exit({
-    if (is.na(old_env)) {
-      Sys.unsetenv("TIDYTRACKS_PRINTING")
-    } else {
-      Sys.setenv(TIDYTRACKS_PRINTING = old_env)
-    }
-  }, add = TRUE)
-  on.exit(restore_standard_move2_printing(), add = TRUE)
+  on.exit(
+    {
+      if (is.na(old_env)) {
+        Sys.unsetenv("TIDYTRACKS_PRINTING")
+      } else {
+        Sys.setenv(TIDYTRACKS_PRINTING = old_env)
+      }
+    },
+    add = TRUE
+  )
+  on.exit(restore_move2_printing(), add = TRUE)
 
   path <- tempfile(fileext = ".rds")
   testthat::local_mocked_bindings(
-    .tidytracks_printing_config_file = function() path,
+    .tt_printing_config_file = function() path,
     .package = "tidytracks"
   )
 

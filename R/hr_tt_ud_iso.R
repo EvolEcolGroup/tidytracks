@@ -2,8 +2,9 @@
 #'
 #' This method can be applied to a whole tibble of UDs, or to an individual UD.
 #'
-#' @param x either a tibble of class `hr_tt_ud_tbl`, as created by [hr_tt_kde()], or a
-#'   `SpatRaster` object from the `ud` column of a `hr_tt_ud_tbl` tibble.
+#' @param x either a tibble of class `hr_tt_ud_tbl`, as created by
+#'   [hr_tt_kde()], or a `SpatRaster` object from the `ud` column of a
+#'   `hr_tt_ud_tbl` tibble.
 #' @param levels numeric vector of isopleth levels to create. Default is
 #'   `c(0.50, 0.95)`, which will create 50% and 95% isopleths. Levels should be
 #'   between 0 and 1.
@@ -27,8 +28,8 @@ hr_tt_ud_iso <- function(x, levels = c(0.50, 0.95)) {
 
 #' @export
 #' @rdname hr_tt_ud_iso
-# Note that we have a generic method for a tibble as the hr_tt_ud_tbl class is lost
-# on group_map operations
+# Note that we have a generic method for a tibble as the hr_tt_ud_tbl
+# class is lost on group_map operations
 hr_tt_ud_iso.tbl_df <- function(x, levels = c(0.50, 0.95)) {
   stopifnot_hr_tt_ud_table(x) # nolint: object_usage_linter.
   # Work with a plain list locally while preserving a loaded object's packing.
@@ -158,6 +159,9 @@ hr_tt_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
 #' @name hr_tt_ud_iso
 #' @export
 hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
-  warning("hr_ud_iso is deprecated. Please use hr_tt_ud_iso instead.", call. = FALSE)
+  warning(
+    "hr_ud_iso is deprecated. Please use hr_tt_ud_iso instead.",
+    call. = FALSE
+  )
   hr_tt_ud_iso(x = x, levels = levels)
 }

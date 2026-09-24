@@ -60,17 +60,20 @@
 #' # Create a map using example_tt dataset (print map if you want to check it)
 #' library(ggplot2)
 #' map <- ggplot() +
-#'   geom_event_path(data = example_tt, aes(colour = track_id),
-#'                   size = 2, lineend = "round")
+#'   geom_event_path(
+#'     data = example_tt, aes(colour = track_id),
+#'     size = 2, lineend = "round"
+#'   )
 #' # Add animation logic
 #' map_anim <- animate_map(p = map, wake_length = 1)
 #' # This is a gganim object
 #' class(map_anim)
 #' \donttest{
 #' # Render the animation - this can take a while on real datasets
-#' gganimate::animate(plot = map_anim,
-#'                   nframes = attr(map_anim, "n_timesteps"),
-#'                   duration = 2 # video duration in seconds
+#' gganimate::animate(
+#'   plot = map_anim,
+#'   nframes = attr(map_anim, "n_timesteps"),
+#'   duration = 2 # video duration in seconds
 #' )
 #' }
 #'
@@ -221,11 +224,7 @@ tt_detect_layer_type <- function(p, layer_name = NULL) {
     time_col <- attr(data, "tidytracks_time_col")
 
     # Map the raw tag string to the canonical type label used downstream.
-    type <- base::switch(tag,
-      event_path = "path",
-      event_point = "point",
-      NULL
-    )
+    type <- base::switch(tag, event_path = "path", event_point = "point", NULL)
     if (is.null(type)) {
       next
     }

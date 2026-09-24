@@ -209,17 +209,17 @@ event_flag_mcconnell <- function(
       #   ...
       #
       # These help identify isolated spikes.
-      elapsed_time2 <- (
-        unclass(track_time[valid_track][-c(1, 2)]) -
-          unclass(track_time[valid_track][-c(n - 1, n)])
-      ) / 3600
+      elapsed_time2 <- (unclass(track_time[valid_track][-c(1, 2)]) -
+        unclass(track_time[valid_track][-c(n - 1, n)])) /
+        3600
       speed2 <- dist_fast(
         x1[-((nrow(x1) - 1):nrow(x1)), 1],
         x1[-((nrow(x1) - 1):nrow(x1)), 2],
         x1[-(1:2), 1],
         x1[-(1:2), 2],
         longlat = !projected
-      ) / elapsed_time2
+      ) /
+        elapsed_time2
 
       # Indices corresponding to currently retained points.
       this_index <- index[valid_track]

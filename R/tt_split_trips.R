@@ -34,14 +34,13 @@
 #'   buffer_outbound = as_units(1, "km"),
 #'   buffer_inbound = as_units(1, "km"),
 #'   complete = FALSE
-#'   )
+#' )
 #' # Now the unit of tracking is `trip_id` column
 #' move2::mt_track_id_column(example_tt_split)
 #' # Three incomplete trips were identified
 #' show_meta(example_tt_split) %>%
 #'   dplyr::group_by(track_id, trip_id, trip_type) %>%
 #'   dplyr::summarise(.groups = "drop")
-
 tt_split_trips <- function(
   x,
   centre_col = NULL,
@@ -108,17 +107,17 @@ tt_split_trips <- function(
   i <- NULL # avoid global variable warning (i is used by foreach)
   # Loop through each track and split into trips
   trip_list <- foreach::foreach(i = seq_len(nrow(show_meta(x)))) %do% {
-    split_one_track(
-      unique_ids[i],
-      coords[ids == unique_ids[i], 1],
-      coords[ids == unique_ids[i], 2],
-      is_lonlat = is_longlat,
-      centre_x = centre_col[i, 1],
-      centre_y = centre_col[i, 2],
-      buffer_inbound = buffer_in_uless,
-      buffer_outbound = buffer_out_uless
-    )
-  }
+      split_one_track(
+        unique_ids[i],
+        coords[ids == unique_ids[i], 1],
+        coords[ids == unique_ids[i], 2],
+        is_lonlat = is_longlat,
+        centre_x = centre_col[i, 1],
+        centre_y = centre_col[i, 2],
+        buffer_inbound = buffer_in_uless,
+        buffer_outbound = buffer_out_uless
+      )
+    }
 
   # Combine trip IDs into a single vector
   x$trip_id <- unlist(purrr::map_depth(trip_list, 1, "trip_labels"))

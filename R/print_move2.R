@@ -6,10 +6,7 @@
 #   1. the custom tidytracks method, `print_move2_tt()`, or
 #   2. the original `print.move2()` method supplied by move2.
 #
-# Users can set a persistent preference with:
-#
-#     tidytracks_printing(TRUE)
-#     tidytracks_printing(FALSE)
+# Users can set a persistent preference with tidytracks_printing(TRUE/FALSE)
 #
 # The environment variable TIDYTRACKS_PRINTING can temporarily override that
 # preference. The order of precedence is:
@@ -40,7 +37,6 @@
 # reaches it through ordinary S3 dispatch.
 # ============================================================================
 
-
 # ============================================================================
 # Configuration location
 # ============================================================================
@@ -57,7 +53,7 @@
 #' @return A character scalar containing the configuration-file path.
 #'
 #' @keywords internal
-.tidytracks_printing_config_file <- function() {
+.tt_printing_config_file <- function() {
   file.path(
     tools::R_user_dir(
       package = "tidytracks",
@@ -87,7 +83,7 @@
 #' @return `TRUE`, `FALSE`, or `NA` when no valid override is present.
 #'
 #' @keywords internal
-.get_tidytracks_printing_env <- function() {
+.get_tt_printing_env <- function() {
   value <- Sys.getenv(
     "TIDYTRACKS_PRINTING",
     unset = NA_character_
@@ -140,8 +136,8 @@
 #' @return A single logical value.
 #'
 #' @keywords internal
-.get_tidytracks_printing_stored <- function() {
-  config_file <- .tidytracks_printing_config_file()
+.get_tt_printing_stored <- function() {
+  config_file <- .tt_printing_config_file()
 
   if (!file.exists(config_file)) {
     return(FALSE)
@@ -192,13 +188,13 @@
 #'
 #' @keywords internal
 .get_tidytracks_printing <- function() {
-  env_value <- .get_tidytracks_printing_env()
+  env_value <- .get_tt_printing_env()
 
   if (!is.na(env_value)) {
     return(env_value)
   }
 
-  .get_tidytracks_printing_stored()
+  .get_tt_printing_stored()
 }
 
 
@@ -359,7 +355,7 @@ tidytracks_printing <- function(value = NULL) {
     )
   }
 
-  config_file <- .tidytracks_printing_config_file()
+  config_file <- .tt_printing_config_file()
 
   # R_user_dir() determines the correct directory but does not create it.
   dir.create(
@@ -404,11 +400,11 @@ tidytracks_printing <- function(value = NULL) {
 #'
 #' @keywords internal
 print_move2_tt <- function(
-    x,
-    ...,
-    n = getOption("sf_max_print", default = 10L)
+  x,
+  ...,
+  n = getOption("sf_max_print", default = 10L)
 ) {
-  avg_dur <- mean( # nolint: object_usage_linter.
+  avg_dur <- mean(     # nolint: object_usage_linter.
     do.call(
       c,
       lapply(

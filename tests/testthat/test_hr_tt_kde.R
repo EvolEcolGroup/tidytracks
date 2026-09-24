@@ -44,7 +44,6 @@ test_that("hr_tt_kde works with multiple tracks", {
     stats::setNames(lapply(boar_kde$ud, terra::values), boar_kde$name),
     stats::setNames(lapply(boar_kde2$ud, terra::values), boar_kde2$name)
   )
-
 })
 
 test_that("hr_tt_kde bbox columns are always numeric (not list-cols)", {

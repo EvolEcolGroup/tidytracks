@@ -50,8 +50,9 @@ hr_tt_ud_sum.list <- function(x) {
 
 #' @export
 #' @rdname hr_tt_ud_sum
-# Note that we have a generic method for a tibble as the hr_tt_ud_tbl class is lost
-# on group_map operations
+# Note that we have a generic method for a
+# tibble as the hr_tt_ud_tbl class is lost on group_map operations
+
 hr_tt_ud_sum.tbl_df <- function(x) {
   stopifnot_hr_tt_ud_table(x) # nolint: object_usage_linter.
   # Work with a plain list locally while preserving a loaded object's packing.
@@ -75,8 +76,8 @@ hr_tt_ud_sum.tbl_df <- function(x) {
 
 #' @export
 #' @rdname hr_tt_ud_sum
-# Note that we have a generic method for a tibble as the hr_tt_ud_tbl class is lost
-# on group_map operations
+# Note that we have a generic method for a
+# tibble as the hr_tt_ud_tbl class is lost on group_map operations
 hr_tt_ud_sum.grouped_df <- function(x) {
   stopifnot_hr_tt_ud_table(x) # nolint: object_usage_linter.
   # Work with a plain list locally while preserving a loaded object's packing.
@@ -114,6 +115,9 @@ stopifnot_hr_tt_ud_table <- function(x) {
 #' @name hr_tt_ud_sum
 #' @export
 hr_ud_sum <- function(x) {
-  warning("hr_ud_sum is deprecated. Please use hr_tt_ud_sum instead.", call. = FALSE)
+  warning(
+    "hr_ud_sum is deprecated. Please use hr_tt_ud_sum instead.",
+    call. = FALSE
+  )
   hr_tt_ud_sum(x)
 }

@@ -7,8 +7,12 @@ test_that("hr_tt_ud_iso converts a table of utilisation distributions", {
   expect_s3_class(boar_iso, "sf")
   expect_equal(nrow(boar_iso), nrow(boar_kde) * 2)
   expect_false("ud" %in% names(boar_iso))
-  expect_true(all(c("name", "method", "level", "area", "geometry") %in%
-                    names(boar_iso)))
+  expect_true(
+    all(
+      c("name", "method", "level", "area", "geometry") %in%
+        names(boar_iso)
+    )
+  )
   expect_true(all(sf::st_geometry_type(boar_iso) == "MULTIPOLYGON"))
 
   levels_by_track <- split(boar_iso$level, boar_iso$name)
@@ -51,7 +55,10 @@ test_that("hr_tt_ud_iso validates input tables, raster layers, and levels", {
   raster_without_ud <- boar_kde$ud[[1]]
   names(raster_without_ud) <- "not_ud"
 
-  expect_error(hr_tt_ud_iso(tibble::tibble()), "x must have a column named 'ud'")
+  expect_error(
+    hr_tt_ud_iso(tibble::tibble()),
+    "x must have a column named 'ud'"
+  )
   expect_error(
     hr_tt_ud_iso(tibble::tibble(ud = list("not a raster"))),
     "x\\$ud must be a list of SpatRaster objects"

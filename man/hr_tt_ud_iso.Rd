@@ -16,8 +16,9 @@ hr_tt_ud_iso(x, levels = c(0.5, 0.95))
 hr_ud_iso(x, levels = c(0.5, 0.95))
 }
 \arguments{
-\item{x}{either a tibble of class \code{hr_tt_ud_tbl}, as created by \code{\link[=hr_tt_kde]{hr_tt_kde()}}, or a
-\code{SpatRaster} object from the \code{ud} column of a \code{hr_tt_ud_tbl} tibble.}
+\item{x}{either a tibble of class \code{hr_tt_ud_tbl}, as created by
+\code{\link[=hr_tt_kde]{hr_tt_kde()}}, or a \code{SpatRaster} object from the \code{ud} column of a
+\code{hr_tt_ud_tbl} tibble.}
 
 \item{levels}{numeric vector of isopleth levels to create. Default is
 \code{c(0.50, 0.95)}, which will create 50\% and 95\% isopleths. Levels should be

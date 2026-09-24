@@ -25,7 +25,12 @@
 #' example_kde <- hr_tt_kde(example_tt)
 #' library(ggplot2)
 #' autoplot(example_kde)
-autoplot.hr_tt_ud_tbl <- function(object, id_to_plot = NULL, layout = NULL, ...) {
+autoplot.hr_tt_ud_tbl <- function(
+  object,
+  id_to_plot = NULL,
+  layout = NULL,
+  ...
+) {
   # Work with a plain list locally while preserving a loaded object's packing.
   object <- hr_tt_ud_unwrap(object) # nolint: object_usage_linter.
   ## Get appropriate ids to plot

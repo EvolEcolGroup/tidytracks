@@ -28,7 +28,8 @@ hr_ud_overlap(...)
 }
 \arguments{
 \item{x}{A SpatRaster of the utilisation distribution (with a layer \code{ud}), or
-a tibble of UDs of class \code{hr_tt_ud_tbl} (e.g. as created with \code{\link[=hr_tt_kde]{hr_tt_kde()}}).}
+a tibble of UDs of class \code{hr_tt_ud_tbl} (e.g. as created with
+\code{\link[=hr_tt_kde]{hr_tt_kde()}}).}
 
 \item{...}{Additional arguments (not currently used)}
 
@@ -61,10 +62,10 @@ the UD, rather than the full UD. This can be useful for comparing the core
 areas of the UDs.
 }
 \details{
-When \code{x} is an \code{hr_tt_ud_tbl}, each UD is validated, converted to cell
-values, and conditionally masked once before all pairwise comparisons are
-calculated. This avoids repeated raster reads and cumulative-distribution
-calculations for UDs that occur in multiple pairs.
+When \code{x} is an \code{hr_tt_ud_tbl}, each UD is validated, converted to
+cell values, and conditionally masked once before all pairwise comparisons
+are calculated. This avoids repeated raster reads and
+cumulative-distribution calculations for UDs that occur in multiple pairs.
 }
 \examples{
 example_kde <- hr_tt_kde(example_tt)

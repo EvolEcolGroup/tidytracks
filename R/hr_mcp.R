@@ -45,22 +45,22 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
     group_id = group_unique,
     .combine = dplyr::bind_rows
   ) %do% {
-    # Filter the data for the current group
-    xy_sub <- xy[group_index == group_id, ]
-    # Create MCP for each level
-    geometry <- mcp_one_group(xy_sub, levels, crs = sf::st_crs(x))
-    # Calculate area
-    area <- sf::st_area(geometry)
+      # Filter the data for the current group
+      xy_sub <- xy[group_index == group_id, ]
+      # Create MCP for each level
+      geometry <- mcp_one_group(xy_sub, levels, crs = sf::st_crs(x))
+      # Calculate area
+      area <- sf::st_area(geometry)
 
-    # Create a tibble with the results
-    tibble::tibble(
-      group_id = group_labels[group_id],
-      method = "mcp",
-      level = levels,
-      area = area,
-      geometry = geometry
-    )
-  }
+      # Create a tibble with the results
+      tibble::tibble(
+        group_id = group_labels[group_id],
+        method = "mcp",
+        level = levels,
+        area = area,
+        geometry = geometry
+      )
+    }
 
   # now cast the results to an sf object
   mcp_results <- sf::st_as_sf(mcp_results, crs = sf::st_crs(x))

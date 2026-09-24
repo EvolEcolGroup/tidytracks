@@ -18,5 +18,4 @@
 #' @export
 #' @examples
 #' track_lines(example_tt)
-
 track_lines <- move2::mt_track_lines

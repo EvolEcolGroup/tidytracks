@@ -9,12 +9,13 @@
 #' the UD, rather than the full UD. This can be useful for comparing the core
 #' areas of the UDs.
 #'
-#' @details When `x` is an `hr_tt_ud_tbl`, each UD is validated, converted to cell
-#' values, and conditionally masked once before all pairwise comparisons are
-#' calculated. This avoids repeated raster reads and cumulative-distribution
-#' calculations for UDs that occur in multiple pairs.
+#' @details When `x` is an `hr_tt_ud_tbl`, each UD is validated, converted to
+#'   cell values, and conditionally masked once before all pairwise comparisons
+#'   are calculated. This avoids repeated raster reads and
+#'   cumulative-distribution calculations for UDs that occur in multiple pairs.
 #' @param x A SpatRaster of the utilisation distribution (with a layer `ud`), or
-#'   a tibble of UDs of class `hr_tt_ud_tbl` (e.g. as created with [hr_tt_kde()]).
+#'   a tibble of UDs of class `hr_tt_ud_tbl` (e.g. as created with
+#'   [hr_tt_kde()]).
 #' @param method A character string specifying the method to use for overlap
 #'   calculation. Options are `"ba"` (Bhattacharyya's Affinity), `"vi"` (Volume
 #'   of Intersection), `"udoi"` (Utilisation Distribution Overlap Index), and
@@ -75,8 +76,8 @@ hr_tt_ud_overlap.SpatRaster <- function(
 
 #' @export
 #' @rdname hr_tt_ud_overlap
-# Note that we have a generic method for a tibble as the hr_tt_ud_tbl class is lost
-# on group_map operations
+# Note that we have a generic method for a tibble as the hr_tt_ud_tbl
+# class is lost on group_map operations
 
 hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
   x,
@@ -195,9 +196,9 @@ check_cond_level <- function(cond_level) {
   if (
     !is.null(cond_level) &&
       (length(cond_level) != 1 ||
-         !is.numeric(cond_level) ||
-         cond_level <= 0 ||
-         cond_level >= 1)
+        !is.numeric(cond_level) ||
+        cond_level <= 0 ||
+        cond_level >= 1)
   ) {
     stop("cond_level must be a single numeric value between 0 and 1")
   }
@@ -305,7 +306,9 @@ check_earth_mover_available <- function() {
 #' @name hr_tt_ud_overlap
 #' @export
 hr_ud_overlap <- function(...) {
-  warning("hr_ud_overlap is deprecated. Please use hr_tt_ud_overlap instead.", call. = FALSE)
+  warning(
+    "hr_ud_overlap is deprecated. Please use hr_tt_ud_overlap instead.",
+    call. = FALSE
+  )
   hr_tt_ud_overlap(...)
 }
-

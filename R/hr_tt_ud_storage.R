@@ -104,7 +104,7 @@ unwrap_ud_column <- function(x) {
 #' hr_tt_ud_saveRDS(example_kde, "example-kde.rds")
 #' loaded_kde <- readRDS("example-kde.rds")
 #' }
-hr_tt_ud_saveRDS <- function( # nolint: object_name_linter.
+hr_tt_ud_saveRDS <- function(   # nolint: object_name_linter.
   x,
   file,
   compress = TRUE,
@@ -134,7 +134,10 @@ stopifnot_hr_tt_ud_tbl <- function(x) {
 #' @name hr_tt_ud_wrap
 #' @export
 hr_ud_wrap <- function(x) {
-  warning("hr_ud_wrap is deprecated. Please use hr_tt_ud_wrap instead.", call. = FALSE)
+  warning(
+    "hr_ud_wrap is deprecated. Please use hr_tt_ud_wrap instead.",
+    call. = FALSE
+  )
   hr_tt_ud_wrap(x)
 }
 
@@ -142,14 +145,20 @@ hr_ud_wrap <- function(x) {
 #' @name hr_tt_ud_unwrap
 #' @export
 hr_ud_unwrap <- function(x) {
-  warning("hr_ud_unwrap is deprecated. Please use hr_tt_ud_unwrap instead.", call. = FALSE)
+  warning(
+    "hr_ud_unwrap is deprecated. Please use hr_tt_ud_unwrap instead.",
+    call. = FALSE
+  )
   hr_tt_ud_unwrap(x)
 }
 
 # deprecated function for backward compatibility
 #' @name hr_tt_ud_saveRDS
 #' @export
-hr_ud_saveRDS <- function(...) {
-  warning("hr_ud_saveRDS is deprecated. Please use hr_tt_ud_saveRDS instead.", call. = FALSE)
+hr_ud_saveRDS <- function(...) {   # nolint: object_name_linter.
+  warning(
+    "hr_ud_saveRDS is deprecated. Please use hr_tt_ud_saveRDS instead.",
+    call. = FALSE
+  )
   hr_tt_ud_saveRDS(...)
 }
