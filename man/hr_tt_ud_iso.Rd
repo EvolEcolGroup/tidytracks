@@ -13,7 +13,7 @@ hr_tt_ud_iso(x, levels = c(0.5, 0.95))
 
 \method{hr_tt_ud_iso}{SpatRaster}(x, levels = c(0.5, 0.95))
 
-hr_ud_iso(...)
+hr_ud_iso(x, levels = c(0.5, 0.95))
 }
 \arguments{
 \item{x}{either a tibble of class \code{hr_tt_ud_tbl}, as created by \code{\link[=hr_tt_kde]{hr_tt_kde()}}, or a

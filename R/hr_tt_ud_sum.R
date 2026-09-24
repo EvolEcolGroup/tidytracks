@@ -113,7 +113,7 @@ stopifnot_hr_tt_ud_table <- function(x) {
 # deprecated function for backward compatibility
 #' @name hr_tt_ud_sum
 #' @export
-hr_ud_sum <- function(...) {
+hr_ud_sum <- function(x) {
   warning("hr_ud_sum is deprecated. Please use hr_tt_ud_sum instead.", call. = FALSE)
-  hr_tt_ud_sum(...)
+  hr_tt_ud_sum(x)
 }

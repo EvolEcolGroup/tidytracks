@@ -114,7 +114,7 @@ chull_mcp <- function(x) {
 # deprecated function for backward compatibility
 #' @name hr_tt_mcp
 #' @export
-hr_mcp <- function(...) {
+hr_mcp <- function(x, levels = c(0.5, 0.95)) {
   warning("hr_mcp is deprecated. Please use hr_tt_mcp instead.", call. = FALSE)
-  hr_tt_mcp(...)
+  hr_tt_mcp(x = x, levels = levels)
 }

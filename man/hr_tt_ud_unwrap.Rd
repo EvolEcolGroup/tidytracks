@@ -7,7 +7,7 @@
 \usage{
 hr_tt_ud_unwrap(x)
 
-hr_ud_unwrap(...)
+hr_ud_unwrap(x)
 }
 \arguments{
 \item{x}{An \code{hr_tt_ud_tbl} with a \code{ud} list-column.}

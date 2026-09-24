@@ -157,7 +157,7 @@ hr_tt_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
 # deprecated function for backward compatibility
 #' @name hr_tt_ud_iso
 #' @export
-hr_ud_iso <- function(...) {
+hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
   warning("hr_ud_iso is deprecated. Please use hr_tt_ud_iso instead.", call. = FALSE)
-  hr_tt_ud_iso(...)
+  hr_tt_ud_iso(x = x, levels = levels)
 }

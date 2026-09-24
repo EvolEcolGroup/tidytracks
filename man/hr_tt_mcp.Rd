@@ -7,7 +7,7 @@
 \usage{
 hr_tt_mcp(x, levels = c(0.5, 0.95))
 
-hr_mcp(...)
+hr_mcp(x, levels = c(0.5, 0.95))
 }
 \arguments{
 \item{x}{A move2 object; if explicitly grouped, the home range is estimated

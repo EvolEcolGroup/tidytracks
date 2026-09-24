@@ -325,7 +325,19 @@ kde_one_group <- function(xy, crs, bbox, res, h, id) {
 # deprecated function for backward compatibility
 #' @name hr_tt_kde
 #' @export
-hr_kde <- function(...) {
+hr_kde <- function(
+    x,
+    h = "h_ref_mean",
+    bbox = NULL,
+    res = NULL,
+    levels = NULL
+) {
   warning("hr_kde is deprecated. Please use hr_tt_kde instead.", call. = FALSE)
-  hr_tt_kde(...)
+  hr_tt_kde(
+    x = x,
+    h = h,
+    bbox = bbox,
+    res = res,
+    levels = levels
+  )
 }

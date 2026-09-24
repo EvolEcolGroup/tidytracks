@@ -7,7 +7,7 @@
 \usage{
 hr_tt_kde(x, h = "h_ref_mean", bbox = NULL, res = NULL, levels = NULL)
 
-hr_kde(...)
+hr_kde(x, h = "h_ref_mean", bbox = NULL, res = NULL, levels = NULL)
 }
 \arguments{
 \item{x}{A move2 object; if explicitly grouped, the home range is estimated

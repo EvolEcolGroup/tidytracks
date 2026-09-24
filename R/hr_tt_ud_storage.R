@@ -133,17 +133,17 @@ stopifnot_hr_tt_ud_tbl <- function(x) {
 # deprecated function for backward compatibility
 #' @name hr_tt_ud_wrap
 #' @export
-hr_ud_wrap <- function(...) {
+hr_ud_wrap <- function(x) {
   warning("hr_ud_wrap is deprecated. Please use hr_tt_ud_wrap instead.", call. = FALSE)
-  hr_tt_ud_wrap(...)
+  hr_tt_ud_wrap(x)
 }
 
 # deprecated function for backward compatibility
 #' @name hr_tt_ud_unwrap
 #' @export
-hr_ud_unwrap <- function(...) {
+hr_ud_unwrap <- function(x) {
   warning("hr_ud_unwrap is deprecated. Please use hr_tt_ud_unwrap instead.", call. = FALSE)
-  hr_tt_ud_unwrap(...)
+  hr_tt_ud_unwrap(x)
 }
 
 # deprecated function for backward compatibility

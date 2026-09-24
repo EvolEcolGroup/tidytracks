@@ -16,7 +16,7 @@ hr_tt_ud_sum(x)
 
 \method{hr_tt_ud_sum}{grouped_df}(x)
 
-hr_ud_sum(...)
+hr_ud_sum(x)
 }
 \arguments{
 \item{x}{A tibble of UDs (potentially grouped), where each row is a UD in the
