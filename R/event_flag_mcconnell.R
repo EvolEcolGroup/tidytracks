@@ -210,7 +210,7 @@ event_flag_mcconnell <- function(
       #
       # These help identify isolated spikes.
       elapsed_time2 <- (unclass(track_time[valid_track][-c(1, 2)]) -
-        unclass(track_time[valid_track][-c(n - 1, n)])) /
+                          unclass(track_time[valid_track][-c(n - 1, n)])) /
         3600
       speed2 <- dist_fast(
         x1[-((nrow(x1) - 1):nrow(x1)), 1],

@@ -196,9 +196,9 @@ check_cond_level <- function(cond_level) {
   if (
     !is.null(cond_level) &&
       (length(cond_level) != 1 ||
-        !is.numeric(cond_level) ||
-        cond_level <= 0 ||
-        cond_level >= 1)
+         !is.numeric(cond_level) ||
+         cond_level <= 0 ||
+         cond_level >= 1)
   ) {
     stop("cond_level must be a single numeric value between 0 and 1")
   }

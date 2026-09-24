@@ -127,8 +127,9 @@ test_that("track_summary_stats correctly computes track summaries", {
   trip_na_ids <- trip_ids[grepl("_trip_na$", trip_ids)]
   meta_no_nas <- show_meta(test_tt_split)[
     !(show_meta(test_tt_split)[[
-      move2::mt_track_id_column(test_tt_split)]] %in%
-        trip_na_ids),
+                                move2::mt_track_id_column(test_tt_split)]] %in%
+      trip_na_ids
+    ),
   ]
   expect_equal(
     test_sums[[move2::mt_track_id_column(test_tt_split)]],

@@ -106,7 +106,7 @@ tt_read_data <- function(
   } else if (
     length(col_date_time) == 2 &&
       (!col_date_time[1] %in% names(events) ||
-        !col_date_time[2] %in% names(events))
+         !col_date_time[2] %in% names(events))
   ) {
     stop(paste(
       "Columns",

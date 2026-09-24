@@ -95,7 +95,7 @@ test_that("tt_split_trips accepts one centre per track", {
   # the last trip of id_1 is incomplete
   expect_true(
     (show_meta(test_mt_split) %>%
-      dplyr::filter(trip_id == "id_1_trip_3"))$trip_type ==
+       dplyr::filter(trip_id == "id_1_trip_3"))$trip_type ==
       "incomplete"
   )
 
@@ -134,7 +134,7 @@ test_that("tt_split_trips accepts one centre per track", {
   # the last trip of id_1 is incomplete
   expect_true(
     (show_meta(test_mt_split3) %>%
-      dplyr::filter(trip_id == "id_1_trip_3"))$trip_type ==
+       dplyr::filter(trip_id == "id_1_trip_3"))$trip_type ==
       "complete"
   )
 

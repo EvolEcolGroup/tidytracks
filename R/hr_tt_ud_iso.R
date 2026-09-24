@@ -71,7 +71,10 @@ hr_tt_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
 
   # 1) Try to create contours
   contours <- tryCatch(
-    terra::as.contour(hr_tt_cud(x), levels = levels),
+    terra::as.contour(
+      hr_tt_cud(x), # nolint: object_usage_linter.
+      levels = levels
+    ),
     error = function(e) {
       warning("No isopleths could be computed: ", conditionMessage(e))
       return(empty_iso(x))
