@@ -102,7 +102,7 @@ test_that("invalid environment values warn and are ignored", {
     add = TRUE
   )
 
-  for (value in c("maybe", "2", "", "enabled")) {
+  for (value in c("maybe", "2", "enabled")) {
     Sys.setenv(TIDYTRACKS_PRINTING = value)
     expect_warning(
       result <- tidytracks:::.get_tt_printing_env(),
@@ -111,6 +111,36 @@ test_that("invalid environment values warn and are ignored", {
     )
     expect_true(is.na(result), info = value)
   }
+})
+
+
+test_that("empty environment values are ignored", {
+  old <- Sys.getenv("TIDYTRACKS_PRINTING", unset = NA_character_)
+  on.exit(
+    {
+      if (is.na(old)) {
+        Sys.unsetenv("TIDYTRACKS_PRINTING")
+      } else {
+        Sys.setenv(TIDYTRACKS_PRINTING = old)
+      }
+    },
+    add = TRUE
+  )
+
+  Sys.setenv(TIDYTRACKS_PRINTING = "")
+
+  if (.Platform$OS.type == "windows") {
+    expect_no_warning(
+      result <- tidytracks:::.get_tt_printing_env()
+    )
+  } else {
+    expect_warning(
+      result <- tidytracks:::.get_tt_printing_env(),
+      "Ignoring invalid value of TIDYTRACKS_PRINTING"
+    )
+  }
+
+  expect_true(is.na(result))
 })
 
 
