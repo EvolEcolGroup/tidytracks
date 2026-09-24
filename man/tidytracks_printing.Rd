@@ -4,77 +4,38 @@
 \alias{tidytracks_printing}
 \title{Enable or disable custom tidytracks printing}
 \usage{
-tidytracks_printing(value = NULL)
+tidytracks_printing(value = NULL, sticky = TRUE)
 }
 \arguments{
-\item{value}{Either \code{TRUE}, \code{FALSE}, or \code{NULL}.
-\itemize{
-\item \code{TRUE} saves a preference for custom tidytracks printing.
-\item \code{FALSE} saves a preference for standard move2 printing.
-\item \code{NULL}, the default, returns the current effective setting without
-changing the persistent preference.
-}}
+\item{value}{Either \code{TRUE}, \code{FALSE}, or \code{NULL}. \code{TRUE} registers custom
+tidytracks printing, \code{FALSE} registers standard move2 printing, and \code{NULL}
+reports which method is currently registered without changing anything.}
+
+\item{sticky}{Whether the supplied setting should persist across R sessions.
+If \code{FALSE}, the method is changed only for the current R session. If
+\code{TRUE}, the supplied value is also saved in the user-specific tidytracks
+configuration directory. Defaults to \code{TRUE}.}
 }
 \value{
-If \code{value} is \code{NULL}, a logical scalar giving the effective setting after
-applying the environment-variable override.
-
-If \code{value} is \code{TRUE} or \code{FALSE}, the supplied value is saved and returned
-invisibly. The S3 method corresponding to the effective setting is
-registered immediately.
+If \code{value} is \code{NULL}, a logical scalar indicating whether
+tidytracks' custom print method is currently registered. Otherwise, the
+supplied value is returned invisibly after registration.
 }
 \description{
 Controls whether objects of class \code{move2} use custom tidytracks printing or
 the standard printing method supplied by \code{move2}.
 }
 \details{
-The preference saved by this function is persistent across R sessions and
-is stored in the user-specific tidytracks configuration directory returned
-by \code{\link[tools:R_user_dir]{tools::R_user_dir()}}.
-
-A \code{TIDYTRACKS_PRINTING} environment variable can temporarily override the
-stored preference. Accepted values are \code{"true"}, \code{"1"}, and \code{"yes"} for
-custom tidytracks printing, and \code{"false"}, \code{"0"}, and \code{"no"} for standard
-move2 printing. Values are matched without regard to case, and surrounding
-whitespace is ignored.
-
-The order of precedence is:
-\enumerate{
-\item \code{TIDYTRACKS_PRINTING}, when it contains a recognised value;
-\item the persistent preference saved by this function;
-\item \code{FALSE}, the package default.
-}
-
-Calling \code{tidytracks_printing(TRUE)} or \code{tidytracks_printing(FALSE)} always
-saves the supplied persistent preference. It then immediately registers the
-method selected by the effective setting. Thus, if an environment-variable
-override is present, that override continues to control printing without
-changing the saved preference.
-
-Changing \code{TIDYTRACKS_PRINTING} with \code{\link[=Sys.setenv]{Sys.setenv()}} after tidytracks has been
-loaded does not by itself re-register an S3 method. Call
-\code{tidytracks_printing()} to inspect the new effective value, then call
-\code{tidytracks_printing(TRUE)} or \code{tidytracks_printing(FALSE)} to apply and save
-a preference, or reload tidytracks. At package load, \code{.onLoad()} always
-applies the current effective setting.
+Calling \code{tidytracks_printing()} with no \code{value} directly inspects the
+currently registered S3 method. It does not read the persistent
+configuration file.
 }
 \examples{
 \dontrun{
-# Inspect the effective setting
 tidytracks_printing()
-
-# Persistently enable custom tidytracks printing
 tidytracks_printing(TRUE)
-
-# Persistently restore standard move2 printing
 tidytracks_printing(FALSE)
-
-# Temporarily override the stored preference for this R process
-Sys.setenv(TIDYTRACKS_PRINTING = "true")
-tidytracks_printing()
-
-# Remove the temporary override
-Sys.unsetenv("TIDYTRACKS_PRINTING")
+tidytracks_printing(TRUE, sticky = FALSE)
+tidytracks_printing(FALSE, sticky = FALSE)
 }
-
 }

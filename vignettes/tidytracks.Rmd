@@ -104,9 +104,9 @@ which is more in line with the grammar from `tidytracks`, you can use:
 tidytracks_printing(TRUE)
 ```
 ```{r echo = FALSE, echo = FALSE}
-# we set an env variable, as on CRAN and CI we don't want to be writing files
-# in the user settings
-Sys.setenv(TIDYTRACKS_PRINTING = "true")
+# avoid saving our preference as on CRAN and CI we don't want to be
+# writing files in the user settings
+tidytracks_printing(TRUE, sticky = FALSE)
 ```
 
 You only need to do this once, and your preference will be remembered in future

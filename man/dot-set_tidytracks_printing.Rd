@@ -14,16 +14,6 @@ tidytracks printing and \code{FALSE} selects standard move2 printing.}
 \code{NULL}, invisibly.
 }
 \description{
-Switches the S3 \code{print()} method currently registered for class \code{move2}.
-}
-\details{
-If \code{value} is \code{TRUE}, tidytracks' \code{print_move2_tt()} implementation is
-registered. If \code{value} is \code{FALSE}, the original function stored in the
-\code{move2} namespace is registered.
-
-Re-registering the original method, rather than calling it directly, is
-essential because move2's method uses \code{NextMethod()}. Registration ensures
-that the function is entered through normal S3 dispatch and receives the
-required dispatch context.
+Register the selected print method for move2 objects
 }
 \keyword{internal}

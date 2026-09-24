@@ -13,9 +13,4 @@ A character scalar containing the configuration-file path.
 Returns the internal path used to store the persistent tidytracks printing
 preference.
 }
-\details{
-The file is placed in the platform-specific, package-specific configuration
-directory returned by \code{\link[tools:R_user_dir]{tools::R_user_dir()}}. tidytracks does not modify the
-user's \code{.Rprofile} or \code{.Renviron}.
-}
 \keyword{internal}

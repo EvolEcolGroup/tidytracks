@@ -7,16 +7,10 @@
 .get_tt_printing_stored()
 }
 \value{
-A single logical value.
+A single logical value. If no valid stored preference exists,
+\code{FALSE} is returned.
 }
 \description{
-Reads the preference previously saved by \code{\link[=tidytracks_printing]{tidytracks_printing()}}. This
-helper deliberately does not inspect \code{TIDYTRACKS_PRINTING}; it returns only
-the stored preference.
-}
-\details{
-If no preference has been stored, the package default of \code{FALSE} is
-returned. A missing, damaged, or invalid configuration file therefore never
-prevents tidytracks from loading.
+Read the persistent tidytracks printing preference
 }
 \keyword{internal}
