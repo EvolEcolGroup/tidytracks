@@ -48,9 +48,9 @@ so it must operate on the output of an `event` function.
 
 Many `tidytracks` functions mirror those in `move2`, often as simple wrappers 
 that bring them into the `tidytracks` grammar; others have been reworked for 
-distance. In contrast, `move2`, follows more traditional `sf` grammar and relies 
+computational speed. In contrast, `move2`, follows more traditional `sf` grammar and relies 
 almost exclusively on `sf` under the hood. `tidytracks` departs from this, 
-optimising such functions for speed, distance and home-range analysis 
+optimising functions such as those dealing with speed, distance and home-range analysis 
 (e.g. `event_distance()`). 
 
 Because we use the `move2` data structure, events and home-range data are still 
