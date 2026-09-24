@@ -13,26 +13,26 @@
 #'   SpatRaster if `x` is a list of SpatRaster objects.
 #' @export
 #' @examples
-#' example_kde <- hr_kde(example_tt)
+#' example_kde <- hr_tt_kde(example_tt)
 #' # sum the UDs for all tracks in the tibble
-#' hr_ud_sum(example_kde)
+#' hr_tt_ud_sum(example_kde)
 #' # add sex info from metadata and use it to group the UDs
 #' library(dplyr)
 #' example_kde_grouped <- example_kde %>%
 #'   left_join(show_meta(example_tt)) %>%
 #'   group_by(sex)
-#' hr_ud_sum(example_kde_grouped)
+#' hr_tt_ud_sum(example_kde_grouped)
 #' @family home_range
 
-hr_ud_sum <- function(x) {
-  UseMethod("hr_ud_sum")
+hr_tt_ud_sum <- function(x) {
+  UseMethod("hr_tt_ud_sum")
 }
 
 #' @export
-#' @rdname hr_ud_sum
-hr_ud_sum.list <- function(x) {
+#' @rdname hr_tt_ud_sum
+hr_tt_ud_sum.list <- function(x) {
   if (inherits(x, "PackedSpatRaster_list")) {
-    stop("x is wrapped; use hr_ud_unwrap() before calculating the sum")
+    stop("x is wrapped; use hr_tt_ud_unwrap() before calculating the sum")
   }
   # check that all elements of the list are SpatRaster objects
   if (!all(vapply(x, inherits, logical(1), "SpatRaster"))) {
@@ -49,11 +49,11 @@ hr_ud_sum.list <- function(x) {
 }
 
 #' @export
-#' @rdname hr_ud_sum
-# Note that we have a generic method for a tibble as the hr_ud_tbl class is lost
+#' @rdname hr_tt_ud_sum
+# Note that we have a generic method for a tibble as the hr_tt_ud_tbl class is lost
 # on group_map operations
-hr_ud_sum.tbl_df <- function(x) {
-  stopifnot_hr_ud_table(x) # nolint: object_usage_linter.
+hr_tt_ud_sum.tbl_df <- function(x) {
+  stopifnot_hr_tt_ud_table(x) # nolint: object_usage_linter.
   # Work with a plain list locally while preserving a loaded object's packing.
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
@@ -67,32 +67,32 @@ hr_ud_sum.tbl_df <- function(x) {
   if (nrow(sum_tbl) != 1) {
     stop("all UDs should have the same extent and resolution")
   }
-  # we can use the hr_ud_sum.list method to sum the UDs
-  sum_tbl$ud <- list(hr_ud_sum(x$ud))
+  # we can use the hr_tt_ud_sum.list method to sum the UDs
+  sum_tbl$ud <- list(hr_tt_ud_sum(x$ud))
 
   return(sum_tbl)
 }
 
 #' @export
-#' @rdname hr_ud_sum
-# Note that we have a generic method for a tibble as the hr_ud_tbl class is lost
+#' @rdname hr_tt_ud_sum
+# Note that we have a generic method for a tibble as the hr_tt_ud_tbl class is lost
 # on group_map operations
-hr_ud_sum.grouped_df <- function(x) {
-  stopifnot_hr_ud_table(x) # nolint: object_usage_linter.
+hr_tt_ud_sum.grouped_df <- function(x) {
+  stopifnot_hr_tt_ud_table(x) # nolint: object_usage_linter.
   # Work with a plain list locally while preserving a loaded object's packing.
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
   # now we need to group_modify the tibble to sum the UDs for each group
-  hr_grouped_sum <- dplyr::group_modify(
+  hr_tt_grouped_sum <- dplyr::group_modify(
     x,
-    ~ hr_ud_sum(.x)
+    ~ hr_tt_ud_sum(.x)
   )
-  class(hr_grouped_sum) <- c("hr_ud_tbl", class(hr_grouped_sum))
-  return(hr_grouped_sum)
+  class(hr_tt_grouped_sum) <- c("hr_tt_ud_tbl", class(hr_tt_grouped_sum))
+  return(hr_tt_grouped_sum)
 }
 
 
-stopifnot_hr_ud_table <- function(x) {
+stopifnot_hr_tt_ud_table <- function(x) {
   # check that the ud column exists
   if (!"ud" %in% colnames(x)) {
     stop("x must have a column named 'ud'")
@@ -107,4 +107,13 @@ stopifnot_hr_ud_table <- function(x) {
   ) {
     stop("x$ud must be a list of SpatRaster objects")
   }
+}
+
+
+# deprecated function for backward compatibility
+#' @name hr_tt_ud_sum
+#' @export
+hr_ud_sum <- function(...) {
+  warning("hr_ud_sum is deprecated. Please use hr_tt_ud_sum instead.", call. = FALSE)
+  hr_tt_ud_sum(...)
 }

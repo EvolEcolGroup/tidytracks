@@ -511,7 +511,7 @@ shags_females_proj <- shags_females %>%
 ## Kernel UDs
 
 We can now estimate the home range using **Kernel Density Estimation (KDE)**. The
-default smoothing parameter (*h*) in the `hr_kde()` function is set to
+default smoothing parameter (*h*) in the `hr_tt_kde()` function is set to
 `'h_ref_mean'`. The bandwidth for the kernel density estimation can be either a
 number, or `'h_ref_indiv'` for using the reference bandwidth for each
 individual, or `'h_ref_mean'` for using the mean bandwidth for all individuals
@@ -536,7 +536,7 @@ each central-place foraging trip), so we will group by `bird_id`:
 ```{r}
 shags_females_kde <- shags_females_proj %>%
   group_by(bird_id) %>%
-  hr_kde(levels = c(0.5, 0.95))
+  hr_tt_kde(levels = c(0.5, 0.95))
 ```
 
 If you get a warning here, it may be because one of the datasets is small, and
@@ -595,7 +595,7 @@ To retain the full utilisation distributions instead, omit `levels`:
 ```{r full_ud}
 shags_females_ud <- shags_females_proj %>%
   group_by(bird_id) %>%
-  hr_kde()
+  hr_tt_kde()
 shags_females_ud
 ```
 
@@ -605,13 +605,13 @@ autoplot(shags_females_ud)
 ```
 
 Note that the UD tibble contains live `SpatRaster` objects. These can not be
-saved directly, so we need to use `hr_ud_saveRDS()` rather than `saveRDS()` to
-save it. `hr_ud_saveRDS()` wraps the rasters before writing the RDS file (see
+saved directly, so we need to use `hr_tt_ud_saveRDS()` rather than `saveRDS()` to
+save it. `hr_tt_ud_saveRDS()` wraps the rasters before writing the RDS file (see
 the help page for the `wrap()` function in `terra` for details):
 
 ```{r save_full_ud}
 ud_file <- file.path(tempdir(), "shags_females_ud.rds")
-hr_ud_saveRDS(shags_females_ud, ud_file)
+hr_tt_ud_saveRDS(shags_females_ud, ud_file)
 ```
 
 When the object is loaded again, its `ud` column is wrapped (we can see that it
@@ -627,7 +627,7 @@ fly, but if you plan extensive analysis, it will be faster if you unwrap it
 explicitly before running further analyses:
 
 ```{r}
-shags_females_ud <- hr_ud_unwrap(shags_females_ud)
+shags_females_ud <- hr_tt_ud_unwrap(shags_females_ud)
 shags_females_ud
 ```
 
@@ -637,7 +637,7 @@ To get a minimum convex polygon covering 95% of the data, we can use:
 ```{r compute_mcp}
 shags_females_mcp <- shags_females_proj %>%
   group_by(bird_id) %>%
-  hr_mcp(levels = c(0.95))
+  hr_tt_mcp(levels = c(0.95))
 ```
 
 We can plot the MCPs with:

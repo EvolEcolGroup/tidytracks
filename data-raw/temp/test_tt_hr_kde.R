@@ -43,7 +43,7 @@ ade_genetta <- adehabitatHR::kernelUD(
 ade_genetta_50 <- adehabitatHR::getverticeshr(ade_genetta, 50)
 ade_genetta_95 <- adehabitatHR::getverticeshr(ade_genetta, 95)
 
-# and now repeat it with hr_kde
+# and now repeat it with hr_tt_kde
 # create a move2 object with just one individual
 genetta_sf <- sf::st_as_sf(
   x = genetta_df,
@@ -71,7 +71,7 @@ grid_list <- list(
   ymax = 0.4,
   n = 1240
 )
-genetta_tt_hr <- hr_kde(
+genetta_tt_hr <- hr_tt_kde(
   genetta_tt,
   h = NULL,
   grid = grid_list,

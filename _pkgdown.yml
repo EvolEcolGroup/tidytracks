@@ -39,11 +39,11 @@ reference:
     contents:
         - starts_with("geom_")
         - animate_map
-        - autoplot.hr_ud_tbl
+        - autoplot.hr_tt_ud_tbl
   - title: "Home range"
     desc: "Estimate home range and habitat use from movement data."
     contents:
-        - starts_with("hr_")
+        - starts_with("hr_tt_")
   - title: "List of PackedRasters"
     desc: "Process lists of rasters (used to represent UDs for home ranges)."
     contents:

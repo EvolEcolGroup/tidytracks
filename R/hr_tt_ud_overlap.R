@@ -2,19 +2,19 @@
 #'
 #' This function computes the overlap between pairs of utilisation distributions
 #' (UDs) using various methods. If `x` is a `SpatRaster`, it computes the
-#' overlap between `x` and `y`. If `x` is an `hr_ud_tbl`, it computes the
+#' overlap between `x` and `y`. If `x` is an `hr_tt_ud_tbl`, it computes the
 #' overlap for all unique pairs of UDs in the table. If `cond_level` is set, it
 #' computes the conditional overlap for the specified level, which is the
 #' overlap between the UDs estimated within a given isopleth level (e.g. 50%) of
 #' the UD, rather than the full UD. This can be useful for comparing the core
 #' areas of the UDs.
 #'
-#' @details When `x` is an `hr_ud_tbl`, each UD is validated, converted to cell
+#' @details When `x` is an `hr_tt_ud_tbl`, each UD is validated, converted to cell
 #' values, and conditionally masked once before all pairwise comparisons are
 #' calculated. This avoids repeated raster reads and cumulative-distribution
 #' calculations for UDs that occur in multiple pairs.
 #' @param x A SpatRaster of the utilisation distribution (with a layer `ud`), or
-#'   a tibble of UDs of class `hr_ud_tbl` (e.g. as created with [hr_kde()]).
+#'   a tibble of UDs of class `hr_tt_ud_tbl` (e.g. as created with [hr_tt_kde()]).
 #' @param method A character string specifying the method to use for overlap
 #'   calculation. Options are `"ba"` (Bhattacharyya's Affinity), `"vi"` (Volume
 #'   of Intersection), `"udoi"` (Utilisation Distribution Overlap Index), and
@@ -29,21 +29,21 @@
 #'   tibble of multiple UDs.
 #' @export
 #' @examples
-#' example_kde <- hr_kde(example_tt)
-#' hr_ud_overlap(example_kde)
-hr_ud_overlap <- function(
+#' example_kde <- hr_tt_kde(example_tt)
+#' hr_tt_ud_overlap(example_kde)
+hr_tt_ud_overlap <- function(
   x,
   ...,
   method = c("ba", "vi", "udoi", "earth_mover")
 ) {
-  UseMethod("hr_ud_overlap")
+  UseMethod("hr_tt_ud_overlap")
 }
 
 #' @export
-#' @rdname hr_ud_overlap
+#' @rdname hr_tt_ud_overlap
 #' @param y A SpatRaster of the utilisation distribution, if `x` is a single UD.
 #'   Else, if `x` is tibble of UDs, `y` is not used.
-hr_ud_overlap.SpatRaster <- function(
+hr_tt_ud_overlap.SpatRaster <- function(
   x,
   y,
   ...,
@@ -74,17 +74,17 @@ hr_ud_overlap.SpatRaster <- function(
 }
 
 #' @export
-#' @rdname hr_ud_overlap
-# Note that we have a generic method for a tibble as the hr_ud_tbl class is lost
+#' @rdname hr_tt_ud_overlap
+# Note that we have a generic method for a tibble as the hr_tt_ud_tbl class is lost
 # on group_map operations
 
-hr_ud_overlap.hr_ud_tbl <- function(
+hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
   x,
   ...,
   method = c("ba", "vi", "udoi", "earth_mover"),
   cond_level = NULL
 ) {
-  stopifnot_hr_ud_table(x) # nolint: object_usage_linter.
+  stopifnot_hr_tt_ud_table(x) # nolint: object_usage_linter.
   # Work with a plain list locally while preserving a loaded object's packing.
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
@@ -299,3 +299,13 @@ check_earth_mover_available <- function() {
   }
   invisible(NULL)
 }
+
+
+# deprecated function for backward compatibility
+#' @name hr_tt_ud_overlap
+#' @export
+hr_ud_overlap <- function(...) {
+  warning("hr_ud_overlap is deprecated. Please use hr_tt_ud_overlap instead.", call. = FALSE)
+  hr_tt_ud_overlap(...)
+}
+

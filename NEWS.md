@@ -1,14 +1,14 @@
 # tidytracks dev
 
-* Allow group specific grids for `hr_kde()`
-* Add earth mover distance to `hr_ud_overlap()`
+* Allow group specific grids for `hr_tt_kde()`
+* Add earth mover distance to `hr_tt_ud_overlap()`
 
 # tidytracks 0.1.0
 
-* Optimisation for `hr_` functions and UD raster storage in tibbles to improve 
-  speed of `hr_ud_overlap()` 
+* Optimisation for `hr_tt_` functions and UD raster storage in tibbles to improve 
+  speed of `hr_tt_ud_overlap()` 
 * Minor bug fixes and documentation updates.
-* Implement `hr_ud_sum()` to sum multiple UDs.
+* Implement `hr_tt_ud_sum()` to sum multiple UDs.
 
 # tidytracks 0.0.1
 
