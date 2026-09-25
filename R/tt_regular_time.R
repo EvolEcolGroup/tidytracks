@@ -185,7 +185,8 @@ tt_regular_time <- function(
   )
   out_track_ids <- unique(as.character(combined[[track_col]]))
   out_track_data <- track_data[
-    as.character(track_data[[track_col]]) %in% out_track_ids, ,
+    as.character(track_data[[track_col]]) %in% out_track_ids,
+    ,
     drop = FALSE
   ]
   move2::mt_set_track_data(out, out_track_data)

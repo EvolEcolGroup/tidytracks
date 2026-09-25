@@ -22,7 +22,7 @@
 #' @keywords internal
 #' @noRd
 
-hr_cud <- function(x, return_matrix = !inherits(x, "SpatRaster")) {
+hr_tt_cud <- function(x, return_matrix = !inherits(x, "SpatRaster")) {
   if (!inherits(x, "SpatRaster") && !return_matrix) {
     stop(
       "cannot return a SpatRaster when x is a matrix; use return_matrix = TRUE"

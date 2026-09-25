@@ -58,16 +58,16 @@
 #'
 #' @export
 #' @examples
-#' example_kde <- hr_kde(example_tt)
+#' example_kde <- hr_tt_kde(example_tt)
 #' example_kde
 #' library(ggplot2)
 #' autoplot(example_kde)
 #' # compute the isopleths for the 50% and 95% home range
-#' example_iso <- hr_kde(example_tt, levels = c(0.5, 0.95))
+#' example_iso <- hr_tt_kde(example_tt, levels = c(0.5, 0.95))
 #' ggplot(example_iso) +
 #'   geom_sf(aes(fill = track_id), alpha = 0.7)
 #'
-hr_kde <- function(
+hr_tt_kde <- function(
   x,
   h = "h_ref_mean",
   bbox = NULL,
@@ -187,9 +187,9 @@ hr_kde <- function(
     res_tbl$ud <- list(kde)
     names(res_tbl$ud) <- group_labels[group_id]
     # add a class to the tibble
-    class(res_tbl) <- c("hr_ud_tbl", class(res_tbl))
+    class(res_tbl) <- c("hr_tt_ud_tbl", class(res_tbl))
     if (!is.null(levels)) {
-      res_tbl <- hr_ud_iso(res_tbl, levels)
+      res_tbl <- hr_tt_ud_iso(res_tbl, levels) # nolint: object_usage_linter.
     }
     res_tbl
   }
@@ -259,7 +259,7 @@ align_kde_bbox <- function(bbox, res) {
 
 #' Compute the kde for a given group
 #'
-#' This is the internal function that is called by `hr_kde` to compute the
+#' This is the internal function that is called by `hr_tt_kde` to compute the
 #' kde for a given group. It is not intended to be called directly by the user.
 #'
 #' @param xy a matrix of coordinates
@@ -320,4 +320,24 @@ kde_one_group <- function(xy, crs, bbox, res, h, id) {
   )
 
   r
+}
+
+# deprecated function for backward compatibility
+#' @name hr_tt_kde
+#' @export
+hr_kde <- function(
+  x,
+  h = "h_ref_mean",
+  bbox = NULL,
+  res = NULL,
+  levels = NULL
+) {
+  warning("hr_kde is deprecated. Please use hr_tt_kde instead.", call. = FALSE)
+  hr_tt_kde(
+    x = x,
+    h = h,
+    bbox = bbox,
+    res = res,
+    levels = levels
+  )
 }

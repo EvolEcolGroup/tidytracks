@@ -2,54 +2,55 @@
 #'
 #' This method can be applied to a whole tibble of UDs, or to an individual UD.
 #'
-#' @param x either a tibble of class `hr_ud_tbl`, as created by [hr_kde()], or a
-#'   `SpatRaster` object from the `ud` column of a `hr_ud_tbl` tibble.
+#' @param x either a tibble of class `hr_tt_ud_tbl`, as created by
+#'   [hr_tt_kde()], or a `SpatRaster` object from the `ud` column of a
+#'   `hr_tt_ud_tbl` tibble.
 #' @param levels numeric vector of isopleth levels to create. Default is
 #'   `c(0.50, 0.95)`, which will create 50% and 95% isopleths. Levels should be
 #'   between 0 and 1.
-#' @return If `x` is a tibble, a tibble of class `hr_poly_tbl` with columns
-#'   `id`, `level`, and `geometry`. If `x` is a `hr_ud` object, a
+#' @return If `x` is a tibble, a tibble of class `hr_tt_poly_tbl` with columns
+#'   `id`, `level`, and `geometry`. If `x` is a `hr_tt_ud` object, a
 #'   `sfc_GEOMETRYCOLLECTION` object.
 #' @export
 #' @family home_range
 #' @examples
-#' example_kde <- hr_kde(example_tt)
-#' example_iso <- hr_ud_iso(example_kde)
+#' example_kde <- hr_tt_kde(example_tt)
+#' example_iso <- hr_tt_ud_iso(example_kde)
 #' example_iso
 #'
 #' # now plot the isopleths
 #' library(ggplot2)
 #' ggplot(example_iso) +
 #'   geom_sf(aes(fill = track_id), alpha = 0.7)
-hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
-  UseMethod("hr_ud_iso")
+hr_tt_ud_iso <- function(x, levels = c(0.50, 0.95)) {
+  UseMethod("hr_tt_ud_iso")
 }
 
 #' @export
-#' @rdname hr_ud_iso
-# Note that we have a generic method for a tibble as the hr_ud_tbl class is lost
-# on group_map operations
-hr_ud_iso.tbl_df <- function(x, levels = c(0.50, 0.95)) {
-  stopifnot_hr_ud_table(x) # nolint: object_usage_linter.
+#' @rdname hr_tt_ud_iso
+# Note that we have a generic method for a tibble as the hr_tt_ud_tbl
+# class is lost on group_map operations
+hr_tt_ud_iso.tbl_df <- function(x, levels = c(0.50, 0.95)) {
+  stopifnot_hr_tt_ud_table(x) # nolint: object_usage_linter.
   # Work with a plain list locally while preserving a loaded object's packing.
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
   levels <- sort(levels)
 
   res_tbl <- x %>%
-    dplyr::mutate(iso = purrr::map(.data$ud, hr_ud_iso, levels = levels)) %>%
+    dplyr::mutate(iso = purrr::map(.data$ud, hr_tt_ud_iso, levels = levels)) %>%
     dplyr::select(-dplyr::any_of("ud")) %>%
     tidyr::unnest(dplyr::any_of("iso"))
 
   res_tbl <- sf::st_as_sf(res_tbl)
-  class(res_tbl) <- c("hr_poly_tbl", class(res_tbl))
+  class(res_tbl) <- c("hr_tt_poly_tbl", class(res_tbl))
   res_tbl
 }
 
 
 #' @export
-#' @rdname hr_ud_iso
-hr_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
+#' @rdname hr_tt_ud_iso
+hr_tt_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
   if (any(levels < 0 | levels > 1)) {
     stop("levels should be between 0 and 1")
   }
@@ -70,7 +71,10 @@ hr_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
 
   # 1) Try to create contours
   contours <- tryCatch(
-    terra::as.contour(hr_cud(x), levels = levels),
+    terra::as.contour(
+      hr_tt_cud(x), # nolint: object_usage_linter.
+      levels = levels
+    ),
     error = function(e) {
       warning("No isopleths could be computed: ", conditionMessage(e))
       return(empty_iso(x))
@@ -151,4 +155,16 @@ hr_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
     dplyr::mutate(area = sf::st_area(.data$geometry), .after = "level")
 
   sf::st_as_sf(out)
+}
+
+
+# deprecated function for backward compatibility
+#' @name hr_tt_ud_iso
+#' @export
+hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
+  warning(
+    "hr_ud_iso is deprecated. Please use hr_tt_ud_iso instead.",
+    call. = FALSE
+  )
+  hr_tt_ud_iso(x = x, levels = levels)
 }

@@ -16,8 +16,7 @@ h_ref_indiv <- function(xy, group_index) {
     # compute the bandwidth for this group
     (sqrt(
       0.5 *
-        (stats::var(xy_sub[, 1]) +
-           stats::var(xy_sub[, 2]))
+        (stats::var(xy_sub[, 1]) + stats::var(xy_sub[, 2]))
     )) *
       (nrow(xy_sub)^-(1 / 6))
   })
