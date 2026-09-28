@@ -17,17 +17,17 @@ If \code{FALSE}, the method is changed only for the current R session. If
 configuration directory. Defaults to \code{TRUE}.}
 }
 \value{
-If \code{value} is \code{NULL}, a logical scalar indicating whether
-tidytracks' custom print method is currently registered. Otherwise, the
-supplied value is returned invisibly after registration.
+If \code{value} is \code{NULL}, a logical scalar indicating whether tidytracks'
+custom print method is currently registered. Otherwise, the supplied value
+is returned invisibly after registration.
 }
 \description{
 Controls whether objects of class \code{move2} use custom tidytracks printing or
 the standard printing method supplied by \code{move2}.
 }
 \details{
-Calling \code{tidytracks_printing()} with no \code{value} directly inspects the
-currently registered S3 method. It does not read the persistent
+Calling \code{tidytracks_printing()} with no \code{value} directly inspects
+the currently registered S3 method. It does not read the persistent
 configuration file.
 }
 \examples{
