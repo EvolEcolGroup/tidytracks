@@ -1,6 +1,8 @@
-# tidytracks dev
+# tidytracks 0.2.0
 
 * Rename functions to `hr_tt_` prefix to avoid name clashes with other packages.
+  (NOTE the old names are still available for backwards compatibility, but will 
+  be deprecated in future releases.)
 * Allow group specific grids for `hr_tt_kde()`
 * Add earth mover distance to `hr_tt_ud_overlap()`
 * Ensure that all `track_*` functions return values in the same order as in the
