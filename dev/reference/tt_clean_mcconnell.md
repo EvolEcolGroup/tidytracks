@@ -73,5 +73,9 @@ tt_clean_mcconnell(example_tt,
 #> 10        b 2024-01-01 13:20:00 POINT (-0.9581 -1.5686)
 #> 11        c 2024-01-01 12:00:00  POINT (-0.7845 0.4328)
 #> 12        c 2024-01-01 12:20:00  POINT (-4.0496 1.0655)
-#> To see track metadata, use `show_meta()`
+#> Track features:
+#>   track_id    sex nest_lon nest_lat
+#> 1        a   male     1.37     0.06
+#> 2        b   male    -2.44    -1.76
+#> 3        c female    -0.78     0.43
 ```

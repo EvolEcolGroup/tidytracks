@@ -44,5 +44,5 @@ tt_write_data(
   example_tt,
   tmp_prefix,
   combined = TRUE
-  )
+)
 ```

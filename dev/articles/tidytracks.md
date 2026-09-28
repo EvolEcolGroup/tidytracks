@@ -86,6 +86,20 @@ shags_tt <- tt_read_data(
 )
 ```
 
+By default, `tidytracks` prints out an overview of `move2` objects using
+the default [`print()`](https://rdrr.io/r/base/print.html) method from
+the `move2` package. If you want a print out which is more in line with
+the grammar from `tidytracks`, you can use:
+
+``` r
+
+tidytracks_printing(TRUE)
+```
+
+You only need to do this once, and your preference will be remembered in
+future sessions. You can always revert back to the original `move2`
+implementation with `tidytracks_printing(FALSE)`.
+
 Inspecting the events table, we have:
 
 ``` r
@@ -818,7 +832,7 @@ shags_females_proj <- shags_females %>%
 
 We can now estimate the home range using **Kernel Density Estimation
 (KDE)**. The default smoothing parameter (*h*) in the
-[`hr_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_kde.md)
+[`hr_tt_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md)
 function is set to `'h_ref_mean'`. The bandwidth for the kernel density
 estimation can be either a number, or `'h_ref_indiv'` for using the
 reference bandwidth for each individual, or `'h_ref_mean'` for using the
@@ -846,7 +860,7 @@ we will group by `bird_id`:
 
 shags_females_kde <- shags_females_proj %>%
   group_by(bird_id) %>%
-  hr_kde(levels = c(0.5, 0.95))
+  hr_tt_kde(levels = c(0.5, 0.95))
 ```
 
 If you get a warning here, it may be because one of the datasets is
@@ -1015,7 +1029,7 @@ To retain the full utilisation distributions instead, omit `levels`:
 
 shags_females_ud <- shags_females_proj %>%
   group_by(bird_id) %>%
-  hr_kde()
+  hr_tt_kde()
 shags_females_ud
 #> # A tibble: 4 × 9
 #>   bird_id method     h    xmin    ymin   xmax   ymax   res ud               
@@ -1033,15 +1047,15 @@ We can visualise the UD with a simple `autoplot`:
 autoplot(shags_females_ud)
 ```
 
-![](tidytracks_files/figure-html/unnamed-chunk-5-1.png)
+![](tidytracks_files/figure-html/unnamed-chunk-7-1.png)
 
 Note that the UD tibble contains live `SpatRaster` objects. These can
 not be saved directly, so we need to use
-[`hr_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_ud_saveRDS.md)
+[`hr_tt_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_saveRDS.md)
 rather than
 [`saveRDS()`](https://rspatial.github.io/terra/reference/serialize.html)
 to save it.
-[`hr_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_ud_saveRDS.md)
+[`hr_tt_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_saveRDS.md)
 wraps the rasters before writing the RDS file (see the help page for the
 [`wrap()`](https://rspatial.github.io/terra/reference/wrap.html)
 function in `terra` for details):
@@ -1049,7 +1063,7 @@ function in `terra` for details):
 ``` r
 
 ud_file <- file.path(tempdir(), "shags_females_ud.rds")
-hr_ud_saveRDS(shags_females_ud, ud_file)
+hr_tt_ud_saveRDS(shags_females_ud, ud_file)
 ```
 
 When the object is loaded again, its `ud` column is wrapped (we can see
@@ -1075,7 +1089,7 @@ unwrap it explicitly before running further analyses:
 
 ``` r
 
-shags_females_ud <- hr_ud_unwrap(shags_females_ud)
+shags_females_ud <- hr_tt_ud_unwrap(shags_females_ud)
 shags_females_ud
 #> # A tibble: 4 × 9
 #>   bird_id method     h    xmin    ymin   xmax   ymax   res ud               
@@ -1094,7 +1108,7 @@ To get a minimum convex polygon covering 95% of the data, we can use:
 
 shags_females_mcp <- shags_females_proj %>%
   group_by(bird_id) %>%
-  hr_mcp(levels = c(0.95))
+  hr_tt_mcp(levels = c(0.95))
 ```
 
 We can plot the MCPs with:

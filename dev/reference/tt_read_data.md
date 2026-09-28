@@ -117,7 +117,7 @@ shags_tt <- tt_read_data(shags_csv,
 )
 shags_tt
 #> A <move2> with `track_id_column` "bird_id" and `time_column` "date_time"
-#> Containing 9 tracks lasting on average 109052 secs in a
+#> Containing 9 tracks lasting on average 1.26 days in a
 #> Simple feature collection with 3762 features and 3 fields
 #> Geometry type: POINT
 #> Dimension:     XY
@@ -135,5 +135,15 @@ shags_tt
 #> 8    kb_17 2022-01-04 01:19:01 0.02357237 POINT (-68.06892 -67.57065)
 #> 9    kb_17 2022-01-04 01:29:01 0.04011861 POINT (-68.06884 -67.57064)
 #> 10   kb_17 2022-01-04 01:39:00 0.02165668 POINT (-68.06892 -67.57069)
-#> To see track metadata, use `show_meta()`
+#> Track features:
+#>   bird_id colony_lon colony_lat    sex
+#> 1   kb_17  -68.06893  -67.57072   male
+#> 2   kb_19  -68.06893  -67.57072   male
+#> 3   kb_27  -68.06893  -67.57072 female
+#> 4   kb_29  -68.06893  -67.57072   male
+#> 5   kb_38  -68.06893  -67.57072   male
+#> 6   kb_40  -68.06893  -67.57072   male
+#> 7   kb_42  -68.06893  -67.57072 female
+#> 8   kb_43  -68.06893  -67.57072 female
+#> 9   kb_45  -68.06893  -67.57072 female
 ```

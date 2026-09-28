@@ -43,5 +43,9 @@ tt_order_time(example_tt)
 #> 8         b 2024-01-01 12:40:00 POINT (-3.3802 -0.7828)
 #> 9         b 2024-01-01 13:00:00 POINT (-0.2703 -0.3566)
 #> 10        b 2024-01-01 13:20:00 POINT (-0.9581 -1.5686)
-#> To see track metadata, use `show_meta()`
+#> Track features:
+#>   track_id    sex nest_lon nest_lat
+#> 1        a   male     1.37     0.06
+#> 2        b   male    -2.44    -1.76
+#> 3        c female    -0.78     0.43
 ```
