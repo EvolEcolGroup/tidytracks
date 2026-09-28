@@ -39,7 +39,7 @@ tt_clean_mcconnell <- function(
     x,
     max_speed = max_speed,
     check_first_last = check_first_last
-  )
+  ) # nolint: object_usage_linter.
 
   if (flag_action == "remove") {
     x <- x[valid_points, ]

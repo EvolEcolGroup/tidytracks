@@ -22,6 +22,12 @@ track_duration <- function(x, units = as_units(1, "days")) {
       diff
     )
   )
+  # split() orders groups by the factor levels of event_track_id(), which
+  # are alphabetical, not by the tracks' original order of appearance.
+  # Reorder to match the order tracks first appear in x.
+  track_order <- as.character(unique(event_track_id(x)))
+  tot_duration <- tot_duration[track_order]
+
   # Convert the duration (difftime) to the specified units
   tot_duration <- units::as_units(tot_duration, units)
 

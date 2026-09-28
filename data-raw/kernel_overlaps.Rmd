@@ -4,7 +4,7 @@ output: html_document
 ---
 
 Benchmarking kernel overlap functions in `adehabitatHR` (`kerneloverlaphr()`) 
-and in `tidytracks` (`hr_ud_overlap()`).
+and in `tidytracks` (`hr_tt_ud_overlap()`).
 
 Compare speed using the wild boars dataset from `adehabitatHR` package.
 
@@ -62,7 +62,7 @@ show_meta(wildboars_tt)
 
 # compute the kde
 wildboars_tt <- wildboars_tt %>% dplyr::group_by(name)
-wildboars_kde <- hr_kde(wildboars_tt, levels = NULL,
+wildboars_kde <- hr_tt_kde(wildboars_tt, levels = NULL,
                            h = "h_ref_indiv",
                            res = 194.7458,
                            bbox = list(xmin = 695842.0, ymin = 3154018.0,
@@ -102,11 +102,11 @@ rm(t1, t2)
 ## tidytracks
 
 ```{r}
-?hr_ud_overlap
+?hr_tt_ud_overlap
 class(wildboars_kde)
 # run overlap
 t1 <- Sys.time()
-ovl_tt <- hr_ud_overlap(x = wildboars_kde_100,
+ovl_tt <- hr_tt_ud_overlap(x = wildboars_kde_100,
                         method = "ba",
                         cond_level = 0.9)
 t2 <- Sys.time()

@@ -4,7 +4,8 @@ library(move2)
 set.seed(123)
 date_time_seq <- as.POSIXct(seq(
   from = lubridate::mdy_hm("01-01-2021 00:00"),
-  length.out = 20, ,
+  length.out = 20,
+  ,
   by = "12 hours"
 ))
 

@@ -431,7 +431,7 @@ We want to estimate the home range for each bird, so we will group by `bird_id`:
 ```{r}
 shags_kde <- shags_proj %>%
   group_by(bird_id) %>%
-  hr_kde()
+  hr_tt_kde()
 ```
 
 `shags_females_kde` is an `sf` object, with estimates of the area (in the units of
@@ -441,7 +441,7 @@ shags_kde
 ```
 
 ```{r}
-shags_overlap <- shags_kde %>% hr_ud_overlap()
+shags_overlap <- shags_kde %>% hr_tt_ud_overlap()
 ```
 
 For a mantel, we need to create a matrix of 1 for same sex and 0 for
@@ -459,7 +459,7 @@ Visualise with isopleths
 ```{r}
 shags_iso <- shags_proj %>%
   group_by(bird_id) %>%
-  hr_kde(levels = c(0.95))
+  hr_tt_kde(levels = c(0.95))
 ```
 
 
@@ -486,7 +486,7 @@ female_kde <- shags_kde %>% filter(sex=="female")
 female_grouped_kde <- sum(rast(as.list(female_kde$ud)))
 female_grouped_kde <- female_grouped_kde/nrow(female_kde)
 names(female_grouped_kde) <- "ud"
-hr_ud_overlap(male_grouped_kde, female_grouped_kde)
+hr_tt_ud_overlap(male_grouped_kde, female_grouped_kde)
 
 null_overlaps <- NA
 for (i in 1:5){

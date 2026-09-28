@@ -1,9 +1,9 @@
-test_that("hr_ud_sum works", {
+test_that("hr_tt_ud_sum works", {
   # load a simple dataset originally from adehabitat
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = 50)
   expect_false(inherits(boar_kde$ud, "PackedSpatRaster_list"))
-  rast_sum <- hr_ud_sum(boar_kde$ud)
+  rast_sum <- hr_tt_ud_sum(boar_kde$ud)
   # check that this is a raster
   expect_s4_class(rast_sum, "SpatRaster")
   # check that the sum of the raster values is 1
@@ -12,15 +12,15 @@ test_that("hr_ud_sum works", {
   expect_equal(names(rast_sum), "ud")
 
   ## now do the same directly on the tibble
-  tibble_sum <- hr_ud_sum(boar_kde)
+  tibble_sum <- hr_tt_ud_sum(boar_kde)
   expect_equal(as.matrix(rast_sum), as.matrix(tibble_sum$ud[[1]]))
 
   # now test on a grouped tibble
   boar_kde$sex <- c("male", "female", "female", "male")
   boar_grouped_kde <- boar_kde %>% dplyr::group_by(sex)
-  grouped_sum <- hr_ud_sum(boar_grouped_kde)
-  # check that this is a hr_ud_tbl
-  expect_true(inherits(grouped_sum, "hr_ud_tbl"))
+  grouped_sum <- hr_tt_ud_sum(boar_grouped_kde)
+  # check that this is a hr_tt_ud_tbl
+  expect_true(inherits(grouped_sum, "hr_tt_ud_tbl"))
   # check that we have two rows
   expect_true(nrow(grouped_sum) == 2)
   # check that there is a column sex

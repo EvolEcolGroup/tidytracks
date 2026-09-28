@@ -20,7 +20,6 @@
 #' # Drop the units from any columns with units
 #' result <- tt_drop_units(example_tt)
 #' class(result$speed)
-
 tt_drop_units <- function(x) {
   for (i in seq_along(names(x))) {
     if (inherits(x[[i]], "units")) {

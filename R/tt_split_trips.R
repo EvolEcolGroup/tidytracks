@@ -34,14 +34,13 @@
 #'   buffer_outbound = as_units(1, "km"),
 #'   buffer_inbound = as_units(1, "km"),
 #'   complete = FALSE
-#'   )
+#' )
 #' # Now the unit of tracking is `trip_id` column
 #' move2::mt_track_id_column(example_tt_split)
 #' # Three incomplete trips were identified
 #' show_meta(example_tt_split) %>%
 #'   dplyr::group_by(track_id, trip_id, trip_type) %>%
 #'   dplyr::summarise(.groups = "drop")
-
 tt_split_trips <- function(
   x,
   centre_col = NULL,
