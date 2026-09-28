@@ -15,7 +15,7 @@ have matching time stamps (as the starting points are different)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,7 +42,7 @@ have matching time stamps (as the starting points are different)."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Resample a <code>move2</code> track to regular time intervals by geometric interpolation</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/tt_regular_time.R" class="external-link"><code>R/tt_regular_time.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/tt_regular_time.R" class="external-link"><code>R/tt_regular_time.R</code></a></small>
       <div class="d-none name"><code>tt_regular_time.Rd</code></div>
     </div>
 
@@ -184,7 +184,9 @@ objects; <code><a href="https://r-spatial.github.io/sf/reference/st_line_sample.
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 2024-01-01 00:01:05  gull_01 3.017647  POINT (-0.06471044 51.51412)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3 2024-01-01 00:02:05  gull_01 2.890909  POINT (-0.03409567 51.52637)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4 2024-01-01 00:03:05  gull_01 2.018182 POINT (-0.006820769 51.53727)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> To see track metadata, use `show_meta()`</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Track features:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   track_id</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  gull_01</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Resample to 30-second fixes, skipping gaps &gt; 2 minutes</span></span></span>
 <span class="r-in"><span><span class="va">resampled_gapped</span> <span class="op">&lt;-</span> <span class="fu">tt_regular_time</span><span class="op">(</span></span></span>
@@ -208,7 +210,9 @@ objects; <code><a href="https://r-spatial.github.io/sf/reference/st_line_sample.
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5 2024-01-01 00:02:05  gull_01 2.890909  POINT (-0.03409567 51.52637)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6 2024-01-01 00:02:35  gull_01 2.454545  POINT (-0.02045986 51.53182)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 7 2024-01-01 00:03:05  gull_01 2.018182 POINT (-0.006820769 51.53727)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> To see track metadata, use `show_meta()`</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Track features:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   track_id</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  gull_01</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Resample to one fix per minute, snapping times to whole-minute boundaries</span></span></span>
 <span class="r-in"><span><span class="va">resampled_snap</span> <span class="op">&lt;-</span> <span class="fu">tt_regular_time</span><span class="op">(</span><span class="va">track</span>,</span></span>
@@ -227,7 +231,9 @@ objects; <code><a href="https://r-spatial.github.io/sf/reference/st_line_sample.
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 2024-01-01 00:01:00  gull_01 2.941176  POINT (-0.06765207 51.51294)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 2024-01-01 00:02:00  gull_01 2.963636  POINT (-0.03636799 51.52546)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3 2024-01-01 00:03:00  gull_01 2.090909 POINT (-0.009094177 51.53637)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> To see track metadata, use `show_meta()`</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Track features:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   track_id</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  gull_01</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
@@ -236,7 +242,7 @@ objects; <code><a href="https://r-spatial.github.io/sf/reference/st_line_sample.
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Andrea Manica, Lizzie Pearmain, Paul Whitelaw, Holly Pickett.</p>
+  <p>Developed by Lizzie Pearmain, Paul Whitelaw, Holly Pickett, Andrea Manica.</p>
 </div>
 
 <div class="pkgdown-footer-right">

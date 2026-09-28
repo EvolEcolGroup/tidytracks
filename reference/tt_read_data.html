@@ -37,7 +37,7 @@ breeding status, etc.)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,7 +64,7 @@ breeding status, etc.)."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Read data from a CSV file into a <code>move2</code> object</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/tt_read_data.R" class="external-link"><code>R/tt_read_data.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/tt_read_data.R" class="external-link"><code>R/tt_read_data.R</code></a></small>
       <div class="d-none name"><code>tt_read_data.Rd</code></div>
     </div>
 
@@ -184,7 +184,7 @@ details.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">shags_tt</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> A <span style="color: #0000BB;">&lt;move2&gt;</span> with `track_id_column` <span style="color: #0000BB;">"bird_id"</span> and `time_column` <span style="color: #0000BB;">"date_time"</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Containing 9 tracks lasting on average 109052 secs in a</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Containing 9 tracks lasting on average 1.26 days in a</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Simple feature collection with 3762 features and 3 fields</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Geometry type: POINT</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Dimension:     XY</span>
@@ -202,7 +202,17 @@ details.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 8    kb_17 2022-01-04 01:19:01 0.02357237 POINT (-68.06892 -67.57065)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 9    kb_17 2022-01-04 01:29:01 0.04011861 POINT (-68.06884 -67.57064)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 10   kb_17 2022-01-04 01:39:00 0.02165668 POINT (-68.06892 -67.57069)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> To see track metadata, use `show_meta()`</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Track features:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   bird_id colony_lon colony_lat    sex</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   kb_17  -68.06893  -67.57072   male</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   kb_19  -68.06893  -67.57072   male</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   kb_27  -68.06893  -67.57072 female</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   kb_29  -68.06893  -67.57072   male</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5   kb_38  -68.06893  -67.57072   male</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6   kb_40  -68.06893  -67.57072   male</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7   kb_42  -68.06893  -67.57072 female</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8   kb_43  -68.06893  -67.57072 female</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9   kb_45  -68.06893  -67.57072 female</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
@@ -210,7 +220,7 @@ details.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Andrea Manica, Lizzie Pearmain, Paul Whitelaw, Holly Pickett.</p>
+  <p>Developed by Lizzie Pearmain, Paul Whitelaw, Holly Pickett, Andrea Manica.</p>
 </div>
 
 <div class="pkgdown-footer-right">

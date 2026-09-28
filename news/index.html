@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,15 +34,24 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="tidytracks-020">tidytracks 0.2.0<a class="anchor" aria-label="anchor" href="#tidytracks-020"></a></h2>
+<ul><li>Rename functions to <code>hr_tt_</code> prefix to avoid name clashes with other packages. (NOTE the old names are still available for backwards compatibility, but will be deprecated in future releases.)</li>
+<li>Allow group specific grids for <code><a href="../reference/hr_tt_kde.html">hr_tt_kde()</a></code>
+</li>
+<li>Add earth mover distance to <code><a href="../reference/hr_tt_ud_overlap.html">hr_tt_ud_overlap()</a></code>
+</li>
+<li>Ensure that all <code>track_*</code> functions return values in the same order as in the metadata.</li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="tidytracks-010">tidytracks 0.1.0<a class="anchor" aria-label="anchor" href="#tidytracks-010"></a></h2>
-<ul><li>Optimisation for <code>hr_</code> functions and UD raster storage in tibbles to improve speed of <code><a href="../reference/hr_ud_overlap.html">hr_ud_overlap()</a></code>
+<ul><li>Optimisation for <code>hr_tt_</code> functions and UD raster storage in tibbles to improve speed of <code><a href="../reference/hr_tt_ud_overlap.html">hr_tt_ud_overlap()</a></code>
 </li>
 <li>Minor bug fixes and documentation updates.</li>
-<li>Implement <code><a href="../reference/hr_ud_sum.html">hr_ud_sum()</a></code> to sum multiple UDs.</li>
+<li>Implement <code><a href="../reference/hr_tt_ud_sum.html">hr_tt_ud_sum()</a></code> to sum multiple UDs.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.1" id="tidytracks-001">tidytracks 0.0.1<a class="anchor" aria-label="anchor" href="#tidytracks-001"></a></h2>
@@ -53,7 +62,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Andrea Manica, Lizzie Pearmain, Paul Whitelaw, Holly Pickett.</p>
+  <p>Developed by Lizzie Pearmain, Paul Whitelaw, Holly Pickett, Andrea Manica.</p>
 </div>
 
 <div class="pkgdown-footer-right">

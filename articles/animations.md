@@ -50,7 +50,18 @@ df
 ## 8  2007-12-19 14:19:00 bird_01 POINT (-35.63 -46.39)
 ## 9  2007-12-20 02:15:00 bird_01 POINT (-34.32 -46.17)
 ## 10 2007-12-20 14:14:00 bird_01 POINT (-34.13 -46.66)
-## To see track metadata, use `show_meta()`
+## Track features:
+##    bird_id
+## 1  bird_01
+## 2  bird_02
+## 3  bird_03
+## 4  bird_04
+## 5  bird_05
+## 6  bird_06
+## 7  bird_07
+## 8  bird_08
+## 9  bird_09
+## 10 bird_10
 ```
 
 ### regularise data
@@ -87,7 +98,18 @@ df
 ## 8  2007-12-20 00:00:00 bird_01 POINT (-34.56619 -46.21262)
 ## 9  2007-12-20 12:00:00 bird_01  POINT (-34.16567 -46.5687)
 ## 10 2007-12-21 00:00:00 bird_01 POINT (-33.05775 -46.98074)
-## To see track metadata, use `show_meta()`
+## Track features:
+##    bird_id
+## 1  bird_01
+## 2  bird_02
+## 3  bird_03
+## 4  bird_04
+## 5  bird_05
+## 6  bird_06
+## 7  bird_07
+## 8  bird_08
+## 9  bird_09
+## 10 bird_10
 ```
 
 ------------------------------------------------------------------------
@@ -116,11 +138,6 @@ colony <- data.frame(colony = "Bird Island", lon = -38.03, lat = -54) %>%
 library(rnaturalearth)
 land <- ne_countries(scale = "medium", returnclass = "sf")
 ```
-
-    ## The rnaturalearthdata package needs to be installed.
-    ## Installing the rnaturalearthdata package.
-    ## Installing package into '/home/runner/work/_temp/Library'
-    ## (as 'lib' is unspecified)
 
 ### subset data to test
 

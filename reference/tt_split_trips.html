@@ -9,7 +9,7 @@ foragers by identifying the trips based on a distance from the colony/nest."></h
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +36,7 @@ foragers by identifying the trips based on a distance from the colony/nest."></h
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Split tracks into trips for central place foragers</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/tt_split_trips.R" class="external-link"><code>R/tt_split_trips.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/tt_split_trips.R" class="external-link"><code>R/tt_split_trips.R</code></a></small>
       <div class="d-none name"><code>tt_split_trips.Rd</code></div>
     </div>
 
@@ -106,7 +106,7 @@ in-between trips) are collected into a dummy trip labelled "trip_na".</p></dd>
 <span class="r-in"><span>  buffer_outbound <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">1</span>, <span class="st">"km"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  buffer_inbound <span class="op">=</span> <span class="fu"><a href="https://r-quantities.github.io/units/reference/units.html" class="external-link">as_units</a></span><span class="op">(</span><span class="fl">1</span>, <span class="st">"km"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  complete <span class="op">=</span> <span class="cn">FALSE</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># Now the unit of tracking is `trip_id` column</span></span></span>
 <span class="r-in"><span><span class="fu">move2</span><span class="fu">::</span><span class="fu"><a href="https://bartk.gitlab.io/move2/reference/column_name.html" class="external-link">mt_track_id_column</a></span><span class="op">(</span><span class="va">example_tt_split</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "trip_id"</span>
@@ -129,7 +129,7 @@ in-between trips) are collected into a dummy trip labelled "trip_na".</p></dd>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Andrea Manica, Lizzie Pearmain, Paul Whitelaw, Holly Pickett.</p>
+  <p>Developed by Lizzie Pearmain, Paul Whitelaw, Holly Pickett, Andrea Manica.</p>
 </div>
 
 <div class="pkgdown-footer-right">

@@ -151,7 +151,9 @@ resampled
 #> 2 2024-01-01 00:01:05  gull_01 3.017647  POINT (-0.06471044 51.51412)
 #> 3 2024-01-01 00:02:05  gull_01 2.890909  POINT (-0.03409567 51.52637)
 #> 4 2024-01-01 00:03:05  gull_01 2.018182 POINT (-0.006820769 51.53727)
-#> To see track metadata, use `show_meta()`
+#> Track features:
+#>   track_id
+#> 1  gull_01
 
 # Resample to 30-second fixes, skipping gaps > 2 minutes
 resampled_gapped <- tt_regular_time(
@@ -175,7 +177,9 @@ resampled_gapped
 #> 5 2024-01-01 00:02:05  gull_01 2.890909  POINT (-0.03409567 51.52637)
 #> 6 2024-01-01 00:02:35  gull_01 2.454545  POINT (-0.02045986 51.53182)
 #> 7 2024-01-01 00:03:05  gull_01 2.018182 POINT (-0.006820769 51.53727)
-#> To see track metadata, use `show_meta()`
+#> Track features:
+#>   track_id
+#> 1  gull_01
 
 # Resample to one fix per minute, snapping times to whole-minute boundaries
 resampled_snap <- tt_regular_time(track,
@@ -194,5 +198,7 @@ resampled_snap
 #> 1 2024-01-01 00:01:00  gull_01 2.941176  POINT (-0.06765207 51.51294)
 #> 2 2024-01-01 00:02:00  gull_01 2.963636  POINT (-0.03636799 51.52546)
 #> 3 2024-01-01 00:03:00  gull_01 2.090909 POINT (-0.009094177 51.53637)
-#> To see track metadata, use `show_meta()`
+#> Track features:
+#>   track_id
+#> 1  gull_01
 ```

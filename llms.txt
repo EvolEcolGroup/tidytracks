@@ -81,6 +81,9 @@ Functions for loading, saving and displaying tibbles of tracks.
 - [`sf_point_col()`](https://evolecolgroup.github.io/tidytracks/reference/sf_point_col.md)
   : Create a simple feature POINT geometry column
 
+- [`tidytracks_printing()`](https://evolecolgroup.github.io/tidytracks/reference/tidytracks_printing.md)
+  : Enable or disable custom tidytracks printing
+
 ## Event functions
 
 Functions operating on events (return an object of length \# of events).
@@ -163,28 +166,36 @@ Functions to visualise movement.
 - [`animate_map()`](https://evolecolgroup.github.io/tidytracks/reference/animate_map.md)
   : Animate a user-built map with track paths or points
 
-- [`autoplot(`*`<hr_ud_tbl>`*`)`](https://evolecolgroup.github.io/tidytracks/reference/autoplot.hr_ud_tbl.md)
+- [`autoplot(`*`<hr_tt_ud_tbl>`*`)`](https://evolecolgroup.github.io/tidytracks/reference/autoplot.hr_tt_ud_tbl.md)
   : Autoplot a tibble of utilisation distributions
 
 ## Home range
 
 Estimate home range and habitat use from movement data.
 
-- [`hr_kde()`](https://evolecolgroup.github.io/tidytracks/reference/hr_kde.md)
+- [`hr_tt_kde()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_kde.md)
+  [`hr_kde()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_kde.md)
   : Quantify the home range using kernel density estimation
-- [`hr_mcp()`](https://evolecolgroup.github.io/tidytracks/reference/hr_mcp.md)
+- [`hr_tt_mcp()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_mcp.md)
+  [`hr_mcp()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_mcp.md)
   : Quantify the home range using minimum convex polygon (MCP)
-- [`hr_ud_iso()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_iso.md)
+- [`hr_tt_ud_iso()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_iso.md)
+  [`hr_ud_iso()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_iso.md)
   : Create isopleths from utilisation distributions
-- [`hr_ud_overlap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_overlap.md)
+- [`hr_tt_ud_overlap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_overlap.md)
+  [`hr_ud_overlap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_overlap.md)
   : Compute overlap for utilisation distributions
-- [`hr_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_saveRDS.md)
+- [`hr_tt_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_saveRDS.md)
+  [`hr_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_saveRDS.md)
   : Save utilisation distributions as an RDS file
-- [`hr_ud_sum()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_sum.md)
+- [`hr_tt_ud_sum()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_sum.md)
+  [`hr_ud_sum()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_sum.md)
   : Compute the normalised sum of multiple UDs
-- [`hr_ud_unwrap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_unwrap.md)
+- [`hr_tt_ud_unwrap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_unwrap.md)
+  [`hr_ud_unwrap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_unwrap.md)
   : Unwrap utilisation distributions after loading
-- [`hr_ud_wrap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_ud_wrap.md)
+- [`hr_tt_ud_wrap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_wrap.md)
+  [`hr_ud_wrap()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_wrap.md)
   : Wrap utilisation distributions for storage
 
 ## List of PackedRasters

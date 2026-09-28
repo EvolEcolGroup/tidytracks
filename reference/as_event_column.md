@@ -59,5 +59,9 @@ example_tt2 # now showing sex in the events table
 #> 8         b 2024-01-01 12:40:00 male POINT (-3.3802 -0.7828)
 #> 9         b 2024-01-01 13:00:00 male POINT (-0.2703 -0.3566)
 #> 10        b 2024-01-01 13:20:00 male POINT (-0.9581 -1.5686)
-#> To see track metadata, use `show_meta()`
+#> Track features:
+#>   track_id nest_lon nest_lat
+#> 1        a     1.37     0.06
+#> 2        b    -2.44    -1.76
+#> 3        c    -0.78     0.43
 ```
