@@ -26,8 +26,8 @@ are:
 \item \code{min_latitude}: The minimum latitude of the track
 \item \code{max_longitude}: The maximum longitude of the track
 \item \code{min_longitude}: The minimum longitude of the track
-\item \code{max_dist_centre}: The maximum distance from the central place location
-in column \code{centre_col} (or the starting point)
+\item \code{max_dist_centre}: The maximum distance from the central place
+location in column \code{centre_col} (or the starting point)
 \item \code{lat_at_max_dist_centre}: The latitude at the point of maximum
 distance from the central place location (or the starting point)
 \item \code{lon_at_max_dist_centre}: The longitude at the point of maximum

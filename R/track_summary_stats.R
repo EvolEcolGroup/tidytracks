@@ -7,8 +7,8 @@
 #' longitude of the track, and, if a central place location is provided, the
 #' maximum distance from that location, and the latitude and longitude at the
 #' most distant point from that location.
-#' 
-#' @details 
+#'
+#' @details
 #' Note that the central place location is often not part of the track.
 #' This means that under certain circumstances (e.g. very large buffers used in
 #' trip splitting), the total distance travelled along the track may be shorter
@@ -19,7 +19,6 @@
 #' The units for distance, latitude, and longitude are taken from the
 #' projection. The units for duration are specified by the `units_duration`
 #' argument.
-#' 
 #'
 #' @param x A `move2` object
 #' @param centre_col The name of an sf point column (usually added with
@@ -36,8 +35,8 @@
 #'  \item `min_latitude`: The minimum latitude of the track
 #'  \item `max_longitude`: The maximum longitude of the track
 #'  \item `min_longitude`: The minimum longitude of the track
-#'  \item `max_dist_centre`: The maximum distance from the central place location
-#'  in column `centre_col` (or the starting point)
+#'  \item `max_dist_centre`: The maximum distance from the central place
+#'  location in column `centre_col` (or the starting point)
 #'  \item `lat_at_max_dist_centre`: The latitude at the point of maximum
 #'  distance from the central place location (or the starting point)
 #'  \item `lon_at_max_dist_centre`: The longitude at the point of maximum
