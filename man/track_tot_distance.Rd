@@ -16,6 +16,6 @@ A vector of total distances for each track
 Compute the total distance of each track
 }
 \examples{
-track_distance(example_tt)
+track_tot_distance(example_tt)
 
 }

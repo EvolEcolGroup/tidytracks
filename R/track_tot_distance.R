@@ -15,7 +15,7 @@ track_tot_distance <- function(x) {
     c,
     lapply(
       split(event_distance(x), event_track_id(x), drop = TRUE),
-      sum, na.rm=TRUE
+      sum, na.rm = TRUE
     )
   )
   # Reorder to match the order tracks first appear in x.

@@ -19,11 +19,10 @@ test_that("track_tot_distance returns values in original order", {
   # example_tt_2 has tracks that first appear in the order b, a, c, which
   # differs from alphabetical order
   distances <- track_tot_distance(example_tt_2)
-  
   expect_equal(names(distances), c("b", "a", "c"))
   expect_equal(
     unname(distances),
-    as_units(c(1559776.1, 870617.4, 474273.1 ), "m"),
+    as_units(c(1559776.1, 870617.4, 474273.1), "m"),
     tolerance = 1e-6
   )
 })
