@@ -13,12 +13,24 @@ track_duration <- function(x, units = as_units(1, "days")) {
   }
 
   tot_duration <- do.call(
+    # The inner lapply() calls produce a *list* of single-value difftimes
+    # (one per track), not a vector. do.call(c, ...) concatenates that list
+    # into one combined difftime vector, preserving each element's name
+    # (the track ID) as the resulting vector's names.
     c,
     lapply(
       lapply(
+        # split() breaks the vector of event timestamps into a named list
+        # of timestamp vectors, one per track, using the track ID as the
+        # grouping factor. drop = TRUE removes any unused factor levels
+        # (tracks with no events) from the list.
         split(event_time(x), event_track_id(x), drop = TRUE),
+        # For each track's vector of timestamps, range() returns a
+        # length-2 vector: c(earliest timestamp, latest timestamp).
         range
       ),
+      # diff() on a length-2 range gives a single value: latest - earliest,
+      # i.e. the track's total duration (as a difftime).
       diff
     )
   )
