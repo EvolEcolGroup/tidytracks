@@ -1,0 +1,36 @@
+#' Compute the total distance of each track
+#'
+#' @param x A `move2` object
+#' @return A vector of total distances for each track
+#' @export
+#' @examples
+#' track_distance(example_tt)
+#' 
+
+track_distance <- function(x) {
+  if (!inherits(x, "move2")) {
+    stop("x must be a move2 object")
+  }
+  
+  # Name of the track ID column
+  track_col <- move2::mt_track_id_column(x)
+  
+  df <- x %>%
+    # Distance to the next point (last point of each track is NA)
+    dplyr::mutate(distance = as.numeric(event_distance(x))) %>%
+    # Drop geometry so it isn't carried into the output
+    sf::st_drop_geometry() %>%
+    dplyr::group_by(.data[[track_col]]) %>%
+    dplyr::summarise(
+      tot_distance = sum(.data$distance, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  # Named ) vector: names = track IDs, values = total distance
+  stats::setNames(df$tot_distance, as.character(df[[track_col]]))
+}
+
+dist<- track_distance(example_tt)
+str(dist)
+
+# does it have units?
