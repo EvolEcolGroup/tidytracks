@@ -17,7 +17,7 @@ track_distance <- function(x) {
   
   df <- x %>%
     # Distance to the next point (last point of each track is NA)
-    dplyr::mutate(distance = as.numeric(event_distance(x))) %>%
+    dplyr::mutate(distance = units::as_units(event_distance(x))) %>%
     # Drop geometry so it isn't carried into the output
     sf::st_drop_geometry() %>%
     dplyr::group_by(.data[[track_col]]) %>%
@@ -30,7 +30,4 @@ track_distance <- function(x) {
   stats::setNames(df$tot_distance, as.character(df[[track_col]]))
 }
 
-dist<- track_distance(example_tt)
-str(dist)
 
-# does it have units?
