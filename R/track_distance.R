@@ -26,9 +26,15 @@ track_distance <- function(x) {
       .groups = "drop"
     )
   
-  # Named ) vector: names = track IDs, values = total distance
-  stats::setNames(df$tot_distance, as.character(df[[track_col]]))
+# reorder to match the order tracks first appear in x
+  track_order <- as.character(unique(event_track_id(x)))
+  df <- df[match(track_order, df[[track_col]]), ]
+  
+  # Return a named vector of total distances
+  tot_distance <- df$tot_distance
+  names(tot_distance) <- df[[track_col]]
+  
+  return(tot_distance)
 }
-
 
 
