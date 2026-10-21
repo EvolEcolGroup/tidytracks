@@ -373,7 +373,9 @@ tt_regular_time <- function(
       list(rep(move2::mt_track_id(track)[1], n_new)),
       track_col
     ),
-    stringsAsFactors = FALSE
+    stringsAsFactors = FALSE,
+    # keep column names that are not syntactic (e.g. with spaces) unchanged
+    check.names = FALSE
   )
 
   if (length(attr_cols) > 0L) {
@@ -408,7 +410,7 @@ tt_regular_time <- function(
     })
     base_df <- cbind(
       base_df,
-      as.data.frame(attr_df, stringsAsFactors = FALSE)
+      as.data.frame(attr_df, stringsAsFactors = FALSE, check.names = FALSE)
     )
   }
 

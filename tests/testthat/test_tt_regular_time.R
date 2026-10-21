@@ -367,6 +367,27 @@ test_that("all tracks appear in output", {
   expect_setequal(as.character(unique(move2::mt_track_id(out))), c("a", "b"))
 })
 
+test_that("column names that are not syntactic are preserved", {
+  track <- make_track(crs = NA)
+  track[["ground speed"]] <- c(1, 2, 3)
+  track[["fix-type"]] <- c("a", "b", "c")
+  out <- tt_regular_time(track, interval = s(100))
+  expect_true(all(c("ground speed", "fix-type") %in% names(out)))
+  expect_equal(out[["ground speed"]], c(1, 2, 3))
+
+  # including the time and track id columns
+  names(track)[names(track) == "timestamp"] <- "time stamp"
+  names(track)[names(track) == "track_id"] <- "track id"
+  track <- move2::mt_as_move2(
+    sf::st_as_sf(track),
+    time_column = "time stamp",
+    track_id_column = "track id"
+  )
+  out <- tt_regular_time(track, interval = s(100))
+  expect_equal(move2::mt_time_column(out), "time stamp")
+  expect_equal(move2::mt_track_id_column(out), "track id")
+})
+
 test_that("track ids keep their type", {
   times <- as.POSIXct("2024-01-01", tz = "UTC") + c(0, 100, 200, 30, 60)
   geom <- sf::st_sfc(lapply(c(0, 1, 2, 5, 6), function(x) {
