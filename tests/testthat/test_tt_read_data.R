@@ -442,6 +442,56 @@ test_that("tt_read_data reads 2-digit years in auto-detected formats", {
   )
 })
 
+test_that("tt_read_data auto-detects MDY (American) date_time formats", {
+  read_date_times <- function(date_times) {
+    events <- data.frame(
+      track_id = "a",
+      lon = seq_along(date_times),
+      lat = 0,
+      date_time = date_times
+    )
+    event_time(tt_read_data(
+      events,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    ))
+  }
+  # unambiguous MDY: day (15) is not a valid month, so these can only be
+  # parsed as month/day, not day/month
+  expected <- as.POSIXct(
+    c("2024-01-15 13:45:30", "2024-02-01 14:45:00"),
+    tz = "UTC"
+  )
+
+  expect_equal(
+    read_date_times(c("01/15/24 13:45:30", "02/01/24 14:45:00")),
+    expected
+  )
+  expect_equal(
+    read_date_times(c("01-15-24 13:45:30", "02-01-24 14:45:00")),
+    expected
+  )
+  expect_equal(
+    read_date_times(c("01/15/2024 13:45:30", "02/01/2024 14:45:00")),
+    expected
+  )
+  expect_equal(
+    read_date_times(c("01-15-2024 13:45:30", "02-01-2024 14:45:00")),
+    expected
+  )
+
+  # ambiguous day/month (both <= 12): DMY is tried before MDY, so these
+  # should be parsed as day/month, not month/day
+  expect_equal(
+    read_date_times(c("01/02/2024 13:45:30", "02/01/2024 14:45:00")),
+    as.POSIXct(
+      c("2024-02-01 13:45:30", "2024-01-02 14:45:00"),
+      tz = "UTC"
+    )
+  )
+})
+
 # test with specifying the format_date_time parameter
 test_that("tt_read_data works with format_date_time parameter", {
   # test with date_time formats starting with dd instead of yyyy
