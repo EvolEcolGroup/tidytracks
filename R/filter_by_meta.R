@@ -21,11 +21,13 @@ filter_by_meta <- function(.data, ..., .track_id = NULL) {
   # First, we apply the filtering to the METADATA
   new_id_data <- show_meta(.data) |> dplyr::filter(...)
   # Next, we apply any filtering on the track_id_column that was specified
+  # (the ids are injected, so that they cannot be masked by a column of the
+  # metadata with the same name)
   if (!is.null(.track_id)) {
     track_ids_to_keep <- .track_id
     new_id_data <- new_id_data |>
       dplyr::filter(
-        !!rlang::sym(move2::mt_track_id_column(.data)) %in% track_ids_to_keep
+        !!rlang::sym(move2::mt_track_id_column(.data)) %in% !!track_ids_to_keep
       )
   }
   # Get a vector of the track IDs that we're keeping.
@@ -36,11 +38,11 @@ filter_by_meta <- function(.data, ..., .track_id = NULL) {
     dplyr::select(!!rlang::sym(move2::mt_track_id_column(.data))) |>
     dplyr::pull()
   # Now we apply the filtering to the EVENTS DATA
-  # Get track IDs of every line in the events table
-  ids <- event_track_id(.data)
-  # Filter events table to where track ID is in the vector of track IDs we want
-  # to keep
-  .data <- .data |> dplyr::filter(ids %in% new_tracks)
+  # Find the events whose track ID is in the vector of track IDs we want to
+  # keep, and filter the events table to these events (the condition is
+  # injected, so that it cannot be masked by a column of the events table)
+  keep_events <- event_track_id(.data) %in% new_tracks
+  .data <- .data |> dplyr::filter(!!keep_events)
   # Finally, reset the metadata of the newly filtered events table
   .data <- move2::mt_set_track_data(.data, new_id_data)
   return(.data)
