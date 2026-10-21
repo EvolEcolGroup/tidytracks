@@ -1,7 +1,10 @@
 #' Write a tibble of tracks to CSV files
 #'
 #' This function writes the event table and the metadata table of a
-#' 'tidy_tracks' object to CSV files (or one combined CSV file).
+#' 'tidy_tracks' object to CSV files (or one combined CSV file). Times are
+#' written in UTC (e.g. "2024-01-15 13:45:30 UTC", with fractional seconds if
+#' any), in the column `date_time`, so that they can be read back with
+#' [tt_read_data()].
 #'
 #' @param x A `move2` object
 #' @param file_prefix The file path to write the tables, with the prefix for the
@@ -64,10 +67,7 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
             -dplyr::all_of(time_col) # drop original time column
           ) |>
           dplyr::mutate(
-            date_time = format(
-              x[[time_col]],
-              "%Y-%m-%d %H:%M:%S %Z" # format date-time column explicitly
-            )
+            date_time = format_date_time_utc(x[[time_col]])
           ),
         sf::st_coordinates(x)
       ),
@@ -75,4 +75,24 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
       row.names = FALSE
     )
   )
+}
+
+#' Format date-times in UTC
+#'
+#' Formats date-times in UTC, rather than in their own time zone, as time zone
+#' abbreviations (e.g. "BST") cannot be parsed when the data are read back.
+#' Fractional seconds are kept (to the microsecond) if there are any.
+#'
+#' @param time A `POSIXct` vector.
+#' @returns A character vector.
+#' @keywords internal
+#' @noRd
+format_date_time_utc <- function(time) {
+  seconds <- as.numeric(time)
+  time_format <- if (any(seconds != floor(seconds), na.rm = TRUE)) {
+    "%Y-%m-%d %H:%M:%OS6 %Z"
+  } else {
+    "%Y-%m-%d %H:%M:%S %Z"
+  }
+  format(time, time_format, tz = "UTC")
 }
