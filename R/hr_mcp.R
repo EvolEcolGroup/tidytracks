@@ -49,13 +49,16 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   located <- stats::complete.cases(xy)
   xy <- xy[located, , drop = FALSE]
   group_index <- group_index[located]
-  # a polygon needs at least 3 locations
+  # a polygon needs at least 3 locations (only the groups with events are
+  # checked, as groups without events, e.g. unused factor levels kept with
+  # `.drop = FALSE`, are not estimated)
   n_locations <- tabulate(group_index, nbins = length(group_labels))
+  n_locations <- n_locations[group_unique]
   if (any(n_locations < 3)) {
     stop(
       "each group must contain at least 3 events with a location to compute ",
       "a MCP; groups with fewer locations: ",
-      paste(group_labels[n_locations < 3], collapse = ", ")
+      paste(group_labels[group_unique][n_locations < 3], collapse = ", ")
     )
   }
 

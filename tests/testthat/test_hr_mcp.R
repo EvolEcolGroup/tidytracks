@@ -83,3 +83,24 @@ test_that("hr_tt_mcp requires at least 3 locations per group", {
   )
   expect_s3_class(hr_tt_mcp(tracks[tracks$id == "a", ]), "hr_tt_poly_tbl")
 })
+
+test_that("hr_tt_mcp skips groups without events", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  # a grouping factor with an unused level, kept as a group with .drop = FALSE
+  boar_tt$group <- factor(
+    as.character(boar_tt$name),
+    levels = c("unused", levels(boar_tt$name))
+  )
+
+  expect_equal(
+    hr_tt_mcp(dplyr::group_by(boar_tt, group, .drop = FALSE)),
+    hr_tt_mcp(dplyr::group_by(boar_tt, group))
+  )
+  # a group with events, but none with a location, is still an error
+  first_track <- boar_tt$name == boar_tt$name[1]
+  sf::st_geometry(boar_tt)[first_track] <- sf::st_point()
+  expect_error(
+    hr_tt_mcp(dplyr::group_by(boar_tt, group, .drop = FALSE)),
+    paste0("groups with fewer locations: ", as.character(boar_tt$name[1]), "$")
+  )
+})
