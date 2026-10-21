@@ -16,6 +16,8 @@
   (2005), as `adehabitatHR` does; the previous values depended on the
   resolution of the grid.
 * `hr_tt_ud_iso()` keeps holes in isopleths instead of filling them in.
+* `hr_tt_kde()` returns isopleths (when `levels` is set) of class
+  `hr_tt_poly_tbl`, as `hr_tt_ud_iso()` does.
 * `track_duration()` and `track_summary_health()` return the tracks in the
   order of the metadata.
 * Functions work with geometry columns that are not called `geometry`.

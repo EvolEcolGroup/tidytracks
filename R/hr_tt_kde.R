@@ -49,7 +49,8 @@
 #'   possible to specify more than two levels, e.g.  `c(0.5, 0.95)` corresponds
 #'   to the 50% and 95% home ranges.
 #' @returns Either a `tibble` of class `hr_tt_ud_tbl`, or, if `levels` is not
-#' NULL, an `sf` tibble, with columns:
+#' NULL, an `sf` tibble of class `hr_tt_poly_tbl` (as returned by
+#' [hr_tt_ud_iso()]), with columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
 #'   grouping of `x`
@@ -228,6 +229,16 @@ hr_tt_kde <- function(
         ~ dplyr::group_vars(x),
         dplyr::all_of("group_id")
       )
+  }
+
+  # combining the isopleths of the groups with rbind() and renaming the
+  # group_id column do not keep the hr_tt_poly_tbl class set by
+  # hr_tt_ud_iso(), so restore it
+  if (!is.null(levels)) {
+    class(kde_results) <- c(
+      "hr_tt_poly_tbl",
+      setdiff(class(kde_results), "hr_tt_poly_tbl")
+    )
   }
 
   return(kde_results)

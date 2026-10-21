@@ -205,3 +205,18 @@ test_that("hr_tt_kde handles groups with a single location", {
     "fewer than two distinct locations"
   )
 })
+
+test_that("hr_tt_kde returns isopleths of class hr_tt_poly_tbl", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_iso <- hr_tt_kde(boar_tt, levels = c(0.5, 0.95), res = 50)
+  expect_s3_class(boar_iso, "hr_tt_poly_tbl")
+  expect_identical(
+    class(boar_iso),
+    class(hr_tt_ud_iso(hr_tt_kde(boar_tt, res = 50), levels = c(0.5, 0.95)))
+  )
+
+  # including for a single group
+  first_track <- event_track_id(boar_tt) == event_track_id(boar_tt)[1]
+  one_iso <- hr_tt_kde(boar_tt[first_track, ], levels = 0.5, res = 50)
+  expect_identical(class(one_iso), class(boar_iso))
+})
