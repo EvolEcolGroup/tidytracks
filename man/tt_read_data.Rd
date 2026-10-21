@@ -33,8 +33,11 @@ date and time columns). Time is assumed to be in UTC.}
 \item{format_date_time}{optional, a string containing the format of the
 date-time field(s): either the single date-time column, or the date and
 time columns separated by a space, for \code{as.POSIXct()} to parse the
-date-time. If \code{NULL} (default), a set of common formats will be tried. For
-help with specifying date-time formats, see \code{?strptime}.}
+date-time. If \code{NULL} (default), a set of common formats will be tried:
+a date in one of the formats \verb{\%Y-\%m-\%d}, \verb{\%Y/\%m/\%d}, \verb{\%d/\%m/\%Y},
+\verb{\%d-\%m-\%Y}, \verb{\%d/\%m/\%y} or \verb{\%d-\%m-\%y}, followed by a time in the format
+\verb{\%H:\%M:\%OS} or \verb{\%H:\%M}. For help with specifying date-time formats, see
+\code{?strptime}.}
 
 \item{crs}{a proj4 string or EPSG code defining the coordinate reference
 system of the data. Defaults to \code{4326} (WGS 84).}
