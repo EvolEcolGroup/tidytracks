@@ -99,28 +99,40 @@ tt_split_trips <- function(
     units::set_units(buffer_inbound, dist_units, mode = "standard")
   )
 
-  # Get coordinates and metadata
+  # Get coordinates, track ids and times of the events
   coords <- sf::st_coordinates(x)
-  ids <- event_track_id(x)
-  unique_ids <- unique(ids)
+  ids <- as.character(event_track_id(x))
+  times <- event_time(x)
+  # the centres are in the same order as the tracks in the metadata, which can
+  # differ from the order of the tracks in the events table
+  meta_ids <- show_meta(x)[[move2::mt_track_id_column(x)]]
 
   i <- NULL # avoid global variable warning (i is used by foreach)
-  # Loop through each track and split into trips
-  trip_list <- foreach::foreach(i = seq_len(nrow(show_meta(x)))) %do% {
-    split_one_track(
-      unique_ids[i],
-      coords[ids == unique_ids[i], 1],
-      coords[ids == unique_ids[i], 2],
+  # Loop through each track and split its events, in time order, into trips
+  trip_list <- foreach::foreach(i = seq_along(meta_ids)) %do% {
+    track_rows <- which(ids == as.character(meta_ids[i]))
+    track_rows <- track_rows[order(times[track_rows])]
+    trips <- split_one_track(
+      meta_ids[i],
+      coords[track_rows, 1],
+      coords[track_rows, 2],
       is_lonlat = is_longlat,
       centre_x = centre_col[i, 1],
       centre_y = centre_col[i, 2],
       buffer_inbound = buffer_in_uless,
       buffer_outbound = buffer_out_uless
     )
+    trips$track_rows <- track_rows
+    trips
   }
 
-  # Combine trip IDs into a single vector
-  x$trip_id <- unlist(purrr::map_depth(trip_list, 1, "trip_labels"))
+  # Assign the trip IDs back to the events they were computed for (events are
+  # not required to be grouped by track or ordered by time)
+  trip_ids <- character(nrow(x))
+  for (trips in trip_list) {
+    trip_ids[trips$track_rows] <- trips$trip_labels
+  }
+  x$trip_id <- trip_ids
   # now get the trip meta and update the track meta accordingly
   trip_meta <- purrr::map_depth(trip_list, 1, "trip_meta") %>%
     dplyr::bind_rows()
@@ -150,8 +162,8 @@ tt_split_trips <- function(
 #'
 #' @description an internal function that works on single tracks
 #' @param label the label for the track
-#' @param x the x coordinates
-#' @param y the y coordinates
+#' @param x the x coordinates, in time order
+#' @param y the y coordinates, in time order
 #' @param is_lonlat a logical indicating if the coordinates are in lonlat
 #' @param centre_x the x coordinate for the central place (e.g. colony, nest)
 #' @param centre_y the y coordinate for the central place (e.g. colony, nest)
