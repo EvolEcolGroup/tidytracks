@@ -9,10 +9,15 @@
 #'   track id is used as grouping variable.
 #' @param levels A vector of levels for the contour lines. The default is
 #' `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
-#' @returns A tibble of subclass `hr_tt_poly_tbl` of results, with columns:
-#' - `group_id`: the ids from the grouping of `x`
+#' @returns An `sf` tibble of subclass `hr_tt_poly_tbl` of results, with one
+#' row per group and level, and columns:
+#' - the grouping variable (as named in `x`; if `x` is grouped by
+#'   multiple variables, this column is named `group_id`): the ids from the
+#'   grouping of `x`
+#' - `method`: the method used to estimate the home range (`"mcp"`)
 #' - `level`: the level of the contour line
-#' - `geometry`: the geometry of the home range as a list of sf polygons
+#' - `area`: the area of the home range (as computed by `sf::st_area()`)
+#' - `geometry`: the geometry of the home range as sf polygons
 #' @export
 #' @examples
 #' example_mcp <- hr_tt_mcp(example_tt)

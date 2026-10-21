@@ -8,9 +8,11 @@
 #' @param levels numeric vector of isopleth levels to create. Default is
 #'   `c(0.50, 0.95)`, which will create 50% and 95% isopleths. Levels should be
 #'   between 0 and 1.
-#' @return If `x` is a tibble, a tibble of class `hr_tt_poly_tbl` with columns
-#'   `id`, `level`, and `geometry`. If `x` is a `hr_tt_ud` object, a
-#'   `sfc_GEOMETRYCOLLECTION` object.
+#' @return If `x` is a `SpatRaster`, an `sf` object with one row per level and
+#'   columns `level`, `area` (the area of the isopleth) and `geometry` (a
+#'   `MULTIPOLYGON` for the isopleth). If `x` is a tibble, an `sf` tibble of
+#'   class `hr_tt_poly_tbl` with the columns of `x` (except `ud`) and, for each
+#'   UD, one row per level with these three columns.
 #' @export
 #' @family home_range
 #' @examples

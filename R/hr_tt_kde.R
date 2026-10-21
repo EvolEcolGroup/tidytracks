@@ -15,10 +15,11 @@
 #' the full UD is not returned, which can be useful for some applications (e.g.
 #' to compute overlap between home ranges). If `levels` is set, the area of the
 #' isopleths is computed using `sf::st_area()`, which returns the area in the
-#' units of the projection of `x` (e.g. m^2 for a UTM projection). If `x` is
-#' unprojected, the area is computed in degrees^2, which is not a meaningful
-#' unit for area. In this case, it is recommended to project `x` to an
-#' appropriate projection before using this function.
+#' units of the projection of `x` (e.g. m^2 for a UTM projection), or in m^2 if
+#' `x` is unprojected (longitude/latitude). Note, however, that for unprojected
+#' data the kernel is computed in degrees, so the bandwidth and the shape of the
+#' UD are distorted (increasingly so away from the equator); it is recommended
+#' to project `x` to an appropriate projection before using this function.
 #'
 #' @param x A move2 object; if explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
@@ -47,22 +48,25 @@
 #'   distribution is returned; otherwise just the isopleths are returned. It is
 #'   possible to specify more than two levels, e.g.  `c(0.5, 0.95)` corresponds
 #'   to the 50% and 95% home ranges.
-#' @returns Either a `tibble`, or, if `levels` is not NULL, an `sf` tibble ,
-#' with columns:
+#' @returns Either a `tibble` of class `hr_tt_ud_tbl`, or, if `levels` is not
+#' NULL, an `sf` tibble, with columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
 #'   grouping of `x`
-#' - `level`: the level of the isopleth
+#' - `method`: the method used to estimate the home range (`"kde"`)
 #' - `h`: the bandwidth used for the KDE
 #' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
 #' - `res`: the resolution used for the KDE
 #' If `levels` is NULL:
 #' - `ud`: the full utilisation distribution is returned as a list-column of
 #'   `terra::SpatRaster` objects
-#' Else, if `levels` is not NULL, the following columns are added:
+#' Else, if `levels` is not NULL, there is one row per group and level, and
+#' the following columns are added:
+#' - `level`: the level of the isopleth
 #' - `area`: the area of the home range at this level (in the units
-#'   of the projection of `x`, e.g. m^2 for a UTM projection)
-#'  - `geometry`:  an `sfc` column containing the multipolygons representing
+#'   of the projection of `x`, e.g. m^2 for a UTM projection, or in m^2 for
+#'   unprojected data)
+#' - `geometry`:  an `sfc` column containing the multipolygons representing
 #'   the isopleth for the appropriate level
 #'
 #' @export
@@ -92,7 +96,7 @@ hr_tt_kde <- function(
   if (!is.null(levels) && (any(levels < 0 | levels > 1))) {
     stop("levels must be between 0 and 1")
   }
-  # reorder levels from small to big
+  # reorder levels from big to small
   levels <- sort(levels, decreasing = TRUE)
 
   # get the group indices

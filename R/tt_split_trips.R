@@ -12,12 +12,15 @@
 #'   column must be of class `sfc_POINT` and should have a valid coordinate
 #'   reference system (CRS) specified. The function `sf_point_col()` can be used
 #'   to create this column.
-#' @param buffer_outbound the distance from the centre to define outbound trips,
-#'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
-#'   "km")`.
-#' @param buffer_inbound the distance from the centre to define inbound trips,
-#'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
-#'   "km")`.
+#' @param buffer_outbound the distance from the centre that delimits trips: a
+#'   trip starts when the animal moves further than this distance from the
+#'   centre, and ends when it comes back within it. Specified as a unit object,
+#'   e.g `as_units(10000, "m")` or `as_units(10, "km")`.
+#' @param buffer_inbound the distance from the centre within which the last
+#'   location of a track has to be for the last trip of the track to be
+#'   complete (rather than incomplete, i.e. the data end before the animal
+#'   returned to the centre). Specified as a unit object, e.g
+#'   `as_units(10000, "m")` or `as_units(10, "km")`.
 #' @param complete boolean, if TRUE, only complete trips (i.e. the ones that
 #'   started in the outbound buffer and ended within the inbound buffer) are
 #'   kept. If FALSE, all trips are kept, and events at the colony (i.e.

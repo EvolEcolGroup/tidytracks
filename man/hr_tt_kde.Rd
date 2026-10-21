@@ -43,22 +43,25 @@ possible to specify more than two levels, e.g.  \code{c(0.5, 0.95)} corresponds
 to the 50\% and 95\% home ranges.}
 }
 \value{
-Either a \code{tibble}, or, if \code{levels} is not NULL, an \code{sf} tibble ,
-with columns:
+Either a \code{tibble} of class \code{hr_tt_ud_tbl}, or, if \code{levels} is not
+NULL, an \code{sf} tibble, with columns:
 \itemize{
 \item the grouping variable (as named in \code{x}; if \code{x} is grouped by
 multiple variables, this column is named \code{group_id}): the ids from the
 grouping of \code{x}
-\item \code{level}: the level of the isopleth
+\item \code{method}: the method used to estimate the home range (\code{"kde"})
 \item \code{h}: the bandwidth used for the KDE
 \item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}: the bounding box used for the KDE
 \item \code{res}: the resolution used for the KDE
 If \code{levels} is NULL:
 \item \code{ud}: the full utilisation distribution is returned as a list-column of
 \code{terra::SpatRaster} objects
-Else, if \code{levels} is not NULL, the following columns are added:
+Else, if \code{levels} is not NULL, there is one row per group and level, and
+the following columns are added:
+\item \code{level}: the level of the isopleth
 \item \code{area}: the area of the home range at this level (in the units
-of the projection of \code{x}, e.g. m^2 for a UTM projection)
+of the projection of \code{x}, e.g. m^2 for a UTM projection, or in m^2 for
+unprojected data)
 \item \code{geometry}:  an \code{sfc} column containing the multipolygons representing
 the isopleth for the appropriate level
 }
@@ -80,10 +83,11 @@ area. This option is useful to reduce memory use, but has the drawback that
 the full UD is not returned, which can be useful for some applications (e.g.
 to compute overlap between home ranges). If \code{levels} is set, the area of the
 isopleths is computed using \code{sf::st_area()}, which returns the area in the
-units of the projection of \code{x} (e.g. m^2 for a UTM projection). If \code{x} is
-unprojected, the area is computed in degrees^2, which is not a meaningful
-unit for area. In this case, it is recommended to project \code{x} to an
-appropriate projection before using this function.
+units of the projection of \code{x} (e.g. m^2 for a UTM projection), or in m^2 if
+\code{x} is unprojected (longitude/latitude). Note, however, that for unprojected
+data the kernel is computed in degrees, so the bandwidth and the shape of the
+UD are distorted (increasingly so away from the equator); it is recommended
+to project \code{x} to an appropriate projection before using this function.
 }
 \examples{
 example_kde <- hr_tt_kde(example_tt)

@@ -101,9 +101,6 @@ hr_tt_ud_overlap.SpatRaster <- function(
 
 #' @export
 #' @rdname hr_tt_ud_overlap
-# Note that we have a generic method for a tibble as the hr_tt_ud_tbl
-# class is lost on group_map operations
-
 hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
   x,
   ...,
