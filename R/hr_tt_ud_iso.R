@@ -119,10 +119,20 @@ hr_tt_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
     function(cont_lines, lvl) {
       tryCatch(
         {
-          geom <- cont_lines %>%
+          rings <- cont_lines %>%
             dplyr::select(dplyr::any_of("geometry")) %>%
             sf::st_cast("LINESTRING") %>%
             sf::st_cast("POLYGON") %>%
+            sf::st_geometry()
+          # Contour lines of a surface never cross, so a location lies within
+          # the isopleth if it is inside an odd number of rings: a ring nested
+          # within another ring is a hole (e.g. a low-density area surrounded
+          # by high density), which a union of the rings would fill in.
+          geom <- rings[1]
+          for (i in seq_along(rings)[-1]) {
+            geom <- sf::st_sym_difference(geom, rings[i])
+          }
+          geom <- geom %>%
             sf::st_union() %>%
             sf::st_cast("MULTIPOLYGON")
 
