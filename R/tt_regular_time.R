@@ -414,10 +414,11 @@ tt_regular_time <- function(
     )
   }
 
-  # keep the name of the geometry column of the input
-  geom_args <- list(base_df)
-  geom_args[[geom_col]] <- new_geom
-  do.call(sf::st_sf, geom_args)
+  # keep the name of the geometry column of the input (added as a column and
+  # selected by name, as it could be the name of an argument of st_sf(), e.g.
+  # "crs")
+  base_df[[geom_col]] <- new_geom
+  sf::st_sf(base_df, sf_column_name = geom_col)
 }
 
 

@@ -1,7 +1,7 @@
 # move2 objects can have a geometry column with any name (e.g. "geom" when the
 # data were read from a GeoPackage); create a copy of `x` (example_tt) with
-# the geometry column named "geom"
-make_geom_tt <- function(x) {
+# the geometry column named `name`
+make_geom_tt <- function(x, name = "geom") {
   coords <- sf::st_coordinates(x)
   events <- data.frame(
     track_id = x$track_id,
@@ -14,7 +14,10 @@ make_geom_tt <- function(x) {
     coords = c("x", "y"),
     crs = sf::st_crs(x)
   )
-  events <- dplyr::rename(events, geom = "geometry")
+  events <- dplyr::rename(
+    events,
+    dplyr::all_of(stats::setNames("geometry", name))
+  )
   geom_tt <- move2::mt_as_move2(
     events,
     time_column = "date_time",
@@ -93,4 +96,17 @@ test_that("tt_regular_time keeps the name of the geometry column", {
       tt_regular_time(example_tt, interval = as_units(10, "min"))
     )
   )
+  # the name can also be that of an argument of sf::st_sf()
+  for (geom_name in c("crs", "precision", "sf_column_name")) {
+    named_tt <- make_geom_tt(example_tt, name = geom_name)
+    named_resampled <- tt_regular_time(
+      named_tt,
+      interval = as_units(10, "min")
+    )
+    expect_equal(attr(named_resampled, "sf_column"), geom_name)
+    expect_equal(
+      sf::st_coordinates(named_resampled),
+      sf::st_coordinates(resampled)
+    )
+  }
 })
