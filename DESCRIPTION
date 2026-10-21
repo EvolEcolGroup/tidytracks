@@ -7,7 +7,14 @@ Authors@R: c(
     person("Holly", "Pickett", role = c("aut")),
     person("Andrea", "Manica", , "am315@cam.ac.uk", role = c("aut", "cre"))
     )
-Description: Tidy functions to analyse tracking data, based on the move2 objects.
+Description: A grammar for animal tracking data analysis based on
+    'move2' objects. The package provides a consistent and expressive set
+    of tools for manipulating tracks and associated metadata, allowing
+    common movement-ecology workflows to be combined into clear and
+    reproducible analyses. Functionality includes location filtering,
+    trip segmentation, summary statistics, home range estimation and
+    visualisation. Built on the 'sf' spatial framework, it integrates
+    naturally with the tidyverse ecosystem.
 License: GPL (>= 3)
 Encoding: UTF-8
 URL: https://github.com/EvolEcolGroup/tidytracks,

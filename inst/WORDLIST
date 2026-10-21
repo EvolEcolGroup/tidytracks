@@ -1,12 +1,14 @@
 Autoplot
 Bhattacharyya's
 CMD
+DMY
 EPSG
 Fieberg
 Kochanny
 Leucocarbo
 MCP
 MCPs
+MDY
 PackedSpatRaster
 RMS
 Reprojection
@@ -21,7 +23,6 @@ basemap
 bransfieldensis
 codecov
 csv
-dist
 etc
 framerate
 gganimate
@@ -37,7 +38,6 @@ multipolygons
 nd
 polyline
 proj
-res
 spatiotemporal
 tibble
 tibbles
@@ -45,7 +45,3 @@ tidyselect
 tidyverse
 ud
 unprojected
-xmax
-xmin
-ymax
-ymin
