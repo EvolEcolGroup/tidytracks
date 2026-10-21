@@ -4,13 +4,16 @@
 #' kernel.
 #' @param xy A matrix of coordinates
 #' @param group_index A vector of group indices
-#' @returns A vector of bandwidths, one for each group
+#' @returns A vector of bandwidths, one for each group, ordered by group index
+#'   (so that the bandwidth for group `i` is element `i`)
 #' @keywords internal
 #' @noRd
 
 h_ref_indiv <- function(xy, group_index) {
-  # compute the bandwidth for each group (i.e. subset xy by group_index)
-  h_ref <- lapply(unique(group_index), function(i) {
+  # compute the bandwidth for each group (i.e. subset xy by group_index); the
+  # groups are processed in index order, not in order of first appearance, as
+  # callers look up the bandwidth of group `i` as element `i`
+  h_ref <- lapply(sort(unique(group_index)), function(i) {
     # get the coordinates for this group
     xy_sub <- xy[group_index == i, ]
     # compute the bandwidth for this group

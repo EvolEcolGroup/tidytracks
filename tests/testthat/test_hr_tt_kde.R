@@ -110,3 +110,42 @@ test_that("hr_tt_kde validates a collection of group-specific grids", {
     "one value per group"
   )
 })
+
+test_that("hr_tt_kde matches individual bandwidths to the right group", {
+  # track "b" is stored before track "a", so the order in which the groups
+  # appear in the data differs from the order of the group keys
+  set.seed(1)
+  coords <- data.frame(
+    id = rep(c("b", "a"), each = 50),
+    x = stats::rnorm(100, 0, rep(c(10000, 100), each = 50)),
+    y = stats::rnorm(100, 0, rep(c(10000, 100), each = 50))
+  )
+  coords$time <- as.POSIXct("2024-01-01", tz = "UTC") +
+    seq_len(nrow(coords)) * 60
+  tracks <- move2::mt_as_move2(
+    sf::st_as_sf(coords, coords = c("x", "y"), crs = 32630),
+    time_column = "time",
+    track_id_column = "id"
+  )
+  expected_h_ref <- function(id) {
+    xy <- coords[coords$id == id, ]
+    sqrt(0.5 * (stats::var(xy$x) + stats::var(xy$y))) * nrow(xy)^(-1 / 6)
+  }
+
+  kde <- hr_tt_kde(tracks, h = "h_ref_indiv")
+  expect_equal(kde$h[kde$id == "a"], expected_h_ref("a"))
+  expect_equal(kde$h[kde$id == "b"], expected_h_ref("b"))
+
+  # the internal helper returns bandwidths in group index order
+  xy <- sf::st_coordinates(tracks)
+  group_index <- ifelse(coords$id == "a", 1L, 2L)
+  expect_equal(
+    h_ref_indiv(xy, group_index),
+    c(expected_h_ref("a"), expected_h_ref("b"))
+  )
+
+  # a vector of bandwidths is matched to the groups in group key order
+  kde_h <- hr_tt_kde(tracks, h = c(10, 20))
+  expect_equal(kde_h$h[kde_h$id == "a"], 10)
+  expect_equal(kde_h$h[kde_h$id == "b"], 20)
+})

@@ -21,10 +21,10 @@
 #' @param x A move2 object; if explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
 #'   track id is used as grouping variable.
-#' @param h The bandwidth for the kernel density estimation. Either a number, or
-#'   "h_ref_indiv" for using the reference bandwidth for each individual, or
-#'   "h_ref_mean" for using the mean bandwidth for all individuals (the
-#'   default).
+#' @param h The bandwidth for the kernel density estimation. Either a number,
+#'   a vector with one value per group, or "h_ref_indiv" for using the
+#'   reference bandwidth for each individual, or "h_ref_mean" for using the mean
+#'   bandwidth for all individuals (the default).
 #' @param bbox A named vector of four elements (`xmin`, `ymin`, `xmax`, `ymax`)
 #'   defining a grid shared by all groups, or a list of one such vector per
 #'   group. If `NULL`, a shared grid is created from the extent of all points in
@@ -33,6 +33,10 @@
 #'   Supply one value for a shared resolution or one value per group when
 #'   `bbox` contains one grid per group. If `NULL`, each grid is assigned a
 #'   resolution that produces approximately 1000 cells.
+#'
+#'   Per-group values of `h`, `bbox` and `res` are matched to the groups in the
+#'   order of [dplyr::group_keys()] (i.e. sorted by the grouping variables),
+#'   not in the order in which the groups appear in `x`.
 #' @param levels A vector of levels for the isopleths (i.e. contour lines), as
 #'   numbers between 0 and 1. If set to NULL (the default), the full utilisation
 #'   distribution is returned; otherwise just the isopleths are returned. It is
