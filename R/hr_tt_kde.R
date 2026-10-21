@@ -23,7 +23,9 @@
 #'
 #' @param x A move2 object; if explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
-#'   track id is used as grouping variable.
+#'   track id is used as grouping variable. Every group must have events, so
+#'   groupings with empty groups (e.g. from grouping by a factor with unused
+#'   levels with `.drop = FALSE`) give an error.
 #' @param h The bandwidth for the kernel density estimation. Either a number,
 #'   a vector with one value per group, or "h_ref_indiv" for using the
 #'   reference bandwidth for each individual, or "h_ref_mean" for using the mean
@@ -92,6 +94,9 @@ hr_tt_kde <- function(
   if (!inherits(x, "grouped_df")) {
     x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
+  # per-group values (h, bbox and res) are matched to the groups by their
+  # position in the group keys, which must therefore all be estimated
+  check_no_empty_groups(x) # nolint: object_usage_linter.
 
   # Check if levels are valid
   if (!is.null(levels) && (any(levels < 0 | levels > 1))) {

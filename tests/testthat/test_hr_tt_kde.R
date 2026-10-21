@@ -220,3 +220,43 @@ test_that("hr_tt_kde returns isopleths of class hr_tt_poly_tbl", {
   one_iso <- hr_tt_kde(boar_tt[first_track, ], levels = 0.5, res = 50)
   expect_identical(class(one_iso), class(boar_iso))
 })
+
+test_that("hr_tt_kde rejects groups without events", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  # a grouping factor with an unused level, kept as a group with .drop = FALSE
+  boar_tt$group <- factor(
+    as.character(boar_tt$name),
+    levels = c("unused", levels(boar_tt$name))
+  )
+  boar_grouped <- dplyr::group_by(boar_tt, group, .drop = FALSE)
+  expect_error(
+    hr_tt_kde(boar_grouped, res = 50),
+    "groups without events \\(unused\\).*group_by\\(x, group, .drop = TRUE\\)"
+  )
+  # the suggested regrouping removes them
+  expect_equal(
+    hr_tt_kde(
+      dplyr::group_by(boar_grouped, group, .drop = TRUE),
+      levels = 0.5,
+      res = 50
+    ),
+    hr_tt_kde(dplyr::group_by(boar_tt, group), levels = 0.5, res = 50)
+  )
+
+  # groups emptied by filter(.preserve = TRUE)
+  boar_filtered <- boar_tt |>
+    dplyr::group_by(name) |>
+    dplyr::filter(name != "Brock", .preserve = TRUE)
+  expect_error(
+    hr_tt_kde(boar_filtered, res = 50),
+    "groups without events \\(Brock\\).*group_by\\(x, name, .drop = TRUE\\)"
+  )
+
+  # the names of grouping variables that are not syntactic are quoted
+  boar_tt$`life stage` <- boar_tt$group
+  expect_error(
+    hr_tt_kde(dplyr::group_by(boar_tt, `life stage`, .drop = FALSE)),
+    "group_by(x, `life stage`, .drop = TRUE)",
+    fixed = TRUE
+  )
+})

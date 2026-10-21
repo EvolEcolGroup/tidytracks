@@ -12,7 +12,9 @@ hr_kde(x, h = "h_ref_mean", bbox = NULL, res = NULL, levels = NULL)
 \arguments{
 \item{x}{A move2 object; if explicitly grouped, the home range is estimated
 for each group, combining all tracks within each group. Otherwise, the
-track id is used as grouping variable.}
+track id is used as grouping variable. Every group must have events, so
+groupings with empty groups (e.g. from grouping by a factor with unused
+levels with \code{.drop = FALSE}) give an error.}
 
 \item{h}{The bandwidth for the kernel density estimation. Either a number,
 a vector with one value per group, or "h_ref_indiv" for using the
