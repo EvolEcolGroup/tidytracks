@@ -36,9 +36,15 @@
 #'   date-time field(s): either the single date-time column, or the date and
 #'   time columns separated by a space, for `as.POSIXct()` to parse the
 #'   date-time. If `NULL` (default), a set of common formats will be tried:
-#'   a date in one of the formats `%Y-%m-%d`, `%Y/%m/%d`, `%d/%m/%Y`,
-#'   `%d-%m-%Y`, `%d/%m/%y` or `%d-%m-%y`, followed by a time in the format
-#'   `%H:%M:%OS` or `%H:%M`. For help with specifying date-time formats, see
+#'   a date in ISO format (`%Y-%m-%d`, `%Y/%m/%d`), DMY format (`%d/%m/%Y`, 
+#'   `%d-%m-%Y`, `%d/%m/%y`, `%d-%m-%y`), or MDY format (`%m/%d/%Y`, 
+#'   `%m-%d-%Y`, `%m/%d/%y`, `%m-%d-%y`), followed by a time in `%H:%M:%OS` or 
+#'   `%H:%M`. DMY formats are tried before MDY formats, so a date that is
+#'   ambiguous between the two (e.g. `"03/04/2024"`, where both day and month
+#'   are valid as either) will be silently parsed as DMY (4 March 2024), not
+#'   MDY (3 April 2024). If your dates are in MDY format and could be
+#'   ambiguous, specify `format_date_time` explicitly rather than relying on
+#'   auto-detection. For help with specifying date-time formats, see
 #'   `?strptime`.
 #' @param crs a proj4 string or EPSG code defining the coordinate reference
 #'   system of the data. Defaults to `4326` (WGS 84).
@@ -341,33 +347,63 @@ tt_read_data <- function(
 # them.
 tt_date_time_formats <- data.frame(
   format = c(
+    # --- ISO Formats (Unambiguous) ---
     "%Y-%m-%d %H:%M:%OS", # 2024-01-15 13:45:30.123
     "%Y/%m/%d %H:%M:%OS", # 2024/01/15 13:45:30.123
-    "%Y-%m-%d %H:%M", # 2024-01-15 13:45
-    "%Y/%m/%d %H:%M", # 2024/01/15 13:45
+    "%Y-%m-%d %H:%M",    # 2024-01-15 13:45
+    "%Y/%m/%d %H:%M",    # 2024/01/15 13:45
+    
+    # --- 4-Digit Year: DMY (International) ---
     "%d/%m/%Y %H:%M:%OS", # 15/01/2024 13:45:30.123
-    "%d/%m/%y %H:%M:%OS", # 15/01/24 13:45:30.123
     "%d-%m-%Y %H:%M:%OS", # 15-01-2024 13:45:30.123
+    "%d/%m/%Y %H:%M",    # 15/01/2024 13:45
+    "%d-%m-%Y %H:%M",    # 15-01-2024 13:45
+    
+    # --- 4-Digit Year: MDY (American) ---
+    "%m/%d/%Y %H:%M:%OS", # 01/15/2024 13:45:30.123
+    "%m-%d-%Y %H:%M:%OS", # 01-15-2024 13:45:30.123
+    "%m/%d/%Y %H:%M",    # 01/15/2024 13:45
+    "%m-%d-%Y %H:%M",    # 01-15-2024 13:45
+    
+    # --- 2-Digit Year: DMY (International) ---
+    "%d/%m/%y %H:%M:%OS", # 15/01/24 13:45:30.123
     "%d-%m-%y %H:%M:%OS", # 15-01-24 13:45:30.123
-    "%d/%m/%Y %H:%M", # 15/01/2024 13:45
-    "%d-%m-%Y %H:%M", # 15-01-2024 13:45
-    "%d-%m-%y %H:%M", # 15-01-24 13:45
-    "%d/%m/%y %H:%M" # 15/01/24 13:45
+    "%d/%m/%y %H:%M",    # 15/01/24 13:45
+    "%d-%m-%y %H:%M",    # 15-01-24 13:45
+    
+    # --- 2-Digit Year: MDY (American) ---
+    "%m/%d/%y %H:%M:%OS", # 01/15/24 13:45:30.123
+    "%m-%d-%y %H:%M:%OS", # 01-15-24 13:45:30.123
+    "%m/%d/%y %H:%M",    # 01/15/24 13:45
+    "%m-%d-%y %H:%M"     # 01-15-24 13:45
   ),
   date_regex = paste0(
     c(
+      # ISO
       "^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}",
       "^[0-9]{4}/[0-9]{1,2}/[0-9]{1,2}",
       "^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}",
       "^[0-9]{4}/[0-9]{1,2}/[0-9]{1,2}",
+      # 4-Digit DMY
       "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
+      # 4-Digit MDY
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
+      # 2-Digit DMY
       "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2}",
-      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
       "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{2}",
-      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
-      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2}",
       "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{2}",
-      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2}"
+      # 2-Digit MDY
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{2}",
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{2}"
     ),
     "[[:space:]]"
   )
