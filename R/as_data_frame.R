@@ -29,15 +29,15 @@ as.data.frame.move2 <- function(
     x <- x |> move2::mt_as_event_attribute(dplyr::any_of(names(show_meta(x))))
   }
 
-  if (!drop_geometry) {
-    return(NextMethod())
-  } else {
-    # drop the geometry column and convert to a data frame
-    cbind(
-      x |>
-        NextMethod() |> # Convert the move2 object to a data frame
-        dplyr::select(-dplyr::all_of(attr(x, "sf_column"))),
+  # Convert the move2 object to a data frame (NextMethod() passes on the
+  # current value of x, i.e. including the metadata if requested)
+  df <- NextMethod()
+  if (drop_geometry) {
+    # drop the geometry column, and add the coordinates as individual columns
+    df <- cbind(
+      dplyr::select(df, -dplyr::all_of(attr(x, "sf_column"))),
       sf::st_coordinates(x)
-    ) # add the coordinates as individual columns
+    )
   }
+  df
 }
