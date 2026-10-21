@@ -79,6 +79,9 @@ tt_split_trips <- function(
     if (is.na(sf::st_crs(centre_col))) {
       stop("centre_col must have a crs specified")
     }
+    if (any(sf::st_is_empty(centre_col), na.rm = TRUE)) {
+      stop("centre_col must not contain empty geometries")
+    }
     # project the centre_col to the same crs as x
     if (!(sf::st_crs(centre_col) == sf::st_crs(x))) {
       centre_col <- sf::st_transform(centre_col, sf::st_crs(x))

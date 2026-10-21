@@ -173,6 +173,22 @@ test_that("tt_split_trips accepts one centre per track", {
     "centre_col must be a `sfc_POINT` column in the metadata table"
   )
 
+  show_meta(test_mt)$centre_sf <- sf::st_sfc(
+    sf::st_point(),
+    sf::st_point(c(0, 0)),
+    crs = 4326
+  )
+  expect_error(
+    tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_outbound = as_units(100, "km"),
+      buffer_inbound = as_units(100, "km"),
+      complete = FALSE
+    ),
+    "centre_col must not contain empty geometries"
+  )
+
   # Remove the CRS from center_sf and check that the expected error is raised.
   show_meta(test_mt)$centre_sf <- sf_point_col(x = c(0, 0), y = c(0, 0))
   expect_error(
