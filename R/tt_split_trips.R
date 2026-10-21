@@ -2,6 +2,9 @@
 #'
 #' @description This function splits tracks into trips for central place
 #'   foragers by identifying the trips based on a distance from the colony/nest.
+#'   Events with an empty geometry (i.e. no location) are assigned to the same
+#'   trip as the preceding event with a location (or the following one, at the
+#'   start of a track).
 #'
 #' @param x A move2 object
 #' @param centre_col character string, the name of the column in the metadata
@@ -195,6 +198,16 @@ split_one_track <- function(
   )
   # define distances outside the outbound buffer
   out_events <- dist_to_centre > buffer_outbound
+  # events without a location (empty geometries) take the state of the
+  # preceding located event (or of the following one, at the start of the
+  # track); a track without any location is considered to be at the centre
+  located <- which(!is.na(out_events))
+  if (length(located) == 0) {
+    out_events[] <- FALSE
+  } else {
+    nearest <- pmax(findInterval(seq_along(out_events), located), 1)
+    out_events <- out_events[located[nearest]]
+  }
   # label trips
   runs <- rle(out_events)
   # now we can label the trips
@@ -214,7 +227,8 @@ split_one_track <- function(
     )
   )
   # check if last trip is incomplete (data ends outside colony)
-  if (dist_to_centre[length(dist_to_centre)] > buffer_inbound) {
+  last_dist <- utils::tail(dist_to_centre[!is.na(dist_to_centre)], 1)
+  if (length(last_dist) == 1 && last_dist > buffer_inbound) {
     trip_meta$trip_type[nrow(trip_meta)] <- "incomplete"
   }
   # check if first trip is incomplete (data starts outside colony)

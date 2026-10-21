@@ -27,7 +27,8 @@ A tibble of subclass \code{hr_tt_poly_tbl} of results, with columns:
 }
 \description{
 This function estimates the home range of an animal using the minimum convex
-polygon (MCP) method.
+polygon (MCP) method. Events with an empty geometry (i.e. no location) are
+ignored.
 }
 \examples{
 example_mcp <- hr_tt_mcp(example_tt)

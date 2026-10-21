@@ -149,3 +149,26 @@ test_that("hr_tt_kde matches individual bandwidths to the right group", {
   expect_equal(kde_h$h[kde_h$id == "a"], 10)
   expect_equal(kde_h$h[kde_h$id == "b"], 20)
 })
+
+test_that("hr_tt_kde ignores events without a location", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_tt_empty <- boar_tt
+  sf::st_geometry(boar_tt_empty)[5] <- sf::st_point()
+
+  kde_empty <- hr_tt_kde(boar_tt_empty, res = 50)
+  kde_removed <- hr_tt_kde(boar_tt[-5, ], res = 50)
+  expect_equal(kde_empty$h, kde_removed$h)
+  expect_equal(
+    lapply(kde_empty$ud, terra::values),
+    lapply(kde_removed$ud, terra::values)
+  )
+
+  # a group without any location cannot be estimated
+  boar_tt_empty <- boar_tt
+  first_track <- event_track_id(boar_tt) == event_track_id(boar_tt)[1]
+  sf::st_geometry(boar_tt_empty)[first_track] <- sf::st_point()
+  expect_error(
+    hr_tt_kde(boar_tt_empty, res = 50),
+    "each group must contain at least one event with a location"
+  )
+})

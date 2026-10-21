@@ -69,6 +69,8 @@ is used as grouping variable, and the home range is estimated for each track
 separately.
 }
 \details{
+Events with an empty geometry (i.e. no location) are ignored.
+
 By default, the full UD is returned. If \code{levels} is set, the
 isopleths for the specified levels are returned instead, along with their
 area. This option is useful to reduce memory use, but has the drawback that

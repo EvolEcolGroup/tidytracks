@@ -38,6 +38,9 @@ a move2 object with the trips split.
 \description{
 This function splits tracks into trips for central place
 foragers by identifying the trips based on a distance from the colony/nest.
+Events with an empty geometry (i.e. no location) are assigned to the same
+trip as the preceding event with a location (or the following one, at the
+start of a track).
 }
 \examples{
 # First, add a sf point column to metadata giving nest location

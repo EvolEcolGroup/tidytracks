@@ -53,3 +53,11 @@ test_that("hr_tt_mcp rejects levels outside the unit interval", {
     "levels must be between 0 and 1"
   )
 })
+
+test_that("hr_tt_mcp ignores events without a location", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_tt_empty <- boar_tt
+  sf::st_geometry(boar_tt_empty)[5] <- sf::st_point()
+
+  expect_equal(hr_tt_mcp(boar_tt_empty), hr_tt_mcp(boar_tt[-5, ]))
+})

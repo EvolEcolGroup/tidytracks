@@ -335,3 +335,35 @@ test_that("tt_split_trips labels events that are not grouped or sorted", {
     paste0("a", trip_pattern[c(1, 3, 2, 5, 4)])
   )
 })
+
+test_that("tt_split_trips handles events without a location", {
+  coords_df <- data.frame(
+    bird_id = "a",
+    longitude = c(0.5, 0, 0.5, 1, 0.5, 0, 0.5),
+    latitude = 0,
+    date_time = as.POSIXct("2020-01-01", tz = "UTC") + (0:6) * 3600
+  )
+  test_mt <- move2::mt_as_move2(
+    sf::st_as_sf(coords_df, coords = c("longitude", "latitude"), crs = 4326),
+    time_column = "date_time",
+    track_id_column = "bird_id"
+  )
+  show_meta(test_mt)$centre_sf <- sf_point_col(x = 0, y = 0, crs = 4326)
+  # remove the first location (before the bird is first seen at the nest),
+  # one during the trip and the last one (after the bird is back at the nest)
+  sf::st_geometry(test_mt)[c(1, 4, 7)] <- sf::st_point()
+
+  result <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(10, "km"),
+    complete = FALSE
+  )
+  expect_identical(
+    result$trip_id,
+    paste0("a", c(rep("_trip_na", 2), rep("_trip_1", 3), rep("_trip_na", 2)))
+  )
+  meta <- show_meta(result)
+  expect_equal(meta$trip_type[meta$trip_id == "a_trip_1"], "complete")
+})

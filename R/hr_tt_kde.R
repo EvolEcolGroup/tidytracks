@@ -7,7 +7,9 @@
 #' is used as grouping variable, and the home range is estimated for each track
 #' separately.
 #'
-#' @details By default, the full UD is returned. If `levels` is set, the
+#' @details Events with an empty geometry (i.e. no location) are ignored.
+#'
+#' By default, the full UD is returned. If `levels` is set, the
 #' isopleths for the specified levels are returned instead, along with their
 #' area. This option is useful to reduce memory use, but has the drawback that
 #' the full UD is not returned, which can be useful for some applications (e.g.
@@ -97,6 +99,13 @@ hr_tt_kde <- function(
     dplyr::pull(1)
   # extract coordinates
   xy <- sf::st_coordinates(x)
+  # events with an empty geometry have no location to contribute to the KDE
+  located <- stats::complete.cases(xy)
+  xy <- xy[located, , drop = FALSE]
+  group_index <- group_index[located]
+  if (!all(group_unique %in% group_index)) {
+    stop("each group must contain at least one event with a location")
+  }
   # check h
   if (!is.numeric(h)) {
     h <- match.arg(

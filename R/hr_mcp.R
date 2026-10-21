@@ -1,7 +1,8 @@
 #' Quantify the home range using minimum convex polygon (MCP)
 #'
 #' This function estimates the home range of an animal using the minimum convex
-#' polygon (MCP) method.
+#' polygon (MCP) method. Events with an empty geometry (i.e. no location) are
+#' ignored.
 #'
 #' @param x A move2 object; if explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
@@ -39,6 +40,13 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
     dplyr::pull(1)
   # Compute the minimum convex polygon for each group and level
   xy <- sf::st_coordinates(x)
+  # events with an empty geometry have no location to contribute to the MCP
+  located <- stats::complete.cases(xy)
+  xy <- xy[located, , drop = FALSE]
+  group_index <- group_index[located]
+  if (!all(group_unique %in% group_index)) {
+    stop("each group must contain at least one event with a location")
+  }
 
   group_id <- NULL # hack to avoid it being flagged as global in checks
   mcp_results <- foreach::foreach(
