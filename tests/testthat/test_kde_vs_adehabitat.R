@@ -62,3 +62,46 @@ test_that("hr_tt_kde is equivalent to adehabitatHR", {
       1e-3
   )
 })
+
+test_that("hr_tt_ud_overlap UDOI is equivalent to adehabitatHR", {
+  suppressPackageStartupMessages({
+    library(sp)
+    suppressMessages(library(adehabitatHR))
+  })
+  data(puechabonsp)
+  relocs <- puechabonsp$relocs
+
+  # a grid that contains the whole UD of every animal
+  res <- 100
+  bbox <- c(xmin = 696000, ymin = 3155000, xmax = 704000, ymax = 3164500)
+  grid <- expand.grid(
+    x = seq(bbox[["xmin"]] + res / 2, bbox[["xmax"]] - res / 2, by = res),
+    y = seq(bbox[["ymin"]] + res / 2, bbox[["ymax"]] - res / 2, by = res)
+  )
+  sp::coordinates(grid) <- ~ x + y
+  sp::gridded(grid) <- TRUE
+  ade_ud <- kernelUD(relocs[, 1], h = 200, grid = grid)
+  ade_udoi <- kerneloverlaphr(
+    ade_ud,
+    method = "UDOI",
+    percent = 95,
+    conditional = FALSE
+  )
+
+  coords <- sp::coordinates(relocs)
+  relocs_df <- data.frame(
+    name = as.character(relocs$Name),
+    x = coords[, 1],
+    y = coords[, 2],
+    time = as.POSIXct("2024-01-01", tz = "UTC") + seq_len(nrow(coords)) * 60
+  )
+  relocs_tt <- move2::mt_as_move2(
+    sf::st_as_sf(relocs_df, coords = c("x", "y"), crs = 32631),
+    time_column = "time",
+    track_id_column = "name"
+  )
+  tt_kde <- hr_tt_kde(relocs_tt, h = 200, res = res, bbox = bbox)
+  tt_udoi <- hr_tt_ud_overlap(tt_kde, method = "udoi")
+
+  expect_equal(tt_udoi, unclass(ade_udoi), tolerance = 1e-2)
+})

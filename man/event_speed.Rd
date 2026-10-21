@@ -9,8 +9,9 @@ event_speed(x, units = as_units("m/min"))
 \arguments{
 \item{x}{A move2 object}
 
-\item{units}{Optional units to use for speed. The default is \code{"m/min"}.
-Other speed units supported by the \code{units} package can also be supplied.}
+\item{units}{The units to use for speed, as a \code{units} object. The default is
+metres per minute (\code{as_units("m/min")}); other speed units supported by
+the \code{units} package can also be supplied (e.g. \code{as_units("m/s")}).}
 }
 \value{
 a vector of speeds of the same length as the number of events in

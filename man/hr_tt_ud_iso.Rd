@@ -25,9 +25,11 @@ hr_ud_iso(x, levels = c(0.5, 0.95))
 between 0 and 1.}
 }
 \value{
-If \code{x} is a tibble, a tibble of class \code{hr_tt_poly_tbl} with columns
-\code{id}, \code{level}, and \code{geometry}. If \code{x} is a \code{hr_tt_ud} object, a
-\code{sfc_GEOMETRYCOLLECTION} object.
+If \code{x} is a \code{SpatRaster}, an \code{sf} object with one row per level and
+columns \code{level}, \code{area} (the area of the isopleth) and \code{geometry} (a
+\code{MULTIPOLYGON} for the isopleth). If \code{x} is a tibble, an \code{sf} tibble of
+class \code{hr_tt_poly_tbl} with the columns of \code{x} (except \code{ud}) and, for each
+UD, one row per level with these three columns.
 }
 \description{
 This method can be applied to a whole tibble of UDs, or to an individual UD.

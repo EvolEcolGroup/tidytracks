@@ -33,8 +33,17 @@ date and time columns). Time is assumed to be in UTC.}
 \item{format_date_time}{optional, a string containing the format of the
 date-time field(s): either the single date-time column, or the date and
 time columns separated by a space, for \code{as.POSIXct()} to parse the
-date-time. If \code{NULL} (default), a set of common formats will be tried. For
-help with specifying date-time formats, see \code{?strptime}.}
+date-time. If \code{NULL} (default), a set of common formats will be tried:
+a date in ISO format (\verb{\%Y-\%m-\%d}, \verb{\%Y/\%m/\%d}), DMY format (\verb{\%d/\%m/\%Y},
+\verb{\%d-\%m-\%Y}, \verb{\%d/\%m/\%y}, \verb{\%d-\%m-\%y}), or MDY format (\verb{\%m/\%d/\%Y},
+\verb{\%m-\%d-\%Y}, \verb{\%m/\%d/\%y}, \verb{\%m-\%d-\%y}), followed by a time in \verb{\%H:\%M:\%OS} or
+\verb{\%H:\%M}. DMY formats are tried before MDY formats, so a date that is
+ambiguous between the two (e.g. \code{"03/04/2024"}, where both day and month
+are valid as either) will be silently parsed as DMY (4 March 2024), not
+MDY (3 April 2024). If your dates are in MDY format and could be
+ambiguous, specify \code{format_date_time} explicitly rather than relying on
+auto-detection. For help with specifying date-time formats, see
+\code{?strptime}.}
 
 \item{crs}{a proj4 string or EPSG code defining the coordinate reference
 system of the data. Defaults to \code{4326} (WGS 84).}

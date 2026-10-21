@@ -45,3 +45,14 @@ test_that("track_summary_health returns a data frame with expected columns", {
   expect_true(all(result_dup$proportion_missing >= 0))
   expect_true(all(result_dup$proportion_missing <= 1))
 })
+
+test_that("track_summary_health returns tracks in the order of the metadata", {
+  example_tt_2 <- readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
+  # after ordering, the events are in the order a, b, c, whilst the metadata
+  # is still in the order b, a, c
+  example_tt_2 <- tt_order_time(example_tt_2)
+
+  result <- track_summary_health(example_tt_2)
+  expect_equal(as.character(result$track_id), c("b", "a", "c"))
+  expect_equal(result$track_duration, c(5, 4, 3) * 20 * 60)
+})

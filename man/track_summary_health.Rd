@@ -10,7 +10,8 @@ track_summary_health(x)
 \item{x}{A \code{move2} object}
 }
 \value{
-A tibble with one row per track and the following columns:
+A tibble with one row per track (in the same order as the tracks in
+the metadata, see \code{\link[=show_meta]{show_meta()}}) and the following columns:
 \itemize{
 \item \code{<track id column>}: The track ID from \code{x}
 \item median_sampling_interval: The median sampling interval in seconds

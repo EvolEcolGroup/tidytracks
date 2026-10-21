@@ -35,8 +35,17 @@
 #' @param format_date_time optional, a string containing the format of the
 #'   date-time field(s): either the single date-time column, or the date and
 #'   time columns separated by a space, for `as.POSIXct()` to parse the
-#'   date-time. If `NULL` (default), a set of common formats will be tried. For
-#'   help with specifying date-time formats, see `?strptime`.
+#'   date-time. If `NULL` (default), a set of common formats will be tried:
+#'   a date in ISO format (`%Y-%m-%d`, `%Y/%m/%d`), DMY format (`%d/%m/%Y`,
+#'   `%d-%m-%Y`, `%d/%m/%y`, `%d-%m-%y`), or MDY format (`%m/%d/%Y`,
+#'   `%m-%d-%Y`, `%m/%d/%y`, `%m-%d-%y`), followed by a time in `%H:%M:%OS` or
+#'   `%H:%M`. DMY formats are tried before MDY formats, so a date that is
+#'   ambiguous between the two (e.g. `"03/04/2024"`, where both day and month
+#'   are valid as either) will be silently parsed as DMY (4 March 2024), not
+#'   MDY (3 April 2024). If your dates are in MDY format and could be
+#'   ambiguous, specify `format_date_time` explicitly rather than relying on
+#'   auto-detection. For help with specifying date-time formats, see
+#'   `?strptime`.
 #' @param crs a proj4 string or EPSG code defining the coordinate reference
 #'   system of the data. Defaults to `4326` (WGS 84).
 #' @param time_zone a character string specifying the time zone of the
@@ -167,33 +176,25 @@ tt_read_data <- function(
 
   # Attempt to parse date-time with as.POSIXct, wrapped in tryCatch.
   # block to provide informative error messages
+  if (is.factor(date_time_raw)) {
+    date_time_raw <- as.character(date_time_raw)
+  }
   events[[col_date_time]] <- tryCatch(
     {
-      if (is.null(format_date_time)) {
-        # try a set of common formats
-        as.POSIXct(
-          date_time_raw,
-          tz = time_zone,
-          # NB. %OS accounts for fractional seconds but doesn't require them
-          tryFormats = c(
-            "%Y-%m-%d %H:%M:%OS", # 2024-01-15 13:45:30.123
-            "%Y/%m/%d %H:%M:%OS", # 2024/01/15 13:45:30.123
-            "%Y-%m-%d %H:%M", # 2024-01-15 13:45
-            "%Y/%m/%d %H:%M", # 2024/01/15 13:45
-            "%d/%m/%Y %H:%M:%OS", # 15/01/2024 13:45:30.123
-            "%d/%m/%y %H:%M:%OS", # 15/01/24 13:45:30.123
-            "%d-%m-%Y %H:%M:%OS", # 15-01-2024 13:45:30.123
-            "%d-%m-%y %H:%M:%OS", # 15-01-24 13:45:30.123
-            "%d/%m/%Y %H:%M", # 15/01/2024 13:45
-            "%d-%m-%Y %H:%M", # 15-01-2024 13:45
-            "%d-%m-%y %H:%M", # 15-01-24 13:45
-            "%d/%m/%y %H:%M" # 15/01/24 13:45
-          )
-        )
-      } else {
+      if (!is.null(format_date_time)) {
         # use the provided format
         # NB. if the provided format is wrong, you'll silently get NAs here
         as.POSIXct(date_time_raw, format = format_date_time, tz = time_zone)
+      } else if (is.character(date_time_raw)) {
+        # try a set of common formats
+        format_auto <- guess_date_time_format(date_time_raw)
+        if (is.null(format_auto)) {
+          stop("no common date-time format matches all values")
+        }
+        as.POSIXct(trimws(date_time_raw), format = format_auto, tz = time_zone)
+      } else {
+        # already a date-time (e.g. POSIXct) or a date
+        as.POSIXct(date_time_raw, tz = time_zone)
       }
     },
     error = function(e) {
@@ -296,6 +297,13 @@ tt_read_data <- function(
 
     # join new meta to old meta
     old_meta <- show_meta(move2_obj)
+    # the track ids are a factor in the events; convert the ids in the
+    # metadata to the same type, as they often differ (e.g. integer ids read
+    # from a csv file) and cannot be joined otherwise
+    meta[[col_track_id]] <- factor(
+      as.character(meta[[col_track_id]]),
+      levels = levels(old_meta[[col_track_id]])
+    )
     updated_meta <- dplyr::left_join(
       old_meta,
       meta,
@@ -329,4 +337,98 @@ tt_read_data <- function(
   }
 
   return(move2_obj)
+}
+
+# Date-time formats tried by tt_read_data() when no format is given, in order,
+# each with a regular expression that the date part has to match. The pattern
+# fixes the number of digits of the year, as strptime() also accepts 2-digit
+# years for "%Y" (e.g. "15/01/24" would be read as 24 January of year 15 with
+# "%Y/%m/%d"). NB. "%OS" accounts for fractional seconds but doesn't require
+# them.
+tt_date_time_formats <- data.frame(
+  format = c(
+    # --- ISO Formats (Unambiguous) ---
+    "%Y-%m-%d %H:%M:%OS", # 2024-01-15 13:45:30.123
+    "%Y/%m/%d %H:%M:%OS", # 2024/01/15 13:45:30.123
+    "%Y-%m-%d %H:%M", # 2024-01-15 13:45
+    "%Y/%m/%d %H:%M", # 2024/01/15 13:45
+
+    # --- 4-Digit Year: DMY (International) ---
+    "%d/%m/%Y %H:%M:%OS", # 15/01/2024 13:45:30.123
+    "%d-%m-%Y %H:%M:%OS", # 15-01-2024 13:45:30.123
+    "%d/%m/%Y %H:%M", # 15/01/2024 13:45
+    "%d-%m-%Y %H:%M", # 15-01-2024 13:45
+
+    # --- 4-Digit Year: MDY (American) ---
+    "%m/%d/%Y %H:%M:%OS", # 01/15/2024 13:45:30.123
+    "%m-%d-%Y %H:%M:%OS", # 01-15-2024 13:45:30.123
+    "%m/%d/%Y %H:%M", # 01/15/2024 13:45
+    "%m-%d-%Y %H:%M", # 01-15-2024 13:45
+
+    # --- 2-Digit Year: DMY (International) ---
+    "%d/%m/%y %H:%M:%OS", # 15/01/24 13:45:30.123
+    "%d-%m-%y %H:%M:%OS", # 15-01-24 13:45:30.123
+    "%d/%m/%y %H:%M", # 15/01/24 13:45
+    "%d-%m-%y %H:%M", # 15-01-24 13:45
+
+    # --- 2-Digit Year: MDY (American) ---
+    "%m/%d/%y %H:%M:%OS", # 01/15/24 13:45:30.123
+    "%m-%d-%y %H:%M:%OS", # 01-15-24 13:45:30.123
+    "%m/%d/%y %H:%M", # 01/15/24 13:45
+    "%m-%d-%y %H:%M" # 01-15-24 13:45
+  ),
+  date_regex = paste0(
+    c(
+      # ISO
+      "^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}",
+      "^[0-9]{4}/[0-9]{1,2}/[0-9]{1,2}",
+      "^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}",
+      "^[0-9]{4}/[0-9]{1,2}/[0-9]{1,2}",
+      # 4-Digit DMY
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
+      # 4-Digit MDY
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{4}",
+      # 2-Digit DMY
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{2}",
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{2}",
+      # 2-Digit MDY
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{2}",
+      "^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2}",
+      "^[0-9]{1,2}-[0-9]{1,2}-[0-9]{2}"
+    ),
+    "[[:space:]]"
+  )
+)
+
+#' Guess the format of date-time strings
+#'
+#' Returns the first of the common formats in `tt_date_time_formats` whose
+#' date pattern matches all the (non-missing) values in `x` and which parses
+#' all of them.
+#'
+#' @param x A character vector of date-times.
+#' @returns The format as a string, or `NULL` if no format matches.
+#' @keywords internal
+#' @noRd
+guess_date_time_format <- function(x) {
+  x <- trimws(x[!is.na(x)])
+  for (i in seq_len(nrow(tt_date_time_formats))) {
+    format <- tt_date_time_formats$format[i]
+    if (
+      all(grepl(tt_date_time_formats$date_regex[i], x)) &&
+        !anyNA(strptime(x, format, tz = "UTC"))
+    ) {
+      return(format)
+    }
+  }
+  NULL
 }

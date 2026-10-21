@@ -7,24 +7,32 @@
 #' is used as grouping variable, and the home range is estimated for each track
 #' separately.
 #'
-#' @details By default, the full UD is returned. If `levels` is set, the
+#' @details Events with an empty geometry (i.e. no location) are ignored.
+#'
+#' By default, the full UD is returned. If `levels` is set, the
 #' isopleths for the specified levels are returned instead, along with their
 #' area. This option is useful to reduce memory use, but has the drawback that
 #' the full UD is not returned, which can be useful for some applications (e.g.
 #' to compute overlap between home ranges). If `levels` is set, the area of the
 #' isopleths is computed using `sf::st_area()`, which returns the area in the
-#' units of the projection of `x` (e.g. m^2 for a UTM projection). If `x` is
-#' unprojected, the area is computed in degrees^2, which is not a meaningful
-#' unit for area. In this case, it is recommended to project `x` to an
-#' appropriate projection before using this function.
+#' units of the projection of `x` (e.g. m^2 for a UTM projection), or in m^2 if
+#' `x` is unprojected (longitude/latitude). Note, however, that for unprojected
+#' data the kernel is computed in degrees, so the bandwidth and the shape of the
+#' UD are distorted (increasingly so away from the equator); it is recommended
+#' to project `x` to an appropriate projection before using this function.
 #'
 #' @param x A move2 object; if explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
-#'   track id is used as grouping variable.
-#' @param h The bandwidth for the kernel density estimation. Either a number, or
-#'   "h_ref_indiv" for using the reference bandwidth for each individual, or
-#'   "h_ref_mean" for using the mean bandwidth for all individuals (the
-#'   default).
+#'   track id is used as grouping variable. Every group must have events, so
+#'   groupings with empty groups (e.g. from grouping by a factor with unused
+#'   levels with `.drop = FALSE`) give an error.
+#' @param h The bandwidth for the kernel density estimation. Either a number,
+#'   a vector with one value per group, or "h_ref_indiv" for using the
+#'   reference bandwidth for each individual, or "h_ref_mean" for using the mean
+#'   bandwidth for all individuals (the default). The reference bandwidth cannot
+#'   be computed for groups with fewer than two distinct locations: such groups
+#'   are left out of the mean for "h_ref_mean", and cause an error with
+#'   "h_ref_indiv".
 #' @param bbox A named vector of four elements (`xmin`, `ymin`, `xmax`, `ymax`)
 #'   defining a grid shared by all groups, or a list of one such vector per
 #'   group. If `NULL`, a shared grid is created from the extent of all points in
@@ -33,27 +41,35 @@
 #'   Supply one value for a shared resolution or one value per group when
 #'   `bbox` contains one grid per group. If `NULL`, each grid is assigned a
 #'   resolution that produces approximately 1000 cells.
+#'
+#'   Per-group values of `h`, `bbox` and `res` are matched to the groups in the
+#'   order of [dplyr::group_keys()] (i.e. sorted by the grouping variables),
+#'   not in the order in which the groups appear in `x`.
 #' @param levels A vector of levels for the isopleths (i.e. contour lines), as
 #'   numbers between 0 and 1. If set to NULL (the default), the full utilisation
 #'   distribution is returned; otherwise just the isopleths are returned. It is
 #'   possible to specify more than two levels, e.g.  `c(0.5, 0.95)` corresponds
 #'   to the 50% and 95% home ranges.
-#' @returns Either a `tibble`, or, if `levels` is not NULL, an `sf` tibble ,
-#' with columns:
+#' @returns Either a `tibble` of class `hr_tt_ud_tbl`, or, if `levels` is not
+#' NULL, an `sf` tibble of class `hr_tt_poly_tbl` (as returned by
+#' [hr_tt_ud_iso()]), with columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
 #'   grouping of `x`
-#' - `level`: the level of the isopleth
+#' - `method`: the method used to estimate the home range (`"kde"`)
 #' - `h`: the bandwidth used for the KDE
 #' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
 #' - `res`: the resolution used for the KDE
 #' If `levels` is NULL:
 #' - `ud`: the full utilisation distribution is returned as a list-column of
 #'   `terra::SpatRaster` objects
-#' Else, if `levels` is not NULL, the following columns are added:
+#' Else, if `levels` is not NULL, there is one row per group and level, and
+#' the following columns are added:
+#' - `level`: the level of the isopleth
 #' - `area`: the area of the home range at this level (in the units
-#'   of the projection of `x`, e.g. m^2 for a UTM projection)
-#'  - `geometry`:  an `sfc` column containing the multipolygons representing
+#'   of the projection of `x`, e.g. m^2 for a UTM projection, or in m^2 for
+#'   unprojected data)
+#' - `geometry`:  an `sfc` column containing the multipolygons representing
 #'   the isopleth for the appropriate level
 #'
 #' @export
@@ -78,12 +94,15 @@ hr_tt_kde <- function(
   if (!inherits(x, "grouped_df")) {
     x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
+  # per-group values (h, bbox and res) are matched to the groups by their
+  # position in the group keys, which must therefore all be estimated
+  check_no_empty_groups(x) # nolint: object_usage_linter.
 
   # Check if levels are valid
   if (!is.null(levels) && (any(levels < 0 | levels > 1))) {
     stop("levels must be between 0 and 1")
   }
-  # reorder levels from small to big
+  # reorder levels from big to small
   levels <- sort(levels, decreasing = TRUE)
 
   # get the group indices
@@ -93,6 +112,13 @@ hr_tt_kde <- function(
     dplyr::pull(1)
   # extract coordinates
   xy <- sf::st_coordinates(x)
+  # events with an empty geometry have no location to contribute to the KDE
+  located <- stats::complete.cases(xy)
+  xy <- xy[located, , drop = FALSE]
+  group_index <- group_index[located]
+  if (!all(group_unique %in% group_index)) {
+    stop("each group must contain at least one event with a location")
+  }
   # check h
   if (!is.numeric(h)) {
     h <- match.arg(
@@ -111,6 +137,13 @@ hr_tt_kde <- function(
     stop(
       "h must be a single value or a vector of the same length as ",
       "the number of groups in x"
+    )
+  }
+  if (any(!is.finite(h) | h <= 0)) {
+    stop(
+      "h must be a positive number for every group; the reference bandwidth ",
+      "cannot be computed for groups with fewer than two distinct locations ",
+      "(use h = \"h_ref_mean\" or a numeric h instead)"
     )
   }
 
@@ -157,7 +190,7 @@ hr_tt_kde <- function(
     .combine = rbind # dplyr::bind_rows
   ) %do% {
     # Filter the data for the current group
-    xy_sub <- xy[group_index == group_id, ]
+    xy_sub <- xy[group_index == group_id, , drop = FALSE]
     h_val <- h[group_id]
     bbox_val <- bbox[[group_id]]
     res_val <- res[group_id]
@@ -201,6 +234,16 @@ hr_tt_kde <- function(
         ~ dplyr::group_vars(x),
         dplyr::all_of("group_id")
       )
+  }
+
+  # combining the isopleths of the groups with rbind() and renaming the
+  # group_id column do not keep the hr_tt_poly_tbl class set by
+  # hr_tt_ud_iso(), so restore it
+  if (!is.null(levels)) {
+    class(kde_results) <- c(
+      "hr_tt_poly_tbl",
+      setdiff(class(kde_results), "hr_tt_poly_tbl")
+    )
   }
 
   return(kde_results)

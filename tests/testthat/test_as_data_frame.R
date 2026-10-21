@@ -37,3 +37,14 @@ test_that("as.data.frame.move2 can replace geometry with coordinates", {
   expect_equal(result$X, coordinates[, "X"])
   expect_equal(result$Y, coordinates[, "Y"])
 })
+
+test_that("as.data.frame.move2 replaces geometry without metadata", {
+  result <- as.data.frame(example_tt, drop_geometry = TRUE)
+  coordinates <- sf::st_coordinates(example_tt)
+
+  expect_s3_class(result, "data.frame")
+  expect_named(result, c("track_id", "date_time", "X", "Y"))
+  expect_equal(result$date_time, example_tt$date_time)
+  expect_equal(result$X, coordinates[, "X"])
+  expect_equal(result$Y, coordinates[, "Y"])
+})

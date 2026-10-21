@@ -89,3 +89,36 @@ test_that("hr_tt_ud_iso returns empty sf when contours are unavailable", {
   expect_equal(nrow(result), 0)
   expect_equal(names(result), c("level", "area", "geometry"))
 })
+
+test_that("hr_tt_ud_iso keeps holes in isopleths", {
+  # a ring-shaped UD, with a low density in the centre
+  ud <- terra::rast(
+    nrows = 100,
+    ncols = 100,
+    xmin = -50,
+    xmax = 50,
+    ymin = -50,
+    ymax = 50,
+    crs = "EPSG:32630"
+  )
+  xy <- terra::crds(ud)
+  dist_centre <- sqrt(xy[, 1]^2 + xy[, 2]^2)
+  density <- exp(-((dist_centre - 25)^2) / (2 * 4^2))
+  terra::values(ud) <- density / sum(density)
+  names(ud) <- "ud"
+
+  iso <- hr_tt_ud_iso(ud, levels = 0.5)
+  # the isopleth is a single polygon with a hole
+  polygons <- sf::st_geometry(iso)[[1]]
+  expect_length(polygons, 1)
+  expect_length(polygons[[1]], 2)
+  centre <- sf::st_sfc(sf::st_point(c(0, 0)), crs = 32630)
+  expect_false(sf::st_intersects(centre, iso, sparse = FALSE)[1, 1])
+  # its area matches the area of the cells within the 50% isopleth
+  cells_within <- sum(terra::values(hr_tt_cud(ud)) <= 0.5)
+  expect_equal(
+    as.numeric(iso$area),
+    cells_within * prod(terra::res(ud)),
+    tolerance = 0.02
+  )
+})
