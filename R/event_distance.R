@@ -60,7 +60,7 @@ event_distance <- function(x, units = as_units("m")) {
   dist[!same_track] <- NA_real_
 
   # get distance units from CRS
-  dist_units <- units(sf::st_distance(x$geometry[1:2]))
+  dist_units <- units(sf::st_distance(sf::st_geometry(x)[1:2]))
 
   # assign units
   dist <- units::as_units(dist, dist_units)

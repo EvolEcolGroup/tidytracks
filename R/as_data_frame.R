@@ -36,8 +36,8 @@ as.data.frame.move2 <- function(
     cbind(
       x |>
         NextMethod() |> # Convert the move2 object to a data frame
-        dplyr::select(-dplyr::all_of("geometry")),
-      sf::st_coordinates(x$geometry)
+        dplyr::select(-dplyr::all_of(attr(x, "sf_column"))),
+      sf::st_coordinates(x)
     ) # add the coordinates as individual columns
   }
 }

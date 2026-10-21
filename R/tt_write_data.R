@@ -60,7 +60,7 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
       cbind(
         as.data.frame(x) |>
           dplyr::select(
-            -dplyr::all_of("geometry"), # drop geom column
+            -dplyr::all_of(attr(x, "sf_column")), # drop geom column
             -dplyr::all_of(time_col) # drop original time column
           ) |>
           dplyr::mutate(

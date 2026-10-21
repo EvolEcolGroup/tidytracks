@@ -60,8 +60,8 @@
 #'   overlapping tracks will have identical timestamps at each step.
 #'
 #' @return A `move2` object on a regular time grid.  The CRS, time-column name,
-#'   track-id column name, and track-level attributes of \code{x} are all
-#'   preserved.
+#'   track-id column name, geometry column name, and track-level attributes of
+#'   \code{x} are all preserved.
 #'
 #' @seealso \code{\link[move2]{mt_interpolate}} for the move2 implementation of
 #'   the same spatial strategy with flexible time targets (including
@@ -401,7 +401,10 @@ tt_regular_time <- function(
     )
   }
 
-  sf::st_sf(base_df, geometry = new_geom)
+  # keep the name of the geometry column of the input
+  geom_args <- list(base_df)
+  geom_args[[geom_col]] <- new_geom
+  do.call(sf::st_sf, geom_args)
 }
 
 

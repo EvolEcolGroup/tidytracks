@@ -34,8 +34,8 @@ overlapping tracks will have identical timestamps at each step.}
 }
 \value{
 A \code{move2} object on a regular time grid.  The CRS, time-column name,
-track-id column name, and track-level attributes of \code{x} are all
-preserved.
+track-id column name, geometry column name, and track-level attributes of
+\code{x} are all preserved.
 }
 \description{
 Resamples one or more tracks stored in a \code{move2} object onto a regular time

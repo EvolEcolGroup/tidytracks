@@ -71,7 +71,7 @@ event_flag_mcconnell <- function(
   # used by the track. Distances are divided by 60 hours simply to
   # produce a speed unit compatible with the track CRS.
   ref_units <- units(
-    sf::st_distance(x$geometry[1:2]) /
+    sf::st_distance(sf::st_geometry(x)[1:2]) /
       units::as_units(60, "h")
   )
 
