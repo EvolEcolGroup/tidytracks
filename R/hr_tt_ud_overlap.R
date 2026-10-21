@@ -13,15 +13,29 @@
 #'   cell values, and conditionally masked once before all pairwise comparisons
 #'   are calculated. This avoids repeated raster reads and
 #'   cumulative-distribution calculations for UDs that occur in multiple pairs.
+#'
+#'   The UDOI is computed as defined by Fieberg & Kochanny (2005), as
+#'   \eqn{A_{1,2} \int\int UD_1(x,y) UD_2(x,y) dx dy}, where \eqn{A_{1,2}} is
+#'   the area of overlap between the home ranges of the two animals. The home
+#'   ranges are the `cond_level` isopleths of the UDs or, if `cond_level` is
+#'   `NULL`, their 95% isopleths (as in `adehabitatHR::kerneloverlaphr()`). The
+#'   UDOI is 0 for UDs that do not overlap and 1 for two identical, uniformly
+#'   distributed UDs, and can be larger than 1 for non-uniform UDs that overlap
+#'   considerably. Unlike the other indices, the UDOI of a UD with itself is
+#'   therefore not 1, and it is reported on the diagonal of the matrix returned
+#'   for a table of UDs.
+#' @references Fieberg, J. & Kochanny, C.O. (2005) Quantifying home-range
+#'   overlap: the importance of the utilization distribution. Journal of
+#'   Wildlife Management, 69, 1346-1359.
 #' @param x A SpatRaster of the utilisation distribution (with a layer `ud`), or
 #'   a tibble of UDs of class `hr_tt_ud_tbl` (e.g. as created with
 #'   [hr_tt_kde()]).
 #' @param method A character string specifying the method to use for overlap
 #'   calculation. Options are `"ba"` (Bhattacharyya's Affinity), `"vi"` (Volume
-#'   of Intersection), `"udoi"` (Utilisation Distribution Overlap Index), and
-#'   `"earth_mover"` (Earth Mover's Distance). `"earth_mover"` returns a
-#'   distance, where zero indicates identical UDs, and requires the suggested
-#'   package `emdist`. Default is `"ba"`.
+#'   of Intersection), `"udoi"` (Utilisation Distribution Overlap Index, see
+#'   details), and `"earth_mover"` (Earth Mover's Distance). `"earth_mover"`
+#'   returns a distance, where zero indicates identical UDs, and requires the
+#'   suggested package `emdist`. Default is `"ba"`.
 #' @param cond_level Optional, the level for which the the conditional overlap
 #'   is computed.
 #' @param ... Additional arguments (not currently used)
@@ -65,10 +79,21 @@ hr_tt_ud_overlap.SpatRaster <- function(
     )
   }
   check_cond_level(cond_level)
-  x_values <- condition_ud_values(ud_values(x), cond_level)
-  y_values <- condition_ud_values(ud_values(y), cond_level)
+  x_raw_values <- ud_values(x)
+  y_raw_values <- ud_values(y)
+  x_values <- condition_ud_values(x_raw_values, cond_level)
+  y_values <- condition_ud_values(y_raw_values, cond_level)
   if (method == "earth_mover") {
     return(earth_mover_distance(x_values, y_values, x))
+  } else if (method == "udoi") {
+    level <- udoi_level(cond_level)
+    return(udoi_from_values(
+      x_values,
+      y_values,
+      ud_level_mask(x_raw_values, level),
+      ud_level_mask(y_raw_values, level),
+      ud_cell_areas(x)
+    ))
   } else {
     return(overlap_from_values(x_values, y_values, method))
   }
@@ -114,6 +139,7 @@ hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
   reference <- x$ud[[1]]
   check_ud_raster(reference, "x$ud")
   ud_values_list <- vector("list", n)
+  ud_mask_list <- vector("list", n)
   # Cache normalized cell values once per UD because every UD participates in
   # several pairwise comparisons.
   for (i in seq_len(n)) {
@@ -125,7 +151,11 @@ hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
         "resolution, and CRS)"
       )
     }
-    ud_values_list[[i]] <- condition_ud_values(ud_values(ud), cond_level)
+    raw_values <- ud_values(ud)
+    ud_values_list[[i]] <- condition_ud_values(raw_values, cond_level)
+    if (method == "udoi") {
+      ud_mask_list[[i]] <- ud_level_mask(raw_values, udoi_level(cond_level))
+    }
   }
 
   if (method == "ba") {
@@ -135,7 +165,12 @@ hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
     overlap_matrix <- crossprod(sqrt(values_matrix))
   } else if (method == "udoi") {
     values_matrix <- do.call(cbind, ud_values_list)
-    overlap_matrix <- crossprod(values_matrix)
+    mask_matrix <- do.call(cbind, ud_mask_list) * 1
+    cell_areas <- ud_cell_areas(reference)
+    # area of overlap of the home ranges times the integral of the product of
+    # the UDs (densities are the cell probabilities divided by the cell areas)
+    overlap_matrix <- crossprod(mask_matrix * cell_areas, mask_matrix) *
+      crossprod(values_matrix / cell_areas, values_matrix)
   } else {
     diagonal <- if (method == "earth_mover") 0 else 1
     overlap_matrix <- diag(diagonal, n)
@@ -159,7 +194,9 @@ hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
     }
   }
 
-  if (method != "earth_mover") {
+  # the overlap of a UD with itself is 1 for BA and VI (UDOI keeps the
+  # computed value, see details)
+  if (method %in% c("ba", "vi")) {
     diag(overlap_matrix) <- 1
   }
   rownames(overlap_matrix) <- colnames(overlap_matrix) <- ids
@@ -236,32 +273,83 @@ ud_values <- function(x) {
 #' @noRd
 condition_ud_values <- function(values, cond_level) {
   if (!is.null(cond_level)) {
-    # Restore cumulative values to their original cell positions after sorting
-    # cells from highest to lowest UD value.
-    order_index <- order(-values)
-    cumulative_values <- cumsum(values[order_index])[order(order_index)]
-    values[cumulative_values > cond_level] <- NA_real_
+    values[!ud_level_mask(values, cond_level)] <- NA_real_
     values <- values / sum(values, na.rm = TRUE)
   }
   values[is.na(values)] <- 0
   values
 }
 
+#' Find the cells within an isopleth of a utilisation distribution
+#'
+#' @param values A numeric vector of UD values in cell order.
+#' @param level One numeric value strictly between zero and one.
+#' @returns A logical vector, `TRUE` for the cells within the `level` isopleth
+#'   (i.e. the cells with the highest values that, together, hold a proportion
+#'   `level` of the UD).
+#' @keywords internal
+#' @noRd
+ud_level_mask <- function(values, level) {
+  # Restore cumulative values to their original cell positions after sorting
+  # cells from highest to lowest UD value.
+  order_index <- order(-values)
+  cumulative_values <- cumsum(values[order_index])[order(order_index)]
+  !is.na(cumulative_values) & cumulative_values <= level
+}
+
+#' The isopleth level defining the home ranges for the UDOI
+#'
+#' @param cond_level `NULL` or one numeric value strictly between zero and one.
+#' @returns `cond_level`, or 0.95 if `cond_level` is `NULL`.
+#' @keywords internal
+#' @noRd
+udoi_level <- function(cond_level) {
+  if (is.null(cond_level)) 0.95 else cond_level
+}
+
+#' Area of the cells of a utilisation-distribution raster
+#'
+#' @param raster A `terra::SpatRaster`.
+#' @returns A numeric vector of cell areas in cell order (in m^2 for a
+#'   longitude/latitude raster, otherwise in the squared units of the CRS).
+#' @keywords internal
+#' @noRd
+ud_cell_areas <- function(raster) {
+  if (nzchar(terra::crs(raster)) && terra::is.lonlat(raster)) {
+    terra::values(terra::cellSize(raster[[1]], unit = "m"), mat = FALSE)
+  } else {
+    rep(prod(terra::res(raster)), terra::ncell(raster))
+  }
+}
+
+#' Calculate the UDOI from conditioned UD values
+#'
+#' @param x,y Numeric vectors of conditioned UD values (cell probabilities).
+#' @param x_mask,y_mask Logical vectors, `TRUE` for the cells within the home
+#'   range of each UD.
+#' @param cell_areas A numeric vector of cell areas.
+#' @returns The UDOI.
+#' @keywords internal
+#' @noRd
+udoi_from_values <- function(x, y, x_mask, y_mask, cell_areas) {
+  # area of overlap of the home ranges times the integral of the product of
+  # the UDs (densities are the cell probabilities divided by the cell areas)
+  sum(cell_areas[x_mask & y_mask]) * sum(x * y / cell_areas)
+}
+
 #' Calculate overlap from conditioned UD values
 #'
 #' @param x A numeric vector of conditioned UD values.
 #' @param y A numeric vector of conditioned UD values with matching cells.
-#' @param method One of `"ba"`, `"vi"`, or `"udoi"`.
+#' @param method One of `"ba"` or `"vi"`.
 #' @returns A numeric overlap value.
 #' @keywords internal
 #' @noRd
 overlap_from_values <- function(x, y, method) {
   if (method == "ba") {
     sum(sqrt(x) * sqrt(y))
-  } else if (method == "vi") {
-    sum(pmin(x, y))
   } else {
-    sum(x * y)
+    sum(pmin(x, y))
   }
 }
 

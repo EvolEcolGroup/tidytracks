@@ -13,7 +13,17 @@ test_that("hr_tt_ud_overlap works", {
 
   pairwise_overlap <- function(method, cond_level = NULL) {
     n <- nrow(boar_kde)
+    # the overlap of a UD with itself is 1 for BA and VI, but not for UDOI
     result <- diag(1, n)
+    if (method == "udoi") {
+      diag(result) <- vapply(
+        boar_kde$ud,
+        function(ud) {
+          hr_tt_ud_overlap(ud, ud, method = method, cond_level = cond_level)
+        },
+        numeric(1)
+      )
+    }
     for (i in seq_len(n - 1L)) {
       for (j in seq.int(i + 1L, n)) {
         result[i, j] <- result[j, i] <- hr_tt_ud_overlap(
@@ -110,6 +120,26 @@ test_that("hr_tt_ud_overlap works", {
     cond_level = 0.5
   )
   expect_true(boar_overlap_cond < boar_overlap[1, 2])
+})
+
+test_that("hr_tt_ud_overlap computes the UDOI independently of resolution", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_kde_100 <- hr_tt_kde(boar_tt, res = 100)
+  bbox <- unlist(boar_kde_100[1, c("xmin", "ymin", "xmax", "ymax")])
+  boar_kde_50 <- hr_tt_kde(boar_tt, res = 50, bbox = bbox)
+
+  udoi_100 <- hr_tt_ud_overlap(boar_kde_100, method = "udoi")
+  udoi_50 <- hr_tt_ud_overlap(boar_kde_50, method = "udoi")
+  expect_equal(udoi_100, udoi_50, tolerance = 0.02)
+
+  # the diagonal is the UDOI of each UD with itself, which is not 1
+  self_udoi <- hr_tt_ud_overlap(
+    boar_kde_50$ud[[1]],
+    boar_kde_50$ud[[1]],
+    method = "udoi"
+  )
+  expect_equal(udoi_50[1, 1], self_udoi)
+  expect_true(self_udoi > 1)
 })
 
 test_that("hr_tt_ud_overlap calculates Earth Mover's Distance when available", {
