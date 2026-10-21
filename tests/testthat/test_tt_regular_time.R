@@ -367,6 +367,31 @@ test_that("all tracks appear in output", {
   expect_setequal(as.character(unique(move2::mt_track_id(out))), c("a", "b"))
 })
 
+test_that("track ids keep their type", {
+  times <- as.POSIXct("2024-01-01", tz = "UTC") + c(0, 100, 200, 30, 60)
+  geom <- sf::st_sfc(lapply(c(0, 1, 2, 5, 6), function(x) {
+    sf::st_point(c(x, 0))
+  }))
+  for (ids in list(factor(c("a", "a", "a", "b", "b")), c(1L, 1L, 1L, 2L, 2L))) {
+    track <- move2::mt_as_move2(
+      sf::st_sf(timestamp = times, track_id = ids, geometry = geom),
+      time_column = "timestamp",
+      track_id_column = "track_id"
+    )
+    out <- tt_regular_time(track, interval = s(100))
+    expect_identical(class(move2::mt_track_id(out)), class(ids))
+    expect_identical(
+      class(move2::mt_track_id(out)),
+      class(show_meta(out)$track_id)
+    )
+
+    # the second track has no grid point after snapping, and is dropped
+    out_snap <- tt_regular_time(track, interval = s(100), snap_times = TRUE)
+    expect_identical(class(move2::mt_track_id(out_snap)), class(ids))
+    expect_equal(unique(move2::mt_track_id(out_snap)), ids[1])
+  }
+})
+
 test_that("each track has regular gaps after resampling", {
   out <- tt_regular_time(
     move2::mt_stack(

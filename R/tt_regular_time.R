@@ -367,8 +367,10 @@ tt_regular_time <- function(
 
   base_df <- data.frame(
     stats::setNames(list(new_times), time_col),
+    # keep the type of the track ids (e.g. factor or integer), as in the
+    # track data
     stats::setNames(
-      list(rep(unique(as.character(move2::mt_track_id(track))), n_new)),
+      list(rep(move2::mt_track_id(track)[1], n_new)),
       track_col
     ),
     stringsAsFactors = FALSE
