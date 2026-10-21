@@ -172,3 +172,36 @@ test_that("hr_tt_kde ignores events without a location", {
     "each group must contain at least one event with a location"
   )
 })
+
+test_that("hr_tt_kde handles groups with a single location", {
+  set.seed(2)
+  coords <- data.frame(
+    id = c(rep("a", 20), "b"),
+    x = c(stats::rnorm(20, 0, 100), 50),
+    y = c(stats::rnorm(20, 0, 100), 50)
+  )
+  coords$time <- as.POSIXct("2024-01-01", tz = "UTC") +
+    seq_len(nrow(coords)) * 60
+  tracks <- move2::mt_as_move2(
+    sf::st_as_sf(coords, coords = c("x", "y"), crs = 32630),
+    time_column = "time",
+    track_id_column = "id"
+  )
+
+  # the mean reference bandwidth is computed from the groups for which it is
+  # defined, and used for all groups
+  kde <- hr_tt_kde(tracks)
+  h_ref_a <- h_ref_indiv(sf::st_coordinates(tracks)[1:20, ], rep(1, 20))
+  expect_equal(kde$h, rep(h_ref_a, 2))
+  expect_equal(
+    unname(unlist(terra::global(kde$ud[[2]], "sum"))),
+    1
+  )
+  # a numeric bandwidth can be used for a single location
+  expect_no_error(hr_tt_kde(tracks, h = 10))
+  # but the reference bandwidth of a single location is undefined
+  expect_error(
+    hr_tt_kde(tracks, h = "h_ref_indiv"),
+    "fewer than two distinct locations"
+  )
+})

@@ -44,8 +44,14 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   located <- stats::complete.cases(xy)
   xy <- xy[located, , drop = FALSE]
   group_index <- group_index[located]
-  if (!all(group_unique %in% group_index)) {
-    stop("each group must contain at least one event with a location")
+  # a polygon needs at least 3 locations
+  n_locations <- tabulate(group_index, nbins = length(group_labels))
+  if (any(n_locations < 3)) {
+    stop(
+      "each group must contain at least 3 events with a location to compute ",
+      "a MCP; groups with fewer locations: ",
+      paste(group_labels[n_locations < 3], collapse = ", ")
+    )
   }
 
   group_id <- NULL # hack to avoid it being flagged as global in checks
@@ -54,7 +60,7 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
     .combine = dplyr::bind_rows
   ) %do% {
     # Filter the data for the current group
-    xy_sub <- xy[group_index == group_id, ]
+    xy_sub <- xy[group_index == group_id, , drop = FALSE]
     # Create MCP for each level
     geometry <- mcp_one_group(xy_sub, levels, crs = sf::st_crs(x))
     # Calculate area
@@ -106,7 +112,7 @@ mcp_one_group <- function(xy, levels, crs) {
   mxy <- colMeans(xy)
   sqd <- (xy[, 1] - mxy[1])^2 + (xy[, 2] - mxy[2])^2
   qts <- stats::quantile(sqd, levels)
-  geometry <- lapply(qts, function(i) chull_mcp(xy[sqd <= i, ]))
+  geometry <- lapply(qts, function(i) chull_mcp(xy[sqd <= i, , drop = FALSE]))
   geometry <- sf::st_as_sfc(geometry, crs = crs)
 }
 

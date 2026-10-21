@@ -61,3 +61,25 @@ test_that("hr_tt_mcp ignores events without a location", {
 
   expect_equal(hr_tt_mcp(boar_tt_empty), hr_tt_mcp(boar_tt[-5, ]))
 })
+
+test_that("hr_tt_mcp requires at least 3 locations per group", {
+  set.seed(3)
+  coords <- data.frame(
+    id = c(rep("a", 10), "b", "b"),
+    x = c(stats::rnorm(10), 0, 1),
+    y = c(stats::rnorm(10), 0, 1)
+  )
+  coords$time <- as.POSIXct("2024-01-01", tz = "UTC") +
+    seq_len(nrow(coords)) * 60
+  tracks <- move2::mt_as_move2(
+    sf::st_as_sf(coords, coords = c("x", "y"), crs = 32630),
+    time_column = "time",
+    track_id_column = "id"
+  )
+
+  expect_error(
+    hr_tt_mcp(tracks),
+    "at least 3 events with a location.*: b$"
+  )
+  expect_s3_class(hr_tt_mcp(tracks[tracks$id == "a", ]), "hr_tt_poly_tbl")
+})

@@ -5,7 +5,9 @@
 #' @param xy A matrix of coordinates
 #' @param group_index A vector of group indices
 #' @returns A vector of bandwidths, one for each group, ordered by group index
-#'   (so that the bandwidth for group `i` is element `i`)
+#'   (so that the bandwidth for group `i` is element `i`). The bandwidth is
+#'   `NA` for groups with fewer than two distinct locations, for which it is
+#'   undefined.
 #' @keywords internal
 #' @noRd
 
@@ -15,13 +17,16 @@ h_ref_indiv <- function(xy, group_index) {
   # callers look up the bandwidth of group `i` as element `i`
   h_ref <- lapply(sort(unique(group_index)), function(i) {
     # get the coordinates for this group
-    xy_sub <- xy[group_index == i, ]
+    xy_sub <- xy[group_index == i, , drop = FALSE]
     # compute the bandwidth for this group
-    (sqrt(
+    h_ref <- (sqrt(
       0.5 *
         (stats::var(xy_sub[, 1]) + stats::var(xy_sub[, 2]))
     )) *
       (nrow(xy_sub)^-(1 / 6))
+    # a single location, or identical locations, give no information on the
+    # spread of the locations (NA or 0)
+    if (is.na(h_ref) || h_ref <= 0) NA_real_ else h_ref
   })
   return(unlist(h_ref))
 }
@@ -32,11 +37,12 @@ h_ref_indiv <- function(xy, group_index) {
 #' kernel.
 #' @param xy A matrix of coordinates
 #' @param group_index A vector of group indices
-#' @returns A single value, the mean of the bandwidths for each group
+#' @returns A single value, the mean of the bandwidths for each group (for
+#'   which a bandwidth can be computed, see `h_ref_indiv()`)
 #' @keywords internal
 #' @noRd
 
 h_ref_mean <- function(xy, group_index) {
   h_ref <- h_ref_indiv(xy, group_index)
-  return(mean(h_ref))
+  return(mean(h_ref, na.rm = TRUE))
 }

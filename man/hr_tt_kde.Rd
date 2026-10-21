@@ -17,7 +17,10 @@ track id is used as grouping variable.}
 \item{h}{The bandwidth for the kernel density estimation. Either a number,
 a vector with one value per group, or "h_ref_indiv" for using the
 reference bandwidth for each individual, or "h_ref_mean" for using the mean
-bandwidth for all individuals (the default).}
+bandwidth for all individuals (the default). The reference bandwidth cannot
+be computed for groups with fewer than two distinct locations: such groups
+are left out of the mean for "h_ref_mean", and cause an error with
+"h_ref_indiv".}
 
 \item{bbox}{A named vector of four elements (\code{xmin}, \code{ymin}, \code{xmax}, \code{ymax})
 defining a grid shared by all groups, or a list of one such vector per

@@ -26,7 +26,10 @@
 #' @param h The bandwidth for the kernel density estimation. Either a number,
 #'   a vector with one value per group, or "h_ref_indiv" for using the
 #'   reference bandwidth for each individual, or "h_ref_mean" for using the mean
-#'   bandwidth for all individuals (the default).
+#'   bandwidth for all individuals (the default). The reference bandwidth cannot
+#'   be computed for groups with fewer than two distinct locations: such groups
+#'   are left out of the mean for "h_ref_mean", and cause an error with
+#'   "h_ref_indiv".
 #' @param bbox A named vector of four elements (`xmin`, `ymin`, `xmax`, `ymax`)
 #'   defining a grid shared by all groups, or a list of one such vector per
 #'   group. If `NULL`, a shared grid is created from the extent of all points in
@@ -126,6 +129,13 @@ hr_tt_kde <- function(
       "the number of groups in x"
     )
   }
+  if (any(!is.finite(h) | h <= 0)) {
+    stop(
+      "h must be a positive number for every group; the reference bandwidth ",
+      "cannot be computed for groups with fewer than two distinct locations ",
+      "(use h = \"h_ref_mean\" or a numeric h instead)"
+    )
+  }
 
   # Create a shared grid by default.
   if (is.null(bbox)) {
@@ -170,7 +180,7 @@ hr_tt_kde <- function(
     .combine = rbind # dplyr::bind_rows
   ) %do% {
     # Filter the data for the current group
-    xy_sub <- xy[group_index == group_id, ]
+    xy_sub <- xy[group_index == group_id, , drop = FALSE]
     h_val <- h[group_id]
     bbox_val <- bbox[[group_id]]
     res_val <- res[group_id]
