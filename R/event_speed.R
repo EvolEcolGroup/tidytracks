@@ -10,8 +10,9 @@
 #' Euclidean distance is used.
 #'
 #' @param x A move2 object
-#' @param units Optional units to use for speed. The default is `"m/min"`.
-#'   Other speed units supported by the `units` package can also be supplied.
+#' @param units The units to use for speed, as a `units` object. The default is
+#'   metres per minute (`as_units("m/min")`); other speed units supported by
+#'   the `units` package can also be supplied (e.g. `as_units("m/s")`).
 #' @returns a vector of speeds of the same length as the number of events in
 #' `x`, with the last value set to NA for each track.
 #' @export
@@ -52,18 +53,16 @@ event_speed <- function(x, units = as_units("m/min")) {
 
   speed <- dist / dt
 
-  if (!is.null(units)) {
-    # convert the speed into the reference units of the projection
-    speed <- units::set_units(
-      units::ud_convert(
-        x = unclass(speed),
-        from = units(speed),
-        to = units::deparse_unit(units)
-      ),
-      units,
-      mode = "standard"
-    )
-  }
+  # convert the speed into the requested units
+  speed <- units::set_units(
+    units::ud_convert(
+      x = unclass(speed),
+      from = units(speed),
+      to = units::deparse_unit(units)
+    ),
+    units,
+    mode = "standard"
+  )
 
   return(speed)
 }

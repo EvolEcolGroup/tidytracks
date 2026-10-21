@@ -49,6 +49,10 @@ test_that("event_speed gives error for non-units objects", {
     event_speed(example_tt, units = "m/s"),
     "units must be a units object"
   )
+  expect_error(
+    event_speed(example_tt, units = NULL),
+    "units must be a units object"
+  )
 })
 
 test_that("event_speed gives error for objects without a CRS", {

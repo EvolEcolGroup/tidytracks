@@ -9,8 +9,9 @@
 #' Euclidean distance is used.
 #'
 #' @param x A move2 object.
-#' @param units Optional, the units to use for the distance. The default is "m".
-#' Other distance units supported by the `units` package can also be supplied.
+#' @param units The units to use for the distance, as a `units` object. The
+#'   default is metres (`as_units("m")`); other distance units supported by the
+#'   `units` package can also be supplied (e.g. `as_units("km")`).
 #' @returns A vector of distances of the same length as the number of events in
 #' `x`, with the last value set to NA for each track.
 #' @export
@@ -66,17 +67,15 @@ event_distance <- function(x, units = as_units("m")) {
   dist <- units::as_units(dist, dist_units)
 
   # convert to requested units
-  if (!is.null(units)) {
-    dist <- units::set_units(
-      units::ud_convert(
-        x = unclass(dist),
-        from = units(dist),
-        to = units::deparse_unit(units)
-      ),
-      units,
-      mode = "standard"
-    )
-  }
+  dist <- units::set_units(
+    units::ud_convert(
+      x = unclass(dist),
+      from = units(dist),
+      to = units::deparse_unit(units)
+    ),
+    units,
+    mode = "standard"
+  )
 
   return(dist)
 }

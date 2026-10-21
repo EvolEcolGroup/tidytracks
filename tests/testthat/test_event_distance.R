@@ -4,3 +4,18 @@ test_that("event_distance gives error for objects without a CRS", {
     "x must have a coordinate reference system"
   )
 })
+
+test_that("event_distance requires units as a units object", {
+  expect_equal(
+    event_distance(example_tt, units = as_units("km")),
+    units::set_units(event_distance(example_tt), "km")
+  )
+  expect_error(
+    event_distance(example_tt, units = NULL),
+    "units must be a units object"
+  )
+  expect_error(
+    event_distance(example_tt, units = "km"),
+    "units must be a units object"
+  )
+})
