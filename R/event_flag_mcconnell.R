@@ -57,6 +57,11 @@ event_flag_mcconnell <- function(
     stop("max_speed must be a units object: e.g. as_units(50, 'm/s')")
   }
 
+  # Distances (and thus speeds) require a coordinate reference system.
+  if (is.na(sf::st_crs(x))) {
+    stop("x must have a coordinate reference system (CRS) defined")
+  }
+
   # Determine whether coordinates are projected or longitude/latitude.
   # This controls how distances are calculated later.
   projected <- !sf::st_is_longlat(x)

@@ -50,6 +50,17 @@ test_that("event_flag_mcconnell rejects non-move2 input", {
 })
 
 
+test_that("event_flag_mcconnell requires a CRS", {
+  expect_error(
+    event_flag_mcconnell(
+      sf::st_set_crs(example_tt, NA),
+      max_speed = units::as_units(10, "m/s")
+    ),
+    "x must have a coordinate reference system"
+  )
+})
+
+
 test_that("event_flag_mcconnell requires max_speed", {
   x <- make_test_move2(
     x = c(0, 1, 2, 3),

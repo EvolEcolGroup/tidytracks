@@ -31,7 +31,7 @@ event_speed <- function(x, units = as_units("m/min")) {
   }
 
   # give error if we don't have a crs
-  if (is.null(sf::st_crs(x))) {
+  if (is.na(sf::st_crs(x))) {
     stop("x must have a coordinate reference system (CRS) defined")
   }
 

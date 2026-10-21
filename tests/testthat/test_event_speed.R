@@ -50,3 +50,10 @@ test_that("event_speed gives error for non-units objects", {
     "units must be a units object"
   )
 })
+
+test_that("event_speed gives error for objects without a CRS", {
+  expect_error(
+    event_speed(sf::st_set_crs(example_tt, NA)),
+    "x must have a coordinate reference system"
+  )
+})
