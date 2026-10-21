@@ -25,11 +25,12 @@
 #' @section Temporal-to-spatial mapping: Raw observations are often unevenly
 #'   spaced in both time and space. \code{tt_regular_time} accounts for this by
 #'   first computing the normalised arc-length fraction of every input point
-#'   along the path (using [s2::s2_distance()] for geographic CRS and Euclidean
-#'   distance otherwise), then using [stats::approx()] to linearly interpolate
-#'   those fractions at each new time step.  A stationary stretch of the track
-#'   (many observations covering little distance) is therefore correctly treated
-#'   as slow movement, not as a spatial shortcut.
+#'   along the path that is interpolated (using [s2::s2_distance()] along the
+#'   spherical path for geographic and projected CRS, and Euclidean distance
+#'   when there is no CRS), then using [stats::approx()] to linearly
+#'   interpolate those fractions at each new time step.  A stationary stretch
+#'   of the track (many observations covering little distance) is therefore
+#'   correctly treated as slow movement, not as a spatial shortcut.
 #'
 #' @section Attribute interpolation: Numeric event-level columns are linearly
 #'   interpolated at the new time steps using [stats::approx()]. Non-numeric
@@ -298,7 +299,14 @@ tt_regular_time <- function(
 
   t_new <- seq(t_start, t_sec[length(t_sec)], by = interval_sec)
 
-  seg_len <- .path_lengths(track, has_crs, input_crs)
+  # Projected tracks are interpolated along the spherical path in WGS 84, so
+  # the positions of the points along the path have to be measured on that
+  # same path (fractions of the projected, Euclidean path differ from it)
+  is_projected <- has_crs && !.is_geographic(input_crs)
+  path <- if (is_projected) sf::st_transform(track, 4326L) else track
+  path_crs <- if (is_projected) sf::st_crs(4326L) else input_crs
+
+  seg_len <- .path_lengths(path, has_crs, path_crs)
   cum_len <- c(0, cumsum(seg_len))
   total_len <- cum_len[length(cum_len)]
 
@@ -346,11 +354,10 @@ tt_regular_time <- function(
 
   new_geom <- if (!has_crs) {
     .interpolate_no_crs(track, s_norm)
-  } else if (.is_geographic(input_crs)) {
+  } else if (!is_projected) {
     .interpolate_s2(track, s_norm, input_crs)
   } else {
-    track_geo <- sf::st_transform(track, 4326L)
-    pts_geo <- .interpolate_s2(track_geo, s_norm, sf::st_crs(4326L))
+    pts_geo <- .interpolate_s2(path, s_norm, path_crs)
     sf::st_transform(pts_geo, input_crs)
   }
 

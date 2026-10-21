@@ -209,6 +209,39 @@ test_that("[projected CRS] midpoint of straight line is correct", {
 })
 
 
+test_that("[projected CRS] resampling at the fix times returns the fixes", {
+  # a track heading north over a wide range of latitudes, for which distances
+  # along the projected path are not proportional to distances on the sphere
+  times <- as.POSIXct("2024-01-01", tz = "UTC") + c(0, 3600, 7200, 10800)
+  geom <- sf::st_sfc(
+    sf::st_point(c(0, 0)),
+    sf::st_point(c(0, 60)),
+    sf::st_point(c(0, 61)),
+    sf::st_point(c(0, 70)),
+    crs = 4326
+  )
+  for (crs in c(3857, 32631)) {
+    track <- move2::mt_as_move2(
+      sf::st_sf(
+        timestamp = times,
+        track_id = "a",
+        geometry = sf::st_transform(geom, crs)
+      ),
+      time_column = "timestamp",
+      track_id_column = "track_id"
+    )
+    out <- tt_regular_time(track, interval = units::set_units(1, "h"))
+    expect_equal(nrow(out), 4)
+    offsets <- sf::st_distance(
+      sf::st_geometry(out),
+      sf::st_geometry(track),
+      by_element = TRUE
+    )
+    expect_true(all(as.numeric(offsets) < 1))
+  }
+})
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 5. ENDPOINT PRESERVATION
 # ─────────────────────────────────────────────────────────────────────────────

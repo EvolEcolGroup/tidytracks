@@ -66,11 +66,12 @@ are transformed back to the original CRS.
  Raw observations are often unevenly
 spaced in both time and space. \code{tt_regular_time} accounts for this by
 first computing the normalised arc-length fraction of every input point
-along the path (using \code{\link[s2:s2_distance]{s2::s2_distance()}} for geographic CRS and Euclidean
-distance otherwise), then using \code{\link[stats:approx]{stats::approx()}} to linearly interpolate
-those fractions at each new time step.  A stationary stretch of the track
-(many observations covering little distance) is therefore correctly treated
-as slow movement, not as a spatial shortcut.
+along the path that is interpolated (using \code{\link[s2:s2_distance]{s2::s2_distance()}} along the
+spherical path for geographic and projected CRS, and Euclidean distance
+when there is no CRS), then using \code{\link[stats:approx]{stats::approx()}} to linearly
+interpolate those fractions at each new time step.  A stationary stretch
+of the track (many observations covering little distance) is therefore
+correctly treated as slow movement, not as a spatial shortcut.
 }
 
 \section{Attribute interpolation}{
