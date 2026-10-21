@@ -34,9 +34,9 @@
 #'
 #' @section Attribute interpolation: Numeric event-level columns are linearly
 #'   interpolated at the new time steps using [stats::approx()]. Non-numeric
-#'   columns receive the value of the nearest preceding observation via
-#'   \code{\link[base]{findInterval}}. Track-level attributes stored in
-#'   \code{\link[move2]{mt_track_data}} are preserved unchanged.
+#'   columns receive the value of the nearest preceding (or simultaneous)
+#'   observation via \code{\link[base]{findInterval}}. Track-level attributes
+#'   stored in \code{\link[move2]{mt_track_data}} are preserved unchanged.
 #'
 #' @param x A `move2` object. Timestamps (as returned by [event_time()]) must be
 #'   [base::POSIXct].
@@ -399,7 +399,9 @@ tt_regular_time <- function(
           rule = 1L
         )$y
       } else {
-        vals[findInterval(t_new, t_sec, all.inside = TRUE)]
+        # value of the last observation at or before each new time (a time
+        # equal to the last observation takes the value of that observation)
+        vals[findInterval(t_new, t_sec)]
       }
     })
     base_df <- cbind(

@@ -272,6 +272,16 @@ test_that("numeric attribute is correct at 100 s grid", {
   )
 })
 
+test_that("non-numeric attribute takes the preceding observation", {
+  track <- make_track(crs = NA)
+  track$label <- c("p", "q", "r")
+  out <- tt_regular_time(track, interval = s(50))
+  expect_equal(
+    out[order(move2::mt_time(out)), ]$label,
+    c("p", "p", "q", "q", "r")
+  )
+})
+
 test_that("numeric attribute is correct at 50 s grid", {
   out <- tt_regular_time(make_track(crs = NA), interval = s(50))
   expect_equal(
