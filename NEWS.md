@@ -1,4 +1,4 @@
-# tidytracks dev
+# tidytracks 0.2.1
 
 ## Bug fixes
 
