@@ -36,9 +36,9 @@
 #'   date-time field(s): either the single date-time column, or the date and
 #'   time columns separated by a space, for `as.POSIXct()` to parse the
 #'   date-time. If `NULL` (default), a set of common formats will be tried:
-#'   a date in ISO format (`%Y-%m-%d`, `%Y/%m/%d`), DMY format (`%d/%m/%Y`, 
-#'   `%d-%m-%Y`, `%d/%m/%y`, `%d-%m-%y`), or MDY format (`%m/%d/%Y`, 
-#'   `%m-%d-%Y`, `%m/%d/%y`, `%m-%d-%y`), followed by a time in `%H:%M:%OS` or 
+#'   a date in ISO format (`%Y-%m-%d`, `%Y/%m/%d`), DMY format (`%d/%m/%Y`,
+#'   `%d-%m-%Y`, `%d/%m/%y`, `%d-%m-%y`), or MDY format (`%m/%d/%Y`,
+#'   `%m-%d-%Y`, `%m/%d/%y`, `%m-%d-%y`), followed by a time in `%H:%M:%OS` or
 #'   `%H:%M`. DMY formats are tried before MDY formats, so a date that is
 #'   ambiguous between the two (e.g. `"03/04/2024"`, where both day and month
 #'   are valid as either) will be silently parsed as DMY (4 March 2024), not
@@ -350,32 +350,32 @@ tt_date_time_formats <- data.frame(
     # --- ISO Formats (Unambiguous) ---
     "%Y-%m-%d %H:%M:%OS", # 2024-01-15 13:45:30.123
     "%Y/%m/%d %H:%M:%OS", # 2024/01/15 13:45:30.123
-    "%Y-%m-%d %H:%M",    # 2024-01-15 13:45
-    "%Y/%m/%d %H:%M",    # 2024/01/15 13:45
-    
+    "%Y-%m-%d %H:%M", # 2024-01-15 13:45
+    "%Y/%m/%d %H:%M", # 2024/01/15 13:45
+
     # --- 4-Digit Year: DMY (International) ---
     "%d/%m/%Y %H:%M:%OS", # 15/01/2024 13:45:30.123
     "%d-%m-%Y %H:%M:%OS", # 15-01-2024 13:45:30.123
-    "%d/%m/%Y %H:%M",    # 15/01/2024 13:45
-    "%d-%m-%Y %H:%M",    # 15-01-2024 13:45
-    
+    "%d/%m/%Y %H:%M", # 15/01/2024 13:45
+    "%d-%m-%Y %H:%M", # 15-01-2024 13:45
+
     # --- 4-Digit Year: MDY (American) ---
     "%m/%d/%Y %H:%M:%OS", # 01/15/2024 13:45:30.123
     "%m-%d-%Y %H:%M:%OS", # 01-15-2024 13:45:30.123
-    "%m/%d/%Y %H:%M",    # 01/15/2024 13:45
-    "%m-%d-%Y %H:%M",    # 01-15-2024 13:45
-    
+    "%m/%d/%Y %H:%M", # 01/15/2024 13:45
+    "%m-%d-%Y %H:%M", # 01-15-2024 13:45
+
     # --- 2-Digit Year: DMY (International) ---
     "%d/%m/%y %H:%M:%OS", # 15/01/24 13:45:30.123
     "%d-%m-%y %H:%M:%OS", # 15-01-24 13:45:30.123
-    "%d/%m/%y %H:%M",    # 15/01/24 13:45
-    "%d-%m-%y %H:%M",    # 15-01-24 13:45
-    
+    "%d/%m/%y %H:%M", # 15/01/24 13:45
+    "%d-%m-%y %H:%M", # 15-01-24 13:45
+
     # --- 2-Digit Year: MDY (American) ---
     "%m/%d/%y %H:%M:%OS", # 01/15/24 13:45:30.123
     "%m-%d-%y %H:%M:%OS", # 01-15-24 13:45:30.123
-    "%m/%d/%y %H:%M",    # 01/15/24 13:45
-    "%m-%d-%y %H:%M"     # 01-15-24 13:45
+    "%m/%d/%y %H:%M", # 01/15/24 13:45
+    "%m-%d-%y %H:%M" # 01-15-24 13:45
   ),
   date_regex = paste0(
     c(
