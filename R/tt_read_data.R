@@ -291,6 +291,13 @@ tt_read_data <- function(
 
     # join new meta to old meta
     old_meta <- show_meta(move2_obj)
+    # the track ids are a factor in the events; convert the ids in the
+    # metadata to the same type, as they often differ (e.g. integer ids read
+    # from a csv file) and cannot be joined otherwise
+    meta[[col_track_id]] <- factor(
+      as.character(meta[[col_track_id]]),
+      levels = levels(old_meta[[col_track_id]])
+    )
     updated_meta <- dplyr::left_join(
       old_meta,
       meta,

@@ -662,3 +662,27 @@ test_that("tt_read_data gives errors for wrong input types", {
     "meta must be either NULL, a data frame or a path to a csv file."
   )
 })
+
+test_that("tt_read_data joins metadata with numeric track ids", {
+  events <- data.frame(
+    bird_id = c(1, 1, 2, 2),
+    lon = c(0, 1, 0, 1),
+    lat = 0,
+    date_time = rep(c("2024-01-01 00:00:00", "2024-01-01 01:00:00"), 2)
+  )
+  # integer ids (as read by read.csv), in a different order, and with an extra
+  # track that is not in the events
+  meta <- data.frame(bird_id = c(2L, 3L, 1L), sex = c("m", "f", "f"))
+
+  test_tt <- tt_read_data(
+    events = events,
+    meta = meta,
+    col_track_id = "bird_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "date_time"
+  )
+  test_meta <- show_meta(test_tt)
+  expect_s3_class(test_meta$bird_id, "factor")
+  expect_equal(as.character(test_meta$bird_id), c("1", "2"))
+  expect_equal(test_meta$sex, c("f", "m"))
+})
