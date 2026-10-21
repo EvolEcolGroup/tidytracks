@@ -51,9 +51,9 @@ hr_ud_overlap(...)
   A character string specifying the method to use for overlap
   calculation. Options are `"ba"` (Bhattacharyya's Affinity), `"vi"`
   (Volume of Intersection), `"udoi"` (Utilisation Distribution Overlap
-  Index), and `"earth_mover"` (Earth Mover's Distance). `"earth_mover"`
-  returns a distance, where zero indicates identical UDs, and requires
-  the suggested package `emdist`. Default is `"ba"`.
+  Index, see details), and `"earth_mover"` (Earth Mover's Distance).
+  `"earth_mover"` returns a distance, where zero indicates identical
+  UDs, and requires the suggested package `emdist`. Default is `"ba"`.
 
 - y:
 
@@ -77,6 +77,29 @@ values, and conditionally masked once before all pairwise comparisons
 are calculated. This avoids repeated raster reads and
 cumulative-distribution calculations for UDs that occur in multiple
 pairs.
+
+The UDOI is computed as defined by Fieberg & Kochanny (2005), as
+\\A\_{1,2} \int\int UD_1(x,y) UD_2(x,y) dx dy\\, where \\A\_{1,2}\\ is
+the area of overlap between the home ranges of the two animals. The home
+ranges are the `cond_level` isopleths of the UDs or, if `cond_level` is
+`NULL`, their 95% isopleths (as in
+[`adehabitatHR::kerneloverlaphr()`](https://rdrr.io/pkg/adehabitatHR/man/kerneloverlap.html)).
+The UDOI is 0 for UDs that do not overlap and 1 for two identical,
+uniformly distributed UDs, and can be larger than 1 for non-uniform UDs
+that overlap considerably. Unlike the other indices, the UDOI of a UD
+with itself is therefore not 1, and it is reported on the diagonal of
+the matrix returned for a table of UDs.
+
+The isopleths used with `cond_level`, and for the UDOI, must contain at
+least one cell of the grid: an error is given if a single cell holds
+more than `cond_level` (or, for the UDOI with `cond_level = NULL`, 95%)
+of a UD, as can happen on a grid that is coarse relative to the UD.
+
+## References
+
+Fieberg, J. & Kochanny, C.O. (2005) Quantifying home-range overlap: the
+importance of the utilization distribution. Journal of Wildlife
+Management, 69, 1346-1359.
 
 ## Examples
 

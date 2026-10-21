@@ -18,8 +18,9 @@ event_distance(x, units = as_units("m"))
 
 - units:
 
-  Optional, the units to use for the distance. The default is "m". Other
-  distance units supported by the `units` package can also be supplied.
+  The units to use for the distance, as a `units` object. The default is
+  metres (`as_units("m")`); other distance units supported by the
+  `units` package can also be supplied (e.g. `as_units("km")`).
 
 ## Value
 

@@ -21,7 +21,7 @@ areas of the UDs."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,7 +48,7 @@ areas of the UDs."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Compute overlap for utilisation distributions</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/hr_tt_ud_overlap.R" class="external-link"><code>R/hr_tt_ud_overlap.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/hr_tt_ud_overlap.R" class="external-link"><code>R/hr_tt_ud_overlap.R</code></a></small>
       <div class="d-none name"><code>hr_tt_ud_overlap.Rd</code></div>
     </div>
 
@@ -104,10 +104,10 @@ a tibble of UDs of class <code>hr_tt_ud_tbl</code> (e.g. as created with
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>A character string specifying the method to use for overlap
 calculation. Options are <code>"ba"</code> (Bhattacharyya's Affinity), <code>"vi"</code> (Volume
-of Intersection), <code>"udoi"</code> (Utilisation Distribution Overlap Index), and
-<code>"earth_mover"</code> (Earth Mover's Distance). <code>"earth_mover"</code> returns a
-distance, where zero indicates identical UDs, and requires the suggested
-package <code>emdist</code>. Default is <code>"ba"</code>.</p></dd>
+of Intersection), <code>"udoi"</code> (Utilisation Distribution Overlap Index, see
+details), and <code>"earth_mover"</code> (Earth Mover's Distance). <code>"earth_mover"</code>
+returns a distance, where zero indicates identical UDs, and requires the
+suggested package <code>emdist</code>. Default is <code>"ba"</code>.</p></dd>
 
 
 <dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
@@ -132,6 +132,26 @@ tibble of multiple UDs.</p>
 cell values, and conditionally masked once before all pairwise comparisons
 are calculated. This avoids repeated raster reads and
 cumulative-distribution calculations for UDs that occur in multiple pairs.</p>
+<p>The UDOI is computed as defined by Fieberg &amp; Kochanny (2005), as
+\(A_{1,2} \int\int UD_1(x,y) UD_2(x,y) dx dy\), where \(A_{1,2}\) is
+the area of overlap between the home ranges of the two animals. The home
+ranges are the <code>cond_level</code> isopleths of the UDs or, if <code>cond_level</code> is
+<code>NULL</code>, their 95% isopleths (as in <code><a href="https://rdrr.io/pkg/adehabitatHR/man/kerneloverlap.html" class="external-link">adehabitatHR::kerneloverlaphr()</a></code>). The
+UDOI is 0 for UDs that do not overlap and 1 for two identical, uniformly
+distributed UDs, and can be larger than 1 for non-uniform UDs that overlap
+considerably. Unlike the other indices, the UDOI of a UD with itself is
+therefore not 1, and it is reported on the diagonal of the matrix returned
+for a table of UDs.</p>
+<p>The isopleths used with <code>cond_level</code>, and for the UDOI, must contain at
+least one cell of the grid: an error is given if a single cell holds more
+than <code>cond_level</code> (or, for the UDOI with <code>cond_level = NULL</code>, 95%) of a
+UD, as can happen on a grid that is coarse relative to the UD.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Fieberg, J. &amp; Kochanny, C.O. (2005) Quantifying home-range
+overlap: the importance of the utilization distribution. Journal of
+Wildlife Management, 69, 1346-1359.</p>
     </div>
 
     <div class="section level2">

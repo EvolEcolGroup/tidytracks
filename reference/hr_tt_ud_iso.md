@@ -34,9 +34,11 @@ hr_ud_iso(x, levels = c(0.5, 0.95))
 
 ## Value
 
-If `x` is a tibble, a tibble of class `hr_tt_poly_tbl` with columns
-`id`, `level`, and `geometry`. If `x` is a `hr_tt_ud` object, a
-`sfc_GEOMETRYCOLLECTION` object.
+If `x` is a `SpatRaster`, an `sf` object with one row per level and
+columns `level`, `area` (the area of the isopleth) and `geometry` (a
+`MULTIPOLYGON` for the isopleth). If `x` is a tibble, an `sf` tibble of
+class `hr_tt_poly_tbl` with the columns of `x` (except `ud`) and, for
+each UD, one row per level with these three columns.
 
 ## See also
 

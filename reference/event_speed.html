@@ -13,7 +13,7 @@ the distance between events divided by the time between events."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,7 @@ the distance between events divided by the time between events."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Return the speed of each segment between events</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/event_speed.R" class="external-link"><code>R/event_speed.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/event_speed.R" class="external-link"><code>R/event_speed.R</code></a></small>
       <div class="d-none name"><code>event_speed.Rd</code></div>
     </div>
 
@@ -65,8 +65,9 @@ the distance between events divided by the time between events.</p>
 
 
 <dt id="arg-units">units<a class="anchor" aria-label="anchor" href="#arg-units"></a></dt>
-<dd><p>Optional units to use for speed. The default is <code>"m/min"</code>.
-Other speed units supported by the <code>units</code> package can also be supplied.</p></dd>
+<dd><p>The units to use for speed, as a <code>units</code> object. The default is
+metres per minute (<code>as_units("m/min")</code>); other speed units supported by
+the <code>units</code> package can also be supplied (e.g. <code>as_units("m/s")</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">

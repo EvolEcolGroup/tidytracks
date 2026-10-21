@@ -11,7 +11,7 @@ table, the distance of the last event is set to NA."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,7 +38,7 @@ table, the distance of the last event is set to NA."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Measure the distance between pairs of consecutive events within each track</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/event_distance.R" class="external-link"><code>R/event_distance.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/event_distance.R" class="external-link"><code>R/event_distance.R</code></a></small>
       <div class="d-none name"><code>event_distance.Rd</code></div>
     </div>
 
@@ -62,8 +62,9 @@ table, the distance of the last event is set to NA.</p>
 
 
 <dt id="arg-units">units<a class="anchor" aria-label="anchor" href="#arg-units"></a></dt>
-<dd><p>Optional, the units to use for the distance. The default is "m".
-Other distance units supported by the <code>units</code> package can also be supplied.</p></dd>
+<dd><p>The units to use for the distance, as a <code>units</code> object. The
+default is metres (<code>as_units("m")</code>); other distance units supported by the
+<code>units</code> package can also be supplied (e.g. <code>as_units("km")</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">

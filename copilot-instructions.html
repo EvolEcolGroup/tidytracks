@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,7 +34,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Copilot Instructions for tidytracks</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/.github/copilot-instructions.md" class="external-link"><code>.github/copilot-instructions.md</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/.github/copilot-instructions.md" class="external-link"><code>.github/copilot-instructions.md</code></a></small>
     </div>
 
 <div id="copilot-instructions-for-tidytracks" class="section level1">
@@ -105,7 +105,7 @@
 <ul><li>Linting is configured in <code>.lintr</code> using <code>lintr</code> package</li>
 <li>Linter excludes <code>return_linter</code> by default</li>
 <li>Some ggplot2 wrapper functions have <code>object_name_linter</code> disabled to match ggplot2 conventions</li>
-<li>Run <code><a href="https://lintr.r-lib.org/reference/lint.html" class="external-link">lintr::lint_package()</a></code> before committing changes</li>
+<li>Run <code>lintr::lint_package()</code> before committing changes</li>
 </ul></div>
 <div class="section level3">
 <h3 id="error-handling">Error Handling<a class="anchor" aria-label="anchor" href="#error-handling"></a></h3>
@@ -218,7 +218,7 @@
 </li>
 <li>Use <code>@keywords internal</code> for functions not meant to be exported</li>
 <li>The package uses lazy data loading (<code>LazyData: true</code>)</li>
-<li>Minimum R version is 3.5</li>
+<li>Minimum R version is 4.1.0 (see <code>Depends</code> in <code>DESCRIPTION</code>)</li>
 </ul></div>
 <div class="section level2">
 <h2 id="git-and-version-control">Git and Version Control<a class="anchor" aria-label="anchor" href="#git-and-version-control"></a></h2>

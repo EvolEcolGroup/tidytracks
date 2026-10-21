@@ -1,7 +1,10 @@
 # Split tracks into trips for central place foragers
 
 This function splits tracks into trips for central place foragers by
-identifying the trips based on a distance from the colony/nest.
+identifying the trips based on a distance from the colony/nest. Events
+with an empty geometry (i.e. no location) are assigned to the same trip
+as the preceding event with a location (or the following one, at the
+start of a track).
 
 ## Usage
 
@@ -32,13 +35,18 @@ tt_split_trips(
 
 - buffer_outbound:
 
-  the distance from the centre to define outbound trips, specified as a
-  unit object, e.g `as_units(10000, "m")` or `as_units(10, "km")`.
+  the distance from the centre that delimits trips: a trip starts when
+  the animal moves further than this distance from the centre, and ends
+  when it comes back within it. Specified as a unit object, e.g
+  `as_units(10000, "m")` or `as_units(10, "km")`.
 
 - buffer_inbound:
 
-  the distance from the centre to define inbound trips, specified as a
-  unit object, e.g `as_units(10000, "m")` or `as_units(10, "km")`.
+  the distance from the centre within which the last location of a track
+  has to be for the last trip of the track to be complete (rather than
+  incomplete, i.e. the data end before the animal returned to the
+  centre). Specified as a unit object, e.g `as_units(10000, "m")` or
+  `as_units(10, "km")`.
 
 - complete:
 

@@ -13,7 +13,7 @@ points that are missing (due to gaps in track)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,7 +40,7 @@ points that are missing (due to gaps in track)."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Create a summary of the quality of each track</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/track_summary_health.R" class="external-link"><code>R/track_summary_health.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/track_summary_health.R" class="external-link"><code>R/track_summary_health.R</code></a></small>
       <div class="d-none name"><code>track_summary_health.Rd</code></div>
     </div>
 
@@ -66,7 +66,8 @@ points that are missing (due to gaps in track).</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A tibble with one row per track and the following columns:</p><ul><li><p><code>&lt;track id column&gt;</code>: The track ID from <code>x</code></p></li>
+    <p>A tibble with one row per track (in the same order as the tracks in
+the metadata, see <code><a href="show_meta.html">show_meta()</a></code>) and the following columns:</p><ul><li><p><code>&lt;track id column&gt;</code>: The track ID from <code>x</code></p></li>
 <li><p>median_sampling_interval: The median sampling interval in seconds</p></li>
 <li><p>track_duration: The duration of the track in seconds</p></li>
 <li><p>expected_points: The expected number of points based on the

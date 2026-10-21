@@ -17,7 +17,7 @@ separately."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,7 +44,7 @@ separately."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Quantify the home range using kernel density estimation</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/hr_tt_kde.R" class="external-link"><code>R/hr_tt_kde.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/hr_tt_kde.R" class="external-link"><code>R/hr_tt_kde.R</code></a></small>
       <div class="d-none name"><code>hr_tt_kde.Rd</code></div>
     </div>
 
@@ -71,14 +71,19 @@ separately.</p>
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>A move2 object; if explicitly grouped, the home range is estimated
 for each group, combining all tracks within each group. Otherwise, the
-track id is used as grouping variable.</p></dd>
+track id is used as grouping variable. Every group must have events, so
+groupings with empty groups (e.g. from grouping by a factor with unused
+levels with <code>.drop = FALSE</code>) give an error.</p></dd>
 
 
 <dt id="arg-h">h<a class="anchor" aria-label="anchor" href="#arg-h"></a></dt>
-<dd><p>The bandwidth for the kernel density estimation. Either a number, or
-"h_ref_indiv" for using the reference bandwidth for each individual, or
-"h_ref_mean" for using the mean bandwidth for all individuals (the
-default).</p></dd>
+<dd><p>The bandwidth for the kernel density estimation. Either a number,
+a vector with one value per group, or "h_ref_indiv" for using the
+reference bandwidth for each individual, or "h_ref_mean" for using the mean
+bandwidth for all individuals (the default). The reference bandwidth cannot
+be computed for groups with fewer than two distinct locations: such groups
+are left out of the mean for "h_ref_mean", and cause an error with
+"h_ref_indiv".</p></dd>
 
 
 <dt id="arg-bbox">bbox<a class="anchor" aria-label="anchor" href="#arg-bbox"></a></dt>
@@ -92,7 +97,10 @@ group. If <code>NULL</code>, a shared grid is created from the extent of all poi
 <dd><p>The resolution of the grid (in the units of the projection of x).
 Supply one value for a shared resolution or one value per group when
 <code>bbox</code> contains one grid per group. If <code>NULL</code>, each grid is assigned a
-resolution that produces approximately 1000 cells.</p></dd>
+resolution that produces approximately 1000 cells.</p>
+<p>Per-group values of <code>h</code>, <code>bbox</code> and <code>res</code> are matched to the groups in the
+order of <code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">dplyr::group_keys()</a></code> (i.e. sorted by the grouping variables),
+not in the order in which the groups appear in <code>x</code>.</p></dd>
 
 
 <dt id="arg-levels">levels<a class="anchor" aria-label="anchor" href="#arg-levels"></a></dt>
@@ -105,35 +113,41 @@ to the 50% and 95% home ranges.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Either a <code>tibble</code>, or, if <code>levels</code> is not NULL, an <code>sf</code> tibble ,
-with columns:</p><ul><li><p>the grouping variable (as named in <code>x</code>; if <code>x</code> is grouped by
+    <p>Either a <code>tibble</code> of class <code>hr_tt_ud_tbl</code>, or, if <code>levels</code> is not
+NULL, an <code>sf</code> tibble of class <code>hr_tt_poly_tbl</code> (as returned by
+<code><a href="hr_tt_ud_iso.html">hr_tt_ud_iso()</a></code>), with columns:</p><ul><li><p>the grouping variable (as named in <code>x</code>; if <code>x</code> is grouped by
 multiple variables, this column is named <code>group_id</code>): the ids from the
 grouping of <code>x</code></p></li>
-<li><p><code>level</code>: the level of the isopleth</p></li>
+<li><p><code>method</code>: the method used to estimate the home range (<code>"kde"</code>)</p></li>
 <li><p><code>h</code>: the bandwidth used for the KDE</p></li>
 <li><p><code>xmin</code>, <code>ymin</code>, <code>xmax</code>, <code>ymax</code>: the bounding box used for the KDE</p></li>
 <li><p><code>res</code>: the resolution used for the KDE
 If <code>levels</code> is NULL:</p></li>
 <li><p><code>ud</code>: the full utilisation distribution is returned as a list-column of
 <code><a href="https://rspatial.github.io/terra/reference/SpatRaster-class.html" class="external-link">terra::SpatRaster</a></code> objects
-Else, if <code>levels</code> is not NULL, the following columns are added:</p></li>
+Else, if <code>levels</code> is not NULL, there is one row per group and level, and
+the following columns are added:</p></li>
+<li><p><code>level</code>: the level of the isopleth</p></li>
 <li><p><code>area</code>: the area of the home range at this level (in the units
-of the projection of <code>x</code>, e.g. m^2 for a UTM projection)</p></li>
+of the projection of <code>x</code>, e.g. m^2 for a UTM projection, or in m^2 for
+unprojected data)</p></li>
 <li><p><code>geometry</code>:  an <code>sfc</code> column containing the multipolygons representing
 the isopleth for the appropriate level</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>By default, the full UD is returned. If <code>levels</code> is set, the
+    <p>Events with an empty geometry (i.e. no location) are ignored.</p>
+<p>By default, the full UD is returned. If <code>levels</code> is set, the
 isopleths for the specified levels are returned instead, along with their
 area. This option is useful to reduce memory use, but has the drawback that
 the full UD is not returned, which can be useful for some applications (e.g.
 to compute overlap between home ranges). If <code>levels</code> is set, the area of the
 isopleths is computed using <code><a href="https://r-spatial.github.io/sf/reference/geos_measures.html" class="external-link">sf::st_area()</a></code>, which returns the area in the
-units of the projection of <code>x</code> (e.g. m^2 for a UTM projection). If <code>x</code> is
-unprojected, the area is computed in degrees^2, which is not a meaningful
-unit for area. In this case, it is recommended to project <code>x</code> to an
-appropriate projection before using this function.</p>
+units of the projection of <code>x</code> (e.g. m^2 for a UTM projection), or in m^2 if
+<code>x</code> is unprojected (longitude/latitude). Note, however, that for unprojected
+data the kernel is computed in degrees, so the bandwidth and the shape of the
+UD are distorted (increasingly so away from the equator); it is recommended
+to project <code>x</code> to an appropriate projection before using this function.</p>
     </div>
 
     <div class="section level2">

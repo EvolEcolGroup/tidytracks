@@ -61,9 +61,17 @@ tt_read_data(
   either the single date-time column, or the date and time columns
   separated by a space, for
   [`as.POSIXct()`](https://rdrr.io/r/base/as.POSIXlt.html) to parse the
-  date-time. If `NULL` (default), a set of common formats will be tried.
-  For help with specifying date-time formats, see
-  [`?strptime`](https://rdrr.io/r/base/strptime.html).
+  date-time. If `NULL` (default), a set of common formats will be tried:
+  a date in ISO format (`%Y-%m-%d`, `%Y/%m/%d`), DMY format (`%d/%m/%Y`,
+  `%d-%m-%Y`, `%d/%m/%y`, `%d-%m-%y`), or MDY format (`%m/%d/%Y`,
+  `%m-%d-%Y`, `%m/%d/%y`, `%m-%d-%y`), followed by a time in `%H:%M:%OS`
+  or `%H:%M`. DMY formats are tried before MDY formats, so a date that
+  is ambiguous between the two (e.g. `"03/04/2024"`, where both day and
+  month are valid as either) will be silently parsed as DMY (4 March
+  2024), not MDY (3 April 2024). If your dates are in MDY format and
+  could be ambiguous, specify `format_date_time` explicitly rather than
+  relying on auto-detection. For help with specifying date-time formats,
+  see [`?strptime`](https://rdrr.io/r/base/strptime.html).
 
 - crs:
 

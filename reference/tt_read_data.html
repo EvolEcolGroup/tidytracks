@@ -37,7 +37,7 @@ breeding status, etc.)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,7 +64,7 @@ breeding status, etc.)."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Read data from a CSV file into a <code>move2</code> object</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/tt_read_data.R" class="external-link"><code>R/tt_read_data.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/tt_read_data.R" class="external-link"><code>R/tt_read_data.R</code></a></small>
       <div class="d-none name"><code>tt_read_data.Rd</code></div>
     </div>
 
@@ -128,8 +128,17 @@ date and time columns). Time is assumed to be in UTC.</p></dd>
 <dd><p>optional, a string containing the format of the
 date-time field(s): either the single date-time column, or the date and
 time columns separated by a space, for <code><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct()</a></code> to parse the
-date-time. If <code>NULL</code> (default), a set of common formats will be tried. For
-help with specifying date-time formats, see <code><a href="https://rdrr.io/r/base/strptime.html" class="external-link">?strptime</a></code>.</p></dd>
+date-time. If <code>NULL</code> (default), a set of common formats will be tried:
+a date in ISO format (<code>%Y-%m-%d</code>, <code>%Y/%m/%d</code>), DMY format (<code>%d/%m/%Y</code>,
+<code>%d-%m-%Y</code>, <code>%d/%m/%y</code>, <code>%d-%m-%y</code>), or MDY format (<code>%m/%d/%Y</code>,
+<code>%m-%d-%Y</code>, <code>%m/%d/%y</code>, <code>%m-%d-%y</code>), followed by a time in <code>%H:%M:%OS</code> or
+<code>%H:%M</code>. DMY formats are tried before MDY formats, so a date that is
+ambiguous between the two (e.g. <code>"03/04/2024"</code>, where both day and month
+are valid as either) will be silently parsed as DMY (4 March 2024), not
+MDY (3 April 2024). If your dates are in MDY format and could be
+ambiguous, specify <code>format_date_time</code> explicitly rather than relying on
+auto-detection. For help with specifying date-time formats, see
+<code><a href="https://rdrr.io/r/base/strptime.html" class="external-link">?strptime</a></code>.</p></dd>
 
 
 <dt id="arg-crs">crs<a class="anchor" aria-label="anchor" href="#arg-crs"></a></dt>

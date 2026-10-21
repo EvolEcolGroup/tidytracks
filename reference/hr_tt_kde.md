@@ -20,14 +20,19 @@ hr_kde(x, h = "h_ref_mean", bbox = NULL, res = NULL, levels = NULL)
 
   A move2 object; if explicitly grouped, the home range is estimated for
   each group, combining all tracks within each group. Otherwise, the
-  track id is used as grouping variable.
+  track id is used as grouping variable. Every group must have events,
+  so groupings with empty groups (e.g. from grouping by a factor with
+  unused levels with `.drop = FALSE`) give an error.
 
 - h:
 
-  The bandwidth for the kernel density estimation. Either a number, or
-  "h_ref_indiv" for using the reference bandwidth for each individual,
-  or "h_ref_mean" for using the mean bandwidth for all individuals (the
-  default).
+  The bandwidth for the kernel density estimation. Either a number, a
+  vector with one value per group, or "h_ref_indiv" for using the
+  reference bandwidth for each individual, or "h_ref_mean" for using the
+  mean bandwidth for all individuals (the default). The reference
+  bandwidth cannot be computed for groups with fewer than two distinct
+  locations: such groups are left out of the mean for "h_ref_mean", and
+  cause an error with "h_ref_indiv".
 
 - bbox:
 
@@ -43,6 +48,12 @@ hr_kde(x, h = "h_ref_mean", bbox = NULL, res = NULL, levels = NULL)
   `bbox` contains one grid per group. If `NULL`, each grid is assigned a
   resolution that produces approximately 1000 cells.
 
+  Per-group values of `h`, `bbox` and `res` are matched to the groups in
+  the order of
+  [`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html)
+  (i.e. sorted by the grouping variables), not in the order in which the
+  groups appear in `x`.
+
 - levels:
 
   A vector of levels for the isopleths (i.e. contour lines), as numbers
@@ -53,14 +64,16 @@ hr_kde(x, h = "h_ref_mean", bbox = NULL, res = NULL, levels = NULL)
 
 ## Value
 
-Either a `tibble`, or, if `levels` is not NULL, an `sf` tibble , with
-columns:
+Either a `tibble` of class `hr_tt_ud_tbl`, or, if `levels` is not NULL,
+an `sf` tibble of class `hr_tt_poly_tbl` (as returned by
+[`hr_tt_ud_iso()`](https://evolecolgroup.github.io/tidytracks/reference/hr_tt_ud_iso.md)),
+with columns:
 
 - the grouping variable (as named in `x`; if `x` is grouped by multiple
   variables, this column is named `group_id`): the ids from the grouping
   of `x`
 
-- `level`: the level of the isopleth
+- `method`: the method used to estimate the home range (`"kde"`)
 
 - `h`: the bandwidth used for the KDE
 
@@ -71,16 +84,21 @@ columns:
 - `ud`: the full utilisation distribution is returned as a list-column
   of
   [`terra::SpatRaster`](https://rspatial.github.io/terra/reference/SpatRaster-class.html)
-  objects Else, if `levels` is not NULL, the following columns are
-  added:
+  objects Else, if `levels` is not NULL, there is one row per group and
+  level, and the following columns are added:
+
+- `level`: the level of the isopleth
 
 - `area`: the area of the home range at this level (in the units of the
-  projection of `x`, e.g. m^2 for a UTM projection)
+  projection of `x`, e.g. m^2 for a UTM projection, or in m^2 for
+  unprojected data)
 
 - `geometry`: an `sfc` column containing the multipolygons representing
   the isopleth for the appropriate level
 
 ## Details
+
+Events with an empty geometry (i.e. no location) are ignored.
 
 By default, the full UD is returned. If `levels` is set, the isopleths
 for the specified levels are returned instead, along with their area.
@@ -90,10 +108,11 @@ the full UD is not returned, which can be useful for some applications
 area of the isopleths is computed using
 [`sf::st_area()`](https://r-spatial.github.io/sf/reference/geos_measures.html),
 which returns the area in the units of the projection of `x` (e.g. m^2
-for a UTM projection). If `x` is unprojected, the area is computed in
-degrees^2, which is not a meaningful unit for area. In this case, it is
-recommended to project `x` to an appropriate projection before using
-this function.
+for a UTM projection), or in m^2 if `x` is unprojected
+(longitude/latitude). Note, however, that for unprojected data the
+kernel is computed in degrees, so the bandwidth and the shape of the UD
+are distorted (increasingly so away from the equator); it is recommended
+to project `x` to an appropriate projection before using this function.
 
 ## Examples
 

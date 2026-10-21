@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,7 +34,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Create isopleths from utilisation distributions</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/hr_tt_ud_iso.R" class="external-link"><code>R/hr_tt_ud_iso.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/hr_tt_ud_iso.R" class="external-link"><code>R/hr_tt_ud_iso.R</code></a></small>
       <div class="d-none name"><code>hr_tt_ud_iso.Rd</code></div>
     </div>
 
@@ -73,9 +73,11 @@ between 0 and 1.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>If <code>x</code> is a tibble, a tibble of class <code>hr_tt_poly_tbl</code> with columns
-<code>id</code>, <code>level</code>, and <code>geometry</code>. If <code>x</code> is a <code>hr_tt_ud</code> object, a
-<code>sfc_GEOMETRYCOLLECTION</code> object.</p>
+    <p>If <code>x</code> is a <code>SpatRaster</code>, an <code>sf</code> object with one row per level and
+columns <code>level</code>, <code>area</code> (the area of the isopleth) and <code>geometry</code> (a
+<code>MULTIPOLYGON</code> for the isopleth). If <code>x</code> is a tibble, an <code>sf</code> tibble of
+class <code>hr_tt_poly_tbl</code> with the columns of <code>x</code> (except <code>ud</code>) and, for each
+UD, one row per level with these three columns.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

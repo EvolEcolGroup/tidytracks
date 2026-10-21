@@ -874,7 +874,8 @@ the units of the projection, in this case m^2) and a geometry column:
 ``` r
 
 class(shags_females_kde)
-#> [1] "sf"         "tbl_df"     "tbl"        "data.frame"
+#> [1] "hr_tt_poly_tbl" "sf"             "tbl_df"         "tbl"           
+#> [5] "data.frame"
 shags_females_kde
 #> Simple feature collection with 7 features and 10 fields
 #> Geometry type: MULTIPOLYGON

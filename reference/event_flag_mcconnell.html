@@ -11,7 +11,7 @@ package, with an optional endpoint check."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,7 +38,7 @@ package, with an optional endpoint check."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Clean data based on speed</h1>
-      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/main/R/event_flag_mcconnell.R" class="external-link"><code>R/event_flag_mcconnell.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/R/event_flag_mcconnell.R" class="external-link"><code>R/event_flag_mcconnell.R</code></a></small>
       <div class="d-none name"><code>event_flag_mcconnell.Rd</code></div>
     </div>
 
@@ -87,6 +87,10 @@ last currently valid point of each track using an endpoint Root Mean Square
 <li><p>last point:  RMS of speed(n-1,n) and speed(n-2,n)</p></li>
 </ul><p>If an endpoint is removed, the McConnell filter is rerun on the reduced
 track, and the endpoint check is repeated until the result is stable.</p>
+<p>Events with an empty geometry (i.e. no location) are ignored by the filter
+and returned as valid. Consecutive events at the same location are treated
+as having zero speed, even when they share the same timestamp (e.g.
+duplicated records).</p>
     </div>
 
     <div class="section level2">

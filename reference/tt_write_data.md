@@ -1,7 +1,10 @@
 # Write a tibble of tracks to CSV files
 
 This function writes the event table and the metadata table of a
-'tidy_tracks' object to CSV files (or one combined CSV file).
+'tidy_tracks' object to CSV files (or one combined CSV file). Times are
+written in UTC (e.g. "2024-01-15 13:45:30 UTC", with fractional seconds
+if any), in the column `date_time`, so that they can be read back with
+[`tt_read_data()`](https://evolecolgroup.github.io/tidytracks/reference/tt_read_data.md).
 
 ## Usage
 
