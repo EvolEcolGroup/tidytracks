@@ -12,7 +12,9 @@ hr_mcp(x, levels = c(0.5, 0.95))
 \arguments{
 \item{x}{A move2 object; if explicitly grouped, the home range is estimated
 for each group, combining all tracks within each group. Otherwise, the
-track id is used as grouping variable.}
+track id is used as grouping variable. Every group must have events, so
+groupings with empty groups (e.g. from grouping by a factor with unused
+levels with \code{.drop = FALSE}) give an error.}
 
 \item{levels}{A vector of levels for the contour lines. The default is
 \code{c(0.5, 0.95)}, which corresponds to the 50\% and 95\% home ranges.}

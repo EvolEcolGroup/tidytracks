@@ -6,7 +6,9 @@
 #'
 #' @param x A move2 object; if explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
-#'   track id is used as grouping variable.
+#'   track id is used as grouping variable. Every group must have events, so
+#'   groupings with empty groups (e.g. from grouping by a factor with unused
+#'   levels with `.drop = FALSE`) give an error.
 #' @param levels A vector of levels for the contour lines. The default is
 #' `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
 #' @returns An `sf` tibble of subclass `hr_tt_poly_tbl` of results, with one
@@ -30,6 +32,8 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   if (!inherits(x, "grouped_df")) {
     x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
+  # as in hr_tt_kde(), every group listed in the group keys must have events
+  check_no_empty_groups(x) # nolint: object_usage_linter.
 
   # Check if levels are valid
   if (any(levels < 0 | levels > 1)) {
@@ -49,16 +53,13 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   located <- stats::complete.cases(xy)
   xy <- xy[located, , drop = FALSE]
   group_index <- group_index[located]
-  # a polygon needs at least 3 locations (only the groups with events are
-  # checked, as groups without events, e.g. unused factor levels kept with
-  # `.drop = FALSE`, are not estimated)
+  # a polygon needs at least 3 locations
   n_locations <- tabulate(group_index, nbins = length(group_labels))
-  n_locations <- n_locations[group_unique]
   if (any(n_locations < 3)) {
     stop(
       "each group must contain at least 3 events with a location to compute ",
       "a MCP; groups with fewer locations: ",
-      paste(group_labels[group_unique][n_locations < 3], collapse = ", ")
+      paste(group_labels[n_locations < 3], collapse = ", ")
     )
   }
 
