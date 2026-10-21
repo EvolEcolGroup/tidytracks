@@ -24,6 +24,11 @@
 #'   considerably. Unlike the other indices, the UDOI of a UD with itself is
 #'   therefore not 1, and it is reported on the diagonal of the matrix returned
 #'   for a table of UDs.
+#'
+#'   The isopleths used with `cond_level`, and for the UDOI, must contain at
+#'   least one cell of the grid: an error is given if a single cell holds more
+#'   than `cond_level` (or, for the UDOI with `cond_level = NULL`, 95%) of a
+#'   UD, as can happen on a grid that is coarse relative to the UD.
 #' @references Fieberg, J. & Kochanny, C.O. (2005) Quantifying home-range
 #'   overlap: the importance of the utilization distribution. Journal of
 #'   Wildlife Management, 69, 1346-1359.
@@ -283,7 +288,7 @@ condition_ud_values <- function(values, cond_level) {
 #' @param level One numeric value strictly between zero and one.
 #' @returns A logical vector, `TRUE` for the cells within the `level` isopleth
 #'   (i.e. the cells with the highest values that, together, hold a proportion
-#'   `level` of the UD).
+#'   `level` of the UD). An error is given if no cell is within the isopleth.
 #' @keywords internal
 #' @noRd
 ud_level_mask <- function(values, level) {
@@ -291,7 +296,18 @@ ud_level_mask <- function(values, level) {
   # cells from highest to lowest UD value.
   order_index <- order(-values)
   cumulative_values <- cumsum(values[order_index])[order(order_index)]
-  !is.na(cumulative_values) & cumulative_values <= level
+  mask <- !is.na(cumulative_values) & cumulative_values <= level
+  # on a grid that is coarse relative to the UD, the cell with the highest
+  # value can hold more than `level` of the UD, leaving no cell within the
+  # isopleth (which would silently give no overlap, even of a UD with itself)
+  if (!any(mask)) {
+    stop(
+      "the ", level * 100, "% isopleth of a UD contains no cells, as a ",
+      "single cell holds more than ", level * 100, "% of the UD; use UDs ",
+      "estimated on a finer grid"
+    )
+  }
+  mask
 }
 
 #' The isopleth level defining the home ranges for the UDOI

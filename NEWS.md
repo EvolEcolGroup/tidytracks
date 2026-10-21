@@ -15,6 +15,9 @@
 * `hr_tt_ud_overlap(method = "udoi")` computes the UDOI of Fieberg & Kochanny
   (2005), as `adehabitatHR` does; the previous values depended on the
   resolution of the grid.
+* `hr_tt_ud_overlap()` gives an error, instead of an overlap of 0, when the
+  isopleth used with `cond_level` (or for the UDOI) contains no cells of the
+  grid, i.e. when a single cell holds more than that proportion of a UD.
 * `hr_tt_ud_iso()` keeps holes in isopleths instead of filling them in.
 * `hr_tt_kde()` returns isopleths (when `levels` is set) of class
   `hr_tt_poly_tbl`, as `hr_tt_ud_iso()` does.

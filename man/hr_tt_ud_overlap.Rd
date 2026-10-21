@@ -77,6 +77,11 @@ distributed UDs, and can be larger than 1 for non-uniform UDs that overlap
 considerably. Unlike the other indices, the UDOI of a UD with itself is
 therefore not 1, and it is reported on the diagonal of the matrix returned
 for a table of UDs.
+
+The isopleths used with \code{cond_level}, and for the UDOI, must contain at
+least one cell of the grid: an error is given if a single cell holds more
+than \code{cond_level} (or, for the UDOI with \code{cond_level = NULL}, 95\%) of a
+UD, as can happen on a grid that is coarse relative to the UD.
 }
 \examples{
 example_kde <- hr_tt_kde(example_tt)

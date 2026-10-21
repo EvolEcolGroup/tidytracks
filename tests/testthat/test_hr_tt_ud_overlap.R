@@ -142,6 +142,39 @@ test_that("hr_tt_ud_overlap computes the UDOI independently of resolution", {
   expect_true(self_udoi > 1)
 })
 
+test_that("hr_tt_ud_overlap rejects isopleths without cells", {
+  # on a coarse grid, a single cell can hold more than 95% of a UD, so its
+  # 95% isopleth contains no cells
+  x <- terra::rast(ncols = 2, nrows = 1, xmin = 0, xmax = 2, ymin = 0, ymax = 1)
+  names(x) <- "ud"
+  terra::values(x) <- c(0.96, 0.04)
+  ud_tbl <- tibble::tibble(id = c("x", "y"), ud = list(x, x))
+  class(ud_tbl) <- c("hr_tt_ud_tbl", class(ud_tbl))
+
+  expect_error(
+    hr_tt_ud_overlap(x, x, method = "udoi"),
+    "the 95% isopleth of a UD contains no cells"
+  )
+  expect_error(
+    hr_tt_ud_overlap(ud_tbl, method = "udoi"),
+    "the 95% isopleth of a UD contains no cells"
+  )
+  expect_error(
+    hr_tt_ud_overlap(x, x, method = "ba", cond_level = 0.5),
+    "the 50% isopleth of a UD contains no cells"
+  )
+  expect_error(
+    hr_tt_ud_overlap(ud_tbl, method = "vi", cond_level = 0.5),
+    "the 50% isopleth of a UD contains no cells"
+  )
+  # an isopleth that contains a cell is fine (here, the UDs within the
+  # isopleth are a single cell, uniformly distributed, and identical)
+  expect_equal(
+    hr_tt_ud_overlap(x, x, method = "udoi", cond_level = 0.97),
+    1
+  )
+})
+
 test_that("hr_tt_ud_overlap calculates Earth Mover's Distance when available", {
   x <- terra::rast(ncols = 3, nrows = 2, xmin = 0, xmax = 3, ymin = 0, ymax = 2)
   y <- x
