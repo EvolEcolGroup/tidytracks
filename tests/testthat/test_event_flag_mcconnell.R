@@ -50,6 +50,17 @@ test_that("event_flag_mcconnell rejects non-move2 input", {
 })
 
 
+test_that("event_flag_mcconnell requires a CRS", {
+  expect_error(
+    event_flag_mcconnell(
+      sf::st_set_crs(example_tt, NA),
+      max_speed = units::as_units(10, "m/s")
+    ),
+    "x must have a coordinate reference system"
+  )
+})
+
+
 test_that("event_flag_mcconnell requires max_speed", {
   x <- make_test_move2(
     x = c(0, 1, 2, 3),
@@ -230,6 +241,56 @@ test_that("multiple track IDs are handled independently", {
 
 
 ################################################################################
+# Guard against infinite loops: fail instead of hanging the test suite
+with_time_limit <- function(expr, seconds = 30) {
+  setTimeLimit(elapsed = seconds, transient = TRUE)
+  on.exit(setTimeLimit(elapsed = Inf, transient = FALSE))
+  expr
+}
+
+test_that("duplicated records do not stop a later spike being removed", {
+  # the third record is duplicated (same time and place), and the seventh
+  # location is a spike 50 km away
+  x <- make_test_move2(
+    x = c(0, 100, 200, 200, 300, 400, 50000, 600, 700, 800, 900, 1000),
+    y = rep(0, 12),
+    time = as.POSIXct("2020-01-01 00:00:00", tz = "UTC") +
+      c(0, 1, 2, 2, 3, 4, 5, 6, 7, 8, 9, 10) * 600,
+    track_id = rep("a", 12)
+  )
+
+  out <- with_time_limit(
+    event_flag_mcconnell(x, max_speed = units::as_units(10, "km/h"))
+  )
+  expect_identical(out, seq_len(12) != 7)
+})
+
+test_that("empty locations are ignored by the filter", {
+  x <- make_test_move2(
+    x = c(0, 100, 200, 300, 400, 50000, 600, 700, 800, 900),
+    y = rep(0, 10),
+    time = as.POSIXct("2020-01-01 00:00:00", tz = "UTC") + (0:9) * 600,
+    track_id = rep("a", 10)
+  )
+  sf::st_geometry(x)[3] <- sf::st_point()
+
+  out <- with_time_limit(
+    event_flag_mcconnell(x, max_speed = units::as_units(10, "km/h"))
+  )
+  # the spike is removed, the empty location is kept
+  expect_identical(out, seq_len(10) != 6)
+
+  cleaned <- with_time_limit(
+    tt_clean_mcconnell(
+      x,
+      max_speed = units::as_units(10, "km/h"),
+      flag_action = "remove"
+    )
+  )
+  expect_equal(nrow(cleaned), 9)
+  expect_true(sf::st_is_empty(sf::st_geometry(cleaned)[3]))
+})
+
 # Check equivalency to trip::speedfilter
 skip_if_not_installed("trip")
 

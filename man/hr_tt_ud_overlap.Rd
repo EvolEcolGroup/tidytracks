@@ -35,10 +35,10 @@ a tibble of UDs of class \code{hr_tt_ud_tbl} (e.g. as created with
 
 \item{method}{A character string specifying the method to use for overlap
 calculation. Options are \code{"ba"} (Bhattacharyya's Affinity), \code{"vi"} (Volume
-of Intersection), \code{"udoi"} (Utilisation Distribution Overlap Index), and
-\code{"earth_mover"} (Earth Mover's Distance). \code{"earth_mover"} returns a
-distance, where zero indicates identical UDs, and requires the suggested
-package \code{emdist}. Default is \code{"ba"}.}
+of Intersection), \code{"udoi"} (Utilisation Distribution Overlap Index, see
+details), and \code{"earth_mover"} (Earth Mover's Distance). \code{"earth_mover"}
+returns a distance, where zero indicates identical UDs, and requires the
+suggested package \code{emdist}. Default is \code{"ba"}.}
 
 \item{y}{A SpatRaster of the utilisation distribution, if \code{x} is a single UD.
 Else, if \code{x} is tibble of UDs, \code{y} is not used.}
@@ -66,8 +66,29 @@ When \code{x} is an \code{hr_tt_ud_tbl}, each UD is validated, converted to
 cell values, and conditionally masked once before all pairwise comparisons
 are calculated. This avoids repeated raster reads and
 cumulative-distribution calculations for UDs that occur in multiple pairs.
+
+The UDOI is computed as defined by Fieberg & Kochanny (2005), as
+\eqn{A_{1,2} \int\int UD_1(x,y) UD_2(x,y) dx dy}, where \eqn{A_{1,2}} is
+the area of overlap between the home ranges of the two animals. The home
+ranges are the \code{cond_level} isopleths of the UDs or, if \code{cond_level} is
+\code{NULL}, their 95\% isopleths (as in \code{adehabitatHR::kerneloverlaphr()}). The
+UDOI is 0 for UDs that do not overlap and 1 for two identical, uniformly
+distributed UDs, and can be larger than 1 for non-uniform UDs that overlap
+considerably. Unlike the other indices, the UDOI of a UD with itself is
+therefore not 1, and it is reported on the diagonal of the matrix returned
+for a table of UDs.
+
+The isopleths used with \code{cond_level}, and for the UDOI, must contain at
+least one cell of the grid: an error is given if a single cell holds more
+than \code{cond_level} (or, for the UDOI with \code{cond_level = NULL}, 95\%) of a
+UD, as can happen on a grid that is coarse relative to the UD.
 }
 \examples{
 example_kde <- hr_tt_kde(example_tt)
 hr_tt_ud_overlap(example_kde)
+}
+\references{
+Fieberg, J. & Kochanny, C.O. (2005) Quantifying home-range
+overlap: the importance of the utilization distribution. Journal of
+Wildlife Management, 69, 1346-1359.
 }

@@ -69,6 +69,7 @@ track_summary_stats <- function(
     x <- x[!event_track_id(x) %in% trip_na_ids, ]
   }
   .group_var <- move2::mt_track_id_column(x)
+  geom_col <- attr(x, "sf_column")
 
   # check centre_col input
   if (is.null(centre_col)) {
@@ -139,7 +140,7 @@ track_summary_stats <- function(
     dplyr::group_by(.data[[.group_var]]) # break here to extract the group keys
   groups <- dplyr::group_keys(bboxes)
   bboxes <- bboxes %>%
-    dplyr::group_map(~ sf::st_bbox(.x$geometry))
+    dplyr::group_map(function(events, key) sf::st_bbox(events[[geom_col]]))
   bboxes_df <- tibble::as_tibble(do.call(rbind, bboxes)) %>%
     dplyr::mutate(
       max_latitude = .data$ymax,
@@ -176,14 +177,14 @@ track_summary_stats <- function(
       centre <- centre_col[i_foreach, ]
       # calculate the distance between the centre and the events
       # TODO re-write with our distance function instead of sf::st_distance()
-      dists <- sf::st_distance(events$geometry, centre)
+      dists <- sf::st_distance(sf::st_geometry(events), centre)
       max_dist <- max(dists, na.rm = TRUE)
       # get lat and lon at max dist
       lat_at_max_dist <- sf::st_coordinates(
-        events$geometry[which(dists == max_dist)[1]]
+        sf::st_geometry(events)[which(dists == max_dist)[1]]
       )[, "Y"]
       lon_at_max_dist <- sf::st_coordinates(
-        events$geometry[which(dists == max_dist)[1]]
+        sf::st_geometry(events)[which(dists == max_dist)[1]]
       )[, "X"]
 
       # return a dataframe of track id, maximum distance, and lat/lon at it.

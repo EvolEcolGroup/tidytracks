@@ -12,12 +12,17 @@ hr_kde(x, h = "h_ref_mean", bbox = NULL, res = NULL, levels = NULL)
 \arguments{
 \item{x}{A move2 object; if explicitly grouped, the home range is estimated
 for each group, combining all tracks within each group. Otherwise, the
-track id is used as grouping variable.}
+track id is used as grouping variable. Every group must have events, so
+groupings with empty groups (e.g. from grouping by a factor with unused
+levels with \code{.drop = FALSE}) give an error.}
 
-\item{h}{The bandwidth for the kernel density estimation. Either a number, or
-"h_ref_indiv" for using the reference bandwidth for each individual, or
-"h_ref_mean" for using the mean bandwidth for all individuals (the
-default).}
+\item{h}{The bandwidth for the kernel density estimation. Either a number,
+a vector with one value per group, or "h_ref_indiv" for using the
+reference bandwidth for each individual, or "h_ref_mean" for using the mean
+bandwidth for all individuals (the default). The reference bandwidth cannot
+be computed for groups with fewer than two distinct locations: such groups
+are left out of the mean for "h_ref_mean", and cause an error with
+"h_ref_indiv".}
 
 \item{bbox}{A named vector of four elements (\code{xmin}, \code{ymin}, \code{xmax}, \code{ymax})
 defining a grid shared by all groups, or a list of one such vector per
@@ -27,7 +32,11 @@ group. If \code{NULL}, a shared grid is created from the extent of all points in
 \item{res}{The resolution of the grid (in the units of the projection of x).
 Supply one value for a shared resolution or one value per group when
 \code{bbox} contains one grid per group. If \code{NULL}, each grid is assigned a
-resolution that produces approximately 1000 cells.}
+resolution that produces approximately 1000 cells.
+
+Per-group values of \code{h}, \code{bbox} and \code{res} are matched to the groups in the
+order of \code{\link[dplyr:group_keys]{dplyr::group_keys()}} (i.e. sorted by the grouping variables),
+not in the order in which the groups appear in \code{x}.}
 
 \item{levels}{A vector of levels for the isopleths (i.e. contour lines), as
 numbers between 0 and 1. If set to NULL (the default), the full utilisation
@@ -36,22 +45,26 @@ possible to specify more than two levels, e.g.  \code{c(0.5, 0.95)} corresponds
 to the 50\% and 95\% home ranges.}
 }
 \value{
-Either a \code{tibble}, or, if \code{levels} is not NULL, an \code{sf} tibble ,
-with columns:
+Either a \code{tibble} of class \code{hr_tt_ud_tbl}, or, if \code{levels} is not
+NULL, an \code{sf} tibble of class \code{hr_tt_poly_tbl} (as returned by
+\code{\link[=hr_tt_ud_iso]{hr_tt_ud_iso()}}), with columns:
 \itemize{
 \item the grouping variable (as named in \code{x}; if \code{x} is grouped by
 multiple variables, this column is named \code{group_id}): the ids from the
 grouping of \code{x}
-\item \code{level}: the level of the isopleth
+\item \code{method}: the method used to estimate the home range (\code{"kde"})
 \item \code{h}: the bandwidth used for the KDE
 \item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}: the bounding box used for the KDE
 \item \code{res}: the resolution used for the KDE
 If \code{levels} is NULL:
 \item \code{ud}: the full utilisation distribution is returned as a list-column of
 \code{terra::SpatRaster} objects
-Else, if \code{levels} is not NULL, the following columns are added:
+Else, if \code{levels} is not NULL, there is one row per group and level, and
+the following columns are added:
+\item \code{level}: the level of the isopleth
 \item \code{area}: the area of the home range at this level (in the units
-of the projection of \code{x}, e.g. m^2 for a UTM projection)
+of the projection of \code{x}, e.g. m^2 for a UTM projection, or in m^2 for
+unprojected data)
 \item \code{geometry}:  an \code{sfc} column containing the multipolygons representing
 the isopleth for the appropriate level
 }
@@ -65,16 +78,19 @@ is used as grouping variable, and the home range is estimated for each track
 separately.
 }
 \details{
+Events with an empty geometry (i.e. no location) are ignored.
+
 By default, the full UD is returned. If \code{levels} is set, the
 isopleths for the specified levels are returned instead, along with their
 area. This option is useful to reduce memory use, but has the drawback that
 the full UD is not returned, which can be useful for some applications (e.g.
 to compute overlap between home ranges). If \code{levels} is set, the area of the
 isopleths is computed using \code{sf::st_area()}, which returns the area in the
-units of the projection of \code{x} (e.g. m^2 for a UTM projection). If \code{x} is
-unprojected, the area is computed in degrees^2, which is not a meaningful
-unit for area. In this case, it is recommended to project \code{x} to an
-appropriate projection before using this function.
+units of the projection of \code{x} (e.g. m^2 for a UTM projection), or in m^2 if
+\code{x} is unprojected (longitude/latitude). Note, however, that for unprojected
+data the kernel is computed in degrees, so the bandwidth and the shape of the
+UD are distorted (increasingly so away from the equator); it is recommended
+to project \code{x} to an appropriate projection before using this function.
 }
 \examples{
 example_kde <- hr_tt_kde(example_tt)

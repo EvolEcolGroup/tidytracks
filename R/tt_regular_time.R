@@ -25,17 +25,18 @@
 #' @section Temporal-to-spatial mapping: Raw observations are often unevenly
 #'   spaced in both time and space. \code{tt_regular_time} accounts for this by
 #'   first computing the normalised arc-length fraction of every input point
-#'   along the path (using [s2::s2_distance()] for geographic CRS and Euclidean
-#'   distance otherwise), then using [stats::approx()] to linearly interpolate
-#'   those fractions at each new time step.  A stationary stretch of the track
-#'   (many observations covering little distance) is therefore correctly treated
-#'   as slow movement, not as a spatial shortcut.
+#'   along the path that is interpolated (using [s2::s2_distance()] along the
+#'   spherical path for geographic and projected CRS, and Euclidean distance
+#'   when there is no CRS), then using [stats::approx()] to linearly
+#'   interpolate those fractions at each new time step.  A stationary stretch
+#'   of the track (many observations covering little distance) is therefore
+#'   correctly treated as slow movement, not as a spatial shortcut.
 #'
 #' @section Attribute interpolation: Numeric event-level columns are linearly
 #'   interpolated at the new time steps using [stats::approx()]. Non-numeric
-#'   columns receive the value of the nearest preceding observation via
-#'   \code{\link[base]{findInterval}}. Track-level attributes stored in
-#'   \code{\link[move2]{mt_track_data}} are preserved unchanged.
+#'   columns receive the value of the nearest preceding (or simultaneous)
+#'   observation via \code{\link[base]{findInterval}}. Track-level attributes
+#'   stored in \code{\link[move2]{mt_track_data}} are preserved unchanged.
 #'
 #' @param x A `move2` object. Timestamps (as returned by [event_time()]) must be
 #'   [base::POSIXct].
@@ -60,8 +61,8 @@
 #'   overlapping tracks will have identical timestamps at each step.
 #'
 #' @return A `move2` object on a regular time grid.  The CRS, time-column name,
-#'   track-id column name, and track-level attributes of \code{x} are all
-#'   preserved.
+#'   track-id column name, geometry column name, and track-level attributes of
+#'   \code{x} are all preserved.
 #'
 #' @seealso \code{\link[move2]{mt_interpolate}} for the move2 implementation of
 #'   the same spatial strategy with flexible time targets (including
@@ -298,7 +299,14 @@ tt_regular_time <- function(
 
   t_new <- seq(t_start, t_sec[length(t_sec)], by = interval_sec)
 
-  seg_len <- .path_lengths(track, has_crs, input_crs)
+  # Projected tracks are interpolated along the spherical path in WGS 84, so
+  # the positions of the points along the path have to be measured on that
+  # same path (fractions of the projected, Euclidean path differ from it)
+  is_projected <- has_crs && !.is_geographic(input_crs)
+  path <- if (is_projected) sf::st_transform(track, 4326L) else track
+  path_crs <- if (is_projected) sf::st_crs(4326L) else input_crs
+
+  seg_len <- .path_lengths(path, has_crs, path_crs)
   cum_len <- c(0, cumsum(seg_len))
   total_len <- cum_len[length(cum_len)]
 
@@ -346,11 +354,10 @@ tt_regular_time <- function(
 
   new_geom <- if (!has_crs) {
     .interpolate_no_crs(track, s_norm)
-  } else if (.is_geographic(input_crs)) {
+  } else if (!is_projected) {
     .interpolate_s2(track, s_norm, input_crs)
   } else {
-    track_geo <- sf::st_transform(track, 4326L)
-    pts_geo <- .interpolate_s2(track_geo, s_norm, sf::st_crs(4326L))
+    pts_geo <- .interpolate_s2(path, s_norm, path_crs)
     sf::st_transform(pts_geo, input_crs)
   }
 
@@ -360,11 +367,15 @@ tt_regular_time <- function(
 
   base_df <- data.frame(
     stats::setNames(list(new_times), time_col),
+    # keep the type of the track ids (e.g. factor or integer), as in the
+    # track data
     stats::setNames(
-      list(rep(unique(as.character(move2::mt_track_id(track))), n_new)),
+      list(rep(move2::mt_track_id(track)[1], n_new)),
       track_col
     ),
-    stringsAsFactors = FALSE
+    stringsAsFactors = FALSE,
+    # keep column names that are not syntactic (e.g. with spaces) unchanged
+    check.names = FALSE
   )
 
   if (length(attr_cols) > 0L) {
@@ -392,16 +403,22 @@ tt_regular_time <- function(
           rule = 1L
         )$y
       } else {
-        vals[findInterval(t_new, t_sec, all.inside = TRUE)]
+        # value of the last observation at or before each new time (a time
+        # equal to the last observation takes the value of that observation)
+        vals[findInterval(t_new, t_sec)]
       }
     })
     base_df <- cbind(
       base_df,
-      as.data.frame(attr_df, stringsAsFactors = FALSE)
+      as.data.frame(attr_df, stringsAsFactors = FALSE, check.names = FALSE)
     )
   }
 
-  sf::st_sf(base_df, geometry = new_geom)
+  # keep the name of the geometry column of the input (added as a column and
+  # selected by name, as it could be the name of an argument of st_sf(), e.g.
+  # "crs")
+  base_df[[geom_col]] <- new_geom
+  sf::st_sf(base_df, sf_column_name = geom_col)
 }
 
 

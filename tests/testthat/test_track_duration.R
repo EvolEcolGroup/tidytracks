@@ -29,3 +29,28 @@ test_that("track_duration returns values in original order", {
     as_units(c(5 / 3, 4 / 3, 1), "hours")
   )
 })
+
+test_that("track_duration returns values in the order of the metadata", {
+  example_tt_2 <- readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
+  # after ordering, the events are in the order a, b, c, whilst the metadata
+  # is still in the order b, a, c
+  example_tt_2 <- tt_order_time(example_tt_2)
+  expect_equal(
+    unique(as.character(event_track_id(example_tt_2))),
+    c("a", "b", "c")
+  )
+
+  durations <- track_duration(example_tt_2, units = "hours")
+  expect_equal(names(durations), c("b", "a", "c"))
+  expect_equal(
+    unname(durations),
+    as_units(c(5 / 3, 4 / 3, 1), "hours")
+  )
+
+  # so they can be added to the metadata
+  show_meta(example_tt_2)$duration <- track_duration(example_tt_2, "hours")
+  expect_equal(
+    show_meta(example_tt_2)$duration[show_meta(example_tt_2)$track_id == "a"],
+    as_units(4 / 3, "hours")
+  )
+})

@@ -12,7 +12,8 @@ track_duration(x, units = as_units(1, "days"))
 \item{units}{The units to use for the duration. Default is "days".}
 }
 \value{
-A vector of total durations for each track
+A vector of total durations for each track, named by track id and in
+the same order as the tracks in the metadata (see \code{\link[=show_meta]{show_meta()}})
 }
 \description{
 Compute the total duration of each track

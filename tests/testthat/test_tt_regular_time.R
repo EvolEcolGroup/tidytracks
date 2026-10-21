@@ -209,6 +209,39 @@ test_that("[projected CRS] midpoint of straight line is correct", {
 })
 
 
+test_that("[projected CRS] resampling at the fix times returns the fixes", {
+  # a track heading north over a wide range of latitudes, for which distances
+  # along the projected path are not proportional to distances on the sphere
+  times <- as.POSIXct("2024-01-01", tz = "UTC") + c(0, 3600, 7200, 10800)
+  geom <- sf::st_sfc(
+    sf::st_point(c(0, 0)),
+    sf::st_point(c(0, 60)),
+    sf::st_point(c(0, 61)),
+    sf::st_point(c(0, 70)),
+    crs = 4326
+  )
+  for (crs in c(3857, 32631)) {
+    track <- move2::mt_as_move2(
+      sf::st_sf(
+        timestamp = times,
+        track_id = "a",
+        geometry = sf::st_transform(geom, crs)
+      ),
+      time_column = "timestamp",
+      track_id_column = "track_id"
+    )
+    out <- tt_regular_time(track, interval = units::set_units(1, "h"))
+    expect_equal(nrow(out), 4)
+    offsets <- sf::st_distance(
+      sf::st_geometry(out),
+      sf::st_geometry(track),
+      by_element = TRUE
+    )
+    expect_true(all(as.numeric(offsets) < 1))
+  }
+})
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 5. ENDPOINT PRESERVATION
 # ─────────────────────────────────────────────────────────────────────────────
@@ -236,6 +269,16 @@ test_that("numeric attribute is correct at 100 s grid", {
     out[order(move2::mt_time(out)), ]$value,
     c(0, 10, 20),
     tolerance = tol_attr
+  )
+})
+
+test_that("non-numeric attribute takes the preceding observation", {
+  track <- make_track(crs = NA)
+  track$label <- c("p", "q", "r")
+  out <- tt_regular_time(track, interval = s(50))
+  expect_equal(
+    out[order(move2::mt_time(out)), ]$label,
+    c("p", "p", "q", "q", "r")
   )
 })
 
@@ -322,6 +365,52 @@ test_that("all tracks appear in output", {
   )
   expect_equal(move2::mt_n_tracks(out), 2L)
   expect_setequal(as.character(unique(move2::mt_track_id(out))), c("a", "b"))
+})
+
+test_that("column names that are not syntactic are preserved", {
+  track <- make_track(crs = NA)
+  track[["ground speed"]] <- c(1, 2, 3)
+  track[["fix-type"]] <- c("a", "b", "c")
+  out <- tt_regular_time(track, interval = s(100))
+  expect_true(all(c("ground speed", "fix-type") %in% names(out)))
+  expect_equal(out[["ground speed"]], c(1, 2, 3))
+
+  # including the time and track id columns
+  names(track)[names(track) == "timestamp"] <- "time stamp"
+  names(track)[names(track) == "track_id"] <- "track id"
+  track <- move2::mt_as_move2(
+    sf::st_as_sf(track),
+    time_column = "time stamp",
+    track_id_column = "track id"
+  )
+  out <- tt_regular_time(track, interval = s(100))
+  expect_equal(move2::mt_time_column(out), "time stamp")
+  expect_equal(move2::mt_track_id_column(out), "track id")
+})
+
+test_that("track ids keep their type", {
+  times <- as.POSIXct("2024-01-01", tz = "UTC") + c(0, 100, 200, 30, 60)
+  geom <- sf::st_sfc(lapply(c(0, 1, 2, 5, 6), function(x) {
+    sf::st_point(c(x, 0))
+  }))
+  for (ids in list(factor(c("a", "a", "a", "b", "b")), c(1L, 1L, 1L, 2L, 2L))) {
+    track <- move2::mt_as_move2(
+      sf::st_sf(timestamp = times, track_id = ids, geometry = geom),
+      time_column = "timestamp",
+      track_id_column = "track_id"
+    )
+    out <- tt_regular_time(track, interval = s(100))
+    expect_identical(class(move2::mt_track_id(out)), class(ids))
+    expect_identical(
+      class(move2::mt_track_id(out)),
+      class(show_meta(out)$track_id)
+    )
+
+    # the second track has no grid point after snapping, and is dropped
+    out_snap <- tt_regular_time(track, interval = s(100), snap_times = TRUE)
+    expect_identical(class(move2::mt_track_id(out_snap)), class(ids))
+    expect_equal(unique(move2::mt_track_id(out_snap)), ids[1])
+  }
 })
 
 test_that("each track has regular gaps after resampling", {

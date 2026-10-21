@@ -21,11 +21,16 @@ column must be of class \code{sfc_POINT} and should have a valid coordinate
 reference system (CRS) specified. The function \code{sf_point_col()} can be used
 to create this column.}
 
-\item{buffer_outbound}{the distance from the centre to define outbound trips,
-specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
+\item{buffer_outbound}{the distance from the centre that delimits trips: a
+trip starts when the animal moves further than this distance from the
+centre, and ends when it comes back within it. Specified as a unit object,
+e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
-\item{buffer_inbound}{the distance from the centre to define inbound trips,
-specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
+\item{buffer_inbound}{the distance from the centre within which the last
+location of a track has to be for the last trip of the track to be
+complete (rather than incomplete, i.e. the data end before the animal
+returned to the centre). Specified as a unit object, e.g
+\code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
 \item{complete}{boolean, if TRUE, only complete trips (i.e. the ones that
 started in the outbound buffer and ended within the inbound buffer) are
@@ -38,6 +43,9 @@ a move2 object with the trips split.
 \description{
 This function splits tracks into trips for central place
 foragers by identifying the trips based on a distance from the colony/nest.
+Events with an empty geometry (i.e. no location) are assigned to the same
+trip as the preceding event with a location (or the following one, at the
+start of a track).
 }
 \examples{
 # First, add a sf point column to metadata giving nest location

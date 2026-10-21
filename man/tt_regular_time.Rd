@@ -34,8 +34,8 @@ overlapping tracks will have identical timestamps at each step.}
 }
 \value{
 A \code{move2} object on a regular time grid.  The CRS, time-column name,
-track-id column name, and track-level attributes of \code{x} are all
-preserved.
+track-id column name, geometry column name, and track-level attributes of
+\code{x} are all preserved.
 }
 \description{
 Resamples one or more tracks stored in a \code{move2} object onto a regular time
@@ -66,19 +66,20 @@ are transformed back to the original CRS.
  Raw observations are often unevenly
 spaced in both time and space. \code{tt_regular_time} accounts for this by
 first computing the normalised arc-length fraction of every input point
-along the path (using \code{\link[s2:s2_distance]{s2::s2_distance()}} for geographic CRS and Euclidean
-distance otherwise), then using \code{\link[stats:approx]{stats::approx()}} to linearly interpolate
-those fractions at each new time step.  A stationary stretch of the track
-(many observations covering little distance) is therefore correctly treated
-as slow movement, not as a spatial shortcut.
+along the path that is interpolated (using \code{\link[s2:s2_distance]{s2::s2_distance()}} along the
+spherical path for geographic and projected CRS, and Euclidean distance
+when there is no CRS), then using \code{\link[stats:approx]{stats::approx()}} to linearly
+interpolate those fractions at each new time step.  A stationary stretch
+of the track (many observations covering little distance) is therefore
+correctly treated as slow movement, not as a spatial shortcut.
 }
 
 \section{Attribute interpolation}{
  Numeric event-level columns are linearly
 interpolated at the new time steps using \code{\link[stats:approx]{stats::approx()}}. Non-numeric
-columns receive the value of the nearest preceding observation via
-\code{\link[base]{findInterval}}. Track-level attributes stored in
-\code{\link[move2]{mt_track_data}} are preserved unchanged.
+columns receive the value of the nearest preceding (or simultaneous)
+observation via \code{\link[base]{findInterval}}. Track-level attributes
+stored in \code{\link[move2]{mt_track_data}} are preserved unchanged.
 }
 
 \examples{

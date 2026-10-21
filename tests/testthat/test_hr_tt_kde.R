@@ -110,3 +110,153 @@ test_that("hr_tt_kde validates a collection of group-specific grids", {
     "one value per group"
   )
 })
+
+test_that("hr_tt_kde matches individual bandwidths to the right group", {
+  # track "b" is stored before track "a", so the order in which the groups
+  # appear in the data differs from the order of the group keys
+  set.seed(1)
+  coords <- data.frame(
+    id = rep(c("b", "a"), each = 50),
+    x = stats::rnorm(100, 0, rep(c(10000, 100), each = 50)),
+    y = stats::rnorm(100, 0, rep(c(10000, 100), each = 50))
+  )
+  coords$time <- as.POSIXct("2024-01-01", tz = "UTC") +
+    seq_len(nrow(coords)) * 60
+  tracks <- move2::mt_as_move2(
+    sf::st_as_sf(coords, coords = c("x", "y"), crs = 32630),
+    time_column = "time",
+    track_id_column = "id"
+  )
+  expected_h_ref <- function(id) {
+    xy <- coords[coords$id == id, ]
+    sqrt(0.5 * (stats::var(xy$x) + stats::var(xy$y))) * nrow(xy)^(-1 / 6)
+  }
+
+  kde <- hr_tt_kde(tracks, h = "h_ref_indiv")
+  expect_equal(kde$h[kde$id == "a"], expected_h_ref("a"))
+  expect_equal(kde$h[kde$id == "b"], expected_h_ref("b"))
+
+  # the internal helper returns bandwidths in group index order
+  xy <- sf::st_coordinates(tracks)
+  group_index <- ifelse(coords$id == "a", 1L, 2L)
+  expect_equal(
+    h_ref_indiv(xy, group_index),
+    c(expected_h_ref("a"), expected_h_ref("b"))
+  )
+
+  # a vector of bandwidths is matched to the groups in group key order
+  kde_h <- hr_tt_kde(tracks, h = c(10, 20))
+  expect_equal(kde_h$h[kde_h$id == "a"], 10)
+  expect_equal(kde_h$h[kde_h$id == "b"], 20)
+})
+
+test_that("hr_tt_kde ignores events without a location", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_tt_empty <- boar_tt
+  sf::st_geometry(boar_tt_empty)[5] <- sf::st_point()
+
+  kde_empty <- hr_tt_kde(boar_tt_empty, res = 50)
+  kde_removed <- hr_tt_kde(boar_tt[-5, ], res = 50)
+  expect_equal(kde_empty$h, kde_removed$h)
+  expect_equal(
+    lapply(kde_empty$ud, terra::values),
+    lapply(kde_removed$ud, terra::values)
+  )
+
+  # a group without any location cannot be estimated
+  boar_tt_empty <- boar_tt
+  first_track <- event_track_id(boar_tt) == event_track_id(boar_tt)[1]
+  sf::st_geometry(boar_tt_empty)[first_track] <- sf::st_point()
+  expect_error(
+    hr_tt_kde(boar_tt_empty, res = 50),
+    "each group must contain at least one event with a location"
+  )
+})
+
+test_that("hr_tt_kde handles groups with a single location", {
+  set.seed(2)
+  coords <- data.frame(
+    id = c(rep("a", 20), "b"),
+    x = c(stats::rnorm(20, 0, 100), 50),
+    y = c(stats::rnorm(20, 0, 100), 50)
+  )
+  coords$time <- as.POSIXct("2024-01-01", tz = "UTC") +
+    seq_len(nrow(coords)) * 60
+  tracks <- move2::mt_as_move2(
+    sf::st_as_sf(coords, coords = c("x", "y"), crs = 32630),
+    time_column = "time",
+    track_id_column = "id"
+  )
+
+  # the mean reference bandwidth is computed from the groups for which it is
+  # defined, and used for all groups
+  kde <- hr_tt_kde(tracks)
+  h_ref_a <- h_ref_indiv(sf::st_coordinates(tracks)[1:20, ], rep(1, 20))
+  expect_equal(kde$h, rep(h_ref_a, 2))
+  expect_equal(
+    unname(unlist(terra::global(kde$ud[[2]], "sum"))),
+    1
+  )
+  # a numeric bandwidth can be used for a single location
+  expect_no_error(hr_tt_kde(tracks, h = 10))
+  # but the reference bandwidth of a single location is undefined
+  expect_error(
+    hr_tt_kde(tracks, h = "h_ref_indiv"),
+    "fewer than two distinct locations"
+  )
+})
+
+test_that("hr_tt_kde returns isopleths of class hr_tt_poly_tbl", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_iso <- hr_tt_kde(boar_tt, levels = c(0.5, 0.95), res = 50)
+  expect_s3_class(boar_iso, "hr_tt_poly_tbl")
+  expect_identical(
+    class(boar_iso),
+    class(hr_tt_ud_iso(hr_tt_kde(boar_tt, res = 50), levels = c(0.5, 0.95)))
+  )
+
+  # including for a single group
+  first_track <- event_track_id(boar_tt) == event_track_id(boar_tt)[1]
+  one_iso <- hr_tt_kde(boar_tt[first_track, ], levels = 0.5, res = 50)
+  expect_identical(class(one_iso), class(boar_iso))
+})
+
+test_that("hr_tt_kde rejects groups without events", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  # a grouping factor with an unused level, kept as a group with .drop = FALSE
+  boar_tt$group <- factor(
+    as.character(boar_tt$name),
+    levels = c("unused", levels(boar_tt$name))
+  )
+  boar_grouped <- dplyr::group_by(boar_tt, group, .drop = FALSE)
+  expect_error(
+    hr_tt_kde(boar_grouped, res = 50),
+    "groups without events \\(unused\\).*group_by\\(x, group, .drop = TRUE\\)"
+  )
+  # the suggested regrouping removes them
+  expect_equal(
+    hr_tt_kde(
+      dplyr::group_by(boar_grouped, group, .drop = TRUE),
+      levels = 0.5,
+      res = 50
+    ),
+    hr_tt_kde(dplyr::group_by(boar_tt, group), levels = 0.5, res = 50)
+  )
+
+  # groups emptied by filter(.preserve = TRUE)
+  boar_filtered <- boar_tt |>
+    dplyr::group_by(name) |>
+    dplyr::filter(name != "Brock", .preserve = TRUE)
+  expect_error(
+    hr_tt_kde(boar_filtered, res = 50),
+    "groups without events \\(Brock\\).*group_by\\(x, name, .drop = TRUE\\)"
+  )
+
+  # the names of grouping variables that are not syntactic are quoted
+  boar_tt$`life stage` <- boar_tt$group
+  expect_error(
+    hr_tt_kde(dplyr::group_by(boar_tt, `life stage`, .drop = FALSE)),
+    "group_by(x, `life stage`, .drop = TRUE)",
+    fixed = TRUE
+  )
+})

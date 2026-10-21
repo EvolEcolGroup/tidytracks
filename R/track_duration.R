@@ -2,7 +2,8 @@
 #'
 #' @param x A `move2` object
 #' @param units The units to use for the duration. Default is "days".
-#' @return A vector of total durations for each track
+#' @return A vector of total durations for each track, named by track id and in
+#'   the same order as the tracks in the metadata (see [show_meta()])
 #' @export
 #' @examples
 #' track_duration(example_tt)
@@ -23,9 +24,10 @@ track_duration <- function(x, units = as_units(1, "days")) {
     )
   )
   # split() orders groups by the factor levels of event_track_id(), which
-  # are alphabetical, not by the tracks' original order of appearance.
-  # Reorder to match the order tracks first appear in x.
-  track_order <- as.character(unique(event_track_id(x)))
+  # are alphabetical, not by the tracks' order in the metadata (which can also
+  # differ from the order in which they appear in the events table, e.g. after
+  # tt_order_time()). Reorder to match the metadata.
+  track_order <- as.character(show_meta(x)[[move2::mt_track_id_column(x)]])
   tot_duration <- tot_duration[track_order]
 
   # Convert the duration (difftime) to the specified units
