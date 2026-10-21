@@ -1,3 +1,35 @@
+# tidytracks dev
+
+## Bug fixes
+
+* `hr_tt_kde(h = "h_ref_indiv")` no longer assigns the bandwidths to the wrong
+  groups when the tracks are not stored in the order of the groups.
+* `tt_split_trips()` no longer uses the centre of another track, or mislabels
+  events, when the events are not in the same track order as the metadata, are
+  interleaved, or are not ordered by time.
+* `event_flag_mcconnell()` and `tt_clean_mcconnell()` no longer run forever
+  when a track contains a duplicated record or an event without a location.
+* `tt_read_data()` reads dates with 2-digit years correctly (e.g. `15/01/24`
+  was read as 24 January of year 15), and joins metadata with numeric track
+  ids.
+* `hr_tt_ud_overlap(method = "udoi")` computes the UDOI of Fieberg & Kochanny
+  (2005), as `adehabitatHR` does; the previous values depended on the
+  resolution of the grid.
+* `hr_tt_ud_iso()` keeps holes in isopleths instead of filling them in.
+* `track_duration()` and `track_summary_health()` return the tracks in the
+  order of the metadata.
+* Functions work with geometry columns that are not called `geometry`.
+* `tt_split_trips()`, `hr_tt_kde()` and `hr_tt_mcp()` handle events without a
+  location, and `hr_tt_kde()` and `hr_tt_mcp()` handle groups with few
+  locations.
+* `tt_regular_time()` places interpolated points of projected tracks
+  correctly, keeps the type of track ids and non-syntactic column names, and
+  gives non-numeric columns the value of the observation at the last time.
+* `tt_write_data()` writes times in UTC, with fractional seconds, so that they
+  are not shifted when read back with `tt_read_data()`.
+* `event_distance()`, `event_speed()` and `event_flag_mcconnell()` give an
+  informative error for objects without a CRS.
+
 # tidytracks 0.2.0
 
 * Rename functions to `hr_tt_` prefix to avoid name clashes with other packages.
