@@ -94,7 +94,8 @@ Bridges link consecutive events within a track, so the UD is
 estimated for each track: \code{x} must be either ungrouped, or grouped by its
 track id column only. \code{x} must be ordered by time within each track (see
 \code{\link[=tt_order_time]{tt_order_time()}}). Events with an empty geometry (i.e. no location) are
-ignored.
+ignored. Tracks with fewer events than \code{window_size} are skipped by
+\code{move2utils} (with a warning), and are not included in the output.
 
 By default, the UDs are estimated on the same grid as \code{\link[=hr_tt_kde]{hr_tt_kde()}} would
 use for \code{x} (the extent of all the locations, expanded by 100\% of the range
@@ -102,7 +103,11 @@ on each side, with approximately 1000 cells), so that UDs estimated with
 the different methods can be compared (e.g. with \code{\link[=hr_tt_ud_overlap]{hr_tt_ud_overlap()}}).
 The grid must be large enough to contain the bridges (which can extend well
 beyond the locations, e.g. across long gaps between events); if it is not,
-an error is given, and a larger \code{bbox} should be used. For
+an error is given, and a larger \code{bbox} should be used. The grid must also be
+fine enough relative to the width of the bridges: as densities are
+evaluated at the centres of the cells, bridges much narrower than the cells
+(e.g. with frequent, accurate locations) can fall between them, giving an
+error; a smaller \code{res} should then be used. For
 longitude/latitude data, the bridges are computed in a local metric
 projection, and the UD is then projected back onto the grid.
 

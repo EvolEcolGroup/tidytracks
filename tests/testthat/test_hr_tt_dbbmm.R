@@ -266,3 +266,41 @@ test_that("hr_tt_dbgb matches move2utils", {
     terra::values(direct[["b"]], mat = FALSE)
   )
 })
+
+test_that("hr_tt_dbbmm leaves out tracks skipped by move2utils", {
+  skip_if_not_installed("move2utils")
+  x <- create_irregular_tracks()
+  ids <- as.character(event_track_id(x))
+  # track b has fewer events than window_size
+  x_short <- x[ids == "a" | (ids == "b" & seq_along(ids) <= 20), ]
+  expect_warning(
+    ud <- hr_tt_dbbmm(
+      x_short,
+      location_error = as_units(20, "m"),
+      bbox = test_bbox
+    ),
+    "fewer locations than window_size"
+  )
+  expect_identical(ud$id, "a")
+  expect_identical(names(ud$ud), "a")
+})
+
+test_that("hr_tt_ud_sum works with hr_tt_dbbmm UDs", {
+  skip_if_not_installed("move2utils")
+  x <- create_irregular_tracks()
+  ud <- hr_tt_dbbmm(x, location_error = as_units(20, "m"), bbox = test_bbox)
+  ud_sum <- hr_tt_ud_sum(ud)
+  expect_identical(
+    names(ud_sum),
+    c(
+      "method", "window_size", "margin", "xmin", "ymin", "xmax", "ymax",
+      "res", "ud"
+    )
+  )
+  expect_equal(terra::global(ud_sum$ud[[1]], "sum")[[1]], 1)
+  expect_equal(
+    terra::values(ud_sum$ud[[1]], mat = FALSE),
+    (terra::values(ud$ud[[1]], mat = FALSE) +
+       terra::values(ud$ud[[2]], mat = FALSE)) / 2
+  )
+})

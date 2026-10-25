@@ -17,7 +17,8 @@
 #' estimated for each track: `x` must be either ungrouped, or grouped by its
 #' track id column only. `x` must be ordered by time within each track (see
 #' [tt_order_time()]). Events with an empty geometry (i.e. no location) are
-#' ignored.
+#' ignored. Tracks with fewer events than `window_size` are skipped by
+#' `move2utils` (with a warning), and are not included in the output.
 #'
 #' By default, the UDs are estimated on the same grid as [hr_tt_kde()] would
 #' use for `x` (the extent of all the locations, expanded by 100% of the range
@@ -25,7 +26,11 @@
 #' the different methods can be compared (e.g. with [hr_tt_ud_overlap()]).
 #' The grid must be large enough to contain the bridges (which can extend well
 #' beyond the locations, e.g. across long gaps between events); if it is not,
-#' an error is given, and a larger `bbox` should be used. For
+#' an error is given, and a larger `bbox` should be used. The grid must also be
+#' fine enough relative to the width of the bridges: as densities are
+#' evaluated at the centres of the cells, bridges much narrower than the cells
+#' (e.g. with frequent, accurate locations) can fall between them, giving an
+#' error; a smaller `res` should then be used. For
 #' longitude/latitude data, the bridges are computed in a local metric
 #' projection, and the UD is then projected back onto the grid.
 #'
@@ -250,8 +255,15 @@ hr_tt_bridge <- function(
   track_ids <- as.character(
     dplyr::group_keys(dplyr::group_by(x, .data[[track_col]]))[[1]]
   )
+  # the layer of a single track is not named after it
+  if (length(track_ids) == 1) {
+    names(uds) <- track_ids
+  }
+  # move2utils skips tracks with fewer events than window_size (with a
+  # warning), so they have no UD
+  track_ids <- track_ids[track_ids %in% names(uds)]
   ud_list <- lapply(track_ids, function(id) {
-    ud <- if (terra::nlyr(uds) == 1) uds else uds[[id]]
+    ud <- uds[[id]]
     names(ud) <- "ud"
     terra::metags(ud) <- c(
       paste0("id = ", id),
