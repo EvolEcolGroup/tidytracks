@@ -51,6 +51,8 @@ Suggests:
     adehabitatHR,
     av,
     basemaps,
+    crstools,
+    ctmm,
     emdist,
     sp,
     knitr,

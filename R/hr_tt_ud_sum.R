@@ -58,9 +58,10 @@ hr_tt_ud_sum.tbl_df <- function(x) {
   # Work with a plain list locally while preserving a loaded object's packing.
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
-  # create a new tibble with the summed UD
+  # create a new tibble with the summed UD (UDs from hr_tt_akde() have no
+  # bandwidth column h)
   sum_tbl <- x %>%
-    dplyr::select(dplyr::all_of(
+    dplyr::select(dplyr::any_of(
       c("method", "h", "xmin", "ymin", "xmax", "ymax", "res")
     )) %>%
     dplyr::distinct()

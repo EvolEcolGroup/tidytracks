@@ -39,9 +39,11 @@ hr_tt_ud_iso.tbl_df <- function(x, levels = c(0.50, 0.95)) {
 
   levels <- sort(levels)
 
+  # the UDs (including the ctmm UD objects returned by hr_tt_akde()) are
+  # replaced by their isopleths
   res_tbl <- x %>%
     dplyr::mutate(iso = purrr::map(.data$ud, hr_tt_ud_iso, levels = levels)) %>%
-    dplyr::select(-dplyr::any_of("ud")) %>%
+    dplyr::select(-dplyr::any_of(c("ud", "ud_ctmm"))) %>%
     tidyr::unnest(dplyr::any_of("iso"))
 
   res_tbl <- sf::st_as_sf(res_tbl)

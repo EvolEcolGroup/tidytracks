@@ -1,6 +1,8 @@
 # Plan: integrating ctmm into tidytracks
 
-Status: draft for review. Nothing has been implemented yet.
+Status: phases 1 and 2 implemented (see "Decisions" at the end); phases 3
+and 4 are still open. The text below is the original plan, with the function
+names updated to the ones chosen.
 
 ## Goals
 
@@ -113,7 +115,7 @@ amt is the closest precedent.
 
 Names are provisional (see the open questions at the end).
 
-### 1. `tt_as_telemetry(x, error_cols = "auto")`
+### 1. `mt_as_telemetry(x, error_cols = "auto")`
 
 Converts a `move2` object to a named list of `telemetry` objects, one per track
 and in metadata order (`drop = FALSE`, so it is always a list).
@@ -147,9 +149,9 @@ and in metadata order (`drop = FALSE`, so it is always a list).
 * Exported, so users can go to ctmm directly. The reverse direction is already
   `move2::mt_as_move2()`.
 
-### 2. `tt_fit_ctmm(x, model = "auto", error = FALSE, uere = NULL, IC = "AICc", keep_candidates = FALSE, cores = 1, ...)`
+### 2. `ctmm_tt_fit(x, model = "auto", error = FALSE, uere = NULL, IC = "AICc", keep_candidates = FALSE, cores = 1, ...)`
 
-Fits one movement model per track and returns a **`tt_ctmm_tbl`**: a tibble
+Fits one movement model per track and returns a **`ctmm_tt_fit_tbl`**: a tibble
 with **one row per row of `show_meta(x)`, in the same order**.
 
 * **`model`:**
@@ -187,10 +189,10 @@ with **one row per row of `show_meta(x)`, in the same order**.
   but don't do it by default (see open question 2).
 * **Grouping:** models are fitted per *track*. Analyses at other levels (trips,
   seasons) should first make those the tracks, e.g. with `tt_split_trips()` or
-  `move2::mt_set_track_id()`, and then refit. Grouped input to `tt_fit_ctmm()`
+  `move2::mt_set_track_id()`, and then refit. Grouped input to `ctmm_tt_fit()`
   is an error that explains this.
 
-### 3. `tt_ctmm_summary(models, level = 0.95)`
+### 3. `ctmm_tt_summary(models, level = 0.95)`
 
 Turns `summary.ctmm(units = FALSE)` into a long, tidy table: track id,
 `parameter` (area, tau_position, tau_velocity, speed, diffusion), `low`, `est`,
@@ -202,7 +204,7 @@ modelling (e.g. area ~ sex).
 Both `x` and `models` are **required**; there is no default model.
 
 1. **Checks:**
-   * `models` is a `tt_ctmm_tbl` with the same CRS as `x`.
+   * `models` is a `ctmm_tt_fit_tbl` with the same CRS as `x`.
    * Every track/group in `x` has a non-NULL model, matched **by id**, so a
      subset of `x` with the full model table works.
    * The fingerprint matches.
@@ -272,7 +274,7 @@ Each of these takes `(x, models)` or `models` alone:
 
 | Phase | Content | Tests |
 |---|---|---|
-| 1 | `tt_as_telemetry()`, `tt_fit_ctmm()`, `tt_ctmm_tbl` class/print, `tt_ctmm_summary()` | Row order equals `show_meta()` order; ids and coordinates round-trip (`mt_as_move2()`); long/lat input errors; a failing track gives a NULL row with a message and doesn't break the alignment; keyword models give the expected `model_name`; error columns are whitelisted |
+| 1 | `mt_as_telemetry()`, `ctmm_tt_fit()`, `ctmm_tt_fit_tbl` class/print, `ctmm_tt_summary()` | Row order equals `show_meta()` order; ids and coordinates round-trip (`mt_as_move2()`); long/lat input errors; a failing track gives a NULL row with a message and doesn't break the alignment; keyword models give the expected `model_name`; error columns are whitelisted |
 | 2 | `hr_tt_akde()` (one track per group, shared grid, `ud_ctmm`), `hr_tt_ud_iso` tweak | UD sums to 1; grid identical to the requested bbox/res; works with iso/overlap/sum/autoplot/saveRDS; errors for missing, mismatched or BM models; isopleth area close to `summary(UD)` estimate |
 | 3 | Area CIs and CI polygons with `levels`; vignette article "Movement models with ctmm" | CI ordering low ≤ est ≤ high |
 | 4 | Pooled groups (`pkde`), `hr_tt_occurrence()`, ctmm overlap, speed, etc. | — |
@@ -283,31 +285,30 @@ Each of these takes `(x, models)` or `models` alone:
 * **DESCRIPTION:** add `ctmm` to `Suggests` (it brings raster/sp, but only for
   users who install it).
 
-## Open questions for review
+## Decisions (after review)
 
-1. **Names.** I propose `tt_as_telemetry()`, `tt_fit_ctmm()` with the
-   `tt_ctmm_tbl` class, `tt_ctmm_summary()` and `hr_tt_akde()`. Alternatives:
-   `hr_tt_ctmm_fit()`, or `track_ctmm_fit()`, since the result has one row per
-   track.
-2. **Where the models live.** A standalone, metadata-aligned table
-   (recommended: explicit, easy to subset or save, and it doesn't put S4
-   objects inside the `move2` metadata), or a list-column added directly to
-   `show_meta(x)`?
-3. **Default `model`.**
-   * `"auto"` (recommended): slow but statistically sound.
-   * No default, forcing an explicit choice.
-   * Not amt's `"iid"`, which reduces AKDE to a plain KDE.
-4. **Long/lat input.**
-   * Error and ask the user to project (recommended): the UDs are then in the
-     user's CRS, which matches `x`.
-   * Or project internally (e.g. `mt_aeqd_crs()`) and return UDs in that CRS.
-5. **Default `res` for AKDE.**
-   * Our "about 1000 cells" rule can be coarse relative to the AKDE bandwidth
-     when animals range far apart.
-   * Alternative: a ctmm-like default derived from the models (smallest model
-     SD / 10), with a cap on the total number of cells and a warning.
-6. **Location error.** Is auto-detecting Movebank error columns (on by default)
-   desirable, or should it be opt-in?
-7. **Pooled groups** (e.g. one UD per colony from several tracks):
-   population KDE (`pkde`, correct but slow), a weighted `mean()` of the
-   individual UDs, or out of scope?
+1. **Names.** Converters start with `mt_as_` (`mt_as_telemetry()`); other
+   functions are named after what they return: `ctmm_tt_fit()` (a table of
+   ctmm fits, class `ctmm_tt_fit_tbl`), `ctmm_tt_summary()` and
+   `hr_tt_akde()`.
+2. **Where the models live.** A standalone table, aligned with the metadata.
+3. **Default `model`.** `"auto"`.
+4. **Long/lat input.** Error, asking the user to project (suggesting
+   `crstools::suggest_crs()`).
+5. **Default `res` for AKDE.** Similar to the default of ctmm: a tenth of the
+   smallest standard deviation of the kernel or of the model, across groups
+   (square cells), with a warning for grids of more than 1e7 cells.
+6. **Location error.** Auto-detection of known error columns (opt-out with
+   `error_cols = NULL`); a named vector renames columns to the names ctmm
+   recognises.
+7. **Pooled groups.** Out of scope for now (error).
+
+Implementation notes:
+
+* `hr_tt_akde()` has a `tolerance` argument (ctmm's `error` argument of
+  `akde()`), to avoid confusion with location error.
+* The output column with the model name is `model_name` (as in the table of
+  fits), and there is no `h` column; `hr_tt_ud_sum()` was adapted.
+* ctmm's own projection of the locations can lose datum information (e.g.
+  EPSG:27700 has no datum shift in its PROJ4 form), so `mt_as_telemetry()`
+  replaces ctmm's coordinates with the original ones.

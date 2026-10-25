@@ -17,6 +17,7 @@ reference:
         - as_event_column
         - filter_by_meta
         - mt_as_move2.trip
+        - mt_as_telemetry
         - sf_point_col
         - tidytracks_printing
   - title: "Event functions"
@@ -45,6 +46,10 @@ reference:
     desc: "Estimate home range and habitat use from movement data."
     contents:
         - starts_with("hr_tt_")
+  - title: "Movement models"
+    desc: "Fit continuous-time movement models to tracks with ctmm."
+    contents:
+        - starts_with("ctmm_tt_")
   - title: "List of PackedRasters"
     desc: "Process lists of rasters (used to represent UDs for home ranges)."
     contents:
