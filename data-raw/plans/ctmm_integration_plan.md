@@ -301,7 +301,13 @@ Each of these takes `(x, models)` or `models` alone:
 6. **Location error.** Auto-detection of known error columns (opt-out with
    `error_cols = NULL`); a named vector renames columns to the names ctmm
    recognises.
-7. **Pooled groups.** Out of scope for now (error).
+7. **Pooled groups.** `hr_tt_akde()` still requires one track per group, but
+   AKDE UDs can be combined into population UDs (for all tracks, or for each
+   group of a grouped table of UDs) with `hr_tt_akde_pop()`, using
+   `ctmm::pkde()` (default, which needs the tracks and the models) or the
+   average of the UDs with `ctmm::mean.UD()`; the grid is extended when the
+   population UD from `pkde()` extends beyond the grid of the individual
+   UDs.
 
 Implementation notes:
 

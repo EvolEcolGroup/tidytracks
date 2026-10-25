@@ -94,8 +94,9 @@
 #'   the UD rather than from the polygon, can differ slightly from `area`)
 #' - `geometry`: an `sfc` column containing the multipolygons representing
 #'   the isopleth for the appropriate level
-#' @seealso [ctmm_tt_fit()] to fit the movement models, [hr_tt_kde()] for
-#'   conventional kernel density estimation.
+#' @seealso [ctmm_tt_fit()] to fit the movement models, [hr_tt_akde_pop()]
+#'   to combine the UDs into population UDs, [hr_tt_kde()] for conventional
+#'   kernel density estimation.
 #' @export
 #' @examplesIf rlang::is_installed("ctmm")
 #' data(buffalo, package = "ctmm")
@@ -516,10 +517,12 @@ akde_grid <- function(bbox, res) {
 #' @param id The identifier for the group (used in raster metadata).
 #' @param model_name The name of the movement model (used in raster
 #'   metadata).
+#' @param method The method used to estimate the UD (used in raster
+#'   metadata).
 #' @returns A `terra::SpatRaster` with a layer `ud` that sums to 1.
 #' @keywords internal
 #' @noRd
-ctmm_ud_to_rast <- function(ud, bbox, crs, id, model_name) {
+ctmm_ud_to_rast <- function(ud, bbox, crs, id, model_name, method = "akde") {
   # the probability mass of each cell
   pmf <- ud$PDF * prod(ud$dr)
   # the grid must be the one we requested
@@ -559,7 +562,7 @@ ctmm_ud_to_rast <- function(ud, bbox, crs, id, model_name) {
   names(r) <- "ud"
   terra::metags(r) <- c(
     paste0("id = ", id),
-    "method = akde",
+    paste0("method = ", method),
     paste0("model = ", model_name),
     paste0("density_sum = ", sum_density)
   )

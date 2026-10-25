@@ -22,6 +22,9 @@
 #'   left_join(show_meta(example_tt)) %>%
 #'   group_by(sex)
 #' hr_tt_ud_sum(example_kde_grouped)
+#' @seealso [hr_tt_akde_pop()] to combine UDs estimated with [hr_tt_akde()]
+#'   into population UDs with the methods of `ctmm` (with confidence
+#'   intervals of the population home range areas).
 #' @family home_range
 
 hr_tt_ud_sum <- function(x) {

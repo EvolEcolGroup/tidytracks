@@ -15,6 +15,10 @@
     estimation (AKDE), using the fitted models. The UDs are returned as an
     `hr_tt_ud_tbl`, so that they can be used with the other `hr_tt_`
     functions.
+  * `hr_tt_akde_pop()` combines AKDE home ranges (for all tracks, or for
+    each group of a grouped table of UDs) into population home ranges, with
+    population kernel density estimation (`ctmm::pkde()`) or the average of
+    the UDs, with confidence intervals of the population home range areas.
 * `hr_tt_ud_sum()` works with tables of UDs without a bandwidth column `h`.
 
 # tidytracks 0.2.1

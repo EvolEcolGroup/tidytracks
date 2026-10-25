@@ -148,6 +148,7 @@ Nandintsetseg, D., Noonan, M.J., Olson, K.A., Setyawan, E., Sianipar, A.
 home-range estimation. Ecological Applications, 28, 1003-1010.
 }
 \seealso{
-\code{\link[=ctmm_tt_fit]{ctmm_tt_fit()}} to fit the movement models, \code{\link[=hr_tt_kde]{hr_tt_kde()}} for
-conventional kernel density estimation.
+\code{\link[=ctmm_tt_fit]{ctmm_tt_fit()}} to fit the movement models, \code{\link[=hr_tt_akde_pop]{hr_tt_akde_pop()}}
+to combine the UDs into population UDs, \code{\link[=hr_tt_kde]{hr_tt_kde()}} for conventional
+kernel density estimation.
 }
