@@ -38,9 +38,17 @@
 #' @param method A character string specifying the method to use for overlap
 #'   calculation. Options are `"ba"` (Bhattacharyya's Affinity), `"vi"` (Volume
 #'   of Intersection), `"udoi"` (Utilisation Distribution Overlap Index, see
-#'   details), and `"earth_mover"` (Earth Mover's Distance). `"earth_mover"`
-#'   returns a distance, where zero indicates identical UDs, and requires the
-#'   suggested package `emdist`. Default is `"ba"`.
+#'   details), `"earth_mover"` (Earth Mover's Distance) and
+#'   `"earth_mover_sinkhorn"` (a fast approximation of the Earth Mover's
+#'   Distance). The Earth Mover's Distances are distances, in the units of the
+#'   projection of the UDs, where zero indicates identical UDs. `"earth_mover"`
+#'   computes the exact distance with the suggested package `emdist`.
+#'   `"earth_mover_sinkhorn"` uses the entropy-regularised Sinkhorn algorithm
+#'   of [move2utils::emd()], which is much faster for large grids, with values
+#'   typically within a few percent of the exact distance; it requires the
+#'   suggested package `move2utils` (install it with
+#'   `remotes::install_github("move2universe/move2utils")`). Default is
+#'   `"ba"`.
 #' @param cond_level Optional, the level for which the the conditional overlap
 #'   is computed.
 #' @param ... Additional arguments (not currently used)
@@ -54,7 +62,7 @@
 hr_tt_ud_overlap <- function(
   x,
   ...,
-  method = c("ba", "vi", "udoi", "earth_mover")
+  method = c("ba", "vi", "udoi", "earth_mover", "earth_mover_sinkhorn")
 ) {
   UseMethod("hr_tt_ud_overlap")
 }
@@ -67,13 +75,11 @@ hr_tt_ud_overlap.SpatRaster <- function(
   x,
   y,
   ...,
-  method = c("ba", "vi", "udoi", "earth_mover"),
+  method = c("ba", "vi", "udoi", "earth_mover", "earth_mover_sinkhorn"),
   cond_level = NULL
 ) {
   method <- match.arg(method)
-  if (method == "earth_mover") {
-    check_earth_mover_available()
-  }
+  check_earth_mover_available(method)
   check_ud_raster(x, "x")
   check_ud_raster(y, "y")
   # compare the two geometries
@@ -90,6 +96,8 @@ hr_tt_ud_overlap.SpatRaster <- function(
   y_values <- condition_ud_values(y_raw_values, cond_level)
   if (method == "earth_mover") {
     return(earth_mover_distance(x_values, y_values, x))
+  } else if (method == "earth_mover_sinkhorn") {
+    return(earth_mover_sinkhorn(list(x_values, y_values), x)[1, 2])
   } else if (method == "udoi") {
     level <- udoi_level(cond_level)
     return(udoi_from_values(
@@ -109,7 +117,7 @@ hr_tt_ud_overlap.SpatRaster <- function(
 hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
   x,
   ...,
-  method = c("ba", "vi", "udoi", "earth_mover"),
+  method = c("ba", "vi", "udoi", "earth_mover", "earth_mover_sinkhorn"),
   cond_level = NULL
 ) {
   stopifnot_hr_tt_ud_table(x) # nolint: object_usage_linter.
@@ -121,9 +129,7 @@ hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
     stop("additional arguments ... are not used")
   }
   method <- match.arg(method)
-  if (method == "earth_mover") {
-    check_earth_mover_available()
-  }
+  check_earth_mover_available(method)
   check_cond_level(cond_level)
   n <- nrow(x)
   # assume that the first column of x is an id column (check that it is
@@ -173,6 +179,9 @@ hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
     # the UDs (densities are the cell probabilities divided by the cell areas)
     overlap_matrix <- crossprod(mask_matrix * cell_areas, mask_matrix) *
       crossprod(values_matrix / cell_areas, values_matrix)
+  } else if (method == "earth_mover_sinkhorn") {
+    # move2utils computes all pairwise distances at once
+    overlap_matrix <- earth_mover_sinkhorn(ud_values_list, reference)
   } else {
     diagonal <- if (method == "earth_mover") 0 else 1
     overlap_matrix <- diag(diagonal, n)
@@ -375,7 +384,7 @@ overlap_from_values <- function(x, y, method) {
 #' @keywords internal
 #' @noRd
 earth_mover_distance <- function(x, y, raster) {
-  check_earth_mover_available()
+  check_earth_mover_available("earth_mover")
   n_rows <- terra::nrow(raster)
   n_cols <- terra::ncol(raster)
   resolution <- terra::res(raster)
@@ -387,17 +396,44 @@ earth_mover_distance <- function(x, y, raster) {
   )
 }
 
-#' Check that the optional Earth Mover's Distance dependency is installed
+#' Compute pairwise Earth Mover's Distances with the Sinkhorn algorithm
 #'
-#' @returns `NULL`, invisibly, when `emdist` is installed.
+#' @param values_list A list of numeric vectors of UD cell values (in the cell
+#'   order of `raster`).
+#' @param raster A `SpatRaster` giving the grid of the UDs.
+#' @returns A symmetric matrix of the pairwise distances, with zeros on the
+#'   diagonal.
 #' @keywords internal
 #' @noRd
-check_earth_mover_available <- function() {
-  if (!requireNamespace("emdist", quietly = TRUE)) {
+earth_mover_sinkhorn <- function(values_list, raster) {
+  n <- length(values_list)
+  if (n < 2L) {
+    return(matrix(0, nrow = n, ncol = n))
+  }
+  uds <- terra::rast(raster[["ud"]], nlyrs = n)
+  terra::values(uds) <- do.call(cbind, values_list)
+  names(uds) <- paste0("ud", seq_len(n))
+  distances <- as.matrix(move2utils::emd(uds, method = "sinkhorn"))
+  dimnames(distances) <- NULL
+  distances
+}
+
+#' Check that the optional Earth Mover's Distance dependency is installed
+#'
+#' @param method The overlap method; only the Earth Mover's Distance methods
+#'   need a suggested package.
+#' @returns `NULL`, invisibly, when the package needed by `method` is installed.
+#' @keywords internal
+#' @noRd
+check_earth_mover_available <- function(method) {
+  if (method == "earth_mover" && !requireNamespace("emdist", quietly = TRUE)) {
     stop(
       "method = 'earth_mover' requires the suggested package 'emdist'. ",
       "Install it with install.packages('emdist')."
     )
+  }
+  if (method == "earth_mover_sinkhorn") {
+    check_move2utils("hr_tt_ud_overlap") # nolint: object_usage_linter.
   }
   invisible(NULL)
 }

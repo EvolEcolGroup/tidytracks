@@ -27,6 +27,10 @@
     bivariate Gaussian bridge, returning an `hr_tt_ud_tbl` (by default on the
     same grid as `hr_tt_kde()`) that works with the other `hr_tt_ud_*()`
     functions.
+  * `event_ud_level()` returns the isopleth level of each event in a
+    utilisation distribution (e.g. in the UD of its own track).
+  * `hr_tt_ud_overlap(method = "earth_mover_sinkhorn")` computes a fast
+    approximation of the Earth Mover's Distance.
 
 # tidytracks 0.2.1
 

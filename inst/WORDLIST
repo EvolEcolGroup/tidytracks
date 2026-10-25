@@ -20,8 +20,10 @@ MCPs
 MDY
 PackedSpatRaster
 Rall
+reprojected
 RMS
 Reprojection
+Sinkhorn
 SpatRaster
 UD
 UDOI

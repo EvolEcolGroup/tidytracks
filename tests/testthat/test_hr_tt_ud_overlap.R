@@ -198,3 +198,55 @@ test_that("hr_tt_ud_overlap calculates Earth Mover's Distance when available", {
     matrix(c(0, 2, 2, 0), nrow = 2, dimnames = list(c("x", "y"), c("x", "y")))
   )
 })
+
+test_that("earth_mover_sinkhorn matches move2utils::emd", {
+  skip_if_not_installed("move2utils")
+  ud <- hr_tt_kde(sf::st_transform(example_tt, "+proj=eqearth"))
+  distances <- hr_tt_ud_overlap(ud, method = "earth_mover_sinkhorn")
+  stack <- c(ud$ud[[1]], ud$ud[[2]], ud$ud[[3]])
+  names(stack) <- ud$track_id
+  direct <- as.matrix(move2utils::emd(stack, method = "sinkhorn"))
+  expect_equal(distances, direct)
+  expect_identical(dimnames(distances), list(ud$track_id, ud$track_id))
+  expect_equal(unname(diag(distances)), c(0, 0, 0))
+  # the SpatRaster method gives the same distances
+  expect_equal(
+    hr_tt_ud_overlap(ud$ud[[1]], ud$ud[[2]], method = "earth_mover_sinkhorn"),
+    distances[1, 2]
+  )
+})
+
+test_that("earth_mover_sinkhorn approximates the exact distance", {
+  skip_if_not_installed("move2utils")
+  skip_if_not_installed("emdist")
+  ud <- hr_tt_kde(sf::st_transform(example_tt, "+proj=eqearth"))
+  sinkhorn <- hr_tt_ud_overlap(ud, method = "earth_mover_sinkhorn")
+  exact <- suppressWarnings(hr_tt_ud_overlap(ud, method = "earth_mover"))
+  off_diagonal <- upper.tri(exact)
+  expect_true(all(
+    abs(sinkhorn[off_diagonal] / exact[off_diagonal] - 1) < 0.1
+  ))
+})
+
+test_that("earth_mover_sinkhorn works with cond_level", {
+  skip_if_not_installed("move2utils")
+  ud <- hr_tt_kde(sf::st_transform(example_tt, "+proj=eqearth"))
+  conditional <- hr_tt_ud_overlap(
+    ud,
+    method = "earth_mover_sinkhorn",
+    cond_level = 0.95
+  )
+  expect_false(isTRUE(all.equal(
+    conditional,
+    hr_tt_ud_overlap(ud, method = "earth_mover_sinkhorn")
+  )))
+})
+
+test_that("earth_mover_sinkhorn requires move2utils", {
+  local_mocked_bindings(is_move2utils_installed = function() FALSE)
+  ud <- hr_tt_kde(example_tt)
+  expect_error(
+    hr_tt_ud_overlap(ud, method = "earth_mover_sinkhorn"),
+    "requires the suggested package 'move2utils'"
+  )
+})

@@ -7,20 +7,24 @@
 \alias{hr_ud_overlap}
 \title{Compute overlap for utilisation distributions}
 \usage{
-hr_tt_ud_overlap(x, ..., method = c("ba", "vi", "udoi", "earth_mover"))
+hr_tt_ud_overlap(
+  x,
+  ...,
+  method = c("ba", "vi", "udoi", "earth_mover", "earth_mover_sinkhorn")
+)
 
 \method{hr_tt_ud_overlap}{SpatRaster}(
   x,
   y,
   ...,
-  method = c("ba", "vi", "udoi", "earth_mover"),
+  method = c("ba", "vi", "udoi", "earth_mover", "earth_mover_sinkhorn"),
   cond_level = NULL
 )
 
 \method{hr_tt_ud_overlap}{hr_tt_ud_tbl}(
   x,
   ...,
-  method = c("ba", "vi", "udoi", "earth_mover"),
+  method = c("ba", "vi", "udoi", "earth_mover", "earth_mover_sinkhorn"),
   cond_level = NULL
 )
 
@@ -36,9 +40,17 @@ a tibble of UDs of class \code{hr_tt_ud_tbl} (e.g. as created with
 \item{method}{A character string specifying the method to use for overlap
 calculation. Options are \code{"ba"} (Bhattacharyya's Affinity), \code{"vi"} (Volume
 of Intersection), \code{"udoi"} (Utilisation Distribution Overlap Index, see
-details), and \code{"earth_mover"} (Earth Mover's Distance). \code{"earth_mover"}
-returns a distance, where zero indicates identical UDs, and requires the
-suggested package \code{emdist}. Default is \code{"ba"}.}
+details), \code{"earth_mover"} (Earth Mover's Distance) and
+\code{"earth_mover_sinkhorn"} (a fast approximation of the Earth Mover's
+Distance). The Earth Mover's Distances are distances, in the units of the
+projection of the UDs, where zero indicates identical UDs. \code{"earth_mover"}
+computes the exact distance with the suggested package \code{emdist}.
+\code{"earth_mover_sinkhorn"} uses the entropy-regularised Sinkhorn algorithm
+of \code{\link[move2utils:emd]{move2utils::emd()}}, which is much faster for large grids, with values
+typically within a few percent of the exact distance; it requires the
+suggested package \code{move2utils} (install it with
+\code{remotes::install_github("move2universe/move2utils")}). Default is
+\code{"ba"}.}
 
 \item{y}{A SpatRaster of the utilisation distribution, if \code{x} is a single UD.
 Else, if \code{x} is tibble of UDs, \code{y} is not used.}
