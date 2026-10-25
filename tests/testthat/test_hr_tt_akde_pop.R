@@ -131,6 +131,16 @@ test_that("extend_bbox extends a bounding box by whole cells", {
   )
 })
 
+test_that("bbox_union returns the bounding box containing all the others", {
+  expect_equal(
+    bbox_union(list(
+      c(xmin = 0, ymin = 1, xmax = 5, ymax = 6),
+      c(xmin = -1, ymin = 2, xmax = 4, ymax = 8)
+    )),
+    c(xmin = -1, ymin = 1, xmax = 5, ymax = 8)
+  )
+})
+
 test_that("hr_tt_akde_pop returns isopleths with confidence intervals", {
   iso <- hr_tt_akde_pop(
     akde_south,
