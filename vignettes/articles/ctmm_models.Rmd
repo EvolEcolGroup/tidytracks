@@ -51,7 +51,7 @@ library(dplyr)
 
 ## The data
 
-We use the GPS tracks of six African buffalo (*Syncerus caffer*) from Kruger
+We use the GPS tracks of African buffalo (*Syncerus caffer*) from Kruger
 National Park, South Africa, which are provided by `ctmm` (Getz et al. 2007,
 Cross et al. 2016). The tracks are stored as a list of `ctmm` `telemetry`
 objects, which we can convert to a tibble of tracks with `mt_as_move2()`:
@@ -60,6 +60,17 @@ objects, which we can convert to a tibble of tracks with `mt_as_move2()`:
 data(buffalo, package = "ctmm")
 buffalo_tt <- mt_as_move2(buffalo)
 buffalo_tt
+```
+
+The dataset includes six buffalo. Fitting movement models to long tracks
+takes a few minutes per track, so, to keep this article quick to run, we
+keep three of them: Cilla and Gabs, whose home ranges overlap, and Pepper,
+whose GPS collar changed its sampling schedule (see below):
+
+```{r select_buffalo}
+buffalo_tt <- buffalo_tt %>%
+  filter_by_meta(track %in% c("Cilla", "Gabs", "Pepper"))
+show_meta(buffalo_tt)
 ```
 
 The tibble of tracks includes some columns created by `ctmm` (`t`, the time
