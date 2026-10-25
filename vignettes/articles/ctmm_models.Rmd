@@ -1,0 +1,412 @@
+---
+title: "Movement models with ctmm"
+output:
+  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Movement models with ctmm}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "./figures/ctmm_models/",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+The package [`ctmm`](https://ctmm-initiative.github.io/ctmm/) implements
+continuous-time movement models, which describe how the locations of an
+animal are correlated in time. Tracking data are strongly autocorrelated
+(consecutive locations are close to each other), and methods that assume
+independent locations, such as conventional kernel density estimation
+(KDE), underestimate home ranges and their uncertainty. Continuous-time
+movement models account for this autocorrelation, and are the basis of
+methods such as autocorrelated kernel density estimation (AKDE, Fleming et al.
+2015).
+
+`tidytracks` provides an interface to `ctmm` that follows a simple, modular
+workflow:
+
+1. prepare a tibble of tracks in a projected coordinate reference system;
+2. fit a movement model to each track with `ctmm_tt_fit()`, which returns a
+   table of models with one row per track, in the same order as the metadata;
+3. inspect and summarise the models (`ctmm_tt_summary()`);
+4. use the models, together with the tracks, for further analyses, such as
+   estimating home ranges with `hr_tt_akde()`.
+
+In this article, we follow the examples of the `ctmm` vignettes, using the
+same data, to show how this workflow fits with the rest of `tidytracks`.
+
+```{r load_packages, message=FALSE, warning=FALSE}
+library(tidytracks)
+library(ctmm)
+library(ggplot2)
+library(dplyr)
+```
+
+## The data
+
+We use the GPS tracks of six African buffalo (*Syncerus caffer*) from Kruger
+National Park, South Africa, which are provided by `ctmm` (Getz et al. 2007,
+Cross et al. 2016). The tracks are stored as a list of `ctmm` `telemetry`
+objects, which we can convert to a tibble of tracks with `mt_as_move2()`:
+
+```{r load_data}
+data(buffalo, package = "ctmm")
+buffalo_tt <- mt_as_move2(buffalo)
+buffalo_tt
+```
+
+The tibble of tracks includes some columns created by `ctmm` (`t`, the time
+in seconds, and the coordinates in longitude and latitude), which we do not
+need:
+
+```{r drop_columns}
+buffalo_tt <- buffalo_tt %>%
+  select(-t, -longitude, -latitude)
+```
+
+The tracks are projected in the coordinate reference system (CRS) chosen
+by `ctmm` (a two-point equidistant projection centred on the data). However,
+tracking data generally come as longitude and latitude, so we go back to
+longitude and latitude, to show how we would deal with raw data:
+
+```{r unproject}
+buffalo_tt <- sf::st_transform(buffalo_tt, 4326)
+```
+
+```{r plot_tracks}
+ggplot() +
+  geom_track_path(data = buffalo_tt, mapping = aes(colour = track)) +
+  labs(colour = "Buffalo")
+```
+
+## Projecting the data
+
+`ctmm` works with coordinates in a projected CRS, with units in metres. If we
+try to use data in longitude and latitude, we get an error:
+
+```{r unprojected_error, error=TRUE}
+buffalo_fit <- ctmm_tt_fit(buffalo_tt)
+```
+
+The package [`crstools`](https://evolecolgroup.github.io/crstools/) can
+suggest an appropriate projection for the area covered by the tracks. For
+home ranges, where we are interested in areas, an equal-area projection is a
+good choice (the default of `crstools::suggest_crs()`):
+
+```{r suggest_crs, message=FALSE}
+buffalo_crs <- crstools::suggest_crs(buffalo_tt, quiet = TRUE)
+buffalo_crs$description
+buffalo_tt <- sf::st_transform(buffalo_tt, buffalo_crs$wkt)
+```
+
+## Fitting movement models
+
+`ctmm_tt_fit()` fits a continuous-time movement model to each track. By
+default (`model = "auto"`), it selects the best model for each track based on
+AICc (with `ctmm::ctmm.select()`): starting from the model suggested by the
+variogram of the track, generally a model with autocorrelated positions and
+velocities (Ornstein-Uhlenbeck foraging, OUF), it fits simpler models, such
+as models with autocorrelated positions only (Ornstein-Uhlenbeck, OU), with
+independent locations (IID), or with isotropic movement, until AICc no longer
+improves. Fitting can take a while for long tracks; `ctmm` prints the minimum
+sampling interval of each track as it reads it.
+
+```{r fit_models}
+buffalo_fit <- ctmm_tt_fit(buffalo_tt)
+buffalo_fit
+```
+
+The result is a table with one row per track, in the same order as the
+metadata of the tibble of tracks (see `show_meta()`). Besides the fitted
+models (column `model`), the table includes the name of the selected model,
+its AICc, and the effective sample size for the home range area (`dof_area`),
+which is much smaller than the number of locations because of
+autocorrelation: tracks with few home range crossings provide little
+information on the home range, and lead to uncertain estimates.
+
+Since the table is aligned with the metadata, it can be combined with it
+directly:
+
+```{r combine_meta}
+show_meta(buffalo_tt) %>%
+  left_join(
+    select(buffalo_fit, track, model_name, dof_area),
+    by = "track"
+  )
+```
+
+With `candidates = TRUE`, `ctmm_tt_fit()` also returns all the candidate
+models of each track, which is useful to inspect the model selection. Instead
+of selecting a model, we can also fit a given model to all tracks (e.g.
+`model = "ouf"`), or provide model templates created with `ctmm::ctmm()`.
+
+## Checking the fit of the models
+
+The models are standard `ctmm` objects, so we can use all the functions of
+`ctmm` to inspect them. A good way to check the fit of a model is to compare
+it with the empirical variogram of the track, which shows the average
+square distance between locations as a function of the time lag between them
+(see the `ctmm` vignette on variograms). To use `ctmm` functions on the data,
+we convert the tibble of tracks to a list of `telemetry` objects with
+`mt_as_telemetry()`:
+
+```{r telemetry, message=FALSE}
+buffalo_tel <- mt_as_telemetry(buffalo_tt)
+names(buffalo_tel)
+```
+
+We can now plot the variogram of Cilla, the first buffalo, with its fitted
+model, both at short time lags (where we see the autocorrelation of the
+velocity) and at long time lags (where the variogram levels off at the size
+of the home range):
+
+```{r variogram, fig.show="hold", fig.width=3.4, fig.height=3.4, out.width="48%"}
+cilla_svf <- variogram(buffalo_tel$Cilla)
+cilla_model <- buffalo_fit$model$Cilla
+plot(
+  cilla_svf,
+  CTMM = cilla_model,
+  xlim = c(0, 12 %#% "hour"),
+  level = c(0.5, 0.95)
+)
+title("Cilla: short lags")
+plot(cilla_svf, CTMM = cilla_model, fraction = 0.65, level = c(0.5, 0.95))
+title("Cilla: long lags")
+```
+
+## Summarising the models
+
+`ctmm_tt_summary()` extracts the parameters of the models, with their
+confidence intervals, as a table with one row per track. The parameters
+include the area of the home range of the model (`area`), the home range
+crossing time (`tau_position`), the time scale of the autocorrelation of the
+velocity (`tau_velocity`), and the average speed (`speed`). The values are
+`units` objects in SI units, which we can convert to more convenient units:
+
+```{r summary}
+buffalo_summary <- ctmm_tt_summary(buffalo_fit)
+buffalo_summary %>%
+  transmute(
+    track,
+    model_name,
+    area_est = units::set_units(area_est, "km^2"),
+    tau_position_est = units::set_units(tau_position_est, "days"),
+    speed_est = units::set_units(speed_est, "km/day")
+  )
+```
+
+## Autocorrelated kernel density estimation
+
+The fitted models can be used to estimate home ranges with AKDE, which
+accounts for the autocorrelation of locations. `hr_tt_akde()` requires both
+the tibble of tracks and the table of models:
+
+```{r akde}
+buffalo_akde <- hr_tt_akde(buffalo_tt, buffalo_fit)
+buffalo_akde
+```
+
+The result is a table of utilisation distributions (UDs) of class
+`hr_tt_ud_tbl`, as returned by `hr_tt_kde()`, which can be used with the
+other `hr_tt_` functions. The UDs are estimated on a grid shared by all
+tracks; by default, its resolution follows the default of `ctmm`, and its
+extent contains all the UDs. The table also includes the UDs as `ctmm`
+objects (column `ud_ctmm`), which can be used with the functions of `ctmm`.
+
+```{r akde_plot, fig.height=6}
+autoplot(buffalo_akde)
+```
+
+The isopleths (i.e. the home ranges at given levels) can be obtained by
+setting `levels`. For AKDE, the table includes the confidence intervals of
+the area of each home range (`area_low` and `area_high`):
+
+```{r akde_iso}
+buffalo_iso <- hr_tt_akde(buffalo_tt, buffalo_fit, levels = c(0.5, 0.95))
+buffalo_iso %>%
+  sf::st_drop_geometry() %>%
+  transmute(
+    track,
+    level,
+    area = units::set_units(area, "km^2"),
+    area_low = units::set_units(area_low, "km^2"),
+    area_high = units::set_units(area_high, "km^2")
+  )
+```
+
+```{r akde_iso_plot}
+ggplot() +
+  geom_sf(
+    data = filter(buffalo_iso, level == 0.95),
+    mapping = aes(fill = track),
+    alpha = 0.4
+  ) +
+  geom_track_path(
+    data = buffalo_tt,
+    mapping = aes(colour = track),
+    linewidth = 0.1
+  ) +
+  scale_x_continuous(breaks = seq(31.6, 32, by = 0.2)) +
+  labs(fill = "Buffalo", colour = "Buffalo")
+```
+
+### AKDE versus KDE
+
+To see the effect of accounting for autocorrelation, we can compare the AKDE
+home ranges with those estimated with conventional KDE (`hr_tt_kde()`), using
+the reference bandwidth for each buffalo, on the same grid:
+
+```{r kde}
+buffalo_kde_iso <- hr_tt_kde(
+  buffalo_tt,
+  h = "h_ref_indiv",
+  bbox = unlist(buffalo_akde[1, c("xmin", "ymin", "xmax", "ymax")]),
+  res = buffalo_akde$res[1],
+  levels = 0.95
+)
+bind_rows(
+  akde = filter(buffalo_iso, level == 0.95),
+  kde = buffalo_kde_iso,
+  .id = "estimator"
+) %>%
+  sf::st_drop_geometry() %>%
+  transmute(track, estimator, area = units::set_units(area, "km^2")) %>%
+  tidyr::pivot_wider(names_from = estimator, values_from = area)
+```
+
+Conventional KDE, which ignores the autocorrelation of the locations, gives
+smaller home ranges for all buffalo, and no measure of the uncertainty of the
+estimates.
+
+### Irregular sampling
+
+The tracks of some buffalo are sampled irregularly: Pepper, for example, was
+sampled every hour at the start of the deployment, and every two hours
+afterwards, because of a malfunction of the GPS collar. With
+`weights = TRUE`, `hr_tt_akde()` weights the locations to correct for the
+over-representation of the periods sampled more frequently (Fleming et al.
+2018). This is slower, so here we only use it for Pepper:
+
+```{r weights}
+pepper_tt <- filter_by_meta(buffalo_tt, track == "Pepper")
+pepper_iso <- bind_rows(
+  uniform = hr_tt_akde(pepper_tt, buffalo_fit, levels = 0.95),
+  weighted = hr_tt_akde(pepper_tt, buffalo_fit, levels = 0.95, weights = TRUE),
+  .id = "weights"
+)
+pepper_iso %>%
+  sf::st_drop_geometry() %>%
+  transmute(
+    weights,
+    area = units::set_units(area, "km^2"),
+    area_low = units::set_units(area_low, "km^2"),
+    area_high = units::set_units(area_high, "km^2")
+  )
+```
+
+Note that the table of models includes all buffalo: `hr_tt_akde()` matches
+the models to the tracks by their id. Here, weighting changes the estimated
+area only slightly, but it changes the shape of the home range, as we can see
+by plotting the two isopleths over the track of Pepper:
+
+```{r weights_plot}
+ggplot() +
+  geom_track_path(data = pepper_tt, colour = "grey50", linewidth = 0.1) +
+  geom_sf(
+    data = pepper_iso,
+    mapping = aes(colour = weights),
+    fill = NA,
+    linewidth = 1
+  ) +
+  scale_x_continuous(breaks = seq(31.6, 32, by = 0.1)) +
+  labs(colour = "Weights")
+```
+
+## Comparing home ranges
+
+As the UDs of all buffalo are on the same grid, we can compute their overlap
+with `hr_tt_ud_overlap()`:
+
+```{r overlap}
+hr_tt_ud_overlap(buffalo_akde, method = "ba")
+```
+
+Alternatively, we can use `ctmm::overlap()` on the `ctmm` UDs, which provides
+a bias-corrected estimate of the Bhattacharyya coefficient, with confidence
+intervals (here, the estimates):
+
+```{r overlap_ctmm}
+buffalo_overlap <- ctmm::overlap(buffalo_akde$ud_ctmm)
+round(buffalo_overlap$CI[, , "est"], 2)
+```
+
+The `ctmm` UDs can also be used for population-level analyses, such as
+estimating the mean home range area of the buffalo with `ctmm::meta()`:
+
+```{r meta, fig.height=4}
+ctmm::meta(buffalo_akde$ud_ctmm)
+```
+
+## Going further
+
+The fitted models can be used with any other function of `ctmm`, by
+combining them with the `telemetry` objects created with `mt_as_telemetry()`.
+For example, we can estimate the mean speed of Cilla, with its confidence
+interval:
+
+```{r speed}
+ctmm::speed(buffalo_fit$model$Cilla, buffalo_tel$Cilla, trace = FALSE)
+```
+
+or simulate a track from the model of Cilla, conditional on the observed
+locations (e.g. to fill gaps), and convert it back to a tibble of tracks with
+`mt_as_move2()`:
+
+```{r simulate}
+# times every 20 minutes during the first two days of the track
+cilla_times <- seq(
+  from = min(buffalo_tel$Cilla$t),
+  to = min(buffalo_tel$Cilla$t) + 2 %#% "day",
+  by = 20 %#% "minute"
+)
+cilla_sim <- simulate(
+  buffalo_fit$model$Cilla,
+  data = buffalo_tel$Cilla,
+  t = cilla_times
+)
+# simulated tracks only have the time in seconds, so we add the timestamp
+cilla_sim$timestamp <- as.POSIXct(
+  cilla_sim$t,
+  origin = "1970-01-01",
+  tz = "UTC"
+)
+cilla_sim_tt <- mt_as_move2(cilla_sim)
+cilla_sim_tt
+```
+
+## References
+
+Cross, P.C., Bowers, J.A., Hay, C.T., Wolhuter, J., Buss, P., Hofmeyr, M., du
+Toit, J.T. & Getz, W.M. (2016) Data from: Nonparameteric kernel methods for
+constructing home ranges and utilization distributions. Movebank Data
+Repository. DOI: 10.5441/001/1.j900f88t
+
+Fleming, C.H., Fagan, W.F., Mueller, T., Olson, K.A., Leimgruber, P. &
+Calabrese, J.M. (2015) Rigorous home range estimation with movement data: a
+new autocorrelated kernel density estimator. Ecology, 96, 1182-1188.
+
+Fleming, C.H., Sheldon, D., Fagan, W.F., Leimgruber, P., Mueller, T.,
+Nandintsetseg, D., Noonan, M.J., Olson, K.A., Setyawan, E., Sianipar, A. &
+Calabrese, J.M. (2018) Correcting for missing and irregular data in
+home-range estimation. Ecological Applications, 28, 1003-1010.
+
+Getz, W.M., Fortmann-Roe, S., Cross, P.C., Lyons, A.J., Ryan, S.J. & Wilmers,
+C.C. (2007) LoCoH: nonparameteric kernel methods for constructing home ranges
+and utilization distributions. PLoS ONE, 2, e207.

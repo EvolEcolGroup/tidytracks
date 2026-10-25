@@ -309,7 +309,9 @@ hr_tt_akde <- function(
         debias = debias,
         weights = weights,
         error = tolerance,
-        grid = grid
+        grid = grid,
+        # with weights, ctmm plots the sampling intervals by default
+        dt.plot = FALSE
       ),
       label = paste("group", group_labels[i])
     )
@@ -451,7 +453,9 @@ akde_bandwidth <- function(tel, fit) {
     tel <- stats::predict(fit, data = tel, t = tel$t)
     fit$error <- FALSE
   }
-  ctmm::bandwidth(tel, fit)
+  # ctmm gives the same messages when estimating the UD with akde(), so we
+  # silence them here
+  suppressMessages(ctmm::bandwidth(tel, fit, dt.plot = FALSE))
 }
 
 #' Default bounding box of the AKDE of a track
