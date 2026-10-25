@@ -1,3 +1,10 @@
+# internal helpers shared by the wrappers around the suggested package
+# move2utils. the wrappers follow the tidytracks conventions (event_* return
+# one value per event, tt_* return the modified move2, track_* one value per
+# track), so these helpers translate between those conventions and the way
+# move2utils works: it returns its input with added columns, takes physical
+# quantities as plain numbers, and draws plots and prints narration by default.
+
 #' Check that move2utils is installed
 #'
 #' Functions that wrap `move2utils` call this first. `move2utils` is a
@@ -9,6 +16,8 @@
 #' @keywords internal
 #' @noRd
 check_move2utils <- function(fn) {
+  # this is called before any other check, so that users without move2utils
+  # learn how to install it rather than getting an error about their input
   if (!is_move2utils_installed()) {
     stop(
       fn, "() requires the suggested package 'move2utils'. ",
@@ -23,6 +32,8 @@ check_move2utils <- function(fn) {
 #' @keywords internal
 #' @noRd
 is_move2utils_installed <- function() {
+  # requireNamespace() loads move2utils without attaching it: the wrappers
+  # always call its functions with move2utils::
   requireNamespace("move2utils", quietly = TRUE)
 }
 
@@ -41,13 +52,21 @@ is_move2utils_installed <- function() {
 #' @keywords internal
 #' @noRd
 move2utils_args <- function(fn, args) {
+  # the arguments are only added to functions that have them, as passing an
+  # unknown argument to a move2utils function is an error
   fn_args <- names(formals(fn))
-  if ("plot" %in% fn_args && is.null(args$plot)) {
+  # [[ ]] rather than $, as $ partially matches names (e.g. args$plot would
+  # return an argument called plot_type)
+  # a user can still ask for a plot or the narration, e.g. through the ... of
+  # event_flag_outliers(), as these do not change the results
+  if ("plot" %in% fn_args && is.null(args[["plot"]])) {
     args$plot <- FALSE
   }
-  if ("silent" %in% fn_args && is.null(args$silent)) {
+  if ("silent" %in% fn_args && is.null(args[["silent"]])) {
     args$silent <- TRUE
   }
+  # remove = TRUE would drop events from the output, which could then not be
+  # matched to the events of x, so it is overridden even if the user set it
   if ("remove" %in% fn_args) {
     args$remove <- FALSE
   }
@@ -62,6 +81,10 @@ move2utils_args <- function(fn, args) {
 #' @keywords internal
 #' @noRd
 move2utils_units <- c(
+  # only arguments whose units are the same in every move2utils function
+  # that has them are listed (checked in the move2utils documentation): times
+  # are deliberately absent, as move2utils takes some in seconds and others
+  # in minutes (e.g. time_step of mt_thin_time())
   v_max = "m/s",
   physiological_ceiling = "m/s",
   speed_threshold = "m/s",
@@ -88,18 +111,18 @@ move2utils_units <- c(
 #' @keywords internal
 #' @noRd
 units_to_move2utils <- function(args) {
+  # list(...) has no names at all when no argument is named
   arg_names <- names(args)
   if (is.null(arg_names)) {
     arg_names <- rep("", length(args))
   }
   for (i in seq_along(args)) {
     arg <- args[[i]]
-    expected <- if (arg_names[i] %in% names(move2utils_units)) {
-      move2utils_units[[arg_names[i]]]
-    } else {
-      NA_character_
-    }
+    # NA for unnamed arguments and for those not in the table
+    expected <- unname(move2utils_units[arg_names[i]])
     if (is.na(expected)) {
+      # move2utils expects plain numbers, and the units it expects for this
+      # argument are not known here, so refuse rather than guess
       if (inherits(arg, "units")) {
         stop(
           "units objects are not supported for the argument '",
@@ -108,9 +131,14 @@ units_to_move2utils <- function(args) {
       }
       next
     }
+    # NULL is the move2utils default for most of these arguments (and
+    # assigning NULL with [[<- would delete the argument), and a character
+    # value names a column (location_error)
     if (is.null(arg) || is.character(arg)) {
       next
     }
+    # plain numbers are refused, as in the rest of tidytracks, so that the
+    # units are always explicit
     if (
       !inherits(arg, "units") ||
         !units::ud_are_convertible(units::deparse_unit(arg), expected)
@@ -120,6 +148,7 @@ units_to_move2utils <- function(args) {
         expected, ", e.g. as_units(1, '", expected, "')"
       )
     }
+    # mode = "standard" because the target units are in a variable
     args[[i]] <- as.numeric(units::set_units(arg, expected, mode = "standard"))
   }
   args
@@ -138,8 +167,13 @@ units_to_move2utils <- function(args) {
 #' @keywords internal
 #' @noRd
 check_time_ordered <- function(x) {
+  # reordering inside a wrapper would make the results of the event_*
+  # functions harder to match to the events, so ordering is left to the user
   # mt_is_time_ordered() returns FALSE if the times are not in order, but gives
-  # an error if the events of a track are not stored together
+  # an error if the events of a track are not stored together; both cases are
+  # fixed by tt_order_time(), so they get the same error. callers check that x
+  # is a move2 object first, so no other error is expected here
+  # duplicated times are allowed (the default of mt_is_time_ordered())
   ordered <- tryCatch(
     move2::mt_is_time_ordered(x),
     error = function(e) FALSE
@@ -148,6 +182,29 @@ check_time_ordered <- function(x) {
     stop(
       "x must be ordered by time within each track; ",
       "use tt_order_time(x) to order it"
+    )
+  }
+  invisible(NULL)
+}
+
+#' Check that distances can be computed in metres from the coordinates
+#'
+#' `move2utils` computes distances from the coordinates directly: great circle
+#' distances for geographic coordinates, and Euclidean distances, taken to be
+#' in metres, for projected coordinates. Projected coordinates in other units
+#' (e.g. US survey feet) would silently give wrong distances and speeds, so
+#' they are rejected.
+#'
+#' @param x A `move2` object, with a CRS.
+#' @returns `NULL`, invisibly; gives an error if `x` has a projected CRS whose
+#'   units are not metres.
+#' @keywords internal
+#' @noRd
+check_metric_crs <- function(x) {
+  if (!sf::st_is_longlat(x) && !identical(sf::st_crs(x)$units_gdal, "metre")) {
+    stop(
+      "x must have a geographic coordinate reference system, or a projected ",
+      "one in metres (see sf::st_transform())"
     )
   }
   invisible(NULL)
@@ -172,16 +229,21 @@ check_time_ordered <- function(x) {
 #' @keywords internal
 #' @noRd
 call_move2utils <- function(x, fn, ..., cols, time_ordered = TRUE) {
+  # time_ordered = FALSE is only for move2utils functions that sort the
+  # events themselves; the output check below still requires them to return
+  # the events in the order they were given
   if (time_ordered) {
     check_time_ordered(x)
   }
+  # dropping events keeps the order of the others, so the subset is still
+  # ordered by time within each track
   located <- !sf::st_is_empty(x)
   args <- move2utils_args(fn, c(list(x[located, ]), list(...)))
   res <- do.call(fn, args)
-  if (
-    nrow(res) != sum(located) ||
-      !identical(move2::mt_time(res), move2::mt_time(x)[located])
-  ) {
+  # the results are matched to the events by position, so check that
+  # move2utils kept every event, in order; comparing the times catches
+  # dropped, added and reordered events (a different length is not identical)
+  if (!identical(move2::mt_time(res), move2::mt_time(x)[located])) {
     stop("move2utils did not return one row for each event, in order")
   }
   missing_cols <- setdiff(cols, names(res))
@@ -191,14 +253,12 @@ call_move2utils <- function(x, fn, ..., cols, time_ordered = TRUE) {
       paste(missing_cols, collapse = ", ")
     )
   }
-  # fill in the events that were not passed to move2utils with NA (indexing
-  # each vector keeps its class, e.g. units or POSIXct)
-  out <- lapply(cols, function(col) {
-    values <- res[[col]]
-    matched <- values[rep(NA_integer_, nrow(x))]
-    matched[located] <- values
-    matched
-  })
+  # position in res of each event of x, NA for the events that were not
+  # passed to move2utils; indexing each column with it keeps its class (e.g.
+  # units or POSIXct), and the columns are taken one by one with [[ ]] as
+  # res[cols] would keep the geometry of the sf object
+  idx <- match(seq_len(nrow(x)), which(located))
+  out <- lapply(cols, function(col) res[[col]][idx])
   names(out) <- cols
   tibble::as_tibble(out)
 }

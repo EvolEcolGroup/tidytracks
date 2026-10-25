@@ -20,6 +20,15 @@ test_that("event_flag_thin_time gives the correct errors", {
     ),
     "tolerance must be a units object"
   )
+  # move2utils does not check the length of tolerance itself
+  expect_error(
+    event_flag_thin_time(
+      example_tt,
+      interval = as_units(1, "h"),
+      tolerance = as_units(c(5, 10), "min")
+    ),
+    "tolerance must be a units object of length 1"
+  )
   expect_error(
     event_flag_thin_time(
       example_tt,

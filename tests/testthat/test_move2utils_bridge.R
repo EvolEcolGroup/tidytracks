@@ -32,6 +32,12 @@ test_that("move2utils_args turns off plots and narration by default", {
     move2utils_args(function(x) x, list(1)),
     list(1)
   )
+  # names are matched exactly: an argument whose name starts with "plot" does
+  # not count as plot
+  expect_identical(
+    move2utils_args(fake_move2utils_fn, list(1, plot_type = "a")),
+    list(1, plot_type = "a", plot = FALSE, silent = TRUE)
+  )
 })
 
 test_that("check_time_ordered requires events ordered by time", {
@@ -48,6 +54,16 @@ test_that("check_time_ordered requires events ordered by time", {
   )
   # duplicated times are allowed
   expect_null(check_time_ordered(example_tt[c(1, 1:15), ]))
+})
+
+test_that("check_metric_crs requires coordinates in metres or degrees", {
+  expect_null(check_metric_crs(example_tt))
+  expect_null(check_metric_crs(sf::st_transform(example_tt, 32630)))
+  # US survey feet, which move2utils would take to be metres
+  expect_error(
+    check_metric_crs(sf::st_transform(example_tt, 2263)),
+    "x must have a geographic coordinate reference system, or a projected"
+  )
 })
 
 test_that("call_move2utils matches the results to the original events", {
@@ -166,5 +182,27 @@ test_that("units_to_move2utils requires units for physical arguments", {
   expect_error(
     units_to_move2utils(list(as_units(1, "m"))),
     "units objects are not supported"
+  )
+})
+
+test_that("apply_flag_action acts on the flagged events", {
+  x <- example_tt
+  valid <- rep(TRUE, nrow(x))
+  valid[c(2, 9)] <- FALSE
+
+  removed <- apply_flag_action(x, valid, "remove")
+  expect_identical(event_time(removed), event_time(x)[valid])
+
+  nulled <- apply_flag_action(x, valid, "null")
+  expect_identical(nrow(nulled), nrow(x))
+  expect_identical(sf::st_is_empty(nulled), !valid)
+  expect_equal(sf::st_geometry(nulled)[valid], sf::st_geometry(x)[valid])
+
+  interpolated <- apply_flag_action(x, valid, "interpolate")
+  expect_identical(nrow(interpolated), nrow(x))
+  expect_false(any(sf::st_is_empty(interpolated)))
+  expect_equal(
+    sf::st_geometry(interpolated)[valid],
+    sf::st_geometry(x)[valid]
   )
 })

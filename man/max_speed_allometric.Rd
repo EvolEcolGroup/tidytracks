@@ -13,7 +13,7 @@ max_speed_allometric(
 \arguments{
 \item{mass}{Body mass, as a \code{units} object (e.g. \code{as_units(4, "kg")}). It
 can be a vector, e.g. to obtain a prediction for each track from a column
-of the metadata.}
+of the metadata; missing values give \code{NA}.}
 
 \item{mode}{The mode of locomotion, one of "flying", "running" or
 "swimming". Either a single value or one value per element of \code{mass}.}

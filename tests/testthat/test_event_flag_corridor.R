@@ -18,6 +18,18 @@ test_that("event_flag_corridor gives the correct errors", {
     event_flag_corridor(example_tt, speed_threshold = as_units(1, "m")),
     "speed_threshold must be a units object"
   )
+  # vectors would be silently recycled along the steps by move2utils
+  expect_error(
+    event_flag_corridor(
+      example_tt,
+      speed_threshold = as_units(c(1, 2), "m/s")
+    ),
+    "must be single values"
+  )
+  expect_error(
+    event_flag_corridor(example_tt, circvar_threshold = c(0.2, 0.5)),
+    "must be single values"
+  )
   expect_error(
     event_flag_corridor(example_tt[c(2, 1, 3:15), ]),
     "x must be ordered by time within each track; use tt_order_time"
@@ -80,5 +92,15 @@ test_that("event_flag_corridor gives NA for events without a location", {
       speed_threshold = as_units(0.15, "m/s"),
       circvar_threshold = 0.2
     )
+  )
+})
+
+test_that("event_flag_corridor requires coordinates in metres or degrees", {
+  skip_if_not_installed("move2utils")
+  # a projected CRS in US survey feet
+  x <- sf::st_transform(create_spiky_tracks(), 2263)
+  expect_error(
+    event_flag_corridor(x),
+    "x must have a geographic coordinate reference system, or a projected"
   )
 })

@@ -59,14 +59,14 @@ hr_tt_ud_sum.tbl_df <- function(x) {
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
   # create a new tibble with the summed UD, keeping the parameters of the
-  # method (e.g. h for hr_tt_kde(), window_size and margin for hr_tt_dbbmm())
+  # method (e.g. h for hr_tt_kde(), window_size and margin for hr_tt_dbbmm()):
+  # each method has its own, so they are optional, and they are placed after
+  # the method (as h was before) by the order of the selection
   sum_tbl <- x %>%
     dplyr::select(
-      dplyr::all_of(c("method", "xmin", "ymin", "xmax", "ymax", "res")),
-      dplyr::any_of(c("h", "window_size", "margin"))
-    ) %>%
-    dplyr::relocate(dplyr::any_of(c("h", "window_size", "margin")),
-      .after = "method"
+      dplyr::all_of("method"),
+      dplyr::any_of(c("h", "window_size", "margin")),
+      dplyr::all_of(c("xmin", "ymin", "xmax", "ymax", "res"))
     ) %>%
     dplyr::distinct()
   # check that we only have one row in the sum_tbl

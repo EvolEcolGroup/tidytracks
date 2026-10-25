@@ -85,6 +85,12 @@ test_that("event_flag_outliers passes further arguments, converting units", {
     ),
     "v_max must be a units object with units convertible to m/s"
   )
+  # an argument in ... that is not an argument of the move2utils function is
+  # rejected by it (rather than being partially matched to an internal one)
+  expect_error(
+    event_flag_outliers(x, method = "detour", f = 1),
+    "unused argument"
+  )
   # a lower cap (steps are ~0.1 m/s, apart from the spikes) flags more events
   expect_gt(
     sum(!event_flag_outliers(
@@ -153,4 +159,14 @@ test_that("tt_clean_outliers passes further arguments", {
     threshold_type = "hard"
   )
   expect_identical(nrow(removed), sum(valid))
+})
+
+test_that("event_flag_outliers requires coordinates in metres or degrees", {
+  skip_if_not_installed("move2utils")
+  # a projected CRS in US survey feet
+  x <- sf::st_transform(create_spiky_tracks(), 2263)
+  expect_error(
+    event_flag_outliers(x, method = "detour"),
+    "x must have a geographic coordinate reference system, or a projected"
+  )
 })

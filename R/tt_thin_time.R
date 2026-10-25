@@ -23,6 +23,8 @@ tt_thin_time <- function(
   tolerance = NULL,
   criterion = c("closest", "first")
 ) {
+  # all the checks are done by event_flag_thin_time(); keep has no NA (events
+  # without a location are FALSE), so it can be used directly to subset x
   keep <- event_flag_thin_time( # nolint: object_usage_linter.
     x,
     interval = interval,

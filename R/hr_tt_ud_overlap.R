@@ -97,6 +97,7 @@ hr_tt_ud_overlap.SpatRaster <- function(
   if (method == "earth_mover") {
     return(earth_mover_distance(x_values, y_values, x))
   } else if (method == "earth_mover_sinkhorn") {
+    # the distance between the two UDs is the off-diagonal element
     return(earth_mover_sinkhorn(list(x_values, y_values), x)[1, 2])
   } else if (method == "udoi") {
     level <- udoi_level(cond_level)
@@ -180,7 +181,8 @@ hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
     overlap_matrix <- crossprod(mask_matrix * cell_areas, mask_matrix) *
       crossprod(values_matrix / cell_areas, values_matrix)
   } else if (method == "earth_mover_sinkhorn") {
-    # move2utils computes all pairwise distances at once
+    # move2utils computes all pairwise distances at once (with zeros on the
+    # diagonal), from the cached, conditioned cell values
     overlap_matrix <- earth_mover_sinkhorn(ud_values_list, reference)
   } else {
     diagonal <- if (method == "earth_mover") 0 else 1
@@ -407,13 +409,24 @@ earth_mover_distance <- function(x, y, raster) {
 #' @noRd
 earth_mover_sinkhorn <- function(values_list, raster) {
   n <- length(values_list)
+  # move2utils::emd() gives an error with fewer than two UDs, whilst the
+  # distance of a single UD to itself is simply zero
   if (n < 2L) {
     return(matrix(0, nrow = n, ncol = n))
   }
+  # rebuild a multi-layer raster from the (possibly conditioned) cell values,
+  # as move2utils::emd() takes rasters rather than values; the cell
+  # coordinates, and hence the distances, are in the units of the crs
   uds <- terra::rast(raster[["ud"]], nlyrs = n)
   terra::values(uds) <- do.call(cbind, values_list)
+  # unique layer names, as emd() uses them to name the rows and columns
   names(uds) <- paste0("ud", seq_len(n))
+  # emd() also drops the outermost 0.1% of each UD before transporting it
+  # (its default mask_quantile), which together with the entropic
+  # regularisation explains the small differences from the exact distance;
+  # it warns if the UDs are on a longitude/latitude grid
   distances <- as.matrix(move2utils::emd(uds, method = "sinkhorn"))
+  # the callers set the ids as dimnames
   dimnames(distances) <- NULL
   distances
 }
@@ -426,12 +439,16 @@ earth_mover_sinkhorn <- function(values_list, raster) {
 #' @keywords internal
 #' @noRd
 check_earth_mover_available <- function(method) {
+  # checked before any work is done, so that a missing package is reported
+  # first; the other methods need no suggested package
   if (method == "earth_mover" && !requireNamespace("emdist", quietly = TRUE)) {
     stop(
       "method = 'earth_mover' requires the suggested package 'emdist'. ",
       "Install it with install.packages('emdist')."
     )
   }
+  # the Sinkhorn approximation is a separate method, rather than a fallback
+  # for a missing emdist, as its values differ slightly from the exact ones
   if (method == "earth_mover_sinkhorn") {
     check_move2utils("hr_tt_ud_overlap") # nolint: object_usage_linter.
   }

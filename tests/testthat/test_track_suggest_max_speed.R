@@ -14,6 +14,11 @@ test_that("track_suggest_max_speed gives the correct errors", {
     track_suggest_max_speed(x),
     "x must have a coordinate reference system"
   )
+  # projected coordinates in feet, which move2utils would take to be metres
+  expect_error(
+    track_suggest_max_speed(sf::st_transform(example_tt, 2263)),
+    "x must have a geographic coordinate reference system, or a projected"
+  )
   expect_error(track_suggest_max_speed(example_tt, method = "other"))
 })
 

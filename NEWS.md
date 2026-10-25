@@ -2,40 +2,46 @@
 
 ## New features
 
-* tidytracks can now use functions from the package `move2utils`, a suggested
-  package installed from GitHub with
+* tidytracks can now use the methods of `move2utils`, a suggested package
+  installed from GitHub with
   `remotes::install_github("move2universe/move2utils")`, through wrappers
-  that follow the tidytracks conventions:
+  that follow the tidytracks conventions: physical quantities are given as
+  `units` objects, and events without a location are allowed. Projected
+  coordinates must be in metres, as `move2utils` assumes.
   * `max_speed_allometric()` predicts the maximum speed of an animal from its
     body mass and mode of locomotion (Hirt et al. 2017), for use as
     `max_speed` in `event_flag_mcconnell()` and `tt_clean_mcconnell()`.
   * `track_suggest_max_speed()` suggests a maximum speed for each track from
     a break in the distribution of the speeds of its steps.
+  * `event_flag_outliers()` and `tt_clean_outliers()` detect outliers with
+    the methods of `move2utils` (its combined `mt_clean_track()` by default,
+    or its speed cap, detour, Brownian bridge or probability methods), most
+    of which choose their thresholds from the data. `tt_clean_outliers()`
+    removes the outliers, or sets or interpolates their location, as
+    `tt_clean_mcconnell()` does.
   * `event_flag_thin_time()` and `tt_thin_time()` thin tracks to a time
     interval (within a tolerance), keeping as many of the original events as
     possible.
   * `event_flag_thin_distance()` and `tt_thin_distance()` thin tracks by the
     distance travelled along them.
-  * `event_flag_outliers()` and `tt_clean_outliers()` detect outliers with
-    the methods of `move2utils` (its combined `mt_clean_track()` by default,
-    or its speed cap, detour, Brownian bridge or probability methods), most
-    of which choose their thresholds from the data.
   * `event_flag_corridor()` flags the steps that are part of movement
     corridors (fast movement in a consistent direction).
   * `hr_tt_dbbmm()` and `hr_tt_dbgb()` estimate the utilisation distribution
     of each track with a dynamic Brownian bridge movement model or a dynamic
     bivariate Gaussian bridge, returning an `hr_tt_ud_tbl` that works with the
-    other `hr_tt_ud_*()` functions. By default, the grid is chosen from the
-    extent and width of the bridges (and differs from the grid of
+    other `hr_tt_ud_*()` functions. They require data in a projected
+    coordinate reference system in metres. By default, the grid is chosen
+    from the extent and width of the bridges (and differs from the grid of
     `hr_tt_kde()`); a given grid is checked to contain all the bridges.
   * `event_ud_level()` returns the isopleth level of each event in a
     utilisation distribution (e.g. in the UD of its own track).
   * `hr_tt_ud_overlap(method = "earth_mover_sinkhorn")` computes a fast
     approximation of the Earth Mover's Distance.
-  * The new article "Using move2utils with tidytracks" shows these functions
-    in use.
-* `hr_tt_ud_sum()` works with tables of UDs from methods other than
-  `hr_tt_kde()` (it previously required the column `h`).
+  * The new article "Using move2utils with tidytracks", on the package
+    website, shows these functions in use.
+* `hr_tt_ud_sum()` now works with tables of UDs from methods other than
+  `hr_tt_kde()` (it previously required the column `h`), and keeps the
+  parameters of the method (e.g. `window_size` and `margin`).
 
 # tidytracks 0.2.1
 

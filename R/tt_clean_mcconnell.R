@@ -60,13 +60,17 @@ tt_clean_mcconnell <- function(
 #' @keywords internal
 #' @noRd
 apply_flag_action <- function(x, valid, flag_action) {
+  # flag_action has been validated with match.arg() by the caller
   if (flag_action == "remove") {
-    x <- x[valid, ]
-  } else if (flag_action == "null") {
-    sf::st_geometry(x)[!valid] <- sf::st_point()
-  } else if (flag_action == "interpolate") {
-    sf::st_geometry(x)[!valid] <- sf::st_point()
+    return(x[valid, ])
+  }
+  # "null" and "interpolate" keep every event (and so its time stamp and
+  # attributes), and empty the location of the flagged events
+  sf::st_geometry(x)[!valid] <- sf::st_point()
+  # mt_interpolate() fills in every event with an empty location, so events
+  # that had no location before cleaning are interpolated too
+  if (flag_action == "interpolate") {
     x <- move2::mt_interpolate(x)
   }
-  return(x)
+  x
 }

@@ -40,7 +40,7 @@ combines the methods below and iterates until no more outliers are found;
 it is the recommended starting point.
 \item "speed_cap": \code{\link[move2utils:mt_flag_speed_cap]{move2utils::mt_flag_speed_cap()}}, which flags events on
 either side of an implausibly fast step, with a cap chosen from the data
-or given as \code{v_max}.
+or given as \code{v_max} (with \code{threshold_type = "hard"}).
 \item "detour": \code{\link[move2utils:mt_flag_outliers_detour]{move2utils::mt_flag_outliers_detour()}}, which flags events
 for which the path to and from the neighbouring events is much longer
 than the direct distance between them (e.g. out-and-back spikes).

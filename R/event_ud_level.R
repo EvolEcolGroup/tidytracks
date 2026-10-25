@@ -37,16 +37,23 @@ event_ud_level <- function(x, ud) {
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")
   }
+  # events without a location have no cell in the UD, so they keep NA (as do
+  # events without a matching UD); the others are filled in below
   located <- !sf::st_is_empty(x)
   level <- rep(NA_real_, nrow(x))
 
   if (inherits(ud, "SpatRaster")) {
     level[located] <- ud_level_one(x[located, ], ud)
   } else if (inherits(ud, "hr_tt_ud_tbl")) {
+    # a table read back from disk has its UDs wrapped
     ud <- hr_tt_ud_unwrap(ud) # nolint: object_usage_linter.
     if (nrow(ud) == 1) {
+      # e.g. the UD of a single track, or the sum of all UDs from
+      # hr_tt_ud_sum(), whose first column is not an id
       level[located] <- ud_level_one(x[located, ], ud$ud[[1]])
     } else {
+      # the first column of a UD table identifies its rows (the track id for
+      # hr_tt_kde() and hr_tt_dbbmm(), or the grouping variable)
       id_col <- names(ud)[1]
       if (!id_col %in% names(x)) {
         stop(
@@ -55,9 +62,15 @@ event_ud_level <- function(x, ud) {
           "from the metadata"
         )
       }
+      # ids are compared as characters, as UD tables store them, whatever the
+      # type of the column in x (e.g. a factor track id)
       event_ids <- as.character(x[[id_col]])
       for (i in seq_len(nrow(ud))) {
+        # %in% rather than ==, so that events with a missing id are not
+        # selected
         events <- located & event_ids %in% as.character(ud[[1]][i])
+        # each UD is used only for its own events, whose levels are computed
+        # in one call (move2utils computes the volume of the UD each time)
         if (any(events)) {
           level[events] <- ud_level_one(x[events, ], ud$ud[[i]])
         }
@@ -77,10 +90,14 @@ event_ud_level <- function(x, ud) {
 #' @keywords internal
 #' @noRd
 ud_level_one <- function(x, ud) {
+  # move2utils needs a single layer; UDs from tidytracks have a layer named
+  # "ud", but other single-layer rasters (e.g. from move2utils) work too
   if ("ud" %in% names(ud)) {
     ud <- ud[["ud"]]
   } else if (terra::nlyr(ud) != 1) {
     stop("ud must have a layer named 'ud', or a single layer")
   }
+  # move2utils reprojects the events to the crs of the UD, and gives NA for
+  # events outside the grid
   move2utils::ud_outer_probability(x, ud)
 }

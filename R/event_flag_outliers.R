@@ -12,7 +12,7 @@
 #'   it is the recommended starting point.
 #' * "speed_cap": [move2utils::mt_flag_speed_cap()], which flags events on
 #'   either side of an implausibly fast step, with a cap chosen from the data
-#'   or given as `v_max`.
+#'   or given as `v_max` (with `threshold_type = "hard"`).
 #' * "detour": [move2utils::mt_flag_outliers_detour()], which flags events
 #'   for which the path to and from the neighbouring events is much longer
 #'   than the direct distance between them (e.g. out-and-back spikes).
@@ -68,10 +68,19 @@ event_flag_outliers <- function(
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")
   }
+  # all methods work on step lengths and speeds in metres, which need a CRS
+  # to be computed
   if (is.na(sf::st_crs(x))) {
     stop("x must have a coordinate reference system (CRS) defined")
   }
+  # the speed cap and detour methods of move2utils use projected coordinates
+  # as they are, assuming metres, so other projected units would silently give
+  # wrong speeds and distances
+  check_metric_crs(x) # nolint: object_usage_linter.
   method <- match.arg(method)
+  # all these functions share the same interface (a move2 object in, the same
+  # object out with a logical is_outlier column added), so only the function
+  # changes with the method
   fn <- switch(method,
     clean_track = move2utils::mt_clean_track,
     speed_cap = move2utils::mt_flag_speed_cap,
@@ -80,15 +89,23 @@ event_flag_outliers <- function(
     probability = move2utils::mt_flag_outliers
   )
 
+  # move2utils takes physical quantities as plain numbers in fixed units
+  # (e.g. v_max in m/s), so the units objects given through ... are converted
+  # first; arguments that move2utils validates itself (thresholds, iterations,
+  # etc.) are passed on unchanged. do.call() is needed to splice the converted
+  # list into the call; x and fn are named so that an argument in ... cannot
+  # be partially matched to them (e.g. f = 1 would otherwise replace fn)
   res <- do.call(
     call_move2utils, # nolint: object_usage_linter.
     c(
-      list(x, fn),
+      list(x = x, fn = fn),
       units_to_move2utils(list(...)), # nolint: object_usage_linter.
       list(cols = "is_outlier")
     )
   )
-  # events without a location are not passed to move2utils, and are returned
-  # as valid (as in event_flag_mcconnell())
+  # events without a location are not passed to move2utils and come back as
+  # NA: they are returned as valid (as in event_flag_mcconnell()), as there
+  # is no location to judge; %in% also treats any NA from move2utils itself
+  # as not flagged
   !(res$is_outlier %in% TRUE)
 }

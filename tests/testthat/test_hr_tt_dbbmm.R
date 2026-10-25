@@ -164,6 +164,17 @@ test_that("hr_tt_dbbmm uses a given grid", {
   expect_true(overlap > 0 && overlap <= 1)
 })
 
+test_that("hr_tt_dbbmm limits the number of cells of a given bbox", {
+  skip_if_not_installed("move2utils")
+  x <- create_irregular_tracks()
+  # without res, the cells are no smaller than needed for the longest side of
+  # the given bbox (rather than of the bridges) to have 500 cells
+  large_bbox <- c(xmin = -50000, ymin = -50000, xmax = 50000, ymax = 50000)
+  ud <- hr_tt_dbbmm(x, location_error = as_units(20, "m"), bbox = large_bbox)
+  expect_gte(ud$res[1], 100000 / 500)
+  expect_lte(max(dim(ud$ud[[1]])[1:2]), 500)
+})
+
 test_that("hr_tt_dbbmm checks that the grid contains the bridges", {
   skip_if_not_installed("move2utils")
   x <- create_irregular_tracks()

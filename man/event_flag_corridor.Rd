@@ -23,8 +23,8 @@ the directions of the nearby steps at or below which they are considered
 to run in a similar direction. Defaults to the lower quartile of the
 circular variances.}
 
-\item{min_segments}{The minimum number of nearby steps that must qualify
-for a step to be part of a corridor.}
+\item{min_segments}{The minimum number of nearby steps (including the step
+itself) for a step to be part of a corridor.}
 }
 \value{
 A logical vector with one value per event of \code{x}, \code{TRUE} for the
@@ -33,19 +33,29 @@ track is \code{FALSE}).
 }
 \description{
 This function detects corridors: places where animals move fast, in a
-consistent direction (either way along the corridor). A step (from an event
-to the next one in the same track) is flagged as part of a corridor if it is
-fast, and if most of the nearby steps (the steps whose midpoints are within
-half its length) are also fast and run in a similar direction. It is a
-wrapper around \code{\link[move2utils:mt_corridor]{move2utils::mt_corridor()}}, which requires the suggested
-package \code{move2utils} (install it with
+consistent direction (either way along the corridor). It is a wrapper
+around \code{\link[move2utils:mt_corridor]{move2utils::mt_corridor()}}, which requires the suggested package
+\code{move2utils} (install it with
 \code{remotes::install_github("move2universe/move2utils")}).
 }
 \details{
+The nearby steps of a step (from an event to the next one in the same
+track) are the steps whose midpoints are within half its length of its
+midpoint, including the step itself. A step is a candidate if it is fast
+(\code{speed_threshold}), and if its nearby steps run in a similar direction
+(\code{circvar_threshold}). A step is then flagged as part of a corridor if it
+has at least \code{min_segments} nearby steps, and if more than half of them are
+candidates; a step that is not a candidate itself (e.g. a slow step) can
+therefore be flagged when it lies within a corridor.
+
 When \code{speed_threshold} or \code{circvar_threshold} are not given, they are
 estimated from all the steps in \code{x} (pooling all tracks), with a warning
 giving the value used; give explicit values to compare corridors among
 datasets.
+
+The search radius depends on the length of the steps, so it assumes
+roughly regular sampling; \code{move2utils} warns when the time intervals are
+very irregular.
 
 \code{x} must be ordered by time within each track (see \code{\link[=tt_order_time]{tt_order_time()}}).
 Events without a location are ignored, and get \code{NA}.

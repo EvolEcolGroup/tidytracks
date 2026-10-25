@@ -42,7 +42,8 @@ package \code{move2utils} (install it with
 Tracks are split at any gap longer than \code{interval + tolerance}: thinning
 never bridges such a gap. When several subsets of the same size exist,
 \code{criterion} decides which one is kept. Events without a location are never
-kept. To remove the events that are not kept, use \code{\link[=tt_thin_time]{tt_thin_time()}}.
+kept. \code{x} does not need to be ordered by time. To remove the events that
+are not kept, use \code{\link[=tt_thin_time]{tt_thin_time()}}.
 }
 \examples{
 \dontshow{if (requireNamespace("move2utils", quietly = TRUE)) withAutoprint(\{ # examplesIf}

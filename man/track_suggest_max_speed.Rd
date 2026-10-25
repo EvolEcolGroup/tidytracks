@@ -46,7 +46,8 @@ the species (see also \code{\link[=max_speed_allometric]{max_speed_allometric()}
 given when no break is found, e.g. when a track has no outliers, or when it
 has fewer than 10 steps with a positive speed. Events without a location
 are ignored. \code{x} must be ordered by time within each track (see
-\code{\link[=tt_order_time]{tt_order_time()}}).
+\code{\link[=tt_order_time]{tt_order_time()}}), and have a geographic CRS or a projected CRS in metres
+(\code{move2utils} takes projected coordinates to be in metres).
 
 To inspect the distribution of speeds of a track, or to obtain a single
 suggestion pooling all tracks, use \code{\link[move2utils:mt_suggest_speed_cap]{move2utils::mt_suggest_speed_cap()}}

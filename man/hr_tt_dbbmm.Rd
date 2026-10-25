@@ -125,9 +125,9 @@ than the cells (e.g. with frequent, accurate locations) can fall between
 them, giving a patchy UD (or an error, if no density is left). If \code{res} is
 \code{NULL} (the default), the cells are as wide as the median width of the
 bridges (their standard deviation half way between consecutive events), but
-no smaller than needed for the longest side of the grid to have 500 cells. A
-warning is given if the cells are more than ten times wider than the median
-width of the bridges.
+no smaller than needed for the longest side of the grid (the extent of the
+bridges, or \code{bbox} if given) to have 500 cells. A warning is given if the
+cells are more than ten times wider than the median width of the bridges.
 
 Note that these defaults differ from the grid used by \code{\link[=hr_tt_kde]{hr_tt_kde()}} (the
 extent of the locations, expanded by 100\% of the range on each side, with

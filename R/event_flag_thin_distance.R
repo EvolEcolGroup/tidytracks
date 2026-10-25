@@ -53,16 +53,27 @@ event_flag_thin_distance <- function(
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")
   }
+  # move2utils measures the steps with mt_distance(units = "m"), which needs a
+  # CRS to know whether to use great-circle or planar distances
   if (is.na(sf::st_crs(x))) {
     stop("x must have a coordinate reference system (CRS) defined")
   }
+  # both are converted to metres here, as mt_thin_distance() takes metres;
+  # a tolerance of 0 is valid (exact distances only), a distance of 0 is not
   distance <- to_metres(distance, "distance")
   if (!is.null(tolerance)) {
     tolerance <- to_metres(tolerance, "tolerance", allow_zero = TRUE)
   }
+  # matched here (as well as in move2utils) so that invalid values give the
+  # usual match.arg() error before any work is done
   method <- match.arg(method)
   criterion <- match.arg(criterion)
 
+  # the distance travelled is the sum of the steps between consecutive rows,
+  # so (unlike for mt_thin_time()) the rows must be ordered by time, which
+  # call_move2utils() checks by default. a tolerance given with the step
+  # method is passed on anyway, so that move2utils warns that it is ignored;
+  # a tolerance larger than distance is rejected by move2utils
   res <- call_move2utils( # nolint: object_usage_linter.
     x,
     move2utils::mt_thin_distance,
@@ -72,11 +83,15 @@ event_flag_thin_distance <- function(
     criterion = criterion,
     cols = "thin_selected"
   )
-  # events without a location are not passed to move2utils, and not kept
-  res$thin_selected & !is.na(res$thin_selected)
+  # events without a location are not passed to move2utils (so distances are
+  # measured from the previous to the next location) and come back as NA:
+  # they are never kept, as a thinned track should only contain locations
+  res$thin_selected %in% TRUE
 }
 
 #' Convert a units object with length units to a number of metres
+#'
+#' Also used by `hr_tt_dbbmm()` for its raster resolution.
 #'
 #' @param x A `units` object of length 1 with length units.
 #' @param arg The name of the argument, used in error messages.
@@ -85,9 +100,14 @@ event_flag_thin_distance <- function(
 #' @keywords internal
 #' @noRd
 to_metres <- function(x, arg, allow_zero = FALSE) {
+  # plain numbers are rejected rather than assumed to be in metres, as in the
+  # rest of tidytracks physical quantities must carry their units
   if (!inherits(x, "units") || length(x) != 1) {
     stop(arg, " must be a units object of length 1: e.g. as_units(500, 'm')")
   }
+  # mode = "standard" takes the unit from the string "m" (the default mode
+  # expects a unit symbol); set_units() gives an error for units that are not
+  # lengths, which is replaced by a plainer message
   out <- tryCatch(
     as.numeric(units::set_units(x, "m", mode = "standard")),
     error = function(e) {
@@ -96,6 +116,7 @@ to_metres <- function(x, arg, allow_zero = FALSE) {
       )
     }
   )
+  # also rejects NA, which would otherwise reach move2utils
   if (!is.finite(out) || out < 0 || (!allow_zero && out == 0)) {
     stop(arg, " must be a positive distance")
   }

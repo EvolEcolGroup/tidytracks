@@ -21,6 +21,9 @@ tt_thin_distance <- function(
   method = c("step", "interval"),
   criterion = c("closest", "first")
 ) {
+  # all the checks are done by event_flag_thin_distance(); keep has no NA
+  # (events without a location are FALSE), so it can be used directly to
+  # subset x
   keep <- event_flag_thin_distance( # nolint: object_usage_linter.
     x,
     distance = distance,

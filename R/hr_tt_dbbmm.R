@@ -39,9 +39,9 @@
 #' them, giving a patchy UD (or an error, if no density is left). If `res` is
 #' `NULL` (the default), the cells are as wide as the median width of the
 #' bridges (their standard deviation half way between consecutive events), but
-#' no smaller than needed for the longest side of the grid to have 500 cells. A
-#' warning is given if the cells are more than ten times wider than the median
-#' width of the bridges.
+#' no smaller than needed for the longest side of the grid (the extent of the
+#' bridges, or `bbox` if given) to have 500 cells. A warning is given if the
+#' cells are more than ten times wider than the median width of the bridges.
 #'
 #' Note that these defaults differ from the grid used by [hr_tt_kde()] (the
 #' extent of the locations, expanded by 100% of the range on each side, with
@@ -131,7 +131,10 @@ hr_tt_dbbmm <- function(
   levels = NULL,
   ...
 ) {
+  # move2utils is only suggested (and not on CRAN), so check for it first,
+  # with an error naming this function
   check_move2utils("hr_tt_dbbmm") # nolint: object_usage_linter.
+  # the defaults of window_size and margin are those of mt_dbbmm_ud()
   hr_tt_bridge(
     x,
     method = "dbbmm",
@@ -160,6 +163,8 @@ hr_tt_dbgb <- function(
   ...
 ) {
   check_move2utils("hr_tt_dbgb") # nolint: object_usage_linter.
+  # the defaults are those of mt_dbgb_ud() (with a wider margin than for
+  # dBBMM)
   hr_tt_bridge(
     x,
     method = "dbgb",
@@ -201,8 +206,10 @@ hr_tt_bridge <- function(
   if (is.na(sf::st_crs(x))) {
     stop("x must have a coordinate reference system (CRS) defined")
   }
-  # bridges are computed in metres, on the grid in the CRS of x: this also
-  # ensures that move2utils uses the grid as given, so that it can be checked
+  # the bridges are computed in metres; with any other crs, move2utils would
+  # silently compute on a reprojected copy of our grid, so that the checks
+  # below (which protect against out of bounds writes in its C code) would
+  # no longer apply to the grid actually used
   if (
     sf::st_is_longlat(x) ||
       !identical(sf::st_crs(x)$units_gdal, "metre")
@@ -212,6 +219,8 @@ hr_tt_bridge <- function(
       "(see sf::st_transform())"
     )
   }
+  # bridges only make sense between consecutive events of the same track, so
+  # any grouping other than by track would be silently ignored by move2utils
   track_col <- move2::mt_track_id_column(x)
   if (inherits(x, "grouped_df")) {
     if (!identical(dplyr::group_vars(x), track_col)) {
@@ -222,10 +231,15 @@ hr_tt_bridge <- function(
     }
     x <- dplyr::ungroup(x)
   }
+  # move2utils also checks the order, but per track and with a less helpful
+  # message; we point to tt_order_time() instead of reordering silently
   check_time_ordered(x) # nolint: object_usage_linter.
   if (!is.null(levels) && (any(levels < 0 | levels > 1))) {
     stop("levels must be between 0 and 1")
   }
+  # convert the units objects to the plain numbers move2utils expects (metres
+  # for distances, minutes for time_step); this is done on the full x, as a
+  # per-event location_error refers to all its events
   location_error <- bridge_location_error(x, location_error)
   if (!is.null(res)) {
     res <- bridge_res(res)
@@ -234,7 +248,9 @@ hr_tt_bridge <- function(
     time_step <- bridge_time_step(time_step)
   }
 
-  # events with an empty geometry have no location to contribute to the UD
+  # move2utils gives an error for events with an empty geometry, whilst they
+  # are allowed in tidytracks: they have no location to contribute to the UD,
+  # so they are dropped (with their location errors, to keep them aligned)
   located <- !sf::st_is_empty(x)
   x <- x[located, ]
   location_error <- location_error[located]
@@ -249,10 +265,15 @@ hr_tt_bridge <- function(
   )
 
   # one row per track, in the same order (and with the same character ids) as
-  # hr_tt_kde() for ungrouped data
+  # hr_tt_kde() for ungrouped data, rather than the order in which the tracks
+  # appear in x (used by move2utils)
   track_ids <- as.character(
     dplyr::group_keys(dplyr::group_by(x, .data[[track_col]]))[[1]]
   )
+
+  # the motion variance is estimated first (rather than letting the ud
+  # functions of move2utils do it), as it is needed to size the grid before
+  # the C code runs
   variance <- variance_fn(
     x,
     location_error = location_error,
@@ -260,50 +281,58 @@ hr_tt_bridge <- function(
     margin = margin,
     ...
   )
-  if (!inherits(variance, "list")) {
+  # with a single track, move2utils returns a variance object rather than a
+  # list of them; a list is always used below, which also makes the ud
+  # function name each layer after its track
+  if (inherits(variance, c("mt_dbbmm_variance", "mt_dbgb_variance"))) {
     variance <- stats::setNames(list(variance), track_ids)
   }
   # move2utils skips tracks with fewer events than window_size (with a
-  # warning), so they have no variance
-  track_ids <- track_ids[track_ids %in% names(variance)]
-  if (length(track_ids) == 0) {
-    stop("no track has enough events to estimate the motion variance")
-  }
+  # warning), so they have no variance and are left out of the output; it
+  # gives an error itself if no track is left
+  track_ids <- intersect(track_ids, names(variance))
   variance <- variance[track_ids]
 
-  # the extent and width of the bridges of each track
-  event_ids <- as.character(event_track_id(x))
-  bridges <- lapply(track_ids, function(id) {
-    bridge_extent(
-      x[event_ids == id, ],
-      variance[[id]],
-      location_error[event_ids == id]
-    )
-  })
+  # the extent and width of every bridge (segment between consecutive events)
+  # of every track, as the tracks share one grid
+  segments <- do.call(rbind, lapply(variance, bridge_segments))
   needed <- c(
-    xmin = min(vapply(bridges, function(b) b$extent[["xmin"]], numeric(1))),
-    ymin = min(vapply(bridges, function(b) b$extent[["ymin"]], numeric(1))),
-    xmax = max(vapply(bridges, function(b) b$extent[["xmax"]], numeric(1))),
-    ymax = max(vapply(bridges, function(b) b$extent[["ymax"]], numeric(1)))
+    xmin = min(segments$xmin),
+    ymin = min(segments$ymin),
+    xmax = max(segments$xmax),
+    ymax = max(segments$ymax)
   )
-  width <- stats::median(unlist(lapply(bridges, function(b) b$width)))
+  # only the bridges drawn into the UD tell how fine the grid must be (the
+  # others include those at the ends of the tracks, which have no motion
+  # variance and would make the default cells too small)
+  width <- stats::median(segments$width[segments$drawn])
 
   # the grid shared by all tracks
+  if (!is.null(bbox)) {
+    bbox <- normalise_kde_bbox(bbox) # nolint: object_usage_linter.
+  }
   if (is.null(res)) {
+    # cells as wide as a typical bridge, but no more than 500 cells along the
+    # longest side of the grid, which bounds the time and memory needed (the
+    # C code evaluates every cell within reach of each time step)
+    span <- if (is.null(bbox)) needed else bbox
     longest_side <- max(
-      needed[["xmax"]] - needed[["xmin"]],
-      needed[["ymax"]] - needed[["ymin"]]
+      span[["xmax"]] - span[["xmin"]],
+      span[["ymax"]] - span[["ymin"]]
     )
     res <- max(width, longest_side / 500)
   }
   if (is.null(bbox)) {
     bbox <- needed + c(-5, -5, 5, 5) * res
-  } else {
-    bbox <- normalise_kde_bbox(bbox) # nolint: object_usage_linter.
   }
+  # extend xmax and ymax to a whole number of cells, as in hr_tt_kde()
   bbox <- align_kde_bbox(bbox, res) # nolint: object_usage_linter.
-  # the C code of move2utils writes outside the grid when a bridge reaches
-  # its edge, so the bridges must be well within the grid
+  # the C code of move2utils has an off-by-one error in its bounds checks, so
+  # a bridge reaching the outermost cell (or one cell beyond it) is written
+  # outside the grid, corrupting memory instead of giving an error; the
+  # bridges must therefore stay at least two cells within the grid, which
+  # also guarantees a grid of at least four cells along each side (the C code
+  # reads the resolution from the first two cell centres)
   inner <- bbox + c(2, 2, -2, -2) * res
   if (
     needed[["xmin"]] < inner[["xmin"]] || needed[["ymin"]] < inner[["ymin"]] ||
@@ -316,6 +345,8 @@ hr_tt_bridge <- function(
       round(needed[["xmax"]]), ", ymax = ", round(needed[["ymax"]])
     )
   }
+  # densities are evaluated at the cell centres only, so bridges narrower
+  # than the cells can fall between them
   if (width > 0 && res > 10 * width) {
     warning(
       "the cells of the grid (", signif(res, 3), " m) are much wider than ",
@@ -332,10 +363,24 @@ hr_tt_bridge <- function(
     nrows = round((bbox[["ymax"]] - bbox[["ymin"]]) / res),
     crs = sf::st_crs(x)$wkt
   )
+  # move2utils reprojects the grid (invalidating the check above) if its crs
+  # does not compare equal to the crs of the variance objects; this should
+  # not happen for a projected crs in metres, but is checked before the C
+  # code runs, as the consequence would be memory corruption
+  if (sf::st_crs(terra::crs(grid)) != variance[[1]]$track_data$crs) {
+    stop(
+      "the crs of x could not be used for the grid of the bridges; ",
+      "transform x to another projected crs in metres"
+    )
+  }
 
+  # the location errors stored in the variance objects are used (the ud
+  # functions do not accept per-event errors with a list of variances); the
+  # grid has the crs of x, so move2utils returns the UDs on it unchanged
   uds <- tryCatch(
     ud_fn(variance, raster = grid, time_step = time_step, verbose = FALSE),
     error = function(e) {
+      # the only way to get no density on a grid that contains all bridges
       if (grepl("zero or non-finite", conditionMessage(e))) {
         stop(
           "no density was left on the grid, as the bridges are too narrow ",
@@ -346,10 +391,9 @@ hr_tt_bridge <- function(
       stop(e)
     }
   )
-  # the layer of a single track is not named after it
-  if (length(track_ids) == 1) {
-    names(uds) <- track_ids
-  }
+  # one single-layer SpatRaster per track, with the layer named "ud" (as
+  # expected by the hr_tt_ud_* functions) and the same metadata as the UDs
+  # of hr_tt_kde()
   ud_list <- lapply(track_ids, function(id) {
     ud <- uds[[id]]
     names(ud) <- "ud"
@@ -373,6 +417,8 @@ hr_tt_bridge <- function(
     res = res,
     ud = ud_list
   )
+  # the first column is named after the track id column, so that functions
+  # such as event_ud_level() can match the UDs to the events
   names(res_tbl)[1] <- track_col
   class(res_tbl) <- c("hr_tt_ud_tbl", class(res_tbl))
 
@@ -392,6 +438,7 @@ hr_tt_bridge <- function(
 #' @keywords internal
 #' @noRd
 bridge_location_error <- function(x, location_error) {
+  # exact locations: the bridges then pinch to a point at each event
   if (is.null(location_error)) {
     return(rep(0, nrow(x)))
   }
@@ -400,10 +447,13 @@ bridge_location_error <- function(x, location_error) {
       stop("location_error ('", location_error, "') is not a column of x")
     }
     location_error <- x[[location_error]]
+    # a column of plain numbers is taken to be in metres, as is common for
+    # the error columns of tracking data
     if (!inherits(location_error, "units")) {
       location_error <- units::as_units(location_error, "m")
     }
   }
+  # plain numbers are rejected, as elsewhere in tidytracks
   if (
     !inherits(location_error, "units") ||
       !units::ud_are_convertible(units::deparse_unit(location_error), "m")
@@ -419,10 +469,14 @@ bridge_location_error <- function(x, location_error) {
   if (!length(location_error) %in% c(1, nrow(x))) {
     stop("location_error must have one value, or one value per event")
   }
+  # always one value per event, so that it can be subset with the events
   location_error <- rep_len(location_error, nrow(x))
   if (all(is.na(location_error))) {
     stop("location_error must have at least one non-missing value")
   }
+  # the same replacement as the default of move2utils (location_error_na =
+  # "median"), done here so that the errors used to size the grid are those
+  # used by move2utils
   location_error[is.na(location_error)] <- stats::median(
     location_error,
     na.rm = TRUE
@@ -440,6 +494,8 @@ bridge_location_error <- function(x, location_error) {
 #' @keywords internal
 #' @noRd
 bridge_res <- function(res) {
+  # a plain number is accepted (in metres, the units of the crs of x), as for
+  # the res of hr_tt_kde()
   if (inherits(res, "units")) {
     res <- to_metres(res, "res") # nolint: object_usage_linter.
   }
@@ -456,6 +512,8 @@ bridge_res <- function(res) {
 #' @keywords internal
 #' @noRd
 bridge_time_step <- function(time_step) {
+  # a plain number would be ambiguous (move2utils expects minutes here, but
+  # seconds for some other times), so units are required
   if (
     !inherits(time_step, "units") || length(time_step) != 1 ||
       !units::ud_are_convertible(units::deparse_unit(time_step), "min")
@@ -466,6 +524,7 @@ bridge_time_step <- function(time_step) {
     )
   }
   time_step <- as.numeric(units::set_units(time_step, "min", mode = "standard"))
+  # a zero step would make the C code loop forever
   if (!is.finite(time_step) || time_step <= 0) {
     stop("time_step must be positive")
   }
@@ -484,48 +543,72 @@ bridge_time_step <- function(time_step) {
 #' `dt * s / 4 + max(e_k, e_{k + 1})^2`, which gives a conservative extent for
 #' each segment (using 5 standard deviations for both methods).
 #'
-#' @param x A `move2` object with the events of a track.
-#' @param variance The variance object of the track from `move2utils`.
-#' @param location_error The location errors of the events, in metres.
-#' @returns A list with `extent`, a named vector with the extent of the
-#'   bridges (`xmin`, `ymin`, `xmax`, `ymax`), and `width`, a vector with the
-#'   standard deviation of each bridge half way between its events.
+#' @param variance The variance object of a track from `move2utils`.
+#' @returns A data frame with one row per segment between consecutive events
+#'   linked by a bridge, with columns `xmin`, `ymin`, `xmax` and `ymax` (the
+#'   extent of the bridge), `width` (the standard deviation of the bridge half
+#'   way between its events) and `drawn` (whether the bridge is drawn into the
+#'   UD by `move2utils`).
 #' @keywords internal
 #' @noRd
-bridge_extent <- function(x, variance, location_error) {
-  xy <- sf::st_coordinates(x)
-  time_mins <- as.numeric(move2::mt_time(x), units = "secs") / 60
+bridge_segments <- function(variance) {
+  # the coordinates, times (in minutes) and location errors stored in the
+  # variance object are exactly those that the C code receives
+  track <- variance$track_data
+  xy <- cbind(track$x, track$y)
+  time_mins <- track$time_mins
+  # as in move2utils, variance objects without stored errors use exact
+  # locations
+  location_error <- if (is.null(track$location_error)) {
+    rep(0, track$n_locs)
+  } else {
+    rep_len(track$location_error, track$n_locs)
+  }
+  # in units of variance (m^2 per minute) for both methods: move2utils
+  # squares the standard deviations stored for dBGB
   motion_variance <- move2utils::mt_motion_variance(variance)
   if (inherits(variance, "mt_dbgb_variance")) {
+    # the dBGB kernel is elongated along the direction of movement, but its
+    # extent uses the larger of its two standard deviations
     motion_variance <- pmax(motion_variance$para, motion_variance$orth)
-    # dBGB bridges link only the events of interest
-    if (!is.null(variance$seg_interest)) {
-      interest <- variance$seg_interest
-      xy <- xy[interest, , drop = FALSE]
-      time_mins <- time_mins[interest]
-      location_error <- location_error[interest]
-      motion_variance <- motion_variance[interest]
-    }
+    # dBGB keeps only the events of interest (those with the most variance
+    # estimates), and links each to the next one kept
+    interest <- variance$seg_interest
+    xy <- xy[interest, , drop = FALSE]
+    time_mins <- time_mins[interest]
+    location_error <- location_error[interest]
+    motion_variance <- motion_variance[interest]
+    drawn <- rep(TRUE, nrow(xy))
+  } else {
+    # dBBMM keeps all events, but only draws the bridges starting at an event
+    # of interest; all bridges are still included in the extent, to be safe
+    drawn <- variance$interest
   }
   if (length(motion_variance) != nrow(xy)) {
     stop("the motion variance does not match the events of the track")
   }
+  # segment k links event k to event k + 1, and uses the motion variance of
+  # event k
   k <- seq_len(nrow(xy) - 1)
   motion_variance <- motion_variance[k]
+  # the C code also replaces missing variances (at the ends of the track,
+  # where there are too few events for a window) by zero
   motion_variance[is.na(motion_variance)] <- 0
+  # the movement part of the variance, which peaks half way (a = 1 / 2)
   bridge_var <- diff(time_mins) * motion_variance / 4
+  # the mean of the bridge moves along the segment, so its extent is that of
+  # the segment, widened by 5 sd of the largest possible variance
   half_width <- 5 * sqrt(
     bridge_var + pmax(location_error[k], location_error[k + 1])^2
   )
-  list(
-    extent = c(
-      xmin = min(pmin(xy[k, 1], xy[k + 1, 1]) - half_width),
-      ymin = min(pmin(xy[k, 2], xy[k + 1, 2]) - half_width),
-      xmax = max(pmax(xy[k, 1], xy[k + 1, 1]) + half_width),
-      ymax = max(pmax(xy[k, 2], xy[k + 1, 2]) + half_width)
-    ),
+  data.frame(
+    xmin = pmin(xy[k, 1], xy[k + 1, 1]) - half_width,
+    ymin = pmin(xy[k, 2], xy[k + 1, 2]) - half_width,
+    xmax = pmax(xy[k, 1], xy[k + 1, 1]) + half_width,
+    ymax = pmax(xy[k, 2], xy[k + 1, 2]) + half_width,
     width = sqrt(
       bridge_var + (location_error[k]^2 + location_error[k + 1]^2) / 4
-    )
+    ),
+    drawn = drawn[k]
   )
 }

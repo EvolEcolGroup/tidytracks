@@ -67,6 +67,18 @@ test_that("max_speed_allometric is vectorised over mass and mode", {
   )
 })
 
+test_that("max_speed_allometric gives NA for a missing mass", {
+  skip_if_not_installed("move2utils")
+  speed <- max_speed_allometric(as_units(c(4, NA), "kg"), mode = "running")
+  expect_equal(
+    as.numeric(speed[1]),
+    as.numeric(move2utils::v_phys_estimate(4, mode = "running"))
+  )
+  expect_true(is.na(speed[2]))
+  expect_true(all(is.na(attr(speed, "ci")[2, ])))
+  expect_false(anyNA(attr(speed, "ci")[1, ]))
+})
+
 test_that("max_speed_allometric can be used with tt_clean_mcconnell", {
   skip_if_not_installed("move2utils")
   max_speed <- max_speed_allometric(as_units(4, "kg"), mode = "running")
