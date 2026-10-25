@@ -32,7 +32,7 @@ create_irregular_tracks <- function(n = 200, seed = 2) {
       x = cumsum(stats::rnorm(n, 0, 100)),
       y = cumsum(stats::rnorm(n, 0, 100)),
       time = as.POSIXct("2024-01-01", tz = "UTC") +
-        cumsum(round(stats::rexp(n, 1 / 600)) + 1)
+        cumsum(round(stats::rexp(n, 1 / 600)) + 60)
     )
   }
   df <- rbind(make_track("b"), make_track("a"))

@@ -23,10 +23,13 @@
 #'   with an improbable combination of speed, turning angle and their changes.
 #'
 #' Further arguments are passed to the `move2utils` function through `...`
-#' (see its documentation for the options). Physical quantities (e.g.
-#' `v_max`, `location_error`, `jitter`) can be given as `units` objects (e.g.
-#' `v_max = as_units(50, "km/h")`), which are converted to the SI units
-#' expected by `move2utils`. The `move2utils` functions are run without plots
+#' (see its documentation for the options). Physical quantities must be given
+#' as `units` objects (e.g. `v_max = as_units(50, "km/h")`), and are converted
+#' to the units expected by `move2utils`: speeds (`v_max`,
+#' `physiological_ceiling`), distances (`location_error`, `jitter`,
+#' `residual_floor`, `step_floor`, `min_leg`) and masses (`mass`).
+#' `location_error` can also be the name of a column of `x` (with the errors
+#' in metres). The `move2utils` functions are run without plots
 #' and messages; to inspect their diagnostics, call them directly on `x`.
 #'
 #' `x` must be ordered by time within each track (see [tt_order_time()]).

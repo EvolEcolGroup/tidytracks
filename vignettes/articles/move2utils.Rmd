@@ -271,7 +271,7 @@ movement between consecutive locations, weighting the utilisation distribution
 (UD) by time. `hr_tt_dbbmm()` estimates the UD of each track (`hr_tt_dbgb()`
 does the same with dynamic bivariate Gaussian bridges). As bridges link
 consecutive events of a track, the data must be ungrouped, or grouped by
-track.
+track, and they must be in a projected coordinate reference system in metres.
 
 Following the main vignette, we split the tracks into foraging trips (so that
 bridges do not span the long periods spent at the colony), keep the females,
@@ -294,24 +294,27 @@ shags_females <- shags_clean %>%
 
 We now estimate a UD for each trip. The location error of the GPS fixes is set
 to 20 m and, with a location every 2 minutes, we use a sliding window of 15
-locations (30 minutes) to estimate the motion variance. The grid must be large
-enough to contain the bridges, and fine enough relative to their width (the
-densities are evaluated at the centres of the cells); we give a grid with a
-margin of about 5 km around the locations and a resolution of 50 m:
+locations (30 minutes) to estimate the motion variance (`window_size` and
+`margin` are numbers of locations, not durations):
 
 ```{r dbbmm}
-shags_grid <- c(xmin = -15000, ymin = -68000, xmax = 18000, ymax = -31000)
-
 trips_dbbmm <- shags_females %>%
   hr_tt_dbbmm(
     location_error = as_units(20, "m"),
     window_size = 15,
-    margin = 5,
-    bbox = shags_grid,
-    res = 50
+    margin = 5
   )
 trips_dbbmm
 ```
+
+The grid, shared by all trips, must be large enough to contain the bridges,
+which can extend well beyond the locations, and fine enough relative to their
+width, as the densities are evaluated at the centres of the cells.
+`hr_tt_dbbmm()` estimates the motion variance first, and uses it to choose a
+grid covering all the bridges, with cells about as wide as a typical bridge
+(here `r round(trips_dbbmm$res[1])` m). Note that this grid differs from the
+default grid of `hr_tt_kde()`. A grid can also be given with `bbox` and `res`:
+if it is too small to contain the bridges, an error reports the extent needed.
 
 The result is an `hr_tt_ud_tbl`, as returned by `hr_tt_kde()`, so it can be
 used with the other `hr_tt_ud_*()` functions. For example, we can combine the
@@ -329,12 +332,15 @@ birds_dbbmm <- trips_dbbmm %>%
 birds_dbbmm
 ```
 
-Let us compare these UDs with kernel UDs estimated on the same grid:
+Let us compare these UDs with kernel UDs estimated on the same grid, which we
+take from the output of `hr_tt_dbbmm()`:
 
 ```{r kde}
+dbbmm_grid <- unlist(trips_dbbmm[1, c("xmin", "ymin", "xmax", "ymax")])
+
 birds_kde <- shags_females %>%
   group_by(bird_id) %>%
-  hr_tt_kde(bbox = shags_grid, res = 50)
+  hr_tt_kde(bbox = dbbmm_grid, res = trips_dbbmm$res[1])
 ```
 
 As both are on the same grid, we can compute their overlap for each bird

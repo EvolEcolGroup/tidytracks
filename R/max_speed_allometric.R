@@ -16,9 +16,9 @@
 #' [move2utils::v_phys_estimate()] for the details of the model and its
 #' caveats.
 #'
-#' @param mass Body mass, either as a `units` object (e.g. `as_units(4, "kg")`)
-#'   or as a number in kilograms. It can be a vector, e.g. to obtain a
-#'   prediction for each track from a column of the metadata.
+#' @param mass Body mass, as a `units` object (e.g. `as_units(4, "kg")`). It
+#'   can be a vector, e.g. to obtain a prediction for each track from a column
+#'   of the metadata.
 #' @param mode The mode of locomotion, one of "flying", "running" or
 #'   "swimming". Either a single value or one value per element of `mass`.
 #' @param ci_level The level of the confidence interval returned in the
@@ -45,12 +45,16 @@ max_speed_allometric <- function(
   ci_level = 0.95
 ) {
   check_move2utils("max_speed_allometric") # nolint: object_usage_linter.
-  if (inherits(mass, "units")) {
-    mass <- units::drop_units(units::set_units(mass, "kg", mode = "standard"))
+  if (
+    !inherits(mass, "units") || length(mass) == 0 ||
+      !units::ud_are_convertible(units::deparse_unit(mass), "kg")
+  ) {
+    stop(
+      "mass must be a units object with units of mass: ",
+      "e.g. as_units(4, 'kg')"
+    )
   }
-  if (!is.numeric(mass) || length(mass) == 0) {
-    stop("mass must be a units object or a numeric vector (in kg)")
-  }
+  mass <- units::drop_units(units::set_units(mass, "kg", mode = "standard"))
   if (missing(mode)) {
     stop("mode must be provided: one of 'flying', 'running' or 'swimming'")
   }

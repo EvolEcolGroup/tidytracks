@@ -52,10 +52,13 @@ with an improbable combination of speed, turning angle and their changes.
 }
 
 Further arguments are passed to the \code{move2utils} function through \code{...}
-(see its documentation for the options). Physical quantities (e.g.
-\code{v_max}, \code{location_error}, \code{jitter}) can be given as \code{units} objects (e.g.
-\code{v_max = as_units(50, "km/h")}), which are converted to the SI units
-expected by \code{move2utils}. The \code{move2utils} functions are run without plots
+(see its documentation for the options). Physical quantities must be given
+as \code{units} objects (e.g. \code{v_max = as_units(50, "km/h")}), and are converted
+to the units expected by \code{move2utils}: speeds (\code{v_max},
+\code{physiological_ceiling}), distances (\code{location_error}, \code{jitter},
+\code{residual_floor}, \code{step_floor}, \code{min_leg}) and masses (\code{mass}).
+\code{location_error} can also be the name of a column of \code{x} (with the errors
+in metres). The \code{move2utils} functions are run without plots
 and messages; to inspect their diagnostics, call them directly on \code{x}.
 
 \code{x} must be ordered by time within each track (see \code{\link[=tt_order_time]{tt_order_time()}}).

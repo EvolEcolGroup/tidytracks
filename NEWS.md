@@ -24,9 +24,10 @@
     corridors (fast movement in a consistent direction).
   * `hr_tt_dbbmm()` and `hr_tt_dbgb()` estimate the utilisation distribution
     of each track with a dynamic Brownian bridge movement model or a dynamic
-    bivariate Gaussian bridge, returning an `hr_tt_ud_tbl` (by default on the
-    same grid as `hr_tt_kde()`) that works with the other `hr_tt_ud_*()`
-    functions.
+    bivariate Gaussian bridge, returning an `hr_tt_ud_tbl` that works with the
+    other `hr_tt_ud_*()` functions. By default, the grid is chosen from the
+    extent and width of the bridges (and differs from the grid of
+    `hr_tt_kde()`); a given grid is checked to contain all the bridges.
   * `event_ud_level()` returns the isopleth level of each event in a
     utilisation distribution (e.g. in the UD of its own track).
   * `hr_tt_ud_overlap(method = "earth_mover_sinkhorn")` computes a fast

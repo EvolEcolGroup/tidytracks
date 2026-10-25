@@ -125,25 +125,46 @@ test_that("move2utils_args always sets remove to FALSE", {
   )
 })
 
-test_that("units_to_move2utils converts units objects to SI numbers", {
+test_that("units_to_move2utils converts physical arguments", {
   converted <- units_to_move2utils(list(
-    speed = as_units(36, "km/h"),
-    length = as_units(2, "km"),
-    time = as_units(2, "min"),
+    v_max = as_units(36, "km/h"),
+    location_error = as_units(0.02, "km"),
     mass = as_units(500, "g"),
-    number = 3,
-    text = "a",
-    nothing = NULL
+    min_leg = NULL,
+    threshold = 3,
+    method = "a"
   ))
   expect_identical(
     converted,
     list(
-      speed = 10, length = 2000, time = 120, mass = 0.5,
-      number = 3, text = "a", nothing = NULL
+      v_max = 10, location_error = 20, mass = 0.5, min_leg = NULL,
+      threshold = 3, method = "a"
     )
   )
+  # a column name can be given for location_error
+  expect_identical(
+    units_to_move2utils(list(location_error = "error_col")),
+    list(location_error = "error_col")
+  )
+})
+
+test_that("units_to_move2utils requires units for physical arguments", {
   expect_error(
-    units_to_move2utils(list(as_units(1, "K"))),
-    "cannot convert 'K' to a speed, length, time or mass"
+    units_to_move2utils(list(v_max = 10)),
+    "v_max must be a units object with units convertible to m/s"
+  )
+  expect_error(
+    units_to_move2utils(list(jitter = as_units(1, "s"))),
+    "jitter must be a units object with units convertible to m"
+  )
+  # units are not converted for arguments with unknown units (e.g. times,
+  # which move2utils takes in seconds or in minutes depending on the function)
+  expect_error(
+    units_to_move2utils(list(time_step = as_units(1, "min"))),
+    "units objects are not supported for the argument 'time_step'"
+  )
+  expect_error(
+    units_to_move2utils(list(as_units(1, "m"))),
+    "units objects are not supported"
   )
 })

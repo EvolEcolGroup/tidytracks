@@ -66,14 +66,24 @@ test_that("event_flag_outliers passes further arguments, converting units", {
     silent = TRUE
   )
   expect_identical(valid, !direct$is_outlier)
-  expect_identical(
-    valid,
+  # physical quantities must be given with units
+  expect_error(
     event_flag_outliers(
       x,
       method = "speed_cap",
       v_max = 10,
       threshold_type = "hard"
-    )
+    ),
+    "v_max must be a units object"
+  )
+  expect_error(
+    event_flag_outliers(
+      x,
+      method = "speed_cap",
+      v_max = as_units(10, "m"),
+      threshold_type = "hard"
+    ),
+    "v_max must be a units object with units convertible to m/s"
   )
   # a lower cap (steps are ~0.1 m/s, apart from the spikes) flags more events
   expect_gt(

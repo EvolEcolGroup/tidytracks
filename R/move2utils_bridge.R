@@ -54,33 +54,75 @@ move2utils_args <- function(fn, args) {
   args
 }
 
+#' The units expected by move2utils for its physical arguments
+#'
+#' `move2utils` functions take physical quantities as plain numbers, in the
+#' units listed here (by argument name), whilst tidytracks uses `units`
+#' objects.
+#' @keywords internal
+#' @noRd
+move2utils_units <- c(
+  v_max = "m/s",
+  physiological_ceiling = "m/s",
+  speed_threshold = "m/s",
+  location_error = "m",
+  residual_floor = "m",
+  step_floor = "m",
+  jitter = "m",
+  min_leg = "m",
+  mass = "kg"
+)
+
 #' Convert units objects to the numbers expected by move2utils
 #'
-#' `move2utils` functions take physical quantities as plain numbers in SI
-#' units (speeds in m/s, lengths in m, times in s, masses in kg), whilst
-#' tidytracks uses `units` objects. This converts every `units` object in a
-#' list of arguments to a number in the corresponding SI unit, and leaves the
-#' other arguments unchanged.
+#' The physical arguments of `move2utils` functions (see `move2utils_units`)
+#' must be given as `units` objects, which are converted to numbers in the
+#' units expected by `move2utils`. `NULL` and character values (e.g. the name
+#' of a column for `location_error`) are passed unchanged. Other arguments are
+#' passed unchanged, except that `units` objects are rejected, as the units
+#' that `move2utils` expects for them are not known (e.g. some times are in
+#' seconds and others in minutes).
 #'
 #' @param args A named list of arguments.
-#' @returns `args`, with `units` objects replaced by numbers in SI units.
+#' @returns `args`, with `units` objects replaced by numbers.
 #' @keywords internal
 #' @noRd
 units_to_move2utils <- function(args) {
-  lapply(args, function(arg) {
-    if (!inherits(arg, "units")) {
-      return(arg)
+  arg_names <- names(args)
+  if (is.null(arg_names)) {
+    arg_names <- rep("", length(args))
+  }
+  for (i in seq_along(args)) {
+    arg <- args[[i]]
+    expected <- if (arg_names[i] %in% names(move2utils_units)) {
+      move2utils_units[[arg_names[i]]]
+    } else {
+      NA_character_
     }
-    for (si_unit in c("m/s", "m", "s", "kg")) {
-      if (units::ud_are_convertible(units::deparse_unit(arg), si_unit)) {
-        return(as.numeric(units::set_units(arg, si_unit, mode = "standard")))
+    if (is.na(expected)) {
+      if (inherits(arg, "units")) {
+        stop(
+          "units objects are not supported for the argument '",
+          arg_names[i], "'"
+        )
       }
+      next
     }
-    stop(
-      "cannot convert '", units::deparse_unit(arg),
-      "' to a speed, length, time or mass for move2utils"
-    )
-  })
+    if (is.null(arg) || is.character(arg)) {
+      next
+    }
+    if (
+      !inherits(arg, "units") ||
+        !units::ud_are_convertible(units::deparse_unit(arg), expected)
+    ) {
+      stop(
+        arg_names[i], " must be a units object with units convertible to ",
+        expected, ", e.g. as_units(1, '", expected, "')"
+      )
+    }
+    args[[i]] <- as.numeric(units::set_units(arg, expected, mode = "standard"))
+  }
+  args
 }
 
 #' Check that a move2 object is ordered by time within each track

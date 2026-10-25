@@ -12,6 +12,7 @@ hr_tt_dbbmm(
   margin = 11,
   bbox = NULL,
   res = NULL,
+  time_step = NULL,
   levels = NULL,
   ...
 )
@@ -23,40 +24,48 @@ hr_tt_dbgb(
   margin = 15,
   bbox = NULL,
   res = NULL,
+  time_step = NULL,
   levels = NULL,
   ...
 )
 }
 \arguments{
-\item{x}{A \code{move2} object, either ungrouped or grouped by its track id
-column.}
+\item{x}{A \code{move2} object with a projected coordinate reference system in
+metres, either ungrouped or grouped by its track id column.}
 
-\item{location_error}{The error of the locations (the standard deviation
-of the position, as a distance). Either a \code{units} object (e.g.
-\code{as_units(20, "m")}) with one value for all events or one value per event,
-the name of a column of \code{x} with the errors in metres, or \code{NULL} (the
-default) to treat locations as exact. See
-\code{\link[move2utils:mt_dbbmm_variance]{move2utils::mt_dbbmm_variance()}} for other options.}
+\item{location_error}{The error of the locations (the standard deviation of
+the position). Either a \code{units} object (e.g. \code{as_units(20, "m")}) with one
+value for all events or one value per event, the name of a column of \code{x}
+with the errors (as a \code{units} object, or as numbers in metres), or \code{NULL}
+(the default) to treat locations as exact. Missing values are replaced by
+the median error.}
 
 \item{window_size}{The number of events in the sliding window used to
-estimate the motion variance (an odd number).}
+estimate the motion variance (an odd number). It is a number of events
+rather than a duration: with an event every 2 minutes, a window of 15
+events covers 30 minutes.}
 
 \item{margin}{The number of events at each end of the window that are not
-used as breakpoints when looking for changes in the motion variance (an
-odd number).}
+considered as breakpoints when looking for changes in the motion variance
+(an odd number).}
 
 \item{bbox}{A named vector of four elements (\code{xmin}, \code{ymin}, \code{xmax},
-\code{ymax}) defining the grid shared by all tracks. If \code{NULL}, the grid of
-\code{\link[=hr_tt_kde]{hr_tt_kde()}} is used (see Details).}
+\code{ymax}), in the coordinates of \code{x}, defining the grid shared by all
+tracks. If \code{NULL}, the grid covers all the bridges (see Details).}
 
-\item{res}{The resolution of the grid (in the units of the projection of
-\code{x}). If \code{NULL}, the grid has approximately 1000 cells.}
+\item{res}{The resolution of the grid, either as a \code{units} object (e.g.
+\code{as_units(50, "m")}) or as a number in metres. If \code{NULL}, it is chosen
+from the width of the bridges (see Details).}
+
+\item{time_step}{The time step used to integrate the bridges, as a \code{units}
+object (e.g. \code{as_units(10, "s")}). If \code{NULL}, the default of \code{move2utils}
+is used (a fraction of the shortest interval between events).}
 
 \item{levels}{A vector of levels for the isopleths, as numbers between 0
 and 1. If \code{NULL} (the default), the full UDs are returned.}
 
-\item{...}{Further arguments passed to \code{\link[move2utils:mt_dbbmm_ud]{move2utils::mt_dbbmm_ud()}} or
-\code{\link[move2utils:mt_dbgb_ud]{move2utils::mt_dbgb_ud()}}.}
+\item{...}{Further arguments passed to \code{\link[move2utils:mt_dbbmm_variance]{move2utils::mt_dbbmm_variance()}} or
+\code{\link[move2utils:mt_dbgb_variance]{move2utils::mt_dbgb_variance()}} (e.g. \code{parallel} and \code{cores}).}
 }
 \value{
 Either a \code{tibble} of class \code{hr_tt_ud_tbl}, or, if \code{levels} is not
@@ -68,7 +77,7 @@ Either a \code{tibble} of class \code{hr_tt_ud_tbl}, or, if \code{levels} is not
 \code{"dbgb"})
 \item \code{window_size} and \code{margin}: the values used for the sliding window
 \item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax} and \code{res}: the extent and resolution of
-the grid
+the grid (in metres)
 \item \code{ud} (if \code{levels} is \code{NULL}): the UDs, as a list of \code{terra::SpatRaster}
 objects with a layer named \code{ud} whose values sum to 1
 \item \code{level}, \code{area} and \code{geometry} (if \code{levels} is set): the isopleths, see
@@ -84,8 +93,9 @@ model the movement between consecutive locations, with a motion variance
 estimated along the track in a sliding window (so that, e.g., resting and
 travelling contribute differently). dBGB further splits the motion variance
 into components parallel and orthogonal to the direction of movement. They
-are wrappers around \code{\link[move2utils:mt_dbbmm_ud]{move2utils::mt_dbbmm_ud()}} and
-\code{\link[move2utils:mt_dbgb_ud]{move2utils::mt_dbgb_ud()}}, which require the suggested package
+are wrappers around \code{\link[move2utils:mt_dbbmm_variance]{move2utils::mt_dbbmm_variance()}} and
+\code{\link[move2utils:mt_dbbmm_ud]{move2utils::mt_dbbmm_ud()}} (or \code{\link[move2utils:mt_dbgb_variance]{move2utils::mt_dbgb_variance()}} and
+\code{\link[move2utils:mt_dbgb_ud]{move2utils::mt_dbgb_ud()}}), which require the suggested package
 \code{move2utils} (install it with
 \code{remotes::install_github("move2universe/move2utils")}).
 }
@@ -93,34 +103,45 @@ are wrappers around \code{\link[move2utils:mt_dbbmm_ud]{move2utils::mt_dbbmm_ud(
 Bridges link consecutive events within a track, so the UD is
 estimated for each track: \code{x} must be either ungrouped, or grouped by its
 track id column only. \code{x} must be ordered by time within each track (see
-\code{\link[=tt_order_time]{tt_order_time()}}). Events with an empty geometry (i.e. no location) are
-ignored. Tracks with fewer events than \code{window_size} are skipped by
-\code{move2utils} (with a warning), and are not included in the output.
+\code{\link[=tt_order_time]{tt_order_time()}}), and have a projected coordinate reference system in
+metres (see \code{\link[sf:st_transform]{sf::st_transform()}}), as the bridges are computed in metres.
+Events with an empty geometry (i.e. no location) are ignored. Tracks with
+fewer events than \code{window_size} are skipped by \code{move2utils} (with a
+warning), and are not included in the output.
 
-By default, the UDs are estimated on the same grid as \code{\link[=hr_tt_kde]{hr_tt_kde()}} would
-use for \code{x} (the extent of all the locations, expanded by 100\% of the range
-on each side, with approximately 1000 cells), so that UDs estimated with
-the different methods can be compared (e.g. with \code{\link[=hr_tt_ud_overlap]{hr_tt_ud_overlap()}}).
-The grid must be large enough to contain the bridges (which can extend well
-beyond the locations, e.g. across long gaps between events); if it is not,
-an error is given, and a larger \code{bbox} should be used. The grid must also be
-fine enough relative to the width of the bridges: as densities are
-evaluated at the centres of the cells, bridges much narrower than the cells
-(e.g. with frequent, accurate locations) can fall between them, giving an
-error; a smaller \code{res} should then be used. For
-longitude/latitude data, the bridges are computed in a local metric
-projection, and the UD is then projected back onto the grid.
+\strong{The grid.} The UDs of all tracks are estimated on a shared grid, which
+must contain the whole of every bridge: bridges can extend well beyond the
+locations (e.g. across long gaps between events, when the motion variance is
+high). The motion variance is therefore estimated first, and used to compute
+the extent of each bridge (up to five standard deviations from its mean
+path). If \code{bbox} is \code{NULL} (the default), the grid covers the extent of all
+the bridges, plus five cells on each side. If \code{bbox} is given and does not
+contain all the bridges (with a margin of two cells), an error is given,
+reporting the extent needed.
 
-Further arguments of \code{\link[move2utils:mt_dbbmm_ud]{move2utils::mt_dbbmm_ud()}} and
-\code{\link[move2utils:mt_dbgb_ud]{move2utils::mt_dbgb_ud()}} (e.g. \code{time_step}) can be passed through \code{...}.
+The grid must also be fine relative to the width of the bridges, as the
+densities are evaluated at the centres of the cells: bridges much narrower
+than the cells (e.g. with frequent, accurate locations) can fall between
+them, giving a patchy UD (or an error, if no density is left). If \code{res} is
+\code{NULL} (the default), the cells are as wide as the median width of the
+bridges (their standard deviation half way between consecutive events), but
+no smaller than needed for the longest side of the grid to have 500 cells. A
+warning is given if the cells are more than ten times wider than the median
+width of the bridges.
+
+Note that these defaults differ from the grid used by \code{\link[=hr_tt_kde]{hr_tt_kde()}} (the
+extent of the locations, expanded by 100\% of the range on each side, with
+about 1000 cells). To compare the UDs from different methods (e.g. with
+\code{\link[=hr_tt_ud_overlap]{hr_tt_ud_overlap()}}), estimate them on the same grid, e.g. by passing the
+grid of the bridges (columns \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax} and \code{res} of the
+output) as \code{bbox} and \code{res} to \code{\link[=hr_tt_kde]{hr_tt_kde()}}.
 
 If \code{levels} is set, the isopleths for the specified levels are returned
 instead of the full UDs, as in \code{\link[=hr_tt_kde]{hr_tt_kde()}}.
 }
 \examples{
 \dontshow{if (requireNamespace("move2utils", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-# project the data to a metric projection, as the toy dataset spans a large
-# area
+# project the data to a projection in metres
 x <- sf::st_transform(example_tt, "+proj=eqearth")
 ud_dbbmm <- hr_tt_dbbmm(
   x,
@@ -129,9 +150,12 @@ ud_dbbmm <- hr_tt_dbbmm(
   margin = 1
 )
 ud_dbbmm
-# the UDs are on the same grid as those from hr_tt_kde(), so they can be
-# compared
-ud_kde <- hr_tt_kde(x)
+# estimate kernel UDs on the same grid, to compare them
+ud_kde <- hr_tt_kde(
+  x,
+  bbox = unlist(ud_dbbmm[1, c("xmin", "ymin", "xmax", "ymax")]),
+  res = ud_dbbmm$res[1]
+)
 hr_tt_ud_overlap(ud_dbbmm$ud[[1]], ud_kde$ud[[1]])
 \dontshow{\}) # examplesIf}
 }
