@@ -22,6 +22,11 @@
     of which choose their thresholds from the data.
   * `event_flag_corridor()` flags the steps that are part of movement
     corridors (fast movement in a consistent direction).
+  * `hr_tt_dbbmm()` and `hr_tt_dbgb()` estimate the utilisation distribution
+    of each track with a dynamic Brownian bridge movement model or a dynamic
+    bivariate Gaussian bridge, returning an `hr_tt_ud_tbl` (by default on the
+    same grid as `hr_tt_kde()`) that works with the other `hr_tt_ud_*()`
+    functions.
 
 # tidytracks 0.2.1
 
