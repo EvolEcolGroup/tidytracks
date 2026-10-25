@@ -359,6 +359,11 @@ Note: because of this, sometimes if there are two consecutive points with
 unrealistically high speeds, the algorithm may miss one, this can be remedied by 
 recalculating speeds and then running the filter again. 
 
+`tidytracks` can also use the methods of the suggested package `move2utils`
+to choose a maximum speed, detect outliers with data-driven thresholds, and thin
+tracks (see the article "Using move2utils with tidytracks" on the package
+website).
+
 # Splitting trips
 
 Shags are central place foragers, and so we now want to split each bird's track
@@ -647,6 +652,11 @@ explicitly before running further analyses:
 shags_females_ud <- hr_tt_ud_unwrap(shags_females_ud)
 shags_females_ud
 ```
+
+Home ranges can also be estimated with dynamic Brownian bridges, using
+`hr_tt_dbbmm()` or `hr_tt_dbgb()`, which require the suggested package
+`move2utils` (see the article "Using move2utils with tidytracks" on the package
+website).
 
 ## Minimum Convex Polygons
 

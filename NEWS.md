@@ -31,6 +31,10 @@
     utilisation distribution (e.g. in the UD of its own track).
   * `hr_tt_ud_overlap(method = "earth_mover_sinkhorn")` computes a fast
     approximation of the Earth Mover's Distance.
+  * The new article "Using move2utils with tidytracks" shows these functions
+    in use.
+* `hr_tt_ud_sum()` works with tables of UDs from methods other than
+  `hr_tt_kde()` (it previously required the column `h`).
 
 # tidytracks 0.2.1
 
