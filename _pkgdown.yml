@@ -46,7 +46,7 @@ reference:
     desc: "Estimate home range and habitat use from movement data."
     contents:
         - starts_with("hr_tt_")
-  - title: "Movement models"
+  - title: "Continuous-time movement models"
     desc: "Fit continuous-time movement models to tracks with ctmm."
     contents:
         - starts_with("ctmm_tt_")
