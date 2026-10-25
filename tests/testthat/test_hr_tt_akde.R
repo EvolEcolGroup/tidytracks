@@ -120,12 +120,9 @@ test_that("hr_tt_ud_iso adds the confidence intervals to AKDE isopleths", {
     names(iso)[names(iso) %in% c("area", "area_low", "area_high")],
     c("area", "area_low", "area_high")
   )
-  # the same isopleths as estimating them directly with hr_tt_akde()
-  expect_equal(
-    iso,
-    hr_tt_akde(x, fits, levels = c(0.5, 0.95)),
-    ignore_attr = TRUE
-  )
+  # the same isopleths (including the attributes of the sf object) as
+  # estimating them directly with hr_tt_akde()
+  expect_equal(iso, hr_tt_akde(x, fits, levels = c(0.5, 0.95)))
   # wider intervals with a higher confidence level
   iso_99 <- hr_tt_ud_iso(akde, levels = c(0.5, 0.95), ci_level = 0.99)
   expect_equal(iso_99$area, iso$area)
@@ -133,6 +130,10 @@ test_that("hr_tt_ud_iso adds the confidence intervals to AKDE isopleths", {
   expect_true(all(iso_99$area_high > iso$area_high))
   expect_error(
     hr_tt_ud_iso(akde, levels = 0.95, ci_level = 1),
+    "ci_level must be"
+  )
+  expect_error(
+    hr_tt_ud_iso(akde, levels = 0.95, ci_level = NA_real_),
     "ci_level must be"
   )
 })
@@ -191,6 +192,14 @@ test_that("hr_tt_akde checks its inputs", {
     hr_tt_akde(sf::st_transform(x, 32736), fits),
     "same coordinate reference system"
   )
+  expect_error(hr_tt_akde(x, fits, tolerance = 1), "tolerance must be")
+  expect_error(hr_tt_akde(x, fits, tolerance = NA_real_), "tolerance must be")
+  # ci_level is checked (before estimating the UDs) only if levels are given
+  expect_error(
+    hr_tt_akde(x, fits, levels = 0.95, ci_level = 95),
+    "ci_level must be"
+  )
+  expect_s3_class(hr_tt_akde(x, fits, ci_level = 95), "hr_tt_ud_tbl")
   # groups must contain a single track
   x$herd <- "a"
   expect_error(

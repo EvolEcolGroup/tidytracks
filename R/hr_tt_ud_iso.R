@@ -50,21 +50,18 @@ hr_tt_ud_iso.tbl_df <- function(
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
   levels <- sort(levels)
-  # the UDs estimated with ctmm (by hr_tt_akde() or hr_tt_akde_pop()) get the
-  # confidence intervals of the areas of their isopleths
+  # the UDs estimated with ctmm (by hr_tt_akde() or hr_tt_akde_pop()), which
+  # come with their ctmm UD objects in column ud_ctmm, get the confidence
+  # intervals of the areas of their isopleths
   with_ci <- "ud_ctmm" %in% names(x)
   if (with_ci) {
-    if (
-      !is.numeric(ci_level) ||
-        length(ci_level) != 1 ||
-        ci_level <= 0 ||
-        ci_level >= 1
-    ) {
-      stop("ci_level must be a single number between 0 and 1")
-    }
+    check_probability_arg(ci_level, "ci_level") # nolint: object_usage_linter.
+    # the intervals are computed by summary() of the ctmm UD objects, whose
+    # method needs ctmm
     check_ctmm_installed() # nolint: object_usage_linter.
   }
 
+  # the isopleths of each UD (an sf object for each row)
   res_tbl <- x %>%
     dplyr::mutate(iso = purrr::map(.data$ud, hr_tt_ud_iso, levels = levels))
   if (with_ci) {
