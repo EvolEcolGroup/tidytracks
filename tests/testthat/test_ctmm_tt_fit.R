@@ -162,6 +162,7 @@ test_that("ctmm_tt_summary returns the parameters of each model", {
   summ_50 <- ctmm_tt_summary(fits, level = 0.5)
   expect_true(all(summ_50$area_low > summ$area_low))
   expect_error(ctmm_tt_summary(fits, level = 2), "level must be")
+  expect_error(ctmm_tt_summary(fits, level = NA_real_), "level must be")
   expect_error(ctmm_tt_summary(tibble::tibble()), "created with ctmm_tt_fit")
 })
 

@@ -67,34 +67,38 @@ mt_as_telemetry <- function(x, error_cols = "auto", ...) {
   x <- dplyr::ungroup(x)
   # the track ids in the order of the metadata (used to order the output)
   meta_ids <- as.character(show_meta(x)[[move2::mt_track_id_column(x)]])
-
-  # select the columns with information on the location error
+  # the names of the columns with information on the location error
   error_cols <- ctmm_error_cols(x, error_cols)
 
+  ## select and sort the events to pass to ctmm
   # events with an empty geometry have no location to pass to ctmm
   located <- which(!sf::st_is_empty(x))
   if (length(located) == 0) {
     stop("x has no events with a location")
   }
-  # ctmm checks that times are sorted within each track, so we sort the
-  # located events by track and time
+  # ctmm warns if the times are not sorted within each track, so we sort the
+  # located events by track and time; `rows` are their indices in x
   track_id <- as.character(event_track_id(x))
   time <- event_time(x)
   rows <- located[order(track_id[located], time[located])]
   # time in UTC, as ctmm uses the time zone of the first event for all
   time <- time[rows]
   attr(time, "tzone") <- "UTC"
-  # projected coordinates, and longitude and latitude (in WGS84), which ctmm
-  # expects (and then projects itself)
+  # the projected coordinates of x, and the same locations in longitude and
+  # latitude (WGS84), which is what ctmm expects (it then projects them
+  # itself)
   xy <- sf::st_coordinates(x)[rows, , drop = FALSE]
   long_lat <- sf::st_coordinates(
     sf::st_transform(sf::st_geometry(x)[rows], 4326)
   )
 
-  # build a data.frame with column names that ctmm recognises (based on the
-  # Movebank naming conventions); ctmm sorts the events again (with a sort
-  # that does not preserve the order of ties), so we add an index column,
-  # which we use to recover the original coordinates of each event
+  ## build the data.frame passed to ctmm
+  # ctmm identifies columns by name, so we use names that it recognises
+  # (based on the Movebank naming conventions); ctmm sorts the events again
+  # (with a sort that does not preserve the order of ties), so we add an
+  # index column, which we use to recover the original coordinates of each
+  # event (as the index makes every row unique, it also stops ctmm from
+  # silently dropping duplicated events)
   ctmm_df <- data.frame(
     individual.local.identifier = track_id[rows],
     timestamp = time,
@@ -102,25 +106,28 @@ mt_as_telemetry <- function(x, error_cols = "auto", ...) {
     location.lat = long_lat[, 2],
     tt_row_index = seq_along(rows)
   )
-  # add the error columns, dropping units (ctmm expects numbers in metres for
-  # error estimates, and unitless values for dilutions of precision)
+  # add the error columns as plain numbers, dropping units (ctmm expects
+  # numbers in metres for error estimates, and unitless values for dilutions
+  # of precision)
   if (length(error_cols) > 0) {
     error_df <- sf::st_drop_geometry(x)[rows, error_cols, drop = FALSE]
     error_df <- as.data.frame(lapply(error_df, function(col) {
       if (inherits(col, c("units", "integer64"))) as.numeric(col) else col
     }))
-    # columns are renamed to the names given to error_cols (if any)
-    error_names <- names(error_cols)
-    if (is.null(error_names)) {
-      error_names <- error_cols
-    }
-    error_names[error_names == ""] <- error_cols[error_names == ""]
+    # the columns take the names given to error_cols, if any (e.g.
+    # c(HDOP = "my_hdop_column")), so that ctmm recognises them; unnamed
+    # columns keep their own name
+    error_names <- rlang::names2(error_cols)
+    unnamed <- error_names == ""
+    error_names[unnamed] <- error_cols[unnamed]
     names(error_df) <- error_names
     ctmm_df <- cbind(ctmm_df, error_df)
   }
 
-  # create the telemetry objects, one per track (drop = FALSE always returns a
-  # list, even for a single track); we keep the index column to match the rows
+  ## create the telemetry objects
+  # one object per track, in the CRS of x (drop = FALSE always returns a
+  # list, even for a single track); we keep the index column to match the
+  # rows of each object to the events of x
   tel_list <- ctmm::as.telemetry(
     ctmm_df,
     projection = sf::st_crs(x),
@@ -128,7 +135,6 @@ mt_as_telemetry <- function(x, error_cols = "auto", ...) {
     drop = FALSE,
     ...
   )
-
   # ctmm projects the longitude and latitude using its own (PROJ4)
   # representation of the CRS, which can lose details of the datum; we replace
   # its coordinates with the original ones, so that everything estimated by
@@ -142,7 +148,7 @@ mt_as_telemetry <- function(x, error_cols = "auto", ...) {
 
   # return the tracks in the order of the metadata (ctmm sorts them
   # alphabetically); tracks without locations are not in tel_list
-  tel_list[meta_ids[meta_ids %in% names(tel_list)]]
+  tel_list[intersect(meta_ids, names(tel_list))]
 }
 
 #' Check that x has a CRS that can be used with ctmm
@@ -160,9 +166,13 @@ check_ctmm_crs <- function(x) {
   if (is.na(crs)) {
     stop(
       "x has no coordinate reference system (CRS); set one with ",
-      "`sf::st_set_crs()`"
+      "`sf::st_set_crs()`",
+      call. = FALSE
     )
   }
+  # longitude/latitude (the CRS of most raw tracking data) gets its own
+  # message; a projected CRS can still have units other than metres (e.g.
+  # US survey feet)
   if (isTRUE(sf::st_is_longlat(x))) {
     stop(
       "ctmm requires x to be in a projected coordinate reference system ",
@@ -191,6 +201,7 @@ check_ctmm_crs <- function(x) {
 #' @keywords internal
 #' @noRd
 check_ctmm_installed <- function() {
+  # ctmm is only a suggested package, so it might not be installed
   if (!requireNamespace("ctmm", quietly = TRUE)) {
     stop(
       "to use this function, first install package 'ctmm' with\n",
@@ -213,10 +224,12 @@ check_ctmm_installed <- function() {
 #' @param x A `move2` object.
 #' @param error_cols Either `"auto"`, a character vector of column names, or
 #'   `NULL`.
-#' @returns A character vector of column names of `x` (possibly empty).
+#' @returns A character vector of column names of `x` (possibly empty); the
+#'   names given to `error_cols`, if any, are kept.
 #' @keywords internal
 #' @noRd
 ctmm_error_cols <- function(x, error_cols) {
+  # NULL means that no error information is passed
   if (is.null(error_cols)) {
     return(character(0))
   }
@@ -225,6 +238,8 @@ ctmm_error_cols <- function(x, error_cols) {
   }
   # the event columns (excluding the geometry)
   event_cols <- setdiff(names(x), attr(x, "sf_column"))
+  # with "auto", we pick the event columns that ctmm would recognise as
+  # error information
   if (identical(error_cols, "auto")) {
     known_error_cols <- c(
       # error estimates (in metres)
@@ -262,11 +277,14 @@ ctmm_error_cols <- function(x, error_cols) {
       "argos.orientation",
       "argos.error.radius"
     )
-    return(event_cols[
-      canonical_ctmm_name(event_cols) %in% canonical_ctmm_name(known_error_cols)
-    ])
+    # names are compared in the canonical form used by ctmm (e.g. gps_hdop
+    # matches gps.hdop)
+    is_error_col <- canonical_ctmm_name(event_cols) %in%
+      canonical_ctmm_name(known_error_cols)
+    return(event_cols[is_error_col])
   }
-  # otherwise, check that the requested columns exist
+  # otherwise, check that the requested columns exist (their names, if any,
+  # are only used to rename them when they are passed to ctmm)
   missing_cols <- setdiff(error_cols, event_cols)
   if (length(missing_cols) > 0) {
     stop(

@@ -123,12 +123,14 @@ ctmm_tt_fit <- function(
   ...
 ) {
   check_ctmm_installed()
+  ## check the inputs
   # Check if x is a move2 object
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")
   }
   id_col <- move2::mt_track_id_column(x)
-  # models are fitted to each track, so x can only be grouped by track
+  # models are fitted to each track, so x can only be grouped by track (in
+  # which case the grouping adds nothing, and we drop it)
   if (inherits(x, "grouped_df")) {
     if (!identical(dplyr::group_vars(x), id_col)) {
       stop(
@@ -147,35 +149,37 @@ ctmm_tt_fit <- function(
     stop("candidates must be TRUE or FALSE")
   }
 
-  # the track ids, in the order of the metadata (the order of the output)
+  # the track ids, in the order of the metadata (the order of the output);
+  # the labels (as character) are used to match tracks and models by name
   meta_ids <- show_meta(x)[[id_col]]
   meta_labels <- as.character(meta_ids)
   # one model specification (a keyword or a ctmm template) per track
-  model <- ctmm_model_list(model, meta_labels)
-  if (candidates && !identical(unique(unlist(model)), "auto")) {
+  track_models <- ctmm_model_list(model, meta_labels)
+  # candidate models only exist when the model is selected by ctmm.select()
+  if (candidates && !(is.character(model) && model == "auto")) {
     warning("candidates are only returned with model = \"auto\"")
     candidates <- FALSE
   }
 
+  ## fit the models
   # find the error columns once, so that we can store them with the models
+  # (the other functions that use the models must pass the same columns)
   error_cols <- ctmm_error_cols(x, error_cols)
   # convert the tracks to telemetry objects (a list named by track id)
   tel_list <- mt_as_telemetry(x, error_cols = error_cols)
-
-  # fit the model to each track (in the order of the metadata)
+  # fit the model to each track (in the order of the metadata); each element
+  # is a list with the fit, the candidate models and the error message
   fits <- lapply(seq_along(meta_labels), function(i) {
     track_label <- meta_labels[i]
     # tracks without locations are not in tel_list
     if (!track_label %in% names(tel_list)) {
-      return(list(
-        fit = NULL,
-        candidates = NULL,
+      return(ctmm_fit_result(
         message = "the track has no events with a location"
       ))
     }
     fit_ctmm_track(
       tel = tel_list[[track_label]],
-      model = model[[i]],
+      model = track_models[[i]],
       error = error,
       uere = uere,
       ic = ic,
@@ -185,20 +189,16 @@ ctmm_tt_fit <- function(
     )
   })
 
-  # assemble the table of models
+  ## assemble the table of models
+  # the models (NULL for the tracks that could not be fitted), with a summary
+  # of each; the list-column of models is named by track id
   model_fits <- lapply(fits, function(f) f$fit)
-  names(model_fits) <- meta_labels
   fit_tbl <- tibble::tibble(
     !!id_col := meta_ids,
-    model = model_fits,
-    model_name = vapply(
-      model_fits,
-      ctmm_model_name,
-      character(1),
-      USE.NAMES = FALSE
-    ),
-    aicc = vapply(model_fits, ctmm_model_aicc, numeric(1), USE.NAMES = FALSE),
-    dof_area = vapply(model_fits, ctmm_dof_area, numeric(1), USE.NAMES = FALSE)
+    model = stats::setNames(model_fits, meta_labels),
+    model_name = vapply(model_fits, ctmm_model_name, character(1)),
+    aicc = vapply(model_fits, ctmm_model_aicc, numeric(1)),
+    dof_area = vapply(model_fits, ctmm_dof_area, numeric(1))
   )
   # the number of events and the time range of each track, to check later
   # that the tracks have not changed since the models were fitted
@@ -206,14 +206,12 @@ ctmm_tt_fit <- function(
     fit_tbl,
     ctmm_track_fingerprint(tel_list, meta_labels)
   )
-  fit_tbl$fit_message <- vapply(
-    fits,
-    function(f) if (is.null(f$message)) NA_character_ else f$message,
-    character(1)
-  )
+  fit_tbl$fit_message <- vapply(fits, function(f) f$message, character(1))
   if (candidates) {
-    fit_tbl$candidates <- lapply(fits, function(f) f$candidates)
-    names(fit_tbl$candidates) <- meta_labels
+    fit_tbl$candidates <- stats::setNames(
+      lapply(fits, function(f) f$candidates),
+      meta_labels
+    )
   }
 
   # warn about the tracks for which the model could not be fitted
@@ -227,7 +225,9 @@ ctmm_tt_fit <- function(
     )
   }
 
-  # store the information needed to use the models with the original data
+  # store the information needed to use the models with the original data:
+  # the CRS of the coordinates the models were fitted to, the error columns
+  # used, and the column that identifies the tracks
   attr(fit_tbl, "crs") <- sf::st_crs(x)
   attr(fit_tbl, "error_cols") <- error_cols
   attr(fit_tbl, "track_id_column") <- id_col
@@ -235,20 +235,16 @@ ctmm_tt_fit <- function(
   fit_tbl
 }
 
-#' Fit a ctmm model to a single track
+#' Fit a ctmm model to a single track, catching errors
 #'
-#' @param tel A `ctmm` `telemetry` object.
-#' @param model A model keyword (`"auto"`, `"iid"`, `"ou"`, `"ouf"` or `"bm"`)
-#'   or a `ctmm` model template.
-#' @param error Logical; whether to fit an error model.
-#' @param uere A UERE value or object (or `NULL`).
-#' @param ic The information criterion for model selection.
-#' @param cores The number of cores for model selection.
+#' The model is fitted with `fit_ctmm_model()`. Warnings raised by `ctmm` are
+#' prefixed with the id of the track, and errors are caught, so that a track
+#' that cannot be fitted does not stop the fitting of the other tracks.
+#'
+#' @param tel,model,error,uere,ic,cores,... Passed to `fit_ctmm_model()`.
 #' @param track_label The id of the track (used in warnings).
-#' @param ... Additional arguments passed to `ctmm.select()` or `ctmm.fit()`.
-#' @returns A list with elements `fit` (the fitted model, or `NULL`),
-#'   `candidates` (the candidate models for `"auto"`, or `NULL`) and `message`
-#'   (`NULL`, or the error message if the model could not be fitted).
+#' @returns A list created by `ctmm_fit_result()`: the fitted model and the
+#'   candidate models, or the error message if the model could not be fitted.
 #' @keywords internal
 #' @noRd
 fit_ctmm_track <- function(
@@ -263,59 +259,98 @@ fit_ctmm_track <- function(
 ) {
   tryCatch(
     with_label_warnings(
-      {
-        # calibrate the location error, which implies fitting an error model
-        if (!is.null(uere)) {
-          ctmm::uere(tel) <- uere
-          error <- TRUE
-        }
-        cand <- NULL
-        if (inherits(model, "ctmm")) {
-          # a template provided by the user is fitted as it is
-          fit <- ctmm::ctmm.fit(tel, model, ...)
-        } else if (model %in% c("iid", "bm")) {
-          # models without autocorrelation of positions (iid), or without a
-          # home range (bm), do not need initial values for the time scales
-          tau <- if (model == "iid") NULL else Inf
-          fit <- ctmm::ctmm.fit(tel, ctmm::ctmm(tau = tau, error = error), ...)
-        } else {
-          # guess the initial values of the parameters from the variogram
-          guess <- ctmm::ctmm.guess(
-            tel,
-            CTMM = ctmm::ctmm(error = error),
-            interactive = FALSE
-          )
-          if (model == "auto") {
-            # fit all the candidate models (ranked by ic), the best is first
-            cand <- ctmm::ctmm.select(
-              tel,
-              guess,
-              IC = ic,
-              verbose = TRUE,
-              cores = cores,
-              ...
-            )
-            fit <- cand[[1]]
-          } else {
-            # the guess has two time scales (position and velocity); the OU
-            # model only uses the first one
-            tau <- if (model == "ou") guess$tau[1] else guess$tau[1:2]
-            fit <- ctmm::ctmm.fit(
-              tel,
-              ctmm::ctmm(tau = tau, error = error),
-              ...
-            )
-          }
-        }
-        list(fit = fit, candidates = cand, message = NULL)
-      },
+      fit_ctmm_model(
+        tel,
+        model = model,
+        error = error,
+        uere = uere,
+        ic = ic,
+        cores = cores,
+        ...
+      ),
       label = paste("track", track_label)
     ),
     # if the model could not be fitted, record the error message
-    error = function(e) {
-      list(fit = NULL, candidates = NULL, message = conditionMessage(e))
-    }
+    error = function(e) ctmm_fit_result(message = conditionMessage(e))
   )
+}
+
+#' Fit a ctmm model to a single track
+#'
+#' @param tel A `ctmm` `telemetry` object.
+#' @param model A model keyword (`"auto"`, `"iid"`, `"ou"`, `"ouf"` or `"bm"`)
+#'   or a `ctmm` model template.
+#' @param error Logical; whether to fit an error model.
+#' @param uere A UERE value or object (or `NULL`).
+#' @param ic The information criterion for model selection.
+#' @param cores The number of cores for model selection.
+#' @param ... Additional arguments passed to `ctmm.select()` or `ctmm.fit()`.
+#' @returns A list created by `ctmm_fit_result()`, with the fitted model and
+#'   the candidate models (only for `"auto"`).
+#' @keywords internal
+#' @noRd
+fit_ctmm_model <- function(tel, model, error, uere, ic, cores, ...) {
+  # calibrate the location error, which implies fitting an error model
+  if (!is.null(uere)) {
+    ctmm::uere(tel) <- uere
+    error <- TRUE
+  }
+  candidates <- NULL
+  if (inherits(model, "ctmm")) {
+    # a template provided by the user is fitted as it is
+    fit <- ctmm::ctmm.fit(tel, model, ...)
+  } else if (model %in% c("iid", "bm")) {
+    # models without autocorrelation of positions (iid: no time scale), or
+    # without a home range (bm: an infinite time scale of positions), do not
+    # need initial values for the time scales
+    tau <- if (model == "iid") NULL else Inf
+    fit <- ctmm::ctmm.fit(tel, ctmm::ctmm(tau = tau, error = error), ...)
+  } else {
+    # the other models start from initial values of the parameters guessed
+    # from the variogram of the track
+    guess <- ctmm::ctmm.guess(
+      tel,
+      CTMM = ctmm::ctmm(error = error),
+      interactive = FALSE
+    )
+    if (model == "auto") {
+      # fit all the candidate models (verbose = TRUE returns all of them,
+      # ranked by ic), the best is first
+      candidates <- ctmm::ctmm.select(
+        tel,
+        guess,
+        IC = ic,
+        verbose = TRUE,
+        cores = cores,
+        ...
+      )
+      fit <- candidates[[1]]
+    } else {
+      # the guess has two time scales (position and velocity); the OU model
+      # only uses the first one
+      tau <- if (model == "ou") guess$tau[1] else guess$tau[1:2]
+      fit <- ctmm::ctmm.fit(tel, ctmm::ctmm(tau = tau, error = error), ...)
+    }
+  }
+  ctmm_fit_result(fit = fit, candidates = candidates)
+}
+
+#' The result of fitting the model of a track
+#'
+#' @param fit The fitted `ctmm` model, or `NULL` if it could not be fitted.
+#' @param candidates The candidate models (only with `model = "auto"`), or
+#'   `NULL`.
+#' @param message `NA`, or the error message if the model could not be
+#'   fitted.
+#' @returns A list with elements `fit`, `candidates` and `message`.
+#' @keywords internal
+#' @noRd
+ctmm_fit_result <- function(
+  fit = NULL,
+  candidates = NULL,
+  message = NA_character_
+) {
+  list(fit = fit, candidates = candidates, message = message)
 }
 
 #' Evaluate an expression, prefixing any warning with a label
@@ -332,6 +367,7 @@ with_label_warnings <- function(expr, label) {
   withCallingHandlers(
     expr,
     warning = function(w) {
+      # raise the labelled warning, and muffle the original one
       warning(label, ": ", conditionMessage(w), call. = FALSE)
       invokeRestart("muffleWarning")
     }
@@ -350,18 +386,11 @@ with_label_warnings <- function(expr, label) {
 #' @noRd
 ctmm_model_list <- function(model, meta_labels) {
   model_keywords <- c("auto", "iid", "ou", "ouf", "bm")
-  if (is.character(model)) {
-    if (length(model) != 1 || !model %in% model_keywords) {
-      stop(
-        "model must be one of ",
-        paste0("\"", model_keywords, "\"", collapse = ", "),
-        ", a ctmm model template, or a list of templates (one per track)"
-      )
-    }
-    return(rep(list(model), length(meta_labels)))
-  }
-  # a single template is used for all tracks
-  if (inherits(model, "ctmm")) {
+  # a single keyword or template is used for all tracks
+  is_keyword <- is.character(model) &&
+    length(model) == 1 &&
+    model %in% model_keywords
+  if (is_keyword || inherits(model, "ctmm")) {
     return(rep(list(model), length(meta_labels)))
   }
   # a list of templates, one per track
@@ -381,6 +410,7 @@ ctmm_model_list <- function(model, meta_labels) {
     }
     return(unname(model))
   }
+  # anything else (including an unknown keyword) is not a valid model
   stop(
     "model must be one of ",
     paste0("\"", model_keywords, "\"", collapse = ", "),
@@ -399,9 +429,11 @@ ctmm_model_name <- function(fit) {
   if (is.null(fit)) {
     return(NA_character_)
   }
+  # the name given by ctmm, e.g. "OUF anisotropic"
   summary(fit)$name
 }
 
+# the AICc is stored in the fitted model (NA if ctmm did not compute it)
 ctmm_model_aicc <- function(fit) {
   if (is.null(fit) || is.null(fit$AICc)) {
     return(NA_real_)
@@ -409,6 +441,9 @@ ctmm_model_aicc <- function(fit) {
   fit$AICc
 }
 
+# the effective degrees of freedom of the parameters are given by the summary
+# of the model, as a named vector (mean, area, diffusion, speed); models
+# without a home range (e.g. Brownian motion) have 0 for the area
 ctmm_dof_area <- function(fit) {
   if (is.null(fit)) {
     return(NA_real_)
@@ -430,21 +465,26 @@ ctmm_dof_area <- function(fit) {
 #' @keywords internal
 #' @noRd
 ctmm_track_fingerprint <- function(tel_list, meta_labels) {
+  # tracks without locations are not in tel_list: they have no events, and
+  # no time range
   n_events <- vapply(
     meta_labels,
-    function(i) if (i %in% names(tel_list)) nrow(tel_list[[i]]) else 0L,
+    function(id) if (id %in% names(tel_list)) nrow(tel_list[[id]]) else 0L,
     integer(1),
     USE.NAMES = FALSE
   )
-  # times in seconds (as stored by ctmm), converted to POSIXct
+  # the time range of each track (a matrix with the start in the first row,
+  # and the end in the second); ctmm stores times in column t, in seconds
+  # since 1970-01-01 UTC
   t_range <- vapply(
     meta_labels,
-    function(i) {
-      if (i %in% names(tel_list)) range(tel_list[[i]]$t) else c(NA, NA)
+    function(id) {
+      if (id %in% names(tel_list)) range(tel_list[[id]]$t) else c(NA, NA)
     },
     numeric(2),
     USE.NAMES = FALSE
   )
+  # times converted back to POSIXct
   tibble::tibble(
     n_events = n_events,
     t_start = as.POSIXct(t_range[1, ], origin = "1970-01-01", tz = "UTC"),
@@ -459,6 +499,8 @@ ctmm_track_fingerprint <- function(tel_list, meta_labels) {
 #' @keywords internal
 #' @noRd
 stopifnot_ctmm_tt_fit_tbl <- function(x) {
+  # dplyr verbs keep the class of the table, but can drop the columns that
+  # are needed to use the models (e.g. with dplyr::select())
   if (
     !inherits(x, "ctmm_tt_fit_tbl") ||
       !"model" %in% names(x) ||

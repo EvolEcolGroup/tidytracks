@@ -50,20 +50,30 @@
 ctmm_tt_summary <- function(x, level = 0.95) {
   check_ctmm_installed()
   stopifnot_ctmm_tt_fit_tbl(x)
-  if (!is.numeric(level) || length(level) != 1 || level <= 0 || level >= 1) {
+  if (
+    !is.numeric(level) ||
+      length(level) != 1 ||
+      is.na(level) ||
+      level <= 0 ||
+      level >= 1
+  ) {
     stop("level must be a single number between 0 and 1")
   }
   id_col <- attr(x, "track_id_column")
 
-  # extract the confidence intervals of each model as a list of named
-  # vectors (e.g. area_low, area_est, area_high, ...)
+  # extract the confidence intervals of each model as a named vector (e.g.
+  # area_low, area_est, area_high, tau_position_low, ...), or NULL for the
+  # tracks whose model could not be fitted
   ci_list <- lapply(x$model, function(fit) {
     if (is.null(fit)) {
       return(NULL)
     }
+    # a matrix with one row per parameter, and columns low, est and high;
     # units = FALSE returns all values in SI units
     ci <- summary(fit, level = level, units = FALSE)$CI
     params <- ctmm_param_names(rownames(ci))
+    # flatten the matrix by row, so that the three values of each parameter
+    # are next to each other
     values <- c(t(ci[, c("low", "est", "high"), drop = FALSE]))
     names(values) <- paste(
       rep(params, each = 3),
@@ -73,9 +83,10 @@ ctmm_tt_summary <- function(x, level = 0.95) {
     values
   })
 
-  # all the parameters estimated for any track (in order of appearance)
+  # different models estimate different parameters: we take all the
+  # parameters estimated for any track (in order of appearance), and fill a
+  # matrix with one row per track, with NA for the parameters not in a model
   value_names <- unique(unlist(lapply(ci_list, names)))
-  # one row per track, with NA for the parameters not in a model
   values <- matrix(
     NA_real_,
     nrow = nrow(x),
@@ -91,7 +102,8 @@ ctmm_tt_summary <- function(x, level = 0.95) {
     model_name = x$model_name,
     dof_area = x$dof_area
   )
-  # add the parameters as units objects
+  # add the parameters as units objects (the units depend on the parameter,
+  # which is the column name without its _low, _est or _high suffix)
   for (value_name in value_names) {
     param <- sub("_(low|est|high)$", "", value_name)
     summary_tbl[[value_name]] <- ctmm_param_units(values[, value_name], param)
@@ -134,6 +146,7 @@ ctmm_param_names <- function(x) {
 #' @keywords internal
 #' @noRd
 ctmm_param_units <- function(x, param) {
+  # SI units, as returned by summary(fit, units = FALSE)
   param_units <- if (param == "area") {
     "m^2"
   } else if (startsWith(param, "tau_")) {
@@ -147,6 +160,7 @@ ctmm_param_units <- function(x, param) {
   } else {
     NULL
   }
+  # parameters we do not know about are returned as plain numbers
   if (is.null(param_units)) {
     return(x)
   }
