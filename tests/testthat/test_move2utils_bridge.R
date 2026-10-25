@@ -115,3 +115,35 @@ test_that("call_move2utils checks the output of move2utils", {
     "did not return the column\\(s\\): not_there"
   )
 })
+
+test_that("move2utils_args always sets remove to FALSE", {
+  fn <- function(x, remove = TRUE) x
+  expect_identical(move2utils_args(fn, list(1)), list(1, remove = FALSE))
+  expect_identical(
+    move2utils_args(fn, list(1, remove = TRUE)),
+    list(1, remove = FALSE)
+  )
+})
+
+test_that("units_to_move2utils converts units objects to SI numbers", {
+  converted <- units_to_move2utils(list(
+    speed = as_units(36, "km/h"),
+    length = as_units(2, "km"),
+    time = as_units(2, "min"),
+    mass = as_units(500, "g"),
+    number = 3,
+    text = "a",
+    nothing = NULL
+  ))
+  expect_identical(
+    converted,
+    list(
+      speed = 10, length = 2000, time = 120, mass = 0.5,
+      number = 3, text = "a", nothing = NULL
+    )
+  )
+  expect_error(
+    units_to_move2utils(list(as_units(1, "K"))),
+    "cannot convert 'K' to a speed, length, time or mass"
+  )
+})

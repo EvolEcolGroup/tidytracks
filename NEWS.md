@@ -16,6 +16,12 @@
     possible.
   * `event_flag_thin_distance()` and `tt_thin_distance()` thin tracks by the
     distance travelled along them.
+  * `event_flag_outliers()` and `tt_clean_outliers()` detect outliers with
+    the methods of `move2utils` (its combined `mt_clean_track()` by default,
+    or its speed cap, detour, Brownian bridge or probability methods), most
+    of which choose their thresholds from the data.
+  * `event_flag_corridor()` flags the steps that are part of movement
+    corridors (fast movement in a consistent direction).
 
 # tidytracks 0.2.1
 

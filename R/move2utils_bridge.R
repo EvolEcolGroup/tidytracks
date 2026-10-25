@@ -31,11 +31,13 @@ is_move2utils_installed <- function() {
 #' Many `move2utils` functions draw a plot and print a narrative by default.
 #' tidytracks wrappers return values instead, so `plot = FALSE` and
 #' `silent = TRUE` are set for any function that has these arguments, unless
-#' they are already in `args`.
+#' they are already in `args`. `remove` is always set to `FALSE`, as the
+#' wrappers match the results to the events of their input (the `tt_*()`
+#' wrappers then remove events themselves).
 #'
 #' @param fn A `move2utils` function.
 #' @param args A named list of arguments for `fn`.
-#' @returns `args`, with `plot` and `silent` added where relevant.
+#' @returns `args`, with `plot`, `silent` and `remove` set where relevant.
 #' @keywords internal
 #' @noRd
 move2utils_args <- function(fn, args) {
@@ -46,7 +48,39 @@ move2utils_args <- function(fn, args) {
   if ("silent" %in% fn_args && is.null(args$silent)) {
     args$silent <- TRUE
   }
+  if ("remove" %in% fn_args) {
+    args$remove <- FALSE
+  }
   args
+}
+
+#' Convert units objects to the numbers expected by move2utils
+#'
+#' `move2utils` functions take physical quantities as plain numbers in SI
+#' units (speeds in m/s, lengths in m, times in s, masses in kg), whilst
+#' tidytracks uses `units` objects. This converts every `units` object in a
+#' list of arguments to a number in the corresponding SI unit, and leaves the
+#' other arguments unchanged.
+#'
+#' @param args A named list of arguments.
+#' @returns `args`, with `units` objects replaced by numbers in SI units.
+#' @keywords internal
+#' @noRd
+units_to_move2utils <- function(args) {
+  lapply(args, function(arg) {
+    if (!inherits(arg, "units")) {
+      return(arg)
+    }
+    for (si_unit in c("m/s", "m", "s", "kg")) {
+      if (units::ud_are_convertible(units::deparse_unit(arg), si_unit)) {
+        return(as.numeric(units::set_units(arg, si_unit, mode = "standard")))
+      }
+    }
+    stop(
+      "cannot convert '", units::deparse_unit(arg),
+      "' to a speed, length, time or mass for move2utils"
+    )
+  })
 }
 
 #' Check that a move2 object is ordered by time within each track

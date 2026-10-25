@@ -34,6 +34,7 @@ reference:
         - tt_regular_time
         - tt_order_time
         - tt_clean_mcconnell
+        - tt_clean_outliers
         - tt_thin_time
         - tt_thin_distance
         - tt_drop_units
