@@ -52,48 +52,39 @@ library(dplyr)
 ## The data
 
 We use the GPS tracks of African buffalo (*Syncerus caffer*) from Kruger
-National Park, South Africa, which are provided by `ctmm` (Getz et al. 2007,
-Cross et al. 2016). The tracks are stored as a list of `ctmm` `telemetry`
-objects, which we can convert to a tibble of tracks with `mt_as_move2()`:
+National Park, South Africa (Getz et al. 2007, Cross et al. 2016), which are
+also used in the `ctmm` vignettes (`ctmm` provides them as a list of
+`telemetry` objects, which can be converted to a tibble of tracks with
+`mt_as_move2()`). Fitting movement models to long tracks takes a few minutes
+per track, so, to keep this article quick to run, we use three of the six
+buffalo of the dataset: Cilla and Gabs, whose home ranges overlap, and
+Pepper, whose GPS collar changed its sampling schedule (see below).
+
+The tracks are stored in a CSV file, with one row per location: the id of
+the buffalo (`buffalo_id`), the time in UTC (`date_time`), and the longitude
+and latitude (`lon` and `lat`). The file also includes the sex and the age
+class of each buffalo (`sex` and `age`; they are all adult females). As these
+values are repeated for all the locations of a buffalo, `tt_read_data()`
+moves them to the metadata of the tibble of tracks:
 
 ```{r load_data}
-data(buffalo, package = "ctmm")
-buffalo_tt <- mt_as_move2(buffalo)
+buffalo_tt <- tt_read_data(
+  events = "data/buffalo_tracks.csv",
+  col_track_id = "buffalo_id",
+  col_coords = c("lon", "lat"),
+  col_date_time = "date_time"
+)
 buffalo_tt
 ```
 
-The dataset includes six buffalo. Fitting movement models to long tracks
-takes a few minutes per track, so, to keep this article quick to run, we
-keep three of them: Cilla and Gabs, whose home ranges overlap, and Pepper,
-whose GPS collar changed its sampling schedule (see below):
-
-```{r select_buffalo}
-buffalo_tt <- buffalo_tt %>%
-  filter_by_meta(track %in% c("Cilla", "Gabs", "Pepper"))
+```{r show_meta}
 show_meta(buffalo_tt)
-```
-
-The tibble of tracks includes some columns created by `ctmm` (`t`, the time
-in seconds, and the coordinates in longitude and latitude), which we do not
-need:
-
-```{r drop_columns}
-buffalo_tt <- buffalo_tt %>%
-  select(-t, -longitude, -latitude)
-```
-
-The tracks are projected in the coordinate reference system (CRS) chosen
-by `ctmm` (a two-point equidistant projection centred on the data). However,
-tracking data generally come as longitude and latitude, so we go back to
-longitude and latitude, to show how we would deal with raw data:
-
-```{r unproject}
-buffalo_tt <- sf::st_transform(buffalo_tt, 4326)
 ```
 
 ```{r plot_tracks}
 ggplot() +
-  geom_track_path(data = buffalo_tt, mapping = aes(colour = track)) +
+  geom_track_path(data = buffalo_tt, mapping = aes(colour = buffalo_id)) +
+  scale_x_continuous(breaks = seq(31.6, 32, by = 0.2)) +
   labs(colour = "Buffalo")
 ```
 
@@ -142,14 +133,16 @@ which is much smaller than the number of locations because of
 autocorrelation: tracks with few home range crossings provide little
 information on the home range, and lead to uncertain estimates.
 
-Since the table is aligned with the metadata, it can be combined with it
-directly:
+The table has the same id column as the metadata (`buffalo_id`), so it can
+be joined with the metadata, for example to compare the models of
+individuals of different sex or age (here, all the buffalo are adult
+females):
 
 ```{r combine_meta}
 show_meta(buffalo_tt) %>%
   left_join(
-    select(buffalo_fit, track, model_name, dof_area),
-    by = "track"
+    select(buffalo_fit, buffalo_id, model_name, dof_area),
+    by = "buffalo_id"
   )
 ```
 
@@ -173,14 +166,19 @@ buffalo_tel <- mt_as_telemetry(buffalo_tt)
 names(buffalo_tel)
 ```
 
-We can now plot the variogram of Cilla, the first buffalo, with its fitted
-model, both at short time lags (where we see the autocorrelation of the
-velocity) and at long time lags (where the variogram levels off at the size
-of the home range):
+We can now compute the empirical variogram of Cilla, the first buffalo, and
+extract its fitted model:
 
-```{r variogram, fig.show="hold", fig.width=3.4, fig.height=3.4, out.width="48%"}
+```{r variogram}
 cilla_svf <- variogram(buffalo_tel$Cilla)
 cilla_model <- buffalo_fit$model$Cilla
+```
+
+and plot them together, both at short time lags (where we see the
+autocorrelation of the velocity) and at long time lags (where the variogram
+levels off at the size of the home range):
+
+```{r variogram_plot, fig.show="hold", fig.width=3.4, fig.height=3.4, out.width="48%"}
 plot(
   cilla_svf,
   CTMM = cilla_model,
@@ -198,20 +196,42 @@ title("Cilla: long lags")
 confidence intervals, as a table with one row per track. The parameters
 include the area of the home range of the model (`area`), the home range
 crossing time (`tau_position`), the time scale of the autocorrelation of the
-velocity (`tau_velocity`), and the average speed (`speed`). The values are
-`units` objects in SI units, which we can convert to more convenient units:
+velocity (`tau_velocity`), and the average speed (`speed`):
 
 ```{r summary}
 buffalo_summary <- ctmm_tt_summary(buffalo_fit)
+names(buffalo_summary)
+```
+
+Each parameter has three columns: the lower bound of its confidence interval
+(`_low`), its estimate (`_est`) and the upper bound (`_high`). Printing such a
+wide table is not very useful, as the columns that do not fit in the console
+are hidden. To look at the parameters we are interested in, we can use
+`transmute()` from `dplyr`, which keeps only the columns that we list, and
+can modify them at the same time (it combines `select()` and `mutate()`).
+
+Modifying the columns is useful here, as the values are `units` objects in SI
+units: areas are in square metres, time scales in seconds, and speeds in
+metres per second. For buffalo, which live in home ranges of hundreds of
+square kilometres and take days to cross them, these numbers are very large
+or very small, and hard to interpret. With `units::set_units()`, we can
+convert each column to a more intuitive unit, which is shown under the name
+of the column:
+
+```{r summary_display}
 buffalo_summary %>%
   transmute(
-    track,
+    buffalo_id,
     model_name,
     area_est = units::set_units(area_est, "km^2"),
     tau_position_est = units::set_units(tau_position_est, "days"),
     speed_est = units::set_units(speed_est, "km/day")
   )
 ```
+
+We did not save the result of `transmute()`, as it is only used to display
+the table: `buffalo_summary` still has all its columns, in SI units. We use
+the same approach to display the other tables in this article.
 
 ## Autocorrelated kernel density estimation
 
@@ -235,16 +255,27 @@ objects (column `ud_ctmm`), which can be used with the functions of `ctmm`.
 autoplot(buffalo_akde)
 ```
 
-The isopleths (i.e. the home ranges at given levels) can be obtained by
-setting `levels`. For AKDE, the table includes the confidence intervals of
-the area of each home range (`area_low` and `area_high`):
+The isopleths (i.e. the home ranges at given levels) can be obtained from the
+UDs with `hr_tt_ud_iso()`, as for the other methods to estimate home ranges.
+For AKDE, the table of isopleths also includes the confidence intervals of
+the area of each home range (`area_low` and `area_high`), which `ctmm`
+estimates from the `ctmm` UDs:
 
 ```{r akde_iso}
-buffalo_iso <- hr_tt_akde(buffalo_tt, buffalo_fit, levels = c(0.5, 0.95))
+buffalo_iso <- hr_tt_ud_iso(buffalo_akde, levels = c(0.5, 0.95))
+```
+
+The same isopleths can be obtained directly by setting `levels` in
+`hr_tt_akde()`, which is convenient if we do not need the UDs (we do so
+below). To display the areas, we use `transmute()` as above. The table of
+isopleths is an `sf` object, whose geometry column is always kept by
+`transmute()`, so we first drop it with `sf::st_drop_geometry()`:
+
+```{r akde_iso_areas}
 buffalo_iso %>%
   sf::st_drop_geometry() %>%
   transmute(
-    track,
+    buffalo_id,
     level,
     area = units::set_units(area, "km^2"),
     area_low = units::set_units(area_low, "km^2"),
@@ -256,12 +287,12 @@ buffalo_iso %>%
 ggplot() +
   geom_sf(
     data = filter(buffalo_iso, level == 0.95),
-    mapping = aes(fill = track),
+    mapping = aes(fill = buffalo_id),
     alpha = 0.4
   ) +
   geom_track_path(
     data = buffalo_tt,
-    mapping = aes(colour = track),
+    mapping = aes(colour = buffalo_id),
     linewidth = 0.1
   ) +
   scale_x_continuous(breaks = seq(31.6, 32, by = 0.2)) +
@@ -272,7 +303,10 @@ ggplot() +
 
 To see the effect of accounting for autocorrelation, we can compare the AKDE
 home ranges with those estimated with conventional KDE (`hr_tt_kde()`), using
-the reference bandwidth for each buffalo, on the same grid:
+the reference bandwidth for each buffalo. So that the two estimates are
+comparable, we estimate the KDE on the same grid as the AKDE, using the
+bounding box and resolution of the grid stored in the table of AKDE UDs (the
+grid is the same for all buffalo, so we take it from the first row):
 
 ```{r kde}
 buffalo_kde_iso <- hr_tt_kde(
@@ -282,14 +316,34 @@ buffalo_kde_iso <- hr_tt_kde(
   res = buffalo_akde$res[1],
   levels = 0.95
 )
-bind_rows(
-  akde = filter(buffalo_iso, level == 0.95),
-  kde = buffalo_kde_iso,
-  .id = "estimator"
-) %>%
+```
+
+To compare the two estimates, we first stack the 95% home ranges of the two
+methods in a single table with `bind_rows()`, which appends the rows of the
+second table to those of the first. Both tables have a column `method`
+(`"akde"` or `"kde"`), so we can still tell which method each row comes
+from. Columns that are only present in one of the tables (e.g. the
+confidence intervals `area_low` and `area_high`, which KDE does not provide)
+are filled with `NA` for the rows of the other table:
+
+```{r kde_bind}
+buffalo_hr_95 <- bind_rows(
+  filter(buffalo_iso, level == 0.95),
+  buffalo_kde_iso
+)
+```
+
+We then reshape the table with `tidyr::pivot_wider()`, so that each buffalo
+is a row and each method a column. `pivot_wider()` uses all the columns that
+are not reshaped to identify the rows, and these differ between the two
+methods (e.g. `h`, the bandwidth, is only defined for KDE), so we first use
+`transmute()` to keep only the id of the buffalo, the method and the area:
+
+```{r kde_compare}
+buffalo_hr_95 %>%
   sf::st_drop_geometry() %>%
-  transmute(track, estimator, area = units::set_units(area, "km^2")) %>%
-  tidyr::pivot_wider(names_from = estimator, values_from = area)
+  transmute(buffalo_id, method, area = units::set_units(area, "km^2")) %>%
+  tidyr::pivot_wider(names_from = method, values_from = area)
 ```
 
 Conventional KDE, which ignores the autocorrelation of the locations, gives
@@ -306,12 +360,19 @@ over-representation of the periods sampled more frequently (Fleming et al.
 2018). This is slower, so here we only use it for Pepper:
 
 ```{r weights}
-pepper_tt <- filter_by_meta(buffalo_tt, track == "Pepper")
+pepper_tt <- filter_by_meta(buffalo_tt, buffalo_id == "Pepper")
 pepper_iso <- bind_rows(
   uniform = hr_tt_akde(pepper_tt, buffalo_fit, levels = 0.95),
   weighted = hr_tt_akde(pepper_tt, buffalo_fit, levels = 0.95, weights = TRUE),
   .id = "weights"
 )
+```
+
+Here, the two tables have the same columns, so we name them in `bind_rows()`
+(`uniform` and `weighted`), and use `.id` to add a column `weights` with the
+name of the table each row comes from. We can then compare the areas:
+
+```{r weights_areas}
 pepper_iso %>%
   sf::st_drop_geometry() %>%
   transmute(
@@ -343,20 +404,48 @@ ggplot() +
 ## Comparing home ranges
 
 As the UDs of all buffalo are on the same grid, we can compute their overlap
-with `hr_tt_ud_overlap()`:
+with `hr_tt_ud_overlap()`. With `method = "ba"`, the overlap is measured by
+the Bhattacharyya coefficient, which is 1 for identical UDs and 0 for UDs
+that share no area:
 
 ```{r overlap}
-hr_tt_ud_overlap(buffalo_akde, method = "ba")
+buffalo_ba <- hr_tt_ud_overlap(buffalo_akde, method = "ba")
+buffalo_ba
 ```
 
-Alternatively, we can use `ctmm::overlap()` on the `ctmm` UDs, which provides
-a bias-corrected estimate of the Bhattacharyya coefficient, with confidence
-intervals (here, the estimates):
+Alternatively, we can use `ctmm::overlap()` on the `ctmm` UDs, which also
+estimates the Bhattacharyya coefficient, with confidence intervals:
 
 ```{r overlap_ctmm}
 buffalo_overlap <- ctmm::overlap(buffalo_akde$ud_ctmm)
-round(buffalo_overlap$CI[, , "est"], 2)
 ```
+
+The element `CI` of the result is an array with the lower bound, the estimate
+and the upper bound of the overlap of each pair of buffalo. For Cilla and
+Gabs, we get:
+
+```{r overlap_ctmm_ci}
+buffalo_overlap$CI["Cilla", "Gabs", ]
+```
+
+The estimate of `ctmm`
+(`r round(buffalo_overlap$CI["Cilla", "Gabs", "est"], 3)`) is higher than
+the overlap computed by `hr_tt_ud_overlap()`
+(`r round(buffalo_ba["Cilla", "Gabs"], 3)`), because `ctmm` corrects it for
+a bias (Winner et al. 2018). Each UD is estimated from few independent
+observations of the home range (`dof_area` is only
+`r round(buffalo_fit$dof_area[buffalo_fit$buffalo_id == "Gabs"], 1)` for
+Gabs), so even two buffalo using exactly the same area would have estimated
+UDs that differ by chance: the overlap of the estimated UDs, as computed by
+`hr_tt_ud_overlap()`, underestimates the overlap of the true UDs. `ctmm` uses
+the movement models to estimate how large this bias is, and removes it (with
+`debias = FALSE`, it gives the same estimate as `hr_tt_ud_overlap()`). Here,
+nearly all the difference between the UDs of Cilla and Gabs could be due to
+chance, so the corrected estimate is close to 1. This does not mean that the
+two buffalo use exactly the same area, but that we cannot tell their home
+ranges apart with these data: the confidence interval shows that their
+overlap is at least
+`r round(buffalo_overlap$CI["Cilla", "Gabs", "low"], 2)`.
 
 The `ctmm` UDs can also be used for population-level analyses, such as
 estimating the mean home range area of the buffalo with `ctmm::meta()`:
@@ -378,16 +467,26 @@ variation among individuals, so it is large when combining few individuals.
 Population kernel density estimation assumes that the individuals are a
 sample from a single population, sharing an area. Cilla and Gabs live in the
 same area in the south of the park, whereas Pepper lives further north, so we
-combine the home ranges of Cilla and Gabs:
+combine the home ranges of Cilla and Gabs. `ctmm` estimates some of the
+parameters of the population (e.g. the bandwidth of the population kernels)
+with a stochastic optimiser, so the results can differ between runs; to make
+them reproducible, we set the seed of the random number generator first:
 
 ```{r pop}
-south_akde <- filter(buffalo_akde, track %in% c("Cilla", "Gabs"))
+south_akde <- filter(buffalo_akde, buffalo_id %in% c("Cilla", "Gabs"))
+set.seed(1)
 south_pop <- hr_tt_akde_pop(
   south_akde,
   tracks = buffalo_tt,
   models = buffalo_fit,
   levels = 0.95
 )
+```
+
+As for the individual home ranges, we display the area of the population home
+range, with its confidence interval:
+
+```{r pop_areas}
 south_pop %>%
   sf::st_drop_geometry() %>%
   transmute(
@@ -402,8 +501,12 @@ south_pop %>%
 ```{r pop_plot}
 ggplot() +
   geom_sf(
-    data = filter(buffalo_iso, level == 0.95, track %in% c("Cilla", "Gabs")),
-    mapping = aes(colour = track),
+    data = filter(
+      buffalo_iso,
+      level == 0.95,
+      buffalo_id %in% c("Cilla", "Gabs")
+    ),
+    mapping = aes(colour = buffalo_id),
     fill = NA
   ) +
   geom_sf(data = south_pop, fill = "grey50", alpha = 0.3) +
@@ -473,3 +576,7 @@ home-range estimation. Ecological Applications, 28, 1003-1010.
 Getz, W.M., Fortmann-Roe, S., Cross, P.C., Lyons, A.J., Ryan, S.J. & Wilmers,
 C.C. (2007) LoCoH: nonparameteric kernel methods for constructing home ranges
 and utilization distributions. PLoS ONE, 2, e207.
+
+Winner, K., Noonan, M.J., Fleming, C.H., Olson, K.A., Mueller, T., Sheldon, D.
+& Calabrese, J.M. (2018) Statistical inference for home range overlap.
+Methods in Ecology and Evolution, 9, 1679-1691.
