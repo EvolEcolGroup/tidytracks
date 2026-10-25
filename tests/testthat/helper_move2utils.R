@@ -21,3 +21,24 @@ create_spiky_tracks <- function(n = 300, n_spikes = 2, seed = 1) {
     track_id_column = "id"
   )
 }
+
+# create two random-walk tracks with irregular time intervals (track b is
+# stored first in the metadata)
+create_irregular_tracks <- function(n = 200, seed = 2) {
+  set.seed(seed)
+  make_track <- function(id) {
+    data.frame(
+      id = id,
+      x = cumsum(stats::rnorm(n, 0, 100)),
+      y = cumsum(stats::rnorm(n, 0, 100)),
+      time = as.POSIXct("2024-01-01", tz = "UTC") +
+        cumsum(round(stats::rexp(n, 1 / 600)) + 1)
+    )
+  }
+  df <- rbind(make_track("b"), make_track("a"))
+  move2::mt_as_move2(
+    sf::st_as_sf(df, coords = c("x", "y"), crs = 32630),
+    time_column = "time",
+    track_id_column = "id"
+  )
+}

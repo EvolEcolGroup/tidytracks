@@ -11,6 +11,11 @@
     `max_speed` in `event_flag_mcconnell()` and `tt_clean_mcconnell()`.
   * `track_suggest_max_speed()` suggests a maximum speed for each track from
     a break in the distribution of the speeds of its steps.
+  * `event_flag_thin_time()` and `tt_thin_time()` thin tracks to a time
+    interval (within a tolerance), keeping as many of the original events as
+    possible.
+  * `event_flag_thin_distance()` and `tt_thin_distance()` thin tracks by the
+    distance travelled along them.
 
 # tidytracks 0.2.1
 
