@@ -49,47 +49,62 @@ move2utils_args <- function(fn, args) {
   args
 }
 
-#' Prepare a move2 object for move2utils
+#' Check that a move2 object is ordered by time within each track
 #'
-#' `move2utils` gives an error for events without a location, and expects the
-#' events to be ordered by time within each track, whilst tidytracks allows
-#' both. This drops events with an empty geometry and orders the remaining
-#' ones by time, storing the original position of each event in the column
-#' `.tt_row` so that results can be matched back with `call_move2utils()`.
+#' Most `move2utils` functions work on the steps between consecutive events,
+#' and assume that the events of each track are stored together and ordered by
+#' time. Rather than reordering behind the scenes, the wrappers require an
+#' ordered object and suggest [tt_order_time()].
 #'
 #' @param x A `move2` object.
-#' @returns `x`, without events with an empty geometry, ordered by time within
-#'   each track, and with the additional integer column `.tt_row`.
+#' @returns `NULL`, invisibly; gives an error if `x` is not ordered by time
+#'   within each track.
 #' @keywords internal
 #' @noRd
-prepare_for_move2utils <- function(x) {
-  x$.tt_row <- seq_len(nrow(x))
-  x <- x[!sf::st_is_empty(x), ]
-  tt_order_time(x) # nolint: object_usage_linter.
+check_time_ordered <- function(x) {
+  # mt_is_time_ordered() returns FALSE if the times are not in order, but gives
+  # an error if the events of a track are not stored together
+  ordered <- tryCatch(
+    move2::mt_is_time_ordered(x),
+    error = function(e) FALSE
+  )
+  if (!isTRUE(ordered)) {
+    stop(
+      "x must be ordered by time within each track; ",
+      "use tt_order_time(x) to order it"
+    )
+  }
+  invisible(NULL)
 }
 
 #' Call a move2utils function and return event-level results
 #'
 #' Calls a `move2utils` function that returns its input `move2` object with
 #' added columns, and returns the requested columns matched to the events of
-#' `x`. Events without a location are not passed to `fn` and get `NA`.
+#' `x`. `move2utils` gives an error for events without a location, whilst
+#' tidytracks allows them: they are not passed to `fn`, and get `NA`.
 #'
 #' @param x A `move2` object.
 #' @param fn A `move2utils` function whose first argument is a `move2` object
 #'   and which returns that object with added columns.
 #' @param ... Further arguments passed to `fn`.
 #' @param cols Character vector of the columns of the output of `fn` to return.
+#' @param time_ordered Logical, whether `fn` requires the events to be ordered
+#'   by time within each track (see `check_time_ordered()`).
 #' @returns A tibble with one row per event of `x` (in the same order) and the
 #'   columns `cols`.
 #' @keywords internal
 #' @noRd
-call_move2utils <- function(x, fn, ..., cols) {
-  x_prep <- prepare_for_move2utils(x)
-  args <- move2utils_args(fn, c(list(x_prep), list(...)))
+call_move2utils <- function(x, fn, ..., cols, time_ordered = TRUE) {
+  if (time_ordered) {
+    check_time_ordered(x)
+  }
+  located <- !sf::st_is_empty(x)
+  args <- move2utils_args(fn, c(list(x[located, ]), list(...)))
   res <- do.call(fn, args)
   if (
-    nrow(res) != nrow(x_prep) ||
-      !identical(res$.tt_row, x_prep$.tt_row)
+    nrow(res) != sum(located) ||
+      !identical(move2::mt_time(res), move2::mt_time(x)[located])
   ) {
     stop("move2utils did not return one row for each event, in order")
   }
@@ -100,13 +115,12 @@ call_move2utils <- function(x, fn, ..., cols) {
       paste(missing_cols, collapse = ", ")
     )
   }
-  # match each column back to the original events, filling in the events that
-  # were not passed to move2utils with NA (indexing each vector keeps its
-  # class, e.g. units or POSIXct)
+  # fill in the events that were not passed to move2utils with NA (indexing
+  # each vector keeps its class, e.g. units or POSIXct)
   out <- lapply(cols, function(col) {
     values <- res[[col]]
     matched <- values[rep(NA_integer_, nrow(x))]
-    matched[res$.tt_row] <- values
+    matched[located] <- values
     matched
   })
   names(out) <- cols

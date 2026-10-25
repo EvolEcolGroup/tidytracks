@@ -1,9 +1,8 @@
 # a stand-in for a move2utils function: it records its arguments, checks that
-# it receives events with a location ordered by time, and returns its input
-# with an added column
+# it only receives events with a location, and returns its input with added
+# columns
 fake_move2utils_fn <- function(x, plot = TRUE, silent = FALSE) {
   stopifnot(!any(sf::st_is_empty(x)))
-  stopifnot(move2::mt_is_time_ordered(x))
   x$plot_arg <- plot
   x$silent_arg <- silent
   x$time_copy <- move2::mt_time(x)
@@ -35,10 +34,24 @@ test_that("move2utils_args turns off plots and narration by default", {
   )
 })
 
+test_that("check_time_ordered requires events ordered by time", {
+  expect_null(check_time_ordered(example_tt))
+  # times not in order within a track
+  expect_error(
+    check_time_ordered(example_tt[c(2, 1, 3:15), ]),
+    "x must be ordered by time within each track; use tt_order_time"
+  )
+  # events of a track not stored together
+  expect_error(
+    check_time_ordered(example_tt[c(1:3, 6:8, 4:5, 9:15), ]),
+    "x must be ordered by time within each track; use tt_order_time"
+  )
+  # duplicated times are allowed
+  expect_null(check_time_ordered(example_tt[c(1, 1:15), ]))
+})
+
 test_that("call_move2utils matches the results to the original events", {
   x <- example_tt
-  # shuffle the events (keeping each track together) and remove a location
-  x <- x[c(5, 3, 1, 2, 4, 10, 9, 8, 7, 6, 11:15), ]
   sf::st_geometry(x)[2] <- sf::st_point()
 
   res <- call_move2utils(
@@ -49,13 +62,31 @@ test_that("call_move2utils matches the results to the original events", {
   expect_s3_class(res, "tbl_df")
   expect_identical(names(res), c("time_copy", "plot_arg", "silent_arg"))
   expect_identical(nrow(res), nrow(x))
-  # results are in the order of the original events
   expect_equal(res$time_copy[-2], event_time(x)[-2])
   # the event without a location gets NA
   expect_true(all(is.na(res[2, ])))
   # plots and narration are turned off
   expect_true(all(!res$plot_arg[-2]))
   expect_true(all(res$silent_arg[-2]))
+})
+
+test_that("call_move2utils checks that events are ordered by time", {
+  x <- example_tt[c(5, 3, 1, 2, 4, 6:15), ]
+  expect_error(
+    call_move2utils(x, fake_move2utils_fn, cols = "time_copy"),
+    "x must be ordered by time within each track"
+  )
+  # unless the move2utils function does not need it
+  res <- call_move2utils(
+    x,
+    function(x) {
+      x$time_copy <- move2::mt_time(x)
+      x
+    },
+    cols = "time_copy",
+    time_ordered = FALSE
+  )
+  expect_equal(res$time_copy, event_time(x))
 })
 
 test_that("call_move2utils passes further arguments", {

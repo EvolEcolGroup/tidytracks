@@ -58,7 +58,8 @@ distances. Tracks are split at any step longer than
 
 Distances are great-circle distances for longitude/latitude coordinates, and
 planar distances for projected coordinates. Events without a location are
-ignored when measuring distances, and are never kept. To remove the events
+ignored when measuring distances, and are never kept. \code{x} must be ordered
+by time within each track (see \code{\link[=tt_order_time]{tt_order_time()}}). To remove the events
 that are not kept, use \code{\link[=tt_thin_distance]{tt_thin_distance()}}.
 }
 \examples{

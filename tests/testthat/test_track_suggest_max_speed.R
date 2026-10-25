@@ -71,17 +71,28 @@ test_that("track_suggest_max_speed gives NA when no break is found", {
   expect_true(all(is.na(suggested)))
 })
 
+test_that("track_suggest_max_speed requires events ordered by time", {
+  skip_if_not_installed("move2utils")
+  x <- create_spiky_tracks()
+  expect_error(
+    track_suggest_max_speed(x[c(2, 1, 3:nrow(x)), ]),
+    "x must be ordered by time within each track; use tt_order_time"
+  )
+})
+
 test_that("track_suggest_max_speed returns tracks in metadata order", {
   skip_if_not_installed("move2utils")
   x <- create_spiky_tracks()
   expected <- track_suggest_max_speed(x)
-  # reverse the order of the events, so that track b comes first
-  x_rev <- x[rev(seq_len(nrow(x))), ]
+  # store the events of track b first; the metadata order is unchanged
+  ids <- as.character(event_track_id(x))
+  x_b_first <- x[c(which(ids == "b"), which(ids == "a")), ]
   expect_identical(
-    unique(as.character(event_track_id(x_rev))),
+    unique(as.character(event_track_id(x_b_first))),
     c("b", "a")
   )
-  expect_equal(track_suggest_max_speed(x_rev), expected)
+  expect_identical(show_meta(x_b_first)$id, c("a", "b"))
+  expect_equal(track_suggest_max_speed(x_b_first), expected)
 })
 
 test_that("track_suggest_max_speed ignores events without a location", {

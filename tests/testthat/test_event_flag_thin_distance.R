@@ -101,14 +101,15 @@ test_that("event_flag_thin_distance warns about an unused tolerance", {
   )
 })
 
-test_that("event_flag_thin_distance returns flags in the order of the events", {
+test_that("event_flag_thin_distance requires events ordered by time", {
   skip_if_not_installed("move2utils")
   x <- tt_order_time(create_irregular_tracks())
-  expected <- event_flag_thin_distance(x, distance = as_units(1, "km"))
-  shuffled <- rev(seq_len(nrow(x)))
-  expect_identical(
-    event_flag_thin_distance(x[shuffled, ], distance = as_units(1, "km")),
-    expected[shuffled]
+  expect_error(
+    event_flag_thin_distance(
+      x[rev(seq_len(nrow(x))), ],
+      distance = as_units(1, "km")
+    ),
+    "x must be ordered by time within each track; use tt_order_time"
   )
 })
 

@@ -13,7 +13,8 @@
 #' the species (see also [max_speed_allometric()]). No suggestion (`NA`) is
 #' given when no break is found, e.g. when a track has no outliers, or when it
 #' has fewer than 10 steps with a positive speed. Events without a location
-#' are ignored.
+#' are ignored. `x` must be ordered by time within each track (see
+#' [tt_order_time()]).
 #'
 #' To inspect the distribution of speeds of a track, or to obtain a single
 #' suggestion pooling all tracks, use [move2utils::mt_suggest_speed_cap()]
@@ -52,10 +53,12 @@ track_suggest_max_speed <- function(
   }
   method <- match.arg(method)
 
+  check_time_ordered(x) # nolint: object_usage_linter.
+
   # get the track ids before removing events without a location, which could
   # remove whole tracks
   track_ids <- as.character(show_meta(x)[[move2::mt_track_id_column(x)]])
-  x <- prepare_for_move2utils(x) # nolint: object_usage_linter.
+  x <- x[!sf::st_is_empty(x), ]
   event_ids <- as.character(event_track_id(x))
 
   suggested <- vapply(

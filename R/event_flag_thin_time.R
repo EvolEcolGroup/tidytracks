@@ -50,7 +50,9 @@ event_flag_thin_time <- function(
     interval = interval,
     tolerance = tolerance,
     criterion = criterion,
-    cols = "thin_selected"
+    cols = "thin_selected",
+    # mt_thin_time() orders the events by time itself
+    time_ordered = FALSE
   )
   # events without a location are not passed to move2utils, and not kept
   res$thin_selected & !is.na(res$thin_selected)

@@ -86,7 +86,7 @@ test_that("event_flag_thin_time does not depend on the units of interval", {
   )
 })
 
-test_that("event_flag_thin_time returns flags in the order of the events", {
+test_that("event_flag_thin_time does not require events ordered by time", {
   skip_if_not_installed("move2utils")
   x <- tt_order_time(create_irregular_tracks())
   expected <- event_flag_thin_time(x, interval = as_units(30, "min"))

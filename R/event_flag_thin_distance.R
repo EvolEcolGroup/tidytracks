@@ -20,7 +20,8 @@
 #'
 #' Distances are great-circle distances for longitude/latitude coordinates, and
 #' planar distances for projected coordinates. Events without a location are
-#' ignored when measuring distances, and are never kept. To remove the events
+#' ignored when measuring distances, and are never kept. `x` must be ordered
+#' by time within each track (see [tt_order_time()]). To remove the events
 #' that are not kept, use [tt_thin_distance()].
 #'
 #' @param x A `move2` object.
