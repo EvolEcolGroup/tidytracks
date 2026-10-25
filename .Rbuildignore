@@ -11,3 +11,4 @@
 ^\.claude$
 ^_pkgdown\.yml$
 ^pkgdown$
+^dev$

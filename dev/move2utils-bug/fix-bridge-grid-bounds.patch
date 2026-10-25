@@ -1,0 +1,58 @@
+diff --git a/src/bgb_bbmm.c b/src/bgb_bbmm.c
+index f01c3f6..75d3e39 100644
+--- a/src/bgb_bbmm.c
++++ b/src/bgb_bbmm.c
+@@ -64,10 +64,10 @@ SEXP ans;
+ //			error("Lower x grid not large enough %i %.16f s=%f dt=%f a=%f k=%i l %f %f t %f %f, mux=%f, X0=%f, xRes=%f, ext=%f, var=%f", xStart, ti, sigma,  xt[k+1]-xt[k], alpha, k, xlocEr[k], xlocEr[k+1], xt[k], xt[k+1], mux, x0, xRes, ext, xs[k]);
+ 		  	error("Lower x grid not large enough, consider extending the raster in that direction or enlarging the ext argument");
+ 	  	}
+-	  	if(xEnd>nXGrid){
++	  	if(xEnd>=nXGrid){
+ 	  	  error("Higher x grid not large enough, consider extending the raster in that direction or enlarging the ext argument");
+ 		  }
+-  		if(yEnd>nYGrid){
++  		if(yEnd>=nYGrid){
+ 	  		error("Lower y grid not large enough, consider extending the raster in that direction or enlarging the ext argument");
+ 		  }
+ 	  	if(yStart<0){
+@@ -161,10 +161,10 @@ SEXP bgb(SEXP x, SEXP y, SEXP sPara,SEXP sOrth, SEXP t, SEXP locEr,SEXP xGrid, S
+ //			error("Lower x grid not large enough %i %.16f spara=%f sorth=%f dt=%f a=%f k=%i l %f %f t %f %f, mux=%f, X0=%f, xRes=%f, ext=%f, var=%f %f", xStart, ti, sigmaPara, sigmaOrth,  xt[k+1]-xt[k], alpha, k, xlocEr[k], xlocEr[k+1], xt[k], xt[k+1], mux, x0, xRes, ext, xsPara[k], xsOrth[k]);
+ 			error("The raster does not extent far enough in the X dimension towards the left side");
+ 		}
+-		if(xEnd>nXGrid){
++		if(xEnd>=nXGrid){
+ 			error("The raster does not extent far enough in the X dimension towards the right side");
+ 		}
+-		if(yEnd>nYGrid){
++		if(yEnd>=nYGrid){
+ 			error("The raster does not extent far enough in the Y dimension towards the lower side");
+ 		}
+ 		if(yStart<0){
+diff --git a/src/bgb_bbmm_omp.c b/src/bgb_bbmm_omp.c
+index e3c706b..cd1f682 100644
+--- a/src/bgb_bbmm_omp.c
++++ b/src/bgb_bbmm_omp.c
+@@ -89,9 +89,9 @@ SEXP dbbmm2_omp(SEXP x, SEXP y, SEXP s, SEXP t, SEXP locEr,
+ 
+         if (xStart < 0)
+             error("Lower x grid not large enough, consider extending the raster in that direction or enlarging the ext argument");
+-        if (xEnd > nXGrid)
++        if (xEnd >= nXGrid)
+             error("Higher x grid not large enough, consider extending the raster in that direction or enlarging the ext argument");
+-        if (yEnd > nYGrid)
++        if (yEnd >= nYGrid)
+             error("Lower y grid not large enough, consider extending the raster in that direction or enlarging the ext argument");
+         if (yStart < 0)
+             error("Higher y grid not large enough, consider extending the raster in that direction or enlarging the ext argument");
+@@ -198,9 +198,9 @@ SEXP bgb_omp(SEXP x, SEXP y, SEXP sPara, SEXP sOrth, SEXP t, SEXP locEr,
+ 
+         if (xStart < 0)
+             error("The raster does not extent far enough in the X dimension towards the left side");
+-        if (xEnd > nXGrid)
++        if (xEnd >= nXGrid)
+             error("The raster does not extent far enough in the X dimension towards the right side");
+-        if (yEnd > nYGrid)
++        if (yEnd >= nYGrid)
+             error("The raster does not extent far enough in the Y dimension towards the lower side");
+         if (yStart < 0)
+             error("The raster does not extent far enough in the Y dimension towards the upper side");
