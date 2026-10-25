@@ -22,7 +22,11 @@
 #'   resampled), and is standardised to sum to 1 over the grid. The `ctmm` UD
 #'   objects are also returned (in column `ud_ctmm`), so that they can be used
 #'   with other functions of `ctmm` (e.g. [ctmm::overlap()] or
-#'   [ctmm::meta()]).
+#'   [ctmm::meta()]), and so that [hr_tt_ud_iso()] can compute the
+#'   confidence intervals of the areas of the isopleths of the UDs (i.e.
+#'   `hr_tt_ud_iso(hr_tt_akde(x, models), levels)` returns the same isopleths
+#'   as `hr_tt_akde(x, models, levels = levels)`, without estimating the UDs
+#'   again).
 #'
 #'   The models are matched to the tracks by track id. As models are fitted to
 #'   each track, each group of `x` must contain a single track (which is the
@@ -348,7 +352,7 @@ hr_tt_akde <- function(
     names(res_tbl$ud) <- names(res_tbl$ud_ctmm) <- group_labels[i]
     class(res_tbl) <- c("hr_tt_ud_tbl", class(res_tbl))
     if (!is.null(levels)) {
-      res_tbl <- akde_iso(res_tbl, ud_ctmm, levels, ci_level)
+      res_tbl <- hr_tt_ud_iso(res_tbl, levels, ci_level = ci_level)
     }
     res_tbl
   })
@@ -569,21 +573,20 @@ ctmm_ud_to_rast <- function(ud, bbox, crs, id, model_name, method = "akde") {
   r
 }
 
-#' Isopleths of an AKDE, with confidence intervals of their areas
+#' Add the confidence intervals of the areas to the isopleths of an AKDE
 #'
-#' @param res_tbl A one-row `hr_tt_ud_tbl` with the UD of a group.
-#' @param ud_ctmm The `ctmm` `UD` object of the group.
-#' @param levels The levels of the isopleths.
+#' @param iso An `sf` object with the isopleths of a UD (as returned by
+#'   [hr_tt_ud_iso()] for a `SpatRaster`).
+#' @param ud_ctmm The `ctmm` `UD` object of the same UD.
 #' @param ci_level The confidence level of the intervals of the areas.
-#' @returns An `sf` tibble of isopleths (as returned by [hr_tt_ud_iso()]),
-#'   with the columns `area_low` and `area_high` added after `area`.
+#' @returns `iso`, with the columns `area_low` and `area_high` added after
+#'   `area`.
 #' @keywords internal
 #' @noRd
-akde_iso <- function(res_tbl, ud_ctmm, levels, ci_level) {
-  iso_tbl <- hr_tt_ud_iso(res_tbl, levels) # nolint: object_usage_linter.
+akde_iso_area_ci <- function(iso, ud_ctmm, ci_level) {
   # the confidence interval of the area for each level, as estimated by ctmm
   area_ci <- vapply(
-    iso_tbl$level,
+    iso$level,
     function(level) {
       summary(
         ud_ctmm,
@@ -595,10 +598,10 @@ akde_iso <- function(res_tbl, ud_ctmm, levels, ci_level) {
     numeric(2)
   )
   area_ci <- matrix(area_ci, nrow = 2)
-  iso_tbl$area_low <- units::as_units(area_ci[1, ], "m^2")
-  iso_tbl$area_high <- units::as_units(area_ci[2, ], "m^2")
+  iso$area_low <- units::as_units(area_ci[1, ], "m^2")
+  iso$area_high <- units::as_units(area_ci[2, ], "m^2")
   dplyr::relocate(
-    iso_tbl,
+    iso,
     dplyr::all_of(c("area_low", "area_high")),
     .after = "area"
   )

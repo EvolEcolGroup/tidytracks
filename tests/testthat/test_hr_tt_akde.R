@@ -111,6 +111,32 @@ test_that("hr_tt_akde returns isopleths with confidence intervals", {
   expect_error(hr_tt_akde(x, fits, levels = 2), "levels must be")
 })
 
+test_that("hr_tt_ud_iso adds the confidence intervals to AKDE isopleths", {
+  akde <- hr_tt_akde(x, fits)
+  iso <- hr_tt_ud_iso(akde, levels = c(0.5, 0.95))
+  expect_s3_class(iso, "hr_tt_poly_tbl")
+  expect_false("ud_ctmm" %in% names(iso))
+  expect_equal(
+    names(iso)[names(iso) %in% c("area", "area_low", "area_high")],
+    c("area", "area_low", "area_high")
+  )
+  # the same isopleths as estimating them directly with hr_tt_akde()
+  expect_equal(
+    iso,
+    hr_tt_akde(x, fits, levels = c(0.5, 0.95)),
+    ignore_attr = TRUE
+  )
+  # wider intervals with a higher confidence level
+  iso_99 <- hr_tt_ud_iso(akde, levels = c(0.5, 0.95), ci_level = 0.99)
+  expect_equal(iso_99$area, iso$area)
+  expect_true(all(iso_99$area_low < iso$area_low))
+  expect_true(all(iso_99$area_high > iso$area_high))
+  expect_error(
+    hr_tt_ud_iso(akde, levels = 0.95, ci_level = 1),
+    "ci_level must be"
+  )
+})
+
 test_that("hr_tt_akde UDs work with the other hr_tt_ functions", {
   akde <- hr_tt_akde(x, fits)
   iso <- hr_tt_ud_iso(akde, levels = 0.95)

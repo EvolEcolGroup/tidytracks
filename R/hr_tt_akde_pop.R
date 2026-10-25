@@ -361,7 +361,7 @@ hr_tt_akde_pop <- function(
     names(res_tbl$ud) <- names(res_tbl$ud_ctmm) <- group_labels[i]
     class(res_tbl) <- c("hr_tt_ud_tbl", class(res_tbl))
     if (!is.null(levels)) {
-      res_tbl <- akde_iso(res_tbl, pop_ud, levels, ci_level)
+      res_tbl <- hr_tt_ud_iso(res_tbl, levels, ci_level = ci_level)
     }
     res_tbl
   })

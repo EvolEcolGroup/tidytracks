@@ -109,7 +109,11 @@ Each UD is estimated by \code{ctmm} directly on the grid (i.e. it is not
 resampled), and is standardised to sum to 1 over the grid. The \code{ctmm} UD
 objects are also returned (in column \code{ud_ctmm}), so that they can be used
 with other functions of \code{ctmm} (e.g. \code{\link[ctmm:overlap]{ctmm::overlap()}} or
-\code{\link[ctmm:meta]{ctmm::meta()}}).
+\code{\link[ctmm:meta]{ctmm::meta()}}), and so that \code{\link[=hr_tt_ud_iso]{hr_tt_ud_iso()}} can compute the
+confidence intervals of the areas of the isopleths of the UDs (i.e.
+\code{hr_tt_ud_iso(hr_tt_akde(x, models), levels)} returns the same isopleths
+as \code{hr_tt_akde(x, models, levels = levels)}, without estimating the UDs
+again).
 
 The models are matched to the tracks by track id. As models are fitted to
 each track, each group of \code{x} must contain a single track (which is the
