@@ -41,12 +41,31 @@ tt_clean_mcconnell <- function(
     check_first_last = check_first_last
   ) # nolint: object_usage_linter.
 
+  apply_flag_action(x, valid_points, flag_action)
+}
+
+#' Act on the events flagged by a cleaning algorithm
+#'
+#' Shared by the `tt_clean_*()` functions to act on the events that are not
+#' valid.
+#'
+#' @param x A `move2` object.
+#' @param valid A logical vector with one value per event of `x`, `FALSE` for
+#'   the events to act on.
+#' @param flag_action One of "remove", "null", or "interpolate", to either
+#'   remove the flagged events, keep their time stamp but set their location to
+#'   NULL, or replace their location with a linearly interpolated location from
+#'   the valid events.
+#' @returns The `move2` object `x`, with the flagged events acted on.
+#' @keywords internal
+#' @noRd
+apply_flag_action <- function(x, valid, flag_action) {
   if (flag_action == "remove") {
-    x <- x[valid_points, ]
+    x <- x[valid, ]
   } else if (flag_action == "null") {
-    sf::st_geometry(x)[!valid_points] <- sf::st_point()
+    sf::st_geometry(x)[!valid] <- sf::st_point()
   } else if (flag_action == "interpolate") {
-    sf::st_geometry(x)[!valid_points] <- sf::st_point()
+    sf::st_geometry(x)[!valid] <- sf::st_point()
     x <- move2::mt_interpolate(x)
   }
   return(x)

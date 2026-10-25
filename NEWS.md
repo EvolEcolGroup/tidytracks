@@ -1,3 +1,17 @@
+# tidytracks (development version)
+
+## New features
+
+* tidytracks can now use functions from the package `move2utils`, a suggested
+  package installed from GitHub with
+  `remotes::install_github("move2universe/move2utils")`, through wrappers
+  that follow the tidytracks conventions:
+  * `max_speed_allometric()` predicts the maximum speed of an animal from its
+    body mass and mode of locomotion (Hirt et al. 2017), for use as
+    `max_speed` in `event_flag_mcconnell()` and `tt_clean_mcconnell()`.
+  * `track_suggest_max_speed()` suggests a maximum speed for each track from
+    a break in the distribution of the speeds of its steps.
+
 # tidytracks 0.2.1
 
 ## Bug fixes

@@ -57,11 +57,14 @@ Suggests:
     rmarkdown,
     reshape2,
     lwgeom,
+    move2utils,
     rnaturalearth,
     testthat (>= 3.0.0),
     trip,
     track2KBA,
     spelling
+Remotes:
+    move2universe/move2utils
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 LazyData: true
