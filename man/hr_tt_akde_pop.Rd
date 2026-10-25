@@ -107,6 +107,15 @@ In both cases, the uncertainty of the population home range areas
 reflects the variation among individuals, and it is large for groups
 with few individuals (as shown by small values of \code{dof_area}).
 
+\code{ctmm} estimates some of the population-level parameters (e.g. the
+bandwidth of the population kernels with \code{method = "pkde"}) with a
+stochastic optimiser, so the results can differ between runs. With
+\code{method = "pkde"}, both the population UD and the confidence intervals of
+its area can differ; with \code{method = "mean"}, the population UD is always
+the same, but the confidence intervals of its area (and \code{dof_area}) can
+differ. Set the seed of the random number generator (with \code{\link[=set.seed]{set.seed()}})
+before calling \code{hr_tt_akde_pop()} to get reproducible results.
+
 Population kernel density estimation assumes that the individuals of a
 group are a sample from a single population, whose home ranges are
 distributed around a common centre (following a Gaussian distribution).
@@ -136,7 +145,9 @@ buffalo_sub <- buffalo_tt \%>\%
   dplyr::ungroup()
 buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 buffalo_akde <- hr_tt_akde(buffalo_sub, buffalo_fit)
-# population UD with population kernel density estimation
+# population UD with population kernel density estimation (setting the seed
+# for reproducible results, see Details)
+set.seed(1)
 buffalo_pop <- hr_tt_akde_pop(
   buffalo_akde,
   tracks = buffalo_sub,

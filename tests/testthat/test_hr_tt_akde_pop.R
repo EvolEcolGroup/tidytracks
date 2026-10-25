@@ -13,6 +13,9 @@ akde <- suppressMessages(hr_tt_akde(x, fits))
 akde_south <- dplyr::filter(akde, track %in% c("Cilla", "Gabs", "Mvubu"))
 
 test_that("hr_tt_akde_pop estimates a population UD with pkde", {
+  # pkde optimises the population bandwidth with a stochastic optimiser, so we
+  # use the same seed to compare the UD with the one estimated by ctmm
+  set.seed(1)
   pop <- hr_tt_akde_pop(akde_south, tracks = x, models = fits)
   expect_s3_class(pop, "hr_tt_ud_tbl")
   expect_named(
@@ -32,17 +35,19 @@ test_that("hr_tt_akde_pop estimates a population UD with pkde", {
   expect_equal(pop$xmin, akde_south$xmin[1])
   expect_equal(pop$res, akde_south$res[1])
   expect_true(terra::compareGeom(pop$ud[[1]], akde_south$ud[[1]]))
-  # the UD is the one estimated by ctmm
+  # the UD is the one estimated by ctmm (on the same grid)
   tel <- suppressMessages(mt_as_telemetry(x))
+  set.seed(1)
   ctmm_pop <- ctmm::pkde(
     unname(tel[c("Cilla", "Gabs", "Mvubu")]),
     unname(akde_south$ud_ctmm),
+    grid = akde_south$ud_ctmm[[1]],
     trace = FALSE
   )
+  expect_equal(pop$ud_ctmm[[1]]$PDF, ctmm_pop$PDF)
   expect_equal(
     summary(pop$ud_ctmm[[1]], units = FALSE)$CI[1, "est"],
-    summary(ctmm_pop, units = FALSE)$CI[1, "est"],
-    tolerance = 0.01
+    summary(ctmm_pop, units = FALSE)$CI[1, "est"]
   )
 })
 
@@ -96,11 +101,21 @@ test_that("hr_tt_akde_pop extends the grid to contain the population UD", {
   # the grid is extended by whole cells, so it stays aligned
   expect_lt(pop$xmin, akde_coarse$xmin[1])
   expect_gt(pop$xmax, akde_coarse$xmax[1])
-  expect_equal(((pop$xmin - akde_coarse$xmin[1]) / 1000) %% 1, 0)
-  expect_equal(((pop$ymin - akde_coarse$ymin[1]) / 1000) %% 1, 0)
+  shift_cells <- c(
+    (pop$xmin - akde_coarse$xmin[1]) / 1000,
+    (pop$ymin - akde_coarse$ymin[1]) / 1000
+  )
+  expect_equal(shift_cells, round(shift_cells))
   expect_equal(pop$res, 1000)
   # and it contains the population UD
-  expect_gt(as.numeric(terra::metags(pop$ud[[1]])["density_sum"]), 0.999)
+  pop_tags <- terra::metags(pop$ud[[1]])
+  # recent versions of terra return the tags as a data.frame
+  density_sum <- if (is.data.frame(pop_tags)) {
+    pop_tags$value[pop_tags$name == "density_sum"]
+  } else {
+    pop_tags[["density_sum"]]
+  }
+  expect_gt(as.numeric(density_sum), 0.999)
   expect_equal(terra::global(pop$ud[[1]], "sum", na.rm = TRUE)$sum, 1)
 })
 
