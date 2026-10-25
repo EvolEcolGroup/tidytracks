@@ -365,6 +365,58 @@ estimating the mean home range area of the buffalo with `ctmm::meta()`:
 ctmm::meta(buffalo_akde$ud_ctmm)
 ```
 
+## Population home ranges
+
+The home ranges of several individuals can be combined into a population home
+range with `hr_tt_akde_pop()`. By default, it uses population kernel density
+estimation (`ctmm::pkde()`), which estimates the population UD from the
+locations of all the individuals, using the movement model of each of them;
+it therefore needs the tibble of tracks and the table of models, as well as
+the UDs. The uncertainty of the population home range area accounts for the
+variation among individuals, so it is large when combining few individuals.
+
+Population kernel density estimation assumes that the individuals are a
+sample from a single population, sharing an area. Cilla and Gabs live in the
+same area in the south of the park, whereas Pepper lives further north, so we
+combine the home ranges of Cilla and Gabs:
+
+```{r pop}
+south_akde <- filter(buffalo_akde, track %in% c("Cilla", "Gabs"))
+south_pop <- hr_tt_akde_pop(
+  south_akde,
+  tracks = buffalo_tt,
+  models = buffalo_fit,
+  levels = 0.95
+)
+south_pop %>%
+  sf::st_drop_geometry() %>%
+  transmute(
+    method,
+    n_ud,
+    area = units::set_units(area, "km^2"),
+    area_low = units::set_units(area_low, "km^2"),
+    area_high = units::set_units(area_high, "km^2")
+  )
+```
+
+```{r pop_plot}
+ggplot() +
+  geom_sf(
+    data = filter(buffalo_iso, level == 0.95, track %in% c("Cilla", "Gabs")),
+    mapping = aes(colour = track),
+    fill = NA
+  ) +
+  geom_sf(data = south_pop, fill = "grey50", alpha = 0.3) +
+  scale_x_continuous(breaks = seq(31.8, 32, by = 0.1)) +
+  labs(colour = "Buffalo")
+```
+
+Alternatively, with `method = "mean"`, the population UD is the average of
+the individual UDs (as with `hr_tt_ud_sum()`), with confidence intervals of
+the population home range area. If the table of UDs is grouped (e.g. after
+joining a variable from the metadata, such as sex, and grouping by it), a
+population home range is estimated for each group.
+
 ## Going further
 
 The fitted models can be used with any other function of `ctmm`, by
