@@ -221,9 +221,6 @@ hr_tt_kde <- function(
     names(res_tbl$ud) <- group_labels[group_id]
     # add a class to the tibble
     class(res_tbl) <- c("hr_tt_ud_tbl", class(res_tbl))
-    if (!is.null(levels)) {
-      res_tbl <- hr_tt_ud_iso(res_tbl, levels) # nolint: object_usage_linter.
-    }
     res_tbl
   }
 
@@ -236,14 +233,11 @@ hr_tt_kde <- function(
       )
   }
 
-  # combining the isopleths of the groups with rbind() and renaming the
-  # group_id column do not keep the hr_tt_poly_tbl class set by
-  # hr_tt_ud_iso(), so restore it
+  # the isopleths are computed once the UDs of the groups are combined (and
+  # the group_id column renamed): combining and renaming sf tables of
+  # isopleths would leave their attributes (e.g. agr) with the old names
   if (!is.null(levels)) {
-    class(kde_results) <- c(
-      "hr_tt_poly_tbl",
-      setdiff(class(kde_results), "hr_tt_poly_tbl")
-    )
+    kde_results <- hr_tt_ud_iso(kde_results, levels)
   }
 
   return(kde_results)
