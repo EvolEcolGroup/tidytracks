@@ -2,9 +2,12 @@
 # (vignettes/articles/ctmm_models.Rmd), from the buffalo dataset of ctmm
 # (Getz et al. 2007, Cross et al. 2016); run from the root of the package
 
-# we keep three buffalo, to keep the article quick to run
+# we keep four buffalo, to keep the article quick to run: Cilla, Gabs and
+# Mvubu, which share an area in the south of the park (so that the article
+# can estimate the population home range of a group of three), and Pepper,
+# whose sampling schedule changed
 data(buffalo, package = "ctmm")
-buffalo <- buffalo[c("Cilla", "Gabs", "Pepper")]
+buffalo <- buffalo[c("Cilla", "Gabs", "Mvubu", "Pepper")]
 
 # one row per location, with the id of the buffalo, the time (in UTC) and the
 # coordinates (rounded to 6 decimals, i.e. about 0.1 m)

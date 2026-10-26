@@ -56,9 +56,10 @@ National Park, South Africa (Getz et al. 2007, Cross et al. 2016), which are
 also used in the `ctmm` vignettes (`ctmm` provides them as a list of
 `telemetry` objects, which can be converted to a tibble of tracks with
 `mt_as_move2()`). Fitting movement models to long tracks takes a few minutes
-per track, so, to keep this article quick to run, we use three of the six
-buffalo of the dataset: Cilla and Gabs, whose home ranges overlap, and
-Pepper, whose GPS collar changed its sampling schedule (see below).
+per track, so, to keep this article quick to run, we use four of the six
+buffalo of the dataset: Cilla, Gabs and Mvubu, which share an area in the
+south of the park, and Pepper, whose GPS collar changed its sampling schedule
+(see below).
 
 The tracks are stored in a CSV file, with one row per location: the id of
 the buffalo (`buffalo_id`), the time in UTC (`date_time`), and the longitude
@@ -465,15 +466,19 @@ the UDs. The uncertainty of the population home range area accounts for the
 variation among individuals, so it is large when combining few individuals.
 
 Population kernel density estimation assumes that the individuals are a
-sample from a single population, sharing an area. Cilla and Gabs live in the
-same area in the south of the park, whereas Pepper lives further north, so we
-combine the home ranges of Cilla and Gabs. `ctmm` estimates some of the
-parameters of the population (e.g. the bandwidth of the population kernels)
-with a stochastic optimiser, so the results can differ between runs; to make
-them reproducible, we set the seed of the random number generator first:
+sample from a single population, sharing an area. Cilla, Gabs and Mvubu live
+in the same area in the south of the park, whereas Pepper lives further north,
+so we combine the home ranges of the three southern buffalo. Combining at
+least three individuals is also safer: with only two, the parameters of the
+population are poorly determined, and their estimation can fail. `ctmm`
+estimates some of these parameters (e.g. the bandwidth of the population
+kernels) with a stochastic optimiser, so the results can differ between runs;
+to make them reproducible, we set the seed of the random number generator
+first:
 
 ```{r pop}
-south_akde <- filter(buffalo_akde, buffalo_id %in% c("Cilla", "Gabs"))
+south_ids <- c("Cilla", "Gabs", "Mvubu")
+south_akde <- filter(buffalo_akde, buffalo_id %in% south_ids)
 set.seed(1)
 south_pop <- hr_tt_akde_pop(
   south_akde,
@@ -501,11 +506,7 @@ south_pop %>%
 ```{r pop_plot}
 ggplot() +
   geom_sf(
-    data = filter(
-      buffalo_iso,
-      level == 0.95,
-      buffalo_id %in% c("Cilla", "Gabs")
-    ),
+    data = filter(buffalo_iso, level == 0.95, buffalo_id %in% south_ids),
     mapping = aes(colour = buffalo_id),
     fill = NA
   ) +
