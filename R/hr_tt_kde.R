@@ -184,47 +184,82 @@ hr_tt_kde <- function(
     stop("res must contain finite, positive values")
   }
   bbox <- Map(align_kde_bbox, bbox, res)
+
+  # Groups usually share a grid (the default), and setting up a grid (its
+  # raster, the CRS of its isopleths, the coordinates of its cells) takes
+  # longer than the KDE of a small group, so each distinct grid is set up only
+  # once
+  crs_x <- sf::st_crs(x)
+  grid_key <- vapply(
+    seq_along(bbox),
+    function(i) paste(c(bbox[[i]], res[i]), collapse = " "),
+    character(1)
+  )
+  grids <- lapply(
+    match(unique(grid_key), grid_key),
+    function(i) {
+      kde_grid(bbox[[i]], res[i], crs_x, isopleths = !is.null(levels))
+    }
+  )
+  grid_of_group <- match(grid_key, unique(grid_key))
+  # the levels of the isopleths, from the smallest to the largest (as in
+  # hr_tt_ud_iso())
+  iso_levels <- sort(levels)
+
   group_id <- NULL # hack to avoid it being flagged as global in checks
-  kde_results <- foreach::foreach(
-    group_id = group_unique,
-    .combine = rbind # dplyr::bind_rows
-  ) %do% {
+  uds <- foreach::foreach(group_id = group_unique) %do% {
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, , drop = FALSE]
-    h_val <- h[group_id]
-    bbox_val <- bbox[[group_id]]
-    res_val <- res[group_id]
-    # Create kernel for each level
-    kde <- kde_one_group(
+    grid <- grids[[grid_of_group[group_id]]]
+    # Compute the UD
+    density <- kde_density(
       xy_sub,
-      crs = sf::st_crs(x),
-      bbox = bbox_val,
-      res = res_val,
-      h = h_val,
-      id = group_id
+      bbox = bbox[[group_id]],
+      res = res[group_id],
+      h = h[group_id]
     )
-    # row for the table to integrate the results
-    res_tbl <- tibble::tibble(
-      group_id = group_labels[group_id],
-      method = "kde",
-      h = h_val,
-      xmin = bbox_val[["xmin"]],
-      ymin = bbox_val[["ymin"]],
-      xmax = bbox_val[["xmax"]],
-      ymax = bbox_val[["ymax"]],
-      res = res_val
-    )
-
-    # if returning the full kde object, we simply add it to the kde column
-    # add the kde to the tibble as a list column
-    res_tbl$ud <- list(kde)
-    names(res_tbl$ud) <- group_labels[group_id]
-    # add a class to the tibble
-    class(res_tbl) <- c("hr_tt_ud_tbl", class(res_tbl))
-    if (!is.null(levels)) {
-      res_tbl <- hr_tt_ud_iso(res_tbl, levels) # nolint: object_usage_linter.
+    if (is.null(levels)) {
+      # return the full UD, as a raster
+      kde_raster(density, grid, h = h[group_id], id = group_id)
+    } else {
+      # return its isopleths (the UD itself is not needed, so no raster is
+      # built for it)
+      cud <- hr_tt_cud(density$ud) # nolint: object_usage_linter.
+      iso <- cud_isopleths( # nolint: object_usage_linter.
+        cud,
+        x = grid$x,
+        y = grid$y,
+        levels = iso_levels,
+        ops_crs = if (grid$longlat) grid$iso_crs else sf::NA_crs_,
+        cud_raster = function() {
+          terra::rast(grid$template, vals = as.vector(t(cud)), names = "cud")
+        }
+      )
+      iso_sf(iso, grid$iso_crs) # nolint: object_usage_linter.
     }
-    res_tbl
+  }
+
+  # one row per group
+  kde_results <- tibble::tibble(
+    group_id = group_labels[group_unique],
+    method = "kde",
+    h = h[group_unique],
+    xmin = vapply(bbox[group_unique], function(b) b[["xmin"]], numeric(1)),
+    ymin = vapply(bbox[group_unique], function(b) b[["ymin"]], numeric(1)),
+    xmax = vapply(bbox[group_unique], function(b) b[["xmax"]], numeric(1)),
+    ymax = vapply(bbox[group_unique], function(b) b[["ymax"]], numeric(1)),
+    res = res[group_unique]
+  )
+  if (is.null(levels)) {
+    # the full UDs, as a list column of rasters
+    kde_results$ud <- stats::setNames(uds, group_labels[group_unique])
+    class(kde_results) <- c("hr_tt_ud_tbl", class(kde_results))
+  } else {
+    # one row per group and level, with the isopleths and their areas
+    kde_results <- isopleth_table( # nolint: object_usage_linter.
+      kde_results,
+      uds
+    )
   }
 
   # if there was a single grouping variable, rename the group_id column
@@ -300,22 +335,69 @@ align_kde_bbox <- function(bbox, res) {
 }
 
 
+#' Set up a grid for the KDE
+#'
+#' Internal function called by `hr_tt_kde` for each distinct grid: it creates
+#' an empty raster for the grid (from which the rasters of the UDs are made,
+#' which is faster than creating each of them from scratch), and works out
+#' the CRS of the isopleths and the coordinates of the cells, all of which
+#' are the same for all the groups that share the grid.
+#'
+#' @param bbox A named vector of four elements: xmin, ymin, xmax, ymax to define
+#'   the bounding box of the grid.
+#' @param res The resolution of the grid (in the units of the projection of x).
+#' @param crs the crs of the coordinates.
+#' @param isopleths whether isopleths will be computed on the grid.
+#' @returns A list with `template` (an empty `terra::SpatRaster`) and, if
+#'   `isopleths` is `TRUE`, `iso_crs` (the CRS of the isopleths, as obtained
+#'   from the raster), `longlat` (whether that CRS is in longitude/latitude),
+#'   and `x` and `y` (the coordinates of the centres of the columns, and of the
+#'   rows from south to north).
+#' @keywords internal
+#' @noRd
+kde_grid <- function(bbox, res, crs, isopleths) {
+  n <- round(c(
+    (bbox[["xmax"]] - bbox[["xmin"]]) / res,
+    (bbox[["ymax"]] - bbox[["ymin"]]) / res
+  ))
+  template <- terra::rast(
+    nrows = n[2],
+    ncols = n[1],
+    xmin = bbox[["xmin"]],
+    xmax = bbox[["xmax"]],
+    ymin = bbox[["ymin"]],
+    ymax = bbox[["ymax"]],
+    crs = crs$wkt
+  )
+  if (!isopleths) {
+    return(list(template = template))
+  }
+  iso_crs <- sf::st_crs(terra::crs(template))
+  list(
+    template = template,
+    iso_crs = iso_crs,
+    longlat = isTRUE(sf::st_is_longlat(iso_crs)),
+    x = terra::xFromCol(template, seq_len(n[1])),
+    y = terra::yFromRow(template, rev(seq_len(n[2])))
+  )
+}
+
 #' Compute the kde for a given group
 #'
 #' This is the internal function that is called by `hr_tt_kde` to compute the
 #' kde for a given group. It is not intended to be called directly by the user.
 #'
 #' @param xy a matrix of coordinates
-#' @param crs the crs of the coordinates (to use in the geometry)
 #' @param bbox A named vector of four elements: xmin, ymin, xmax, ymax to define
 #'   the bounding box of the grid over which to compute the KDE.
 #' @param res The resolution of the grid (in the units of the projection of x).
 #' @param h The bandwidth for the kernel density estimation.
-#' @param id The identifier for the group (used in raster metadata).
-#' @return A `terra::SpatRaster`.
+#' @returns A list with `ud` (a matrix of densities that sum to 1, laid out as
+#'   a raster: rows from north to south) and `density_sum` (the sum of the
+#'   densities before standardisation).
 #' @keywords internal
 #' @noRd
-kde_one_group <- function(xy, crs, bbox, res, h, id) {
+kde_density <- function(xy, bbox, res, h) {
   kde <- MASS::kde2d(
     xy[, 1],
     xy[, 2],
@@ -342,26 +424,36 @@ kde_one_group <- function(xy, crs, bbox, res, h, id) {
   # standardise the density values to sum to 1
   kde$z <- kde$z / sum_density
 
-  # turn it into a raster (flipping the x axis appropriately)
+  # lay it out as a raster (flipping the x axis appropriately)
   kde$z <- t(kde$z)
-  r <- terra::rast(
-    kde$z[rev(seq_len(nrow(kde$z))), ],
-    crs = crs$wkt,
-    extent = terra::ext(
-      bbox[["xmin"]],
-      bbox[["xmax"]],
-      bbox[["ymin"]],
-      bbox[["ymax"]]
-    )
+  list(
+    ud = kde$z[rev(seq_len(nrow(kde$z))), , drop = FALSE],
+    density_sum = sum_density
   )
-  names(r) <- "ud"
+}
+
+#' Turn the kde of a group into a raster
+#'
+#' @param density the kde, as returned by `kde_density()`.
+#' @param grid the grid, as returned by `kde_grid()`.
+#' @param h The bandwidth for the kernel density estimation.
+#' @param id The identifier for the group (used in raster metadata).
+#' @return A `terra::SpatRaster`.
+#' @keywords internal
+#' @noRd
+kde_raster <- function(density, grid, h, id) {
+  # rasters are filled row by row
+  r <- terra::rast(
+    grid$template,
+    vals = as.vector(t(density$ud)),
+    names = "ud"
+  )
   terra::metags(r) <- c(
     paste0("id = ", id),
     "method = kde",
     paste0("h = ", h),
-    paste0("density_sum = ", sum_density)
+    paste0("density_sum = ", density$density_sum)
   )
-
   r
 }
 

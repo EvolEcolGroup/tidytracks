@@ -270,8 +270,72 @@ per call even with a sequential plan; full UDs should stay sequential. This requ
 suggested packages. For `hr_tt_mcp()`, the gain is too small to matter.
 
 Before that, the fixed cost of `hr_tt_kde()` with `levels` (about 110 ms per
-track, against 3 to 6 ms for `hr_tt_mcp()` and `hr_tt_locoh()`) is worth
-reducing, which would benefit all users: a profile of 200 tracks of 50
-locations shows 63% of the time in building the isopleths
-(`hr_tt_ud_iso()`, per track), 22% in the KDE itself, 18% in looking up the
-parameters of the CRS, and much of the rest in terra's own overheads.
+track, against 3 to 6 ms for `hr_tt_mcp()` and `hr_tt_locoh()`) was worth
+reducing, which benefits all users: this has now been done (see below), so
+the timings of `hr_tt_kde()` above, and its gains from parallel processing,
+predate it.
+
+# KDE: fixed costs (fixed)
+
+Of the ~130 ms that `hr_tt_kde(levels = ...)` took for a track of 50
+locations, the KDE itself (`MASS::kde2d()`) took 0.6 ms. The rest was spent
+on terra and sf objects built for each track:
+
+| step (one track of 50 locations)                                    | ms  |
+|---------------------------------------------------------------------|----:|
+| `MASS::kde2d()`                                                     | 0.6 |
+| raster of the UD (`terra::rast()` parses the CRS every time)        |  14 |
+| raster of the cumulative UD (`hr_tt_cud()`)                         |  12 |
+| contour lines (`terra::as.contour()`)                               |  16 |
+| contour lines to sf (`sf::st_as_sf()`, which parses the CRS again)  |   9 |
+| rest of `hr_tt_ud_iso()` on a raster (each sf operation with a CRS looks up its parameters with PROJ) | ~60 |
+| `hr_tt_ud_iso()` on a table of one row (`mutate()`, `unnest()`, for each track) | ~28 |
+
+terra's own overhead is a few milliseconds per call (its objects are Rcpp
+modules, whose creation and method lookups are slow), and
+`terra::as.contour()` is `grDevices::contourLines()` on the values of the
+raster (sampled down to 100,000 cells first, for larger rasters), wrapped in
+a SpatVector. So, now:
+
+- `hr_tt_kde()` sets up each distinct grid once (a raster to copy, the CRS,
+  the coordinates of the cells), and, when `levels` is set, computes the
+  isopleths from the matrix of the KDE, with `grDevices::contourLines()`, as
+  `terra::as.contour()` would, without building any terra object (for grids
+  of more than 100,000 cells, it still goes through `terra::as.contour()`, to
+  keep its sampling);
+- the geometric operations on the isopleths of projected data are carried
+  out without a CRS (it makes no difference to GEOS, but spares sf from
+  looking up the CRS each time); for longitude/latitude, the CRS is kept, as
+  sf then uses s2;
+- the CRS is looked up once (or once per distinct CRS for `hr_tt_ud_iso()`
+  on a table), all the areas are computed in one call, and the tracks are
+  combined once.
+
+`hr_tt_ud_iso()` uses the same code, for a raster or a table of UDs. The
+results are the same as before (rasters: values, CRS, extent, names and
+metadata; isopleths: levels, areas and coordinates), for 22 cases covering
+projected and unprojected data, several grouping variables, a grid per group,
+odd levels, holes, a grid of 196,000 cells and saved UDs; the multipolygons no
+longer carry stray copies of the attributes of their column (including the
+CRS), which `sf::st_cast()` left on them. Time in s, for tracks simulated as
+above:
+
+| function                          | tracks x locations | before | after | speed-up |
+|-----------------------------------|-------------------:|-------:|------:|---------:|
+| `hr_tt_kde(levels = c(0.5, 0.95))` |          1 x 5000 |  0.217 | 0.098 |      2.2 |
+|                                   |           4 x 5000 |  0.657 | 0.194 |      3.4 |
+|                                   |          20 x 1000 |  2.887 | 0.298 |      9.7 |
+|                                   |           200 x 50 | 25.767 | 2.029 |     12.7 |
+|                                   |          1000 x 50 | 143.372 | 9.230 |    15.5 |
+| `hr_tt_kde()` (full UDs)          |           1 x 5000 |  0.072 | 0.059 |      1.2 |
+|                                   |           4 x 5000 |  0.235 | 0.141 |      1.7 |
+|                                   |          20 x 1000 |  0.512 | 0.266 |      1.9 |
+|                                   |           200 x 50 |  4.469 | 1.831 |      2.4 |
+|                                   |          1000 x 50 | 18.716 | 8.905 |      2.1 |
+| `hr_tt_ud_iso()` on a table       |           1 x 5000 |  0.096 | 0.041 |      2.3 |
+|                                   |           4 x 5000 |  0.370 | 0.063 |      5.9 |
+|                                   |          20 x 1000 |  2.122 | 0.219 |      9.7 |
+|                                   |           200 x 50 | 22.740 | 1.697 |     13.4 |
+
+The isopleths now cost about 10 ms per short track, and full UDs about 9 ms
+(mostly creating the terra raster, which full UDs need).

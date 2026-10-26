@@ -12,6 +12,11 @@
 * `hr_tt_mcp()` is much faster with many tracks (e.g. 5 times faster for 1000
   tracks), as it no longer looks up the CRS for each track and combines the
   tracks in one go.
+* `hr_tt_kde()` and `hr_tt_ud_iso()` are much faster, with the same results:
+  e.g. 15 times faster for the isopleths of 1000 short tracks, and 2 times for
+  their full UDs. The isopleths are computed from the matrix of the UD, without
+  building terra objects for them, and the CRS is looked up once rather than
+  for every track and operation.
 
 # tidytracks 0.2.1
 
