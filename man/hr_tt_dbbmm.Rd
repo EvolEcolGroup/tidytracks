@@ -36,9 +36,8 @@ metres, either ungrouped or grouped by its track id column.}
 \item{location_error}{The error of the locations (the standard deviation of
 the position). Either a \code{units} object (e.g. \code{as_units(20, "m")}) with one
 value for all events or one value per event, the name of a column of \code{x}
-with the errors (as a \code{units} object, or as numbers in metres), or \code{NULL}
-(the default) to treat locations as exact. Missing values are replaced by
-the median error.}
+with the errors (as a \code{units} object), or \code{NULL} (the default) to treat
+locations as exact. Missing values are replaced by the median error.}
 
 \item{window_size}{The number of events in the sliding window used to
 estimate the motion variance (an odd number). It is a number of events
@@ -53,9 +52,9 @@ considered as breakpoints when looking for changes in the motion variance
 \code{ymax}), in the coordinates of \code{x}, defining the grid shared by all
 tracks. If \code{NULL}, the grid covers all the bridges (see Details).}
 
-\item{res}{The resolution of the grid, either as a \code{units} object (e.g.
-\code{as_units(50, "m")}) or as a number in metres. If \code{NULL}, it is chosen
-from the width of the bridges (see Details).}
+\item{res}{The resolution of the grid, as a \code{units} object (e.g.
+\code{as_units(50, "m")}). If \code{NULL}, it is chosen from the width of the
+bridges (see Details).}
 
 \item{time_step}{The time step used to integrate the bridges, as a \code{units}
 object (e.g. \code{as_units(10, "s")}). If \code{NULL}, the default of \code{move2utils}

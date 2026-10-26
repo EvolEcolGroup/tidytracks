@@ -51,7 +51,14 @@ test_that("hr_tt_dbbmm gives the correct errors", {
     hr_tt_dbbmm(x, levels = 1.5),
     "levels must be between 0 and 1"
   )
-  expect_error(hr_tt_dbbmm(x, res = -1), "res must be a single positive")
+  expect_error(
+    hr_tt_dbbmm(x, res = 100),
+    "res must be a units object of length 1"
+  )
+  expect_error(
+    hr_tt_dbbmm(x, res = as_units(-1, "m")),
+    "res must be a positive distance"
+  )
   expect_error(
     hr_tt_dbbmm(x, res = as_units(1, "s")),
     "res must have units of length"
@@ -64,6 +71,12 @@ test_that("hr_tt_dbbmm gives the correct errors", {
   expect_error(
     hr_tt_dbbmm(x, location_error = "not_a_column"),
     "location_error \\('not_a_column'\\) is not a column of x"
+  )
+  # a column of plain numbers is not assumed to be in metres
+  x$error_metres <- rep(20, nrow(x))
+  expect_error(
+    hr_tt_dbbmm(x, location_error = "error_metres"),
+    "the column 'error_metres' used for location_error must be a units object"
   )
   expect_error(
     hr_tt_dbbmm(x, location_error = as_units(c(10, 20), "m")),
@@ -141,13 +154,13 @@ test_that("hr_tt_dbbmm uses a given grid", {
     x,
     location_error = as_units(20, "m"),
     bbox = test_bbox,
-    res = 250
+    res = as_units(250, "m")
   )
   expect_equal(terra::res(ud$ud[[1]]), c(250, 250))
   expect_equal(ud$xmin[1], test_bbox[["xmin"]])
   expect_equal(ud$ymin[1], test_bbox[["ymin"]])
   expect_equal(terra::xmin(ud$ud[[1]]), test_bbox[["xmin"]])
-  # res can be given with units
+  # res can be given in any units of length
   expect_equal_ud_tbl(
     hr_tt_dbbmm(
       x,
@@ -189,7 +202,7 @@ test_that("hr_tt_dbbmm checks that the grid contains the bridges", {
         xmin = locations[["xmin"]], ymin = locations[["ymin"]],
         xmax = locations[["xmax"]], ymax = locations[["ymax"]]
       ),
-      res = 50
+      res = as_units(50, "m")
     ),
     paste(
       "the grid is not large enough to contain the bridges: bbox must",
@@ -228,14 +241,14 @@ test_that("hr_tt_dbbmm accepts location errors in several forms", {
     x,
     location_error = as_units(20, "m"),
     bbox = test_bbox,
-    res = 100
+    res = as_units(100, "m")
   )
   expect_equal_ud_tbl(
     hr_tt_dbbmm(
       x,
       location_error = as_units(0.02, "km"),
       bbox = test_bbox,
-      res = 100
+      res = as_units(100, "m")
     ),
     expected
   )
@@ -245,30 +258,23 @@ test_that("hr_tt_dbbmm accepts location errors in several forms", {
       x,
       location_error = as_units(rep(20, nrow(x)), "m"),
       bbox = test_bbox,
-      res = 100
+      res = as_units(100, "m")
     ),
     expected
   )
-  # a column with units, or with numbers in metres
-  x$error_units <- as_units(rep(20, nrow(x)), "m")
-  x$error_metres <- rep(20, nrow(x))
+  # a column with units, in any units of length
+  x$error_units <- as_units(rep(0.02, nrow(x)), "km")
   expect_equal_ud_tbl(
     hr_tt_dbbmm(x, location_error = "error_units", bbox = test_bbox,
-      res = 100
-    ),
-    expected
-  )
-  expect_equal_ud_tbl(
-    hr_tt_dbbmm(x, location_error = "error_metres", bbox = test_bbox,
-      res = 100
+      res = as_units(100, "m")
     ),
     expected
   )
   # missing values are replaced by the median
-  x$error_metres[5] <- NA
+  x$error_units[5] <- NA
   expect_equal_ud_tbl(
-    hr_tt_dbbmm(x, location_error = "error_metres", bbox = test_bbox,
-      res = 100
+    hr_tt_dbbmm(x, location_error = "error_units", bbox = test_bbox,
+      res = as_units(100, "m")
     ),
     expected
   )
@@ -284,7 +290,7 @@ test_that("hr_tt_dbbmm passes the sliding window and time step", {
     margin = 5,
     time_step = as_units(30, "s"),
     bbox = test_bbox,
-    res = 100
+    res = as_units(100, "m")
   )
   expect_identical(ud$window_size, c(21, 21))
   expect_identical(ud$margin, c(5, 5))
@@ -313,13 +319,13 @@ test_that("hr_tt_dbbmm ignores events without a location", {
       x_empty,
       location_error = as_units(20, "m"),
       bbox = test_bbox,
-      res = 100
+      res = as_units(100, "m")
     ),
     hr_tt_dbbmm(
       x[-c(10, 20), ],
       location_error = as_units(20, "m"),
       bbox = test_bbox,
-      res = 100
+      res = as_units(100, "m")
     )
   )
   # location errors given per event are matched to the located events
@@ -328,13 +334,13 @@ test_that("hr_tt_dbbmm ignores events without a location", {
       x_empty,
       location_error = as_units(c(rep(20, 50), rep(30, nrow(x) - 50)), "m"),
       bbox = test_bbox,
-      res = 100
+      res = as_units(100, "m")
     ),
     hr_tt_dbbmm(
       x[-c(10, 20), ],
       location_error = as_units(c(rep(20, 48), rep(30, nrow(x) - 50)), "m"),
       bbox = test_bbox,
-      res = 100
+      res = as_units(100, "m")
     )
   )
 })

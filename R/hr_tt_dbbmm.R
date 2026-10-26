@@ -58,9 +58,8 @@
 #' @param location_error The error of the locations (the standard deviation of
 #'   the position). Either a `units` object (e.g. `as_units(20, "m")`) with one
 #'   value for all events or one value per event, the name of a column of `x`
-#'   with the errors (as a `units` object, or as numbers in metres), or `NULL`
-#'   (the default) to treat locations as exact. Missing values are replaced by
-#'   the median error.
+#'   with the errors (as a `units` object), or `NULL` (the default) to treat
+#'   locations as exact. Missing values are replaced by the median error.
 #' @param window_size The number of events in the sliding window used to
 #'   estimate the motion variance (an odd number). It is a number of events
 #'   rather than a duration: with an event every 2 minutes, a window of 15
@@ -71,9 +70,9 @@
 #' @param bbox A named vector of four elements (`xmin`, `ymin`, `xmax`,
 #'   `ymax`), in the coordinates of `x`, defining the grid shared by all
 #'   tracks. If `NULL`, the grid covers all the bridges (see Details).
-#' @param res The resolution of the grid, either as a `units` object (e.g.
-#'   `as_units(50, "m")`) or as a number in metres. If `NULL`, it is chosen
-#'   from the width of the bridges (see Details).
+#' @param res The resolution of the grid, as a `units` object (e.g.
+#'   `as_units(50, "m")`). If `NULL`, it is chosen from the width of the
+#'   bridges (see Details).
 #' @param time_step The time step used to integrate the bridges, as a `units`
 #'   object (e.g. `as_units(10, "s")`). If `NULL`, the default of `move2utils`
 #'   is used (a fraction of the shortest interval between events).
@@ -241,8 +240,9 @@ hr_tt_bridge <- function(
   # for distances, minutes for time_step); this is done on the full x, as a
   # per-event location_error refers to all its events
   location_error <- bridge_location_error(x, location_error)
+  # to_metres() also checks that res is a single positive distance
   if (!is.null(res)) {
-    res <- bridge_res(res)
+    res <- to_metres(res, "res") # nolint: object_usage_linter.
   }
   if (!is.null(time_step)) {
     time_step <- bridge_time_step(time_step)
@@ -432,8 +432,7 @@ hr_tt_bridge <- function(
 #'
 #' @param x A `move2` object.
 #' @param location_error `NULL`, a `units` object with one value or one value
-#'   per event, or the name of a column of `x` (with a `units` object, or
-#'   numbers in metres).
+#'   per event, or the name of a column of `x` (with a `units` object).
 #' @returns A numeric vector of errors in metres, one per event of `x`.
 #' @keywords internal
 #' @noRd
@@ -443,15 +442,10 @@ bridge_location_error <- function(x, location_error) {
     return(rep(0, nrow(x)))
   }
   if (is.character(location_error) && length(location_error) == 1) {
-    if (!location_error %in% names(x)) {
-      stop("location_error ('", location_error, "') is not a column of x")
-    }
-    location_error <- x[[location_error]]
-    # a column of plain numbers is taken to be in metres, as is common for
-    # the error columns of tracking data
-    if (!inherits(location_error, "units")) {
-      location_error <- units::as_units(location_error, "m")
-    }
+    location_error <- location_error_column( # nolint: object_usage_linter.
+      x,
+      location_error
+    )
   }
   # plain numbers are rejected, as elsewhere in tidytracks
   if (
@@ -485,24 +479,6 @@ bridge_location_error <- function(x, location_error) {
     stop("location_error must not be negative")
   }
   location_error
-}
-
-#' Convert the resolution of the grid to metres
-#'
-#' @param res A `units` object with length units, or a number in metres.
-#' @returns The resolution in metres.
-#' @keywords internal
-#' @noRd
-bridge_res <- function(res) {
-  # a plain number is accepted (in metres, the units of the crs of x), as for
-  # the res of hr_tt_kde()
-  if (inherits(res, "units")) {
-    res <- to_metres(res, "res") # nolint: object_usage_linter.
-  }
-  if (!is.numeric(res) || length(res) != 1 || !is.finite(res) || res <= 0) {
-    stop("res must be a single positive distance")
-  }
-  res
 }
 
 #' Convert the integration time step to minutes, as used by move2utils
