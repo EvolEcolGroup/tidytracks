@@ -52,7 +52,9 @@ home range area (see \code{\link[ctmm:akde]{ctmm::akde()}}). Default is \code{TR
 
 \item{tolerance}{The target error of the numerical computations of
 \code{\link[ctmm:akde]{ctmm::akde()}} (its \code{error} argument), which also defines the default grid
-(the probability mass of each UD outside the grid). Default is 0.001.}
+(the probability mass of each UD outside the grid). A warning is given
+if more than this (and more than 1\%) of a UD is outside the grid (e.g.
+with a \code{bbox} that is too small). Default is 0.001.}
 
 \item{ci_level}{The confidence level of the confidence intervals of the
 home range areas, returned when \code{levels} is set. Default is 0.95.}

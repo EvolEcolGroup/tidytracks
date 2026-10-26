@@ -86,6 +86,9 @@ test_that("hr_tt_akde uses the grid it is given", {
     ),
     "the grid of group Cilla only contains"
   )
+  # the default grid misses up to about `tolerance` of the UD, which does not
+  # give a warning, even with a large tolerance
+  expect_no_warning(hr_tt_akde(x, fits, tolerance = 0.05))
   expect_error(hr_tt_akde(x, fits, res = c(1, 2, 3)), "res must be")
   expect_error(hr_tt_akde(x, fits, res = -1), "finite, positive")
 })

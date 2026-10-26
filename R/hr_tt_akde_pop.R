@@ -290,7 +290,8 @@ hr_tt_akde_pop <- function(
       crs = crs,
       id = group_labels[i],
       model_name = "population",
-      method = method_name
+      method = method_name,
+      tolerance = tolerance
     )
     # row for the table to integrate the results
     res_tbl <- tibble::tibble(

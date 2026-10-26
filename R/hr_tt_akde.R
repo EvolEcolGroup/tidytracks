@@ -71,7 +71,9 @@
 #'   home range area (see [ctmm::akde()]). Default is `TRUE`.
 #' @param tolerance The target error of the numerical computations of
 #'   [ctmm::akde()] (its `error` argument), which also defines the default grid
-#'   (the probability mass of each UD outside the grid). Default is 0.001.
+#'   (the probability mass of each UD outside the grid). A warning is given
+#'   if more than this (and more than 1%) of a UD is outside the grid (e.g.
+#'   with a `bbox` that is too small). Default is 0.001.
 #' @param ci_level The confidence level of the confidence intervals of the
 #'   home range areas, returned when `levels` is set. Default is 0.95.
 #' @returns Either a `tibble` of class `hr_tt_ud_tbl`, or, if `levels` is not
@@ -231,7 +233,8 @@ hr_tt_akde <- function(
       bbox = grid_bbox,
       crs = crs,
       id = group_labels[i],
-      model_name = model_name
+      model_name = model_name,
+      tolerance = tolerance
     )
     group_row <- tibble::tibble(
       group_id = group_labels[i],
@@ -581,10 +584,21 @@ akde_grid <- function(bbox, res) {
 #'   metadata).
 #' @param method The method used to estimate the UD (used in raster
 #'   metadata).
+#' @param tolerance The probability mass of the UD that can be outside the
+#'   grid (the `tolerance` of [hr_tt_akde()], which the default grid aims
+#'   for): a warning is given if more than this, or more than 1%, is outside.
 #' @returns A `terra::SpatRaster` with a layer `ud` that sums to 1.
 #' @keywords internal
 #' @noRd
-ctmm_ud_to_rast <- function(ud, bbox, crs, id, model_name, method = "akde") {
+ctmm_ud_to_rast <- function(
+  ud,
+  bbox,
+  crs,
+  id,
+  model_name,
+  method = "akde",
+  tolerance = 0.001
+) {
   # a ctmm UD is a list which stores the probability density at the points of
   # the grid (the centres of the cells) in `PDF`, a matrix with rows along x
   # and columns along y, and the resolution of the grid in `dr`; the
@@ -601,10 +615,12 @@ ctmm_ud_to_rast <- function(ud, bbox, crs, id, model_name, method = "akde") {
     stop("the UD estimated by ctmm is not on the requested grid")
   }
   # the probability mass within the grid, which is less than 1 by the mass
-  # of the UD that falls outside the grid (very little with the default grid,
-  # but possibly more with a grid given by the user)
+  # of the UD that falls outside the grid (at most about `tolerance` with the
+  # default grid, but possibly more with a grid given by the user); we warn
+  # only if more is outside than the tolerance allows (and at least 1%, so
+  # that tiny losses with a small tolerance do not give warnings)
   sum_density <- sum(pmf, na.rm = TRUE)
-  if (sum_density < 0.99) {
+  if (sum_density < 1 - max(0.01, tolerance)) {
     warning(
       "the grid of group ", id, " only contains ",
       round(100 * sum_density, 1), "% of the utilisation distribution; ",
