@@ -7,6 +7,12 @@
   adaptive sum of distances (`"a"`). The neighbour search and the hulls are
   computed in C++ (with Rcpp), and the results match `amt::hr_locoh()`.
 
+## Minor improvements
+
+* `hr_tt_mcp()` is much faster with many tracks (e.g. 5 times faster for 1000
+  tracks), as it no longer looks up the CRS for each track and combines the
+  tracks in one go.
+
 # tidytracks 0.2.1
 
 ## Bug fixes

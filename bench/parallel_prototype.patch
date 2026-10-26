@@ -1,0 +1,100 @@
+--- a/DESCRIPTION
++++ b/DESCRIPTION
+@@ -27,6 +27,7 @@
+     units
+ Imports:
+   cli,
++  doFuture,
+   dplyr,
+   foreach,
+   geodist,
+--- a/R/hr_tt_kde.R
++++ b/R/hr_tt_kde.R
+@@ -1,3 +1,5 @@
++`%dofuture%` <- doFuture::`%dofuture%`
++
+ #' Quantify the home range using kernel density estimation
+ #'
+ #' This function estimates the home range of an animal using kernel density
+@@ -185,19 +187,19 @@
+   }
+   bbox <- Map(align_kde_bbox, bbox, res)
+   group_id <- NULL # hack to avoid it being flagged as global in checks
++  crs_x <- sf::st_crs(x)
++  xy_by_group <- lapply(group_unique, function(g) xy[group_index == g, , drop = FALSE])
+   kde_results <- foreach::foreach(
+-    group_id = group_unique,
++    group_id = group_unique, xy_sub = xy_by_group,
+     .combine = rbind # dplyr::bind_rows
+-  ) %do% {
+-    # Filter the data for the current group
+-    xy_sub <- xy[group_index == group_id, , drop = FALSE]
++  ) %dofuture% {
+     h_val <- h[group_id]
+     bbox_val <- bbox[[group_id]]
+     res_val <- res[group_id]
+     # Create kernel for each level
+     kde <- kde_one_group(
+       xy_sub,
+-      crs = sf::st_crs(x),
++      crs = crs_x,
+       bbox = bbox_val,
+       res = res_val,
+       h = h_val,
+@@ -223,10 +225,16 @@
+     class(res_tbl) <- c("hr_tt_ud_tbl", class(res_tbl))
+     if (!is.null(levels)) {
+       res_tbl <- hr_tt_ud_iso(res_tbl, levels) # nolint: object_usage_linter.
++    } else {
++      # rasters cannot be sent between processes as they are: wrap them
++      res_tbl$ud <- lapply(res_tbl$ud, terra::wrap)
+     }
+     res_tbl
+   }
+ 
++  if (is.null(levels)) {
++    kde_results$ud <- lapply(kde_results$ud, terra::unwrap)
++  }
+   # if there was a single grouping variable, rename the group_id column
+   if (length(dplyr::group_vars(x)) == 1) {
+     kde_results <- kde_results %>%
+--- a/R/hr_tt_locoh.R
++++ b/R/hr_tt_locoh.R
+@@ -1,3 +1,5 @@
++`%dofuture%` <- doFuture::`%dofuture%`
++
+ #' Quantify the home range using local convex hulls (LoCoH)
+ #'
+ #' This function estimates the home range of an animal using the local convex
+@@ -162,9 +164,8 @@
+   longlat <- isTRUE(sf::st_is_longlat(crs))
+ 
+   group_id <- NULL # hack to avoid it being flagged as global in checks
+-  locoh_results <- foreach::foreach(group_id = group_unique) %do% {
+-    # Filter the data for the current group
+-    xy_sub <- xy[group_index == group_id, , drop = FALSE]
++  xy_by_group <- lapply(group_unique, function(g) xy[group_index == g, , drop = FALSE])
++  locoh_results <- foreach::foreach(group_id = group_unique, xy_sub = xy_by_group) %dofuture% {
+     # take n for this group now: inside tibble() below, group_id refers to
+     # the column created there, not to the index of the group
+     n_val <- n[group_id]
+--- a/R/hr_tt_mcp.R
++++ b/R/hr_tt_mcp.R
+@@ -1,3 +1,5 @@
++`%dofuture%` <- doFuture::`%dofuture%`
++
+ #' Quantify the home range using minimum convex polygon (MCP)
+ #'
+ #' This function estimates the home range of an animal using the minimum convex
+@@ -64,9 +66,8 @@
+   }
+ 
+   group_id <- NULL # hack to avoid it being flagged as global in checks
+-  mcp_results <- foreach::foreach(group_id = group_unique) %do% {
+-    # Filter the data for the current group
+-    xy_sub <- xy[group_index == group_id, , drop = FALSE]
++  xy_by_group <- lapply(group_unique, function(g) xy[group_index == g, , drop = FALSE])
++  mcp_results <- foreach::foreach(group_id = group_unique, xy_sub = xy_by_group) %dofuture% {
+     # Create MCP for each level (without a CRS, which is set for all groups
+     # at once below)
+     geometry <- mcp_one_group(xy_sub, levels)

@@ -173,5 +173,105 @@ with identical results:
 (type `"k"`; up to 4.4 times for type `"r"`). The remaining ~6 ms per track is
 mostly the union of its hulls, building `sfc` objects, and building a small
 tibble per track; assembling the columns of all tracks and building one tibble
-at the end could roughly halve it again. `hr_tt_mcp()` has the same fixed
-costs (16 ms per track for 1000 tracks of 50 locations).
+at the end could roughly halve it again.
+
+`hr_tt_mcp()` had the same fixed costs (63% of its time went to
+`sf::st_area()`, called for each track, and 21% to combining the tracks one at
+a time), and has the same fix, also with identical results:
+
+| tracks | locations per track | before | after | speed-up |
+|-------:|--------------------:|-------:|------:|---------:|
+|      1 |                5000 |     29 |    31 |      0.9 |
+|     10 |                 500 |    163 |    58 |      2.8 |
+|    100 |                  50 |   1520 |   336 |      4.5 |
+|   1000 |                  50 |  16483 |  3311 |      5.0 |
+
+# Can tracks be processed in parallel?
+
+`hr_tt_mcp()`, `hr_tt_kde()` and `hr_tt_locoh()` compute the home range of
+each track (or group) independently, one after the other, so the tracks could
+be processed in parallel.
+
+## None of them uses several threads within a track
+
+Their CPU time is the same as their elapsed time (20,000 locations): they use
+a single thread. The one exception is on systems where R uses a
+multithreaded BLAS (OpenBLAS, MKL, or Accelerate on macOS; R's own reference
+BLAS, the default on Windows and macOS, is single-threaded): `MASS::kde2d()`,
+used by `hr_tt_kde()`, computes the densities with a matrix product, which
+dominates on fine grids (88 s for 20,000 locations with `res = 10`, here) and
+would then use several threads. When running tracks in parallel on such a
+system, the BLAS should be limited to one thread per worker (e.g. with
+`RhpcBLASctl::blas_set_num_threads(1)`), to avoid oversubscribing the cores.
+
+## Prototype and timings
+
+`parallel_prototype.patch` replaces `%do%` with doFuture's `%dofuture%` in
+the loop over the tracks of the three functions, so that they follow the plan
+set by the user with `future::plan()`. Each task only receives the coordinates
+of its tracks, and full UDs (terra rasters, which cannot be sent between
+processes as they are) are wrapped in the workers and unwrapped at the end.
+`parallel_benchmark.R` times the current code and the prototype, with a
+sequential plan, 2 and 4 R sessions (`multisession`, which works on all
+systems) and 4 forked processes (`multicore`, not available on Windows), on 4
+cores. All the plans give results identical to the current code.
+
+Time in s, and speed-up of 4 sessions over the current code:
+
+| method                | tracks x locations | current | futures, sequential | 2 sessions | 4 sessions | 4 forks | speed-up |
+|-----------------------|-------------------:|--------:|--------------------:|-----------:|-----------:|--------:|---------:|
+| `hr_tt_mcp()`         |           4 x 5000 |   0.045 |               0.120 |      0.192 |      0.238 |   0.245 |      0.2 |
+|                       |           20 x 1000 |  0.081 |               0.215 |      0.207 |      0.279 |   0.291 |      0.3 |
+|                       |           200 x 50 |   0.723 |               0.598 |      0.659 |      0.552 |   0.780 |      1.3 |
+|                       |          1000 x 50 |   3.683 |               2.946 |      2.602 |      2.027 |   2.251 |      1.8 |
+| `hr_tt_kde()`, levels |           4 x 5000 |   0.521 |               0.841 |      0.628 |      0.556 |   0.756 |      0.9 |
+|                       |           20 x 1000 |  2.213 |               2.447 |      1.414 |      1.200 |   1.429 |      1.8 |
+|                       |           200 x 50 |  23.183 |              21.778 |     12.720 |      7.328 |   8.425 |      3.2 |
+|                       |          1000 x 50 | 112.554 |             114.796 |     63.620 |     36.149 |  36.410 |      3.1 |
+| `hr_tt_kde()`, full UD |          4 x 5000 |   0.178 |               0.446 |      0.407 |      0.488 |   0.518 |      0.4 |
+|                       |           20 x 1000 |  0.398 |               0.807 |      0.696 |      0.698 |   0.909 |      0.6 |
+|                       |           200 x 50 |   2.650 |               6.184 |      3.770 |      3.120 |   3.455 |      0.8 |
+| `hr_tt_locoh()`       |           4 x 5000 |   0.870 |               1.218 |      0.613 |      0.519 |   0.628 |      1.7 |
+|                       |           20 x 1000 |  0.941 |               0.977 |      0.680 |      0.548 |   0.613 |      1.7 |
+|                       |           200 x 50 |   1.507 |               1.656 |      1.066 |      0.817 |   1.212 |      1.8 |
+|                       |          1000 x 50 |   6.179 |               6.011 |      4.262 |      2.990 |   3.611 |      2.1 |
+
+(Both builds include the fix of the fixed costs of `hr_tt_mcp()` above. The
+timings exclude starting the workers: starting 4 R sessions takes about
+2.5 s, once per R session, and their first use of terra, for the first KDE,
+a few more seconds; forks start in 0.2 s. The 4 sessions timing of the KDE of
+4 x 5000 locations was taken again with warm workers.)
+
+- `hr_tt_kde()` with `levels` gains the most: 3.1 to 3.2 times faster on 4
+  cores with many tracks (113 s down to 36 s for 1000 tracks), as each track
+  takes long (about 110 ms; see below).
+- `hr_tt_locoh()` gains 1.7 to 2.1 times, with few long tracks or many short
+  ones.
+- `hr_tt_mcp()` only gains with hundreds of tracks (1.3 to 1.8 times, i.e.
+  about 1.7 s for 1000 tracks), and is slower with few tracks, as the
+  overhead of the futures (about 0.1 s per call, up to 0.3 s) exceeds the
+  work.
+- `hr_tt_kde()` returning full UDs is slower in parallel (0.4 to 0.8 times):
+  the rasters must be wrapped, sent back and unwrapped, which costs more than
+  computing them.
+- The gains are well below 4 times, as the data and results must be sent
+  between processes, and as part of the work (combining the tracks, the areas)
+  remains sequential.
+
+## Recommendation
+
+Parallel processing is worth offering for `hr_tt_kde()` with `levels` and for
+`hr_tt_locoh()`, as an opt-in that follows `future::plan()`. To leave the
+default (sequential) use as fast as it is now, the loop should only go
+through futures when the plan has more than one worker
+(`future::nbrOfWorkers() > 1`), as the futures cost about 0.1 s (up to 0.3 s)
+per call even with a sequential plan; full UDs should stay sequential. This requires adding
+`future` and `doFuture` (or `future.apply`) to the dependencies, possibly as
+suggested packages. For `hr_tt_mcp()`, the gain is too small to matter.
+
+Before that, the fixed cost of `hr_tt_kde()` with `levels` (about 110 ms per
+track, against 3 to 6 ms for `hr_tt_mcp()` and `hr_tt_locoh()`) is worth
+reducing, which would benefit all users: a profile of 200 tracks of 50
+locations shows 63% of the time in building the isopleths
+(`hr_tt_ud_iso()`, per track), 22% in the KDE itself, 18% in looking up the
+parameters of the CRS, and much of the rest in terra's own overheads.
