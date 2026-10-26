@@ -65,25 +65,25 @@ write.csv(
 first_last <- !duplicated(shags$bird_id) |
   !duplicated(shags$bird_id, fromLast = TRUE)
 
-# 45 consecutive failed fixes (1.5 hours) while kb_43 flies away from the
-# colony, which leave a gap in the track
-failed_run <- which(shags$bird_id == "kb_43")[1066:1110]
-# 40 isolated failed fixes, which make the sampling interval irregular
+# 35 consecutive failed fixes (70 minutes) while kb_43 flies away from the
+# colony, which leave a gap of more than an hour in the track
+failed_run <- which(shags$bird_id == "kb_43")[1076:1110]
+# 20 isolated failed fixes, which make the sampling interval irregular
 candidates <- setdiff(which(!first_last), failed_run)
-failed_isolated <- sample(candidates, 40)
+failed_isolated <- sample(candidates, 20)
 failed <- c(failed_run, failed_isolated)
 shags$lon[failed] <- 0
 shags$lat[failed] <- 0
 
 # duplicated records, of events that are not failed fixes
 candidates <- setdiff(candidates, failed_isolated)
-dup_rows <- sample(candidates, 25)
-# 10 records that duplicate the time stamp of an event, but are at null island
-dup_null_island <- shags[dup_rows[1:10], ]
+dup_rows <- sample(candidates, 20)
+# 5 records that duplicate the time stamp of an event, but are at null island
+dup_null_island <- shags[dup_rows[1:5], ]
 dup_null_island$lon <- 0
 dup_null_island$lat <- 0
 # 15 exact copies of an event
-dup_exact <- shags[dup_rows[11:25], ]
+dup_exact <- shags[dup_rows[6:20], ]
 
 # place each duplicate right after the original event
 shags_raw <- rbind(shags, dup_null_island, dup_exact)

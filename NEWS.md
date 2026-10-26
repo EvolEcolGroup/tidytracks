@@ -8,9 +8,6 @@
   that follow the tidytracks conventions: physical quantities are given as
   `units` objects, and events without a location are allowed. Projected
   coordinates must be in metres, as `move2utils` assumes.
-  * `max_speed_allometric()` predicts the maximum speed of an animal from its
-    body mass and mode of locomotion (Hirt et al. 2017), for use as
-    `max_speed` in `event_flag_mcconnell()` and `tt_clean_mcconnell()`.
   * `track_suggest_max_speed()` suggests a maximum speed for each track from
     a break in the distribution of the speeds of its steps.
   * `event_flag_outliers()` and `tt_clean_outliers()` detect outliers with
