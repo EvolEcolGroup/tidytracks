@@ -1,16 +1,26 @@
 skip_if_not_installed("ctmm")
 
 # fit the models and estimate the UDs once, as fitting is slow: Cilla, Gabs
-# and Mvubu share an area in the south, Pepper and Toni an area in the north
+# and Mvubu share an area in the south, Pepper, Queen and Toni an area in the
+# north
 x <- ctmm_example_tt(
   n = 60,
-  tracks = c("Cilla", "Gabs", "Mvubu", "Pepper", "Toni")
+  tracks = c("Cilla", "Gabs", "Mvubu", "Pepper", "Queen", "Toni")
 )
-show_meta(x)$herd <- c("south", "south", "south", "north", "north")
+show_meta(x)$herd <- ifelse(
+  show_meta(x)$track %in% c("Cilla", "Gabs", "Mvubu"),
+  "south",
+  "north"
+)
 fits <- suppressMessages(ctmm_tt_fit(x, model = "ou"))
 akde <- suppressMessages(hr_tt_akde(x, fits))
 # the three buffalo of the south
 akde_south <- dplyr::filter(akde, track %in% c("Cilla", "Gabs", "Mvubu"))
+
+# the population estimates of ctmm are stochastic, so each test that estimates
+# a population UD sets the seed first; the groups have at least three
+# individuals, as the population model of ctmm can fail to converge with two
+# (depending on the seed)
 
 test_that("hr_tt_akde_pop estimates a population UD with pkde", {
   # pkde optimises the population bandwidth with a stochastic optimiser, so we
@@ -52,6 +62,7 @@ test_that("hr_tt_akde_pop estimates a population UD with pkde", {
 })
 
 test_that("hr_tt_akde_pop averages the UDs with method = 'mean'", {
+  set.seed(1)
   pop <- hr_tt_akde_pop(akde_south, method = "mean")
   expect_equal(pop$method, "akde_mean")
   # the average UD is the normalised sum of the UDs (up to the small
@@ -76,14 +87,19 @@ test_that("hr_tt_akde_pop averages the UDs with method = 'mean'", {
 })
 
 test_that("hr_tt_akde_pop estimates a population UD for each group", {
-  akde_groups <- akde %>%
+  set.seed(1)
+  # we use a coarse grid to make the test fast: with these short tracks, the
+  # population UD of the north herd is wide, and the fine default grid would
+  # be extended to tens of millions of cells to contain it
+  akde_coarse <- suppressMessages(hr_tt_akde(x, fits, res = 1000))
+  akde_groups <- akde_coarse %>%
     dplyr::left_join(show_meta(x), by = "track") %>%
     dplyr::group_by(herd)
   pop <- hr_tt_akde_pop(akde_groups, tracks = x, models = fits)
   expect_s3_class(pop, "hr_tt_ud_tbl")
   expect_equal(pop$herd, c("north", "south"))
   expect_equal(names(pop)[1], "herd")
-  expect_equal(pop$n_ud, c(2, 3))
+  expect_equal(pop$n_ud, c(3, 3))
   for (ud in pop$ud) {
     expect_equal(terra::global(ud, "sum", na.rm = TRUE)$sum, 1)
   }
@@ -96,6 +112,7 @@ test_that("hr_tt_akde_pop extends the grid to contain the population UD", {
   # pooling buffalo from two distant areas gives a very wide population UD
   # (see the Details of the documentation), which extends beyond the grid of
   # the individual UDs (we use a coarse grid to make the test fast)
+  set.seed(1)
   akde_coarse <- suppressMessages(hr_tt_akde(x, fits, res = 1000))
   pop <- hr_tt_akde_pop(akde_coarse, tracks = x, models = fits)
   # the grid is extended by whole cells, so it stays aligned
@@ -142,6 +159,7 @@ test_that("bbox_union returns the bounding box containing all the others", {
 })
 
 test_that("hr_tt_akde_pop returns isopleths with confidence intervals", {
+  set.seed(1)
   iso <- hr_tt_akde_pop(
     akde_south,
     tracks = x,
@@ -162,6 +180,7 @@ test_that("hr_tt_akde_pop returns isopleths with confidence intervals", {
 test_that("hr_tt_akde_pop optimises the weights of the individuals", {
   skip_on_cran()
   skip_if_not_installed("quadprog")
+  set.seed(1)
   pop <- hr_tt_akde_pop(akde_south, tracks = x, models = fits, weights = TRUE)
   expect_length(pop$ud_ctmm[[1]]$weights, 3)
   expect_equal(sum(pop$ud_ctmm[[1]]$weights), 1)

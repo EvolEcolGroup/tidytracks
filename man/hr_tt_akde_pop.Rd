@@ -21,7 +21,8 @@ hr_tt_akde_pop(
 \item{x}{A tibble of UDs estimated with \code{\link[=hr_tt_akde]{hr_tt_akde()}} (with the \code{ctmm} UD
 objects in column \code{ud_ctmm}), possibly grouped (e.g. with
 \code{\link[dplyr:group_by]{dplyr::group_by()}}) to estimate a population UD for each group. Each
-group must contain at least two UDs.}
+group must contain at least two UDs (but see Details: groups of at least
+three are recommended).}
 
 \item{method}{The method used to combine the UDs, either \code{"pkde"} (the
 default) or \code{"mean"} (see Details).}
@@ -116,6 +117,13 @@ the same, but the confidence intervals of its area (and \code{dof_area}) can
 differ. Set the seed of the random number generator (with \code{\link[=set.seed]{set.seed()}})
 before calling \code{hr_tt_akde_pop()} to get reproducible results.
 
+Use groups of at least three individuals: with both methods, \code{ctmm} fits
+a population model to the movement models of the individuals, whose
+parameters are poorly determined with only two individuals, so that its
+optimiser can fail to converge and run for a very long time (depending on
+the seed). If a call runs for much longer than expected, add individuals
+to the group if possible, or try another seed.
+
 Population kernel density estimation assumes that the individuals of a
 group are a sample from a single population, whose home ranges are
 distributed around a common centre (following a Gaussian distribution).
@@ -155,6 +163,7 @@ buffalo_pop <- hr_tt_akde_pop(
 )
 buffalo_pop
 # or as the average of the individual UDs, with the 95\% home range
+set.seed(1)
 hr_tt_akde_pop(buffalo_akde, method = "mean", levels = 0.95)
 \dontshow{\}) # examplesIf}
 }
