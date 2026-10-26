@@ -158,9 +158,10 @@ iso_sf <- function(iso, crs) {
 #' @keywords internal
 #' @noRd
 isopleth_table <- function(x, iso) {
-  res_tbl <- x %>%
-    dplyr::mutate(iso = iso) %>%
-    tidyr::unnest(dplyr::any_of("iso"))
+  # assigned directly rather than with mutate(), which would evaluate it
+  # within each group of a grouped x (e.g. from hr_tt_ud_sum())
+  x$iso <- iso
+  res_tbl <- tidyr::unnest(x, dplyr::any_of("iso"))
   res_tbl <- sf::st_as_sf(res_tbl)
   if (nrow(res_tbl) > 0) {
     res_tbl$area <- sf::st_area(res_tbl)
