@@ -42,6 +42,11 @@
 * `hr_tt_ud_sum()` now works with tables of UDs from methods other than
   `hr_tt_kde()` (it previously required the column `h`), and keeps the
   parameters of the method (e.g. `window_size` and `margin`).
+* The new article "Reading and cleaning data", on the package website, shows
+  how to read tracking data (including date-times in different formats), and
+  how to clean them step by step: removing locations at null island,
+  duplicated records and outliers, interpolating missing locations, and
+  resampling tracks to a regular interval.
 
 # tidytracks 0.2.1
 
