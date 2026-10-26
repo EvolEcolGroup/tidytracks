@@ -1,3 +1,12 @@
+# tidytracks (development version)
+
+## New features
+
+* `hr_tt_locoh()` estimates home ranges with local convex hulls (LoCoH), with
+  a fixed number of neighbours (`type = "k"`), a fixed radius (`"r"`) or an
+  adaptive sum of distances (`"a"`). The neighbour search and the hulls are
+  computed in C++ (with Rcpp), and the results match `amt::hr_locoh()`.
+
 # tidytracks 0.2.1
 
 ## Bug fixes
