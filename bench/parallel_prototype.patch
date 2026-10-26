@@ -16,48 +16,75 @@
  #' Quantify the home range using kernel density estimation
  #'
  #' This function estimates the home range of an animal using kernel density
-@@ -185,19 +187,19 @@
-   }
-   bbox <- Map(align_kde_bbox, bbox, res)
+@@ -207,10 +209,24 @@
+   iso_levels <- sort(levels)
+ 
    group_id <- NULL # hack to avoid it being flagged as global in checks
-+  crs_x <- sf::st_crs(x)
-+  xy_by_group <- lapply(group_unique, function(g) xy[group_index == g, , drop = FALSE])
-   kde_results <- foreach::foreach(
--    group_id = group_unique,
-+    group_id = group_unique, xy_sub = xy_by_group,
-     .combine = rbind # dplyr::bind_rows
--  ) %do% {
+-  uds <- foreach::foreach(group_id = group_unique) %do% {
 -    # Filter the data for the current group
 -    xy_sub <- xy[group_index == group_id, , drop = FALSE]
+-    grid <- grids[[grid_of_group[group_id]]]
++  # each task only receives the coordinates of its groups
++  xy_by_group <- lapply(
++    group_unique,
++    function(g) xy[group_index == g, , drop = FALSE]
++  )
++  # rasters cannot be sent to other processes as they are, so the tasks get
++  # the grids without their template (which they only need for isopleths of
++  # large grids, and then rebuild; packing it would shift its extent by a few
++  # units in the last place)
++  grids_packed <- lapply(grids, function(g) {
++    g$template <- NULL
++    g
++  })
++  uds <- foreach::foreach(
++    group_id = group_unique,
++    xy_sub = xy_by_group
 +  ) %dofuture% {
-     h_val <- h[group_id]
-     bbox_val <- bbox[[group_id]]
-     res_val <- res[group_id]
-     # Create kernel for each level
-     kde <- kde_one_group(
++    grid <- grids_packed[[grid_of_group[group_id]]]
+     # Compute the UD
+     density <- kde_density(
        xy_sub,
--      crs = sf::st_crs(x),
-+      crs = crs_x,
-       bbox = bbox_val,
-       res = res_val,
-       h = h_val,
-@@ -223,10 +225,16 @@
-     class(res_tbl) <- c("hr_tt_ud_tbl", class(res_tbl))
-     if (!is.null(levels)) {
-       res_tbl <- hr_tt_ud_iso(res_tbl, levels) # nolint: object_usage_linter.
-+    } else {
-+      # rasters cannot be sent between processes as they are: wrap them
-+      res_tbl$ud <- lapply(res_tbl$ud, terra::wrap)
-     }
-     res_tbl
-   }
- 
-+  if (is.null(levels)) {
-+    kde_results$ud <- lapply(kde_results$ud, terra::unwrap)
-+  }
-   # if there was a single grouping variable, rename the group_id column
-   if (length(dplyr::group_vars(x)) == 1) {
-     kde_results <- kde_results %>%
+@@ -219,8 +235,8 @@
+       h = h[group_id]
+     )
+     if (is.null(levels)) {
+-      # return the full UD, as a raster
+-      kde_raster(density, grid, h = h[group_id], id = group_id)
++      # return the density: its raster is built below, in the main process
++      density
+     } else {
+       # return its isopleths (the UD itself is not needed, so no raster is
+       # built for it)
+@@ -232,7 +248,13 @@
+         levels = iso_levels,
+         ops_crs = if (grid$longlat) grid$iso_crs else sf::NA_crs_,
+         cud_raster = function() {
+-          terra::rast(grid$template, vals = as.vector(t(cud)), names = "cud")
++          template <- kde_grid(
++            bbox[[group_id]],
++            res[group_id],
++            crs_x,
++            isopleths = FALSE
++          )$template
++          terra::rast(template, vals = as.vector(t(cud)), names = "cud")
+         }
+       )
+       iso_sf(iso, grid$iso_crs) # nolint: object_usage_linter.
+@@ -252,6 +274,13 @@
+   )
+   if (is.null(levels)) {
+     # the full UDs, as a list column of rasters
++    uds <- Map(
++      function(density, g) {
++        kde_raster(density, grids[[grid_of_group[g]]], h = h[g], id = g)
++      },
++      uds,
++      group_unique
++    )
+     kde_results$ud <- stats::setNames(uds, group_labels[group_unique])
+     class(kde_results) <- c("hr_tt_ud_tbl", class(kde_results))
+   } else {
 --- a/R/hr_tt_locoh.R
 +++ b/R/hr_tt_locoh.R
 @@ -1,3 +1,5 @@

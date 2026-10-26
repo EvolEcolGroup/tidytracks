@@ -209,71 +209,85 @@ system, the BLAS should be limited to one thread per worker (e.g. with
 `parallel_prototype.patch` replaces `%do%` with doFuture's `%dofuture%` in
 the loop over the tracks of the three functions, so that they follow the plan
 set by the user with `future::plan()`. Each task only receives the coordinates
-of its tracks, and full UDs (terra rasters, which cannot be sent between
-processes as they are) are wrapped in the workers and unwrapped at the end.
-`parallel_benchmark.R` times the current code and the prototype, with a
-sequential plan, 2 and 4 R sessions (`multisession`, which works on all
-systems) and 4 forked processes (`multicore`, not available on Windows), on 4
-cores. All the plans give results identical to the current code.
+of its tracks. Terra rasters cannot be sent between processes as they are,
+so, for `hr_tt_kde()`, the tasks compute the densities (and the isopleths,
+which need no raster except on grids of more than 100,000 cells, for which
+they rebuild the raster of the grid), and the rasters of full UDs are built
+by the main process. `parallel_benchmark.R` times the current code and the
+prototype, with a sequential plan, 2 and 4 R sessions (`multisession`, which
+works on all systems) and 4 forked processes (`multicore`, not available on
+Windows), on 4 cores. All the plans give results identical to the current
+code.
 
-Time in s, and speed-up of 4 sessions over the current code:
+Time in s, and speed-up of 4 sessions over the current code (the KDE
+timings are those after the fix of its fixed costs, below; `res = 20` gives a
+grid of about 340,000 cells, on which the KDE itself dominates):
 
-| method                | tracks x locations | current | futures, sequential | 2 sessions | 4 sessions | 4 forks | speed-up |
-|-----------------------|-------------------:|--------:|--------------------:|-----------:|-----------:|--------:|---------:|
-| `hr_tt_mcp()`         |           4 x 5000 |   0.045 |               0.120 |      0.192 |      0.238 |   0.245 |      0.2 |
-|                       |           20 x 1000 |  0.081 |               0.215 |      0.207 |      0.279 |   0.291 |      0.3 |
-|                       |           200 x 50 |   0.723 |               0.598 |      0.659 |      0.552 |   0.780 |      1.3 |
-|                       |          1000 x 50 |   3.683 |               2.946 |      2.602 |      2.027 |   2.251 |      1.8 |
-| `hr_tt_kde()`, levels |           4 x 5000 |   0.521 |               0.841 |      0.628 |      0.556 |   0.756 |      0.9 |
-|                       |           20 x 1000 |  2.213 |               2.447 |      1.414 |      1.200 |   1.429 |      1.8 |
-|                       |           200 x 50 |  23.183 |              21.778 |     12.720 |      7.328 |   8.425 |      3.2 |
-|                       |          1000 x 50 | 112.554 |             114.796 |     63.620 |     36.149 |  36.410 |      3.1 |
-| `hr_tt_kde()`, full UD |          4 x 5000 |   0.178 |               0.446 |      0.407 |      0.488 |   0.518 |      0.4 |
-|                       |           20 x 1000 |  0.398 |               0.807 |      0.696 |      0.698 |   0.909 |      0.6 |
-|                       |           200 x 50 |   2.650 |               6.184 |      3.770 |      3.120 |   3.455 |      0.8 |
-| `hr_tt_locoh()`       |           4 x 5000 |   0.870 |               1.218 |      0.613 |      0.519 |   0.628 |      1.7 |
-|                       |           20 x 1000 |  0.941 |               0.977 |      0.680 |      0.548 |   0.613 |      1.7 |
-|                       |           200 x 50 |   1.507 |               1.656 |      1.066 |      0.817 |   1.212 |      1.8 |
-|                       |          1000 x 50 |   6.179 |               6.011 |      4.262 |      2.990 |   3.611 |      2.1 |
+| method                          | tracks x locations | current | futures, sequential | 2 sessions | 4 sessions | 4 forks | speed-up |
+|---------------------------------|-------------------:|--------:|--------------------:|-----------:|-----------:|--------:|---------:|
+| `hr_tt_mcp()`                   |           4 x 5000 |   0.045 |               0.120 |      0.192 |      0.238 |   0.245 |      0.2 |
+|                                 |          20 x 1000 |   0.081 |               0.215 |      0.207 |      0.279 |   0.291 |      0.3 |
+|                                 |           200 x 50 |   0.723 |               0.598 |      0.659 |      0.552 |   0.780 |      1.3 |
+|                                 |          1000 x 50 |   3.683 |               2.946 |      2.602 |      2.027 |   2.251 |      1.8 |
+| `hr_tt_kde()`, levels           |           4 x 5000 |   0.179 |               0.316 |      0.445 |      0.460 |   0.550 |      0.4 |
+|                                 |          20 x 1000 |   0.339 |               0.499 |      0.552 |      0.517 |   0.903 |      0.7 |
+|                                 |           200 x 50 |   1.697 |               1.932 |      1.779 |      1.747 |   2.281 |      1.0 |
+|                                 |          1000 x 50 |   9.188 |               9.284 |     10.293 |     10.088 |  10.878 |      0.9 |
+| `hr_tt_kde()`, full UD          |           4 x 5000 |   0.146 |               0.343 |      0.430 |      0.405 |   0.551 |      0.4 |
+|                                 |          20 x 1000 |   0.283 |               0.410 |      0.538 |      0.506 |   0.720 |      0.6 |
+|                                 |           200 x 50 |   1.504 |               2.056 |      1.805 |      2.146 |   2.151 |      0.7 |
+| `hr_tt_kde()`, levels, `res = 20` |         4 x 5000 |  12.845 |              14.252 |     11.174 |      6.591 |   5.417 |      1.9 |
+|                                 |          20 x 1000 |   8.959 |               8.352 |      5.356 |      3.260 |   3.175 |      2.7 |
+| `hr_tt_kde()`, full UD, `res = 20` |       4 x 5000 |  12.628 |              14.721 |      8.844 |      5.380 |   7.146 |      2.3 |
+|                                 |          20 x 1000 |   6.739 |               7.893 |      5.236 |      3.432 |   4.320 |      2.0 |
+| `hr_tt_locoh()`                 |           4 x 5000 |   0.870 |               1.218 |      0.613 |      0.519 |   0.628 |      1.7 |
+|                                 |          20 x 1000 |   0.941 |               0.977 |      0.680 |      0.548 |   0.613 |      1.7 |
+|                                 |           200 x 50 |   1.507 |               1.656 |      1.066 |      0.817 |   1.212 |      1.8 |
+|                                 |          1000 x 50 |   6.179 |               6.011 |      4.262 |      2.990 |   3.611 |      2.1 |
 
-(Both builds include the fix of the fixed costs of `hr_tt_mcp()` above. The
-timings exclude starting the workers: starting 4 R sessions takes about
-2.5 s, once per R session, and their first use of terra, for the first KDE,
-a few more seconds; forks start in 0.2 s. The 4 sessions timing of the KDE of
-4 x 5000 locations was taken again with warm workers.)
+(The timings exclude starting the workers: starting 4 R sessions takes about
+2.5 s, once per R session, and their first use of terra a few more seconds;
+forks start in 0.2 s.)
 
-- `hr_tt_kde()` with `levels` gains the most: 3.1 to 3.2 times faster on 4
-  cores with many tracks (113 s down to 36 s for 1000 tracks), as each track
-  takes long (about 110 ms; see below).
+- `hr_tt_kde()` on the default grid no longer gains from parallel processing
+  (0.4 to 1.0 times): since the fix of its fixed costs, a track takes about
+  10 ms, and sending the data and results between processes costs as much.
+- `hr_tt_kde()` on a fine grid, where `MASS::kde2d()` dominates, gains 1.9 to
+  2.7 times. However, a multithreaded BLAS speeds up `MASS::kde2d()` (whose
+  matrix product is most of the work) within each track, without any change
+  to tidytracks: with OpenBLAS (4 threads) instead of R's reference BLAS, the
+  same cases take 3.6 s and 3.7 s with `levels` (3.6 and 2.4 times faster),
+  and 2.6 s and 1.9 s for full UDs (4.8 and 3.6 times faster), i.e. as fast
+  as or faster than 4 sessions. The two do not combine well, as both use all
+  the cores.
 - `hr_tt_locoh()` gains 1.7 to 2.1 times, with few long tracks or many short
   ones.
 - `hr_tt_mcp()` only gains with hundreds of tracks (1.3 to 1.8 times, i.e.
   about 1.7 s for 1000 tracks), and is slower with few tracks, as the
   overhead of the futures (about 0.1 s per call, up to 0.3 s) exceeds the
   work.
-- `hr_tt_kde()` returning full UDs is slower in parallel (0.4 to 0.8 times):
-  the rasters must be wrapped, sent back and unwrapped, which costs more than
-  computing them.
 - The gains are well below 4 times, as the data and results must be sent
-  between processes, and as part of the work (combining the tracks, the areas)
-  remains sequential.
+  between processes, and as part of the work (combining the tracks, the
+  areas, the rasters of full UDs) remains sequential.
 
 ## Recommendation
 
-Parallel processing is worth offering for `hr_tt_kde()` with `levels` and for
-`hr_tt_locoh()`, as an opt-in that follows `future::plan()`. To leave the
-default (sequential) use as fast as it is now, the loop should only go
-through futures when the plan has more than one worker
-(`future::nbrOfWorkers() > 1`), as the futures cost about 0.1 s (up to 0.3 s)
-per call even with a sequential plan; full UDs should stay sequential. This requires adding
-`future` and `doFuture` (or `future.apply`) to the dependencies, possibly as
-suggested packages. For `hr_tt_mcp()`, the gain is too small to matter.
+After the fixes of the fixed costs, parallel processing within tidytracks is
+not worth adding a dependency on `future` and `doFuture`:
 
-Before that, the fixed cost of `hr_tt_kde()` with `levels` (about 110 ms per
-track, against 3 to 6 ms for `hr_tt_mcp()` and `hr_tt_locoh()`) was worth
-reducing, which benefits all users: this has now been done (see below), so
-the timings of `hr_tt_kde()` above, and its gains from parallel processing,
-predate it.
+- for `hr_tt_mcp()` and `hr_tt_kde()` on default grids, it is slower, or
+  barely faster;
+- for `hr_tt_kde()` on fine grids, a multithreaded BLAS (OpenBLAS or MKL on
+  Linux, Accelerate on macOS; see the R Installation and Administration
+  manual) gives as much or more, for all of R;
+- only `hr_tt_locoh()` gains about 2 times on 4 cores, which matters only for
+  large data sets (its union of hulls, in GEOS, is single-threaded).
+
+If parallel processing is added later (e.g. for `hr_tt_locoh()`), it should
+be an opt-in that follows `future::plan()`, going through futures only when
+the plan has more than one worker (`future::nbrOfWorkers() > 1`), as futures
+cost about 0.1 s (up to 0.3 s) per call even with a sequential plan;
+`future` and `doFuture` could then be suggested packages.
 
 # KDE: fixed costs (fixed)
 

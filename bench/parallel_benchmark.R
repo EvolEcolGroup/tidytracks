@@ -13,12 +13,16 @@
 #   R CMD INSTALL -l <proto_lib> .
 #   R_LIBS=<proto_lib> Rscript bench/parallel_benchmark.R futures
 #
+# The label can be followed by the names of the methods to run (e.g. kde_iso
+# kde_ud), to run only those.
+#
 # Each run prints its timings (in seconds) and saves them, with the results of
 # each method, to bench/parallel_<label>.rds, so that the runs can be
 # compared.
 
 args <- commandArgs(trailingOnly = TRUE)
 label <- if (length(args) > 0) args[1] else "current"
+only_methods <- args[-1]
 
 suppressMessages(library(tidytracks))
 
@@ -68,8 +72,16 @@ methods <- list(
   mcp = function(tracks) hr_tt_mcp(tracks),
   kde_iso = function(tracks) hr_tt_kde(tracks, levels = c(0.5, 0.95)),
   kde_ud = function(tracks) hr_tt_kde(tracks),
+  # on a fine grid (about 340,000 cells), where the KDE itself dominates
+  kde_iso_fine = function(tracks) {
+    hr_tt_kde(tracks, levels = c(0.5, 0.95), res = 20)
+  },
+  kde_ud_fine = function(tracks) hr_tt_kde(tracks, res = 20),
   locoh = function(tracks) hr_tt_locoh(tracks, n = 10)
 )
+if (length(only_methods) > 0) {
+  methods <- methods[only_methods]
+}
 plans <- if (label == "current") {
   list(current = function() NULL)
 } else {
@@ -92,8 +104,12 @@ for (plan_name in names(plans)) {
   }
   for (s in seq_along(scenarios)) {
     for (m in names(methods)) {
-      # 1000 full UDs (rasters) are not worth the wait
-      if (m == "kde_ud" && scenarios[[s]][1] > 200) {
+      # 1000 full UDs (rasters) are not worth the wait, nor fine grids for
+      # more than a few tracks
+      if (
+        (m == "kde_ud" && scenarios[[s]][1] > 200) ||
+          (grepl("fine", m) && scenarios[[s]][1] > 20)
+      ) {
         next
       }
       result <- NULL
@@ -104,7 +120,7 @@ for (plan_name in names(plans)) {
       } else {
         stats::median(sapply(1:3, function(i) time_s(methods[[m]](data[[s]]))))
       }
-      if (m == "kde_ud") {
+      if (startsWith(m, "kde_ud")) {
         # compare the values of the rasters, not the pointers to them
         result$ud <- lapply(result$ud, terra::values)
       }
