@@ -57,9 +57,121 @@ packages.
 For the 5000 simulated locations with `type = "k"`, the C++ code (neighbour
 search, hulls, sorting, coverage of the levels) takes 13.6 ms of the 229 ms
 of the whole function. Almost all the rest is the union of the ~3000 hulls of
-the 95% isopleth, computed by GEOS through `sf::st_union()`.
+the 95% isopleth, computed by GEOS through `sf::st_union()` (see the profile
+below for details).
 
 By contrast, amt (in R) builds one data frame per hull, buffers each hull
 (which multiplies the number of vertices that the union then has to process),
 and, for `"r"` and `"a"`, computes the distances from each location to all the
 others, which grows with the square of the number of locations.
+
+# Profile, and can we go faster (e.g. with OpenMP)?
+
+Two scripts profile `hr_tt_locoh()`:
+
+- `locoh_profile.R` times each stage of the function, for single tracks of
+  1000 to 50,000 locations, and the whole function for many short tracks;
+- `locoh_profile_cpp.R` (with `locoh_profile_cpp.cpp`) times each phase of
+  the C++ code, and a prototype that runs the neighbour search and the hulls
+  in parallel with OpenMP.
+
+Run them from the root of the package (with tidytracks installed with
+`R CMD INSTALL`: `devtools::load_all()` compiles the C++ code without
+optimisation, which makes it 4 to 6 times slower). Timings below are medians,
+in ms, on 4 cores.
+
+## Single tracks: the union of the hulls dominates
+
+| locations | type | whole | C++ | `st_sfc()` | union (GEOS) | after the union | C++ share | union share |
+|----------:|------|------:|----:|-----------:|-------------:|----------------:|----------:|------------:|
+|      1000 | k    |    60 |   3 |          1 |           33 |              10 |        5% |         54% |
+|      5000 | k    |   249 |  14 |          4 |          194 |              10 |        6% |         78% |
+|      5000 | a    |   287 |  28 |          3 |          173 |              11 |       10% |         60% |
+|     20000 | k    |  1001 |  66 |         14 |          923 |              15 |        7% |         92% |
+|     50000 | k    |  2571 | 243 |         53 |         2186 |              16 |        9% |         85% |
+|     50000 | r    |  2843 | 123 |         23 |         2368 |              28 |        4% |         83% |
+|     50000 | a    |  2392 | 286 |         32 |         2020 |              15 |       12% |         84% |
+
+The union of the hulls, computed by GEOS (single-threaded), takes 40% to 92%
+of the time (over 75% from 5000 locations on, for all types), and its share
+grows with the number of locations. All the C++ code takes 3% to 16%.
+
+Within the C++ code, the neighbour search is the largest phase, followed by
+the hulls and by turning the hulls into R objects (which must be done by a
+single thread, as R's API is not thread-safe):
+
+| locations | type | tree | neighbours (incl. tree) | hulls | sort, levels | R objects |
+|----------:|------|-----:|------------------------:|------:|-------------:|----------:|
+|      5000 | k    |  0.6 |                     7.1 |   2.6 |          0.5 |       3.1 |
+|      5000 | a    |  0.6 |                    17.9 |   3.5 |          0.5 |       2.8 |
+|     50000 | k    |  7.8 |                    79.4 |  28.9 |          6.5 |      43.9 |
+|     50000 | a    |  7.8 |                   216.8 |  38.6 |          7.5 |      52.8 |
+|    200000 | k    | 38.9 |                   407.2 | 135.3 |         32.4 |     400.0 |
+
+## OpenMP: it works, but would barely change the total
+
+The neighbour search and the hulls are independent for each location, so they
+parallelise well. The prototype in `locoh_profile_cpp.cpp` runs them 2.6 to 3
+times faster on 4 threads:
+
+| locations | 1 thread | 2 threads | 4 threads |
+|----------:|---------:|----------:|----------:|
+|      5000 |      9.8 |       5.2 |       3.3 |
+|     50000 |    127.1 |      69.6 |      38.5 |
+|    200000 |    593.2 |     340.1 |     206.9 |
+
+But these phases are only 3% to 11% of the whole function, so (Amdahl's law)
+OpenMP would make `hr_tt_locoh()` only 2% to 7% faster: e.g. about 6 ms out of
+250 ms for 5000 locations, or about 90 ms out of 2.6 s for 50,000. For that,
+it would add a build dependency that is awkward on macOS (Apple's compiler has
+no OpenMP, so the code must also build without it), a thread setting that
+must default to at most 2 threads on CRAN, and restructuring of the neighbour
+search (which fills a shared array in order and checks for user interrupts
+from R). It is not worth it at present.
+
+## The union: alternatives tested
+
+The union of the ~4400 (5000 locations) and ~46,000 (50,000 locations) hulls
+of the 95% isopleth, type `"k"`:
+
+| approach                                           | 5000 locations | 50,000 locations | same result?          |
+|----------------------------------------------------|---------------:|-----------------:|-----------------------|
+| GEOS cascaded union (current)                      |            163 |             1683 | -                     |
+| Clipper (`polyclip`), all hulls in one pass        |            140 |             4210 | yes (3e-9)            |
+| drop hulls covered by another hull, then GEOS      |      131 + 151 |      1349 + 1607 | yes                   |
+| GEOS on 4 vertical strips in 4 processes, merged   |            105 |              929 | yes                   |
+
+- Clipper scales worse than GEOS with the number of hulls.
+- Only about 9% of the hulls are covered by another single hull, and finding
+  them costs as much as the union.
+- Computing the union of each level from scratch, rather than adding hulls
+  to the union of the previous level, is no faster (within 10% either way,
+  depending on the type).
+- Splitting the union between processes gains 1.6 to 1.8 times, but forking
+  processes is not available on Windows, and a package should not start
+  processes on its own; users with many groups can instead run groups in
+  parallel themselves (e.g. with `parallel::mclapply()` or `future`).
+
+## Many short tracks: fixed costs (fixed)
+
+With one track per foraging trip, data sets often have hundreds of short
+tracks. Profiling 500 tracks of 50 locations showed that most of the time
+went to fixed costs repeated for every track, not to the LoCoH: 52% to sf
+asking PROJ for the parameters of the CRS (about 3 ms for
+`sf::st_is_longlat()` and 9 ms for `sf::st_area()` of one polygon, both called
+for every track), and 15% to combining the results of the tracks one at a
+time (quadratic in the number of tracks). `hr_tt_locoh()` now looks up the
+CRS once, computes all the areas in one call, and combines the tracks once,
+with identical results:
+
+| tracks | locations per track | before | after | speed-up |
+|-------:|--------------------:|-------:|------:|---------:|
+|     10 |                 500 |    409 |   272 |      1.5 |
+|    100 |                  50 |   2126 |   618 |      3.4 |
+|   1000 |                  50 |  22192 |  6118 |      3.6 |
+
+(type `"k"`; up to 4.4 times for type `"r"`). The remaining ~6 ms per track is
+mostly the union of its hulls, building `sfc` objects, and building a small
+tibble per track; assembling the columns of all tracks and building one tibble
+at the end could roughly halve it again. `hr_tt_mcp()` has the same fixed
+costs (16 ms per track for 1000 tracks of 50 locations).

@@ -310,3 +310,32 @@ test_that("hr_tt_locoh gives the same home ranges as amt", {
     }
   }
 })
+
+test_that("hr_tt_locoh gives valid isopleths for unprojected data", {
+  # Tracks in longitude/latitude for which s2 used to reject the isopleths,
+  # as merging the hulls created vertices that s2 sees as duplicates. The
+  # tracks are random walks pulled back towards one of two centres.
+  simulate_lonlat <- function(seed, n_locations = 50) {
+    set.seed(seed)
+    xy <- matrix(0, n_locations, 2)
+    centres <- rbind(c(0, 0), c(3000, 1500))
+    centre <- 1
+    for (i in 2:n_locations) {
+      if (stats::runif(1) < 0.01) {
+        centre <- 3 - centre
+      }
+      pull <- 0.05 * (centres[centre, ] - xy[i - 1, ])
+      xy[i, ] <- xy[i - 1, ] + pull + stats::rnorm(2, sd = 100)
+    }
+    # about 100 m steps, in degrees
+    make_locoh_tt(xy / 1e5, crs = 4326, id = as.character(seed))
+  }
+  for (seed in c(89, 93, 104, 119, 155)) {
+    track <- simulate_lonlat(seed)
+    locoh <- hr_tt_locoh(track, n = 10)
+    expect_true(all(as.numeric(locoh$area) > 0))
+    # the isopleths can be used in further operations with s2
+    expect_true(all(sf::st_is_valid(locoh)))
+    expect_no_error(sf::st_intersects(locoh, track))
+  }
+})

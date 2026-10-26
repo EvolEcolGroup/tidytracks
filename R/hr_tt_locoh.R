@@ -38,12 +38,13 @@
 #' much faster than buffering each hull.
 #'
 #' Distances are computed in the units of the projection of `x`, and hulls are
-#' built on a plane. For unprojected data (longitude/latitude), distances (and
-#' so `n` for types `"r"` and `"a"`) are thus in degrees, and the hulls are
-#' distorted (increasingly so away from the equator); it is recommended to
-#' project `x` to an appropriate projection before using this function. Areas
-#' are computed with [sf::st_area()], in the units of the projection of `x`
-#' (e.g. m^2 for a UTM projection), or in m^2 for unprojected data.
+#' built and merged on a plane. For unprojected data (longitude/latitude),
+#' distances (and so `n` for types `"r"` and `"a"`, and `buffer`) are thus in
+#' degrees, and the hulls are distorted (increasingly so away from the
+#' equator); it is recommended to project `x` to an appropriate projection
+#' before using this function. Areas are computed with [sf::st_area()], in the
+#' units of the projection of `x` (e.g. m^2 for a UTM projection), or in m^2
+#' for unprojected data.
 #'
 #' @param x A move2 object; if explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
@@ -154,42 +155,48 @@ hr_tt_locoh <- function(
   # check n, and recycle it to one value per group
   n <- check_locoh_n(n, type, n_locations, group_labels)
 
+  # look up the CRS (and whether it is longitude/latitude) once: sf asks PROJ
+  # for its parameters every time, which takes a few milliseconds, i.e. more
+  # than the whole LoCoH of a short track
+  crs <- sf::st_crs(x)
+  longlat <- isTRUE(sf::st_is_longlat(crs))
+
   group_id <- NULL # hack to avoid it being flagged as global in checks
-  locoh_results <- foreach::foreach(
-    group_id = group_unique,
-    .combine = dplyr::bind_rows
-  ) %do% {
+  locoh_results <- foreach::foreach(group_id = group_unique) %do% {
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, , drop = FALSE]
     # take n for this group now: inside tibble() below, group_id refers to
     # the column created there, not to the index of the group
     n_val <- n[group_id]
-    # Create the home range for each level
+    # Create the home range for each level (without a CRS, which is set
+    # for all groups at once below)
     geometry <- locoh_one_group(
       xy_sub,
       n = n_val,
       type = type,
       levels = levels,
       buffer = buffer,
-      crs = sf::st_crs(x)
+      longlat = longlat
     )
-    # Calculate area
-    area <- sf::st_area(geometry)
 
-    # Create a tibble with the results
+    # Create a tibble with the results (areas are computed below)
     tibble::tibble(
       group_id = group_labels[group_id],
       method = "locoh",
       type = type,
       n = n_val,
       level = levels,
-      area = area,
+      area = NA_real_,
       geometry = geometry
     )
   }
 
-  # now cast the results to an sf object
-  locoh_results <- sf::st_as_sf(locoh_results, crs = sf::st_crs(x))
+  # combine the groups in one go (combining them one at a time, as foreach's
+  # .combine does, takes time quadratic in the number of groups), cast the
+  # results to an sf object, and compute all the areas in one call
+  locoh_results <- dplyr::bind_rows(locoh_results)
+  locoh_results <- sf::st_as_sf(locoh_results, crs = crs)
+  locoh_results$area <- sf::st_area(locoh_results)
 
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
@@ -261,29 +268,23 @@ check_locoh_n <- function(n, type, n_locations, group_labels) {
 #' @param type the type of LoCoH (`"k"`, `"r"` or `"a"`)
 #' @param levels A vector of levels for the home ranges
 #' @param buffer the distance by which to buffer the home ranges
-#' @param crs the crs of the coordinates (to use in the geometry)
-#' @returns An `sfc` of multipolygons, one per level (in the order of
-#'   `levels`)
+#' @param longlat whether the coordinates are longitudes and latitudes
+#' @returns An `sfc` of multipolygons (without a CRS), one per level (in the
+#'   order of `levels`)
 #' @keywords internal
 #' @noRd
-locoh_one_group <- function(xy, n, type, levels, buffer, crs) {
-  # GEOS, which computes the unions and the buffer below, works in floating
-  # point and loses precision when the coordinates are large compared with
-  # the details of the geometries (e.g. projected coordinates in the millions
-  # and a buffer of 1e-5): it then falls back to a coarser precision, which
-  # distorts the isopleths. So, for projected data, the hulls are built
+locoh_one_group <- function(xy, n, type, levels, buffer, longlat) {
+  # The hulls are built on a plane (in degrees for unprojected data), so they
+  # are also merged on a plane, by GEOS, without a CRS (with a CRS in
+  # longitude/latitude, sf would use s2, on the sphere, instead).
+  #
+  # GEOS works in floating point and loses precision when the coordinates
+  # are large compared with the details of the geometries (e.g. projected
+  # coordinates in the millions and a buffer of 1e-5): it then falls back to
+  # a coarser precision, which distorts the isopleths. So the hulls are built
   # relative to the centre of the locations, and the isopleths are shifted
-  # back at the end. Unprojected data are handled by s2 (on the sphere), and
-  # are left as they are.
-  shift_hulls <- !isTRUE(sf::st_is_longlat(crs))
-  if (shift_hulls) {
-    shift <- c(mean(range(xy[, 1])), mean(range(xy[, 2])))
-    # the shifted coordinates are not in the CRS of the data any more
-    hull_crs <- sf::NA_crs_
-  } else {
-    shift <- c(0, 0)
-    hull_crs <- crs
-  }
+  # back at the end.
+  shift <- c(mean(range(xy[, 1])), mean(range(xy[, 2])))
 
   # the C++ code finds the neighbours, builds the hulls, sorts them by area,
   # and works out how many of the smallest hulls each level needs; it returns
@@ -322,9 +323,7 @@ locoh_one_group <- function(xy, n, type, levels, buffer, crs) {
         # latter is also a union of a collection (rather than of two
         # geometries) because, with a buffer, the unions can contain points
         # and lines, which GEOS cannot overlay with polygons
-        new_union <- sf::st_union(
-          sf::st_sfc(hulls$hulls[new_hulls], crs = hull_crs)
-        )
+        new_union <- sf::st_union(sf::st_sfc(hulls$hulls[new_hulls]))
         union_so_far <- if (is.null(union_so_far)) {
           new_union
         } else {
@@ -335,7 +334,7 @@ locoh_one_group <- function(xy, n, type, levels, buffer, crs) {
     }
     # if all hulls so far have no area, the isopleth is empty
     geometry[[i]] <- if (is.null(union_so_far)) {
-      sf::st_sfc(sf::st_multipolygon(), crs = hull_crs)
+      sf::st_sfc(sf::st_multipolygon())
     } else {
       union_so_far
     }
@@ -347,11 +346,15 @@ locoh_one_group <- function(xy, n, type, levels, buffer, crs) {
   if (buffer > 0) {
     geometry <- sf::st_buffer(geometry, buffer)
   }
-  # return multipolygons, as isopleths can have several parts
-  geometry <- sf::st_cast(geometry, "MULTIPOLYGON")
-  # shift the isopleths back to the original coordinates
-  if (shift_hulls) {
-    geometry <- sf::st_set_crs(geometry + shift, crs)
+  # GEOS can create vertices (where the edges of hulls cross) so close to
+  # other vertices that s2, which sf uses for unprojected data (e.g. to
+  # compute areas), sees them as the same vertex and rejects the polygon.
+  # Simplifying with a tiny tolerance (1e-9 degrees, about 0.1 mm) removes
+  # such vertices without changing the isopleths otherwise.
+  if (longlat) {
+    geometry <- sf::st_simplify(geometry, dTolerance = 1e-9)
   }
-  geometry
+  # return multipolygons, as isopleths can have several parts, shifted back
+  # to the original coordinates
+  sf::st_cast(geometry, "MULTIPOLYGON") + shift
 }

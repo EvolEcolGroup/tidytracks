@@ -95,12 +95,13 @@ coverage, but only becomes part of the isopleth if \code{buffer} is positive.
 much faster than buffering each hull.
 
 Distances are computed in the units of the projection of \code{x}, and hulls are
-built on a plane. For unprojected data (longitude/latitude), distances (and
-so \code{n} for types \code{"r"} and \code{"a"}) are thus in degrees, and the hulls are
-distorted (increasingly so away from the equator); it is recommended to
-project \code{x} to an appropriate projection before using this function. Areas
-are computed with \code{\link[sf:st_area]{sf::st_area()}}, in the units of the projection of \code{x}
-(e.g. m^2 for a UTM projection), or in m^2 for unprojected data.
+built and merged on a plane. For unprojected data (longitude/latitude),
+distances (and so \code{n} for types \code{"r"} and \code{"a"}, and \code{buffer}) are thus in
+degrees, and the hulls are distorted (increasingly so away from the
+equator); it is recommended to project \code{x} to an appropriate projection
+before using this function. Areas are computed with \code{\link[sf:st_area]{sf::st_area()}}, in the
+units of the projection of \code{x} (e.g. m^2 for a UTM projection), or in m^2
+for unprojected data.
 }
 \examples{
 # the tracks in example_tt are short (5 locations each), so each hull is
