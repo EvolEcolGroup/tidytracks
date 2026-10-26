@@ -44,12 +44,15 @@ the order of the metadata.
 
 \item{error}{Logical; whether to fit a model of location error. If the
 tracks have information on the error of each location (e.g. dilution of
-precision, see \code{error_cols}), it is used by the error model.}
+precision, see \code{error_cols}), it is used by the error model. With a model
+template, \code{error = TRUE} adds the error model to the template, unless the
+template already has one (e.g. \code{ctmm::ctmm(error = TRUE)}); with
+\code{error = FALSE}, the error model of the template (if any) is kept.}
 
 \item{uere}{A User Equivalent Range Error (in metres) used to calibrate the
 location error (see \code{\link[ctmm:uere]{ctmm::uere()}}), or an object created with
 \code{\link[ctmm:uere.fit]{ctmm::uere.fit()}} from calibration data. If set, the error model is fitted
-(i.e. \code{error} is set to \code{TRUE}).}
+(i.e. \code{error} is set to \code{TRUE}), also for model templates.}
 
 \item{ic}{The information criterion used to select the best model when
 \code{model = "auto"} (see \code{\link[ctmm:ctmm.select]{ctmm::ctmm.select()}}). Default is \code{"AICc"}.}

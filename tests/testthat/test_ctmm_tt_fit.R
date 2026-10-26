@@ -69,6 +69,24 @@ test_that("ctmm_tt_fit fits the requested model", {
   )
 })
 
+test_that("ctmm_tt_fit adds the error model to templates", {
+  x <- ctmm_example_tt(n = 60, tracks = "Cilla")
+  iso_iid <- ctmm::ctmm(isotropic = TRUE)
+  fit_model <- function(...) suppressMessages(ctmm_tt_fit(x, ...))$model[[1]]
+  # without error, the template is fitted as it is
+  expect_false(any(fit_model(model = iso_iid)$error > 0))
+  # with a uere (the buffalo have no DOP, which ctmm then assumes to be 1),
+  # the error model is added to the template, which gives the same fit as a
+  # template with an error model
+  with_uere <- fit_model(model = iso_iid, uere = 10)
+  expect_true(any(with_uere$error > 0))
+  iso_iid_error <- ctmm::ctmm(isotropic = TRUE, error = TRUE)
+  expect_equal(
+    with_uere$loglike,
+    fit_model(model = iso_iid_error, uere = 10)$loglike
+  )
+})
+
 test_that("ctmm_tt_fit selects the best model with model = 'auto'", {
   skip_on_cran()
   x <- ctmm_example_tt(n = 60, tracks = "Cilla")

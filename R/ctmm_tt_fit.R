@@ -57,11 +57,14 @@
 #'   the order of the metadata.
 #' @param error Logical; whether to fit a model of location error. If the
 #'   tracks have information on the error of each location (e.g. dilution of
-#'   precision, see `error_cols`), it is used by the error model.
+#'   precision, see `error_cols`), it is used by the error model. With a model
+#'   template, `error = TRUE` adds the error model to the template, unless the
+#'   template already has one (e.g. `ctmm::ctmm(error = TRUE)`); with
+#'   `error = FALSE`, the error model of the template (if any) is kept.
 #' @param uere A User Equivalent Range Error (in metres) used to calibrate the
 #'   location error (see [ctmm::uere()]), or an object created with
 #'   [ctmm::uere.fit()] from calibration data. If set, the error model is fitted
-#'   (i.e. `error` is set to `TRUE`).
+#'   (i.e. `error` is set to `TRUE`), also for model templates.
 #' @param ic The information criterion used to select the best model when
 #'   `model = "auto"` (see [ctmm::ctmm.select()]). Default is `"AICc"`.
 #' @param candidates Logical; if `TRUE` and `model = "auto"`, all the candidate
@@ -297,7 +300,15 @@ fit_ctmm_model <- function(tel, model, error, uere, ic, cores, ...) {
   }
   candidates <- NULL
   if (inherits(model, "ctmm")) {
-    # a template provided by the user is fitted as it is
+    # a template provided by the user is fitted as it is, except that, with
+    # error = TRUE (or a uere), we add the error model if the template does
+    # not have one (ctmm.fit() only fits the error model of the template); we
+    # set the same fields as ctmm::ctmm(error = TRUE), and keep the error of a
+    # template that has one (e.g. a numeric initial value of the error)
+    if (error && !any(model$error > 0)) {
+      model$error <- TRUE
+      model$errors <- TRUE
+    }
     fit <- ctmm::ctmm.fit(tel, model, ...)
   } else if (model %in% c("iid", "bm")) {
     # models without autocorrelation of positions (iid: no time scale), or
