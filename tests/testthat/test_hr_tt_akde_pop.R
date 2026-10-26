@@ -227,4 +227,16 @@ test_that("hr_tt_akde_pop checks its inputs", {
     hr_tt_akde_pop(akde_south, method = "mean", levels = 0.95, ci_level = 95),
     "ci_level must be"
   )
+  # a group whose weights are all zero has no population UD, with either
+  # method
+  akde_zero <- akde_south
+  akde_zero$w <- c(0, 0, 0)
+  expect_error(
+    hr_tt_akde_pop(akde_zero, method = "mean", weights = "w"),
+    "must not all be zero"
+  )
+  expect_error(
+    hr_tt_akde_pop(akde_zero, tracks = x, models = fits, weights = "w"),
+    "must not all be zero"
+  )
 })

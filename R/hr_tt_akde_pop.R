@@ -63,9 +63,9 @@
 #'   with [ctmm_tt_fit()] (only needed with `method = "pkde"`).
 #' @param weights The weights of the individuals in the population UD. Either
 #'   `NULL` (the default) for equal weights, the name of a numeric column of
-#'   `x` with the relative weight of each UD, or, with `method = "pkde"`,
-#'   `TRUE` to optimise the weights (see [ctmm::pkde()]; this requires the
-#'   package `quadprog`).
+#'   `x` with the relative weight of each UD (non-negative, and not all zero
+#'   within a group), or, with `method = "pkde"`, `TRUE` to optimise the
+#'   weights (see [ctmm::pkde()]; this requires the package `quadprog`).
 #' @param sample Logical; with `method = "mean"`, whether the tracks are a
 #'   sample of a larger population (`TRUE`, the default) or the whole
 #'   population (`FALSE`).
@@ -184,6 +184,16 @@ hr_tt_akde_pop <- function(
   group_weights <- lapply(rows_list, function(rows) {
     if (is.numeric(ud_weights)) ud_weights[rows] else ud_weights
   })
+  # a group whose weights are all zero has no population UD
+  if (is.numeric(ud_weights)) {
+    zero_weights <- vapply(group_weights, function(w) sum(w) == 0, logical(1))
+    if (any(zero_weights)) {
+      stop(
+        "the weights of each group must not all be zero (group(s) ",
+        paste(group_labels[zero_weights], collapse = ", "), ")"
+      )
+    }
+  }
   # pkde estimates the population UD from the locations of the tracks, so it
   # also needs the telemetry object of the track of each UD
   if (method == "pkde") {
@@ -259,18 +269,29 @@ hr_tt_akde_pop <- function(
   # optimises their bandwidth for the population as a whole), so a population
   # UD estimated with pkde can extend beyond the grid of the individual UDs,
   # and lose the mass outside it: in that case, we extend the grid to contain
-  # the population UD, and estimate it again
+  # the population UD, and estimate it again; each estimate is a new
+  # (stochastic) fit, which can be slightly wider than the one the grid was
+  # extended for, so we check again, a few times at most (the grids only
+  # grow, and a UD that still does not fit is reported by ctmm_ud_to_rast())
   if (method == "pkde") {
-    new_bboxes <- pkde_extended_bboxes(
-      pop_uds,
-      group_grids,
-      group_tels,
-      group_uds,
-      tolerance = tolerance,
-      kernel = list(...)$kernel
-    )
-    for (i in seq_len(n_groups)) {
-      if (!isTRUE(all.equal(new_bboxes[[i]], group_grids[[i]]$bbox))) {
+    for (attempt in 1:3) {
+      new_bboxes <- pkde_extended_bboxes(
+        pop_uds,
+        group_grids,
+        group_tels,
+        group_uds,
+        tolerance = tolerance,
+        kernel = list(...)$kernel
+      )
+      extended <- which(!vapply(
+        seq_len(n_groups),
+        function(i) isTRUE(all.equal(new_bboxes[[i]], group_grids[[i]]$bbox)),
+        logical(1)
+      ))
+      if (length(extended) == 0) {
+        break
+      }
+      for (i in extended) {
         group_grids[[i]]$bbox <- new_bboxes[[i]]
         pop_uds[[i]] <- estimate_pop_ud(i, new_bboxes[[i]])
       }
