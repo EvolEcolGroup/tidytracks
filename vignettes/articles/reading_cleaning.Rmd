@@ -274,6 +274,14 @@ The proportion of missing events has increased for most tracks, in
 particular for `kb_43`, which now has a long gap (we will come back to it when
 resampling the tracks).
 
+Locations at null island are an extreme case of poor fixes. If the loggers
+report the quality of each fix, poor fixes can be removed too:
+`move2utils::mt_filter_gps_quality()` removes fixes with fewer than 5
+satellites, a dilution of precision above 10, or an estimated horizontal
+accuracy above 100 m, from the columns named as in Movebank
+(`gps_satellite_count`, `gps_dop` and `eobs_horizontal_accuracy_estimate`).
+These shag data have no such columns.
+
 # Removing duplicated records
 
 Some records may be duplicated, for example if the data were downloaded twice
@@ -389,8 +397,14 @@ al. 1992), and `event_flag_outliers()` with one of the methods of `move2utils`
 (described by Safi 2026), both returning `TRUE` for valid events. Let us compare
 McConnell's filter with three of these methods: a hard speed cap at the same
 maximum speed, the detour method (which flags out-and-back spikes) and
-`mt_clean_track()`, the default, which combines several methods and chooses its
-thresholds from the data:
+`mt_clean_track()`, the default, which combines several methods and iterates
+until no more outliers are found. Most of these methods choose their
+thresholds from the data, but `move2utils` suggests giving `mt_clean_track()`
+the top speed of the animal when it is known (with `v_max`, or with the body
+`mass` and `mode` of locomotion, from which it predicts one as
+`max_speed_allometric()` does): otherwise, it chooses a maximum speed from the
+data, which can be too low for animals that alternate between slow and fast
+behaviours, such as shags resting at the colony and flying at sea.
 
 ```{r outliers, eval = has_move2utils}
 shags_flags <- shags_tt %>%
@@ -411,8 +425,8 @@ shags_flags <- shags_tt %>%
       method = "detour",
       min_leg = as_units(100, "m")
     ),
-    # the default method, with all thresholds chosen from the data
-    clean_track = event_flag_outliers(.)
+    # the default method, with the same maximum speed
+    clean_track = event_flag_outliers(., v_max = as_units(60, "km/h"))
   )
 ```
 
@@ -460,11 +474,22 @@ ggplot(shags_flags_long, aes(x, y)) +
 The speed cap flags the events at both ends of every step faster than 60 km/h,
 whilst McConnell's filter, which uses the speeds to the neighbouring events,
 flags a single event per spike, and keeps steps that are only just too fast.
-With its default settings, `mt_clean_track()` can also flag events where the
-birds were moving slowly. Whatever the method, look at the flagged events
-before removing them. To inspect the diagnostics of a `move2utils` method, call
-it directly on the tibble of tracks, e.g.
-`move2utils::mt_clean_track(shags_tt, remove = FALSE)`.
+Whatever the method, look at the flagged events before removing them.
+
+The checks combined by `mt_clean_track()` compare each event with a single
+distribution (e.g. of speeds) for the whole track, so, for animals with very
+different behaviours, the normal events of one behaviour can look like
+outliers. If they are flagged, `move2utils` recommends cleaning each behaviour
+separately, giving the behaviour of each event with the `state` argument (e.g.
+`event_flag_outliers(., v_max = as_units(60, "km/h"), state = "behaviour")`,
+for a column `behaviour` of the events; see
+`vignette("OUTLIER_3_state_conditional", package = "move2utils")`). To check a
+run of `mt_clean_track()`, call it directly on the tibble of tracks, without
+removing the outliers, e.g.
+`move2utils::mt_clean_track(shags_tt, v_max = 16.7, remove = FALSE)`
+(`move2utils` takes speeds as plain numbers in m/s, here 60 km/h), and pass
+the result to `move2utils::mt_diagnose_clean_track()`, which plots
+diagnostics of the run and suggests remedies.
 
 ## Removing outliers with McConnell's filter
 
@@ -676,9 +701,13 @@ shags_10min <- shags_clean %>%
 summary(event_interval(shags_10min, units = as_units("min")))
 ```
 
-The longer intervals are gaps in the data, which thinning never bridges.
-`tt_thin_distance()` similarly thins tracks by the distance travelled along
-them (see the article "Using move2utils with tidytracks").
+The longer intervals are gaps in the data, which thinning never bridges. No
+interval is shorter than 9 minutes. By contrast, `mt_filter_per_interval()`
+from `move2` keeps one event per window of time (e.g. with
+`unit = "10 min"`), but, as the windows are aligned on the clock (10:00, 10:10,
+...), two events kept in consecutive windows can be much less than 10 minutes
+apart. `tt_thin_distance()` thins tracks by the distance travelled along them
+(see the article "Using move2utils with tidytracks").
 
 # Summary
 
@@ -687,10 +716,13 @@ A typical workflow to read and clean tracking data is:
 1. read the data with `tt_read_data()`, checking that the date-times have been
    parsed correctly (and giving `format_date_time` if needed);
 2. order the events by time within each track with `tt_order_time()`;
-3. remove the locations at null island (and any other impossible locations);
+3. remove the locations at null island (and any other impossible locations),
+   and, if the loggers report the quality of each fix, the poor fixes (e.g.
+   with `move2utils::mt_filter_gps_quality()`);
 4. remove duplicated records with `mt_filter_unique()`;
 5. remove, or interpolate, outliers with `tt_clean_mcconnell()` or
-   `tt_clean_outliers()`;
+   `tt_clean_outliers()`, giving the top speed of the animal when it is
+   known, and checking the flagged events;
 6. if needed, resample the tracks at a regular interval with
    `tt_regular_time()`, or thin them with `tt_thin_time()`.
 
