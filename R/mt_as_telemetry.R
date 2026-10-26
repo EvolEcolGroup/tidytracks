@@ -298,9 +298,11 @@ ctmm_error_cols <- function(x, error_cols) {
 #' Canonical form of a column name, as used by ctmm to match columns
 #'
 #' @param x A character vector of column names.
-#' @returns The names without separators and in lower case.
+#' @returns The names without separators and brackets, and in lower case.
 #' @keywords internal
 #' @noRd
 canonical_ctmm_name <- function(x) {
-  tolower(gsub("[.:_ ()-]", "", x))
+  # as ctmm's canonical.name(), remove separators (. : _ space -) and round,
+  # square and full-width brackets
+  tolower(gsub("[.:_ ()\\[\\]\uff08\uff09-]", "", x, perl = TRUE))
 }

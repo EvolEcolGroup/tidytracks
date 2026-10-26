@@ -136,3 +136,12 @@ test_that("mt_as_telemetry requires a projected CRS in metres", {
   expect_error(mt_as_telemetry(sf::st_set_crs(x, NA)), "no coordinate")
   expect_error(mt_as_telemetry(as.data.frame(x)), "must be a move2 object")
 })
+
+test_that("canonical_ctmm_name ignores separators, brackets and case", {
+  # as ctmm's canonical.name(), used to recognise the error columns
+  x <- c(
+    "GPS_HDOP", "gps.hdop", "GPS (HDOP)", "GPS [HDOP]", "gps-hdop:",
+    "GPS（HDOP）"
+  )
+  expect_equal(canonical_ctmm_name(x), rep("gpshdop", 6))
+})
