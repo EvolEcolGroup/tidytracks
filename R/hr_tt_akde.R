@@ -660,22 +660,29 @@ ctmm_ud_to_rast <- function(
 #'
 #' @param iso An `sf` object with the isopleths of a UD (as returned by
 #'   [hr_tt_ud_iso()] for a `SpatRaster`).
-#' @param ud_ctmm The `ctmm` `UD` object of the same UD.
+#' @param ud_ctmm The `ctmm` `UD` object of the same UD (or `NULL` for a UD
+#'   not estimated with `ctmm`, which gets `NA` intervals).
 #' @param ci_level The confidence level of the intervals of the areas.
 #' @returns `iso`, with the columns `area_low` and `area_high` added after
 #'   `area`.
 #' @keywords internal
 #' @noRd
 akde_iso_area_ci <- function(iso, ud_ctmm, ci_level) {
-  # for each level of the isopleths (level.UD in ctmm), ctmm estimates the
-  # area of the home range with its confidence interval (a table with one
-  # row and columns low, est and high); with units = FALSE, the areas are in
-  # square metres
-  area_ci <- lapply(iso$level, function(level) {
-    summary(ud_ctmm, level.UD = level, level = ci_level, units = FALSE)$CI
-  })
-  area_low <- vapply(area_ci, function(ci) ci[1, "low"], numeric(1))
-  area_high <- vapply(area_ci, function(ci) ci[1, "high"], numeric(1))
+  if (inherits(ud_ctmm, "UD")) {
+    # for each level of the isopleths (level.UD in ctmm), ctmm estimates the
+    # area of the home range with its confidence interval (a table with one
+    # row and columns low, est and high); with units = FALSE, the areas are
+    # in square metres
+    area_ci <- lapply(iso$level, function(level) {
+      summary(ud_ctmm, level.UD = level, level = ci_level, units = FALSE)$CI
+    })
+    area_low <- vapply(area_ci, function(ci) ci[1, "low"], numeric(1))
+    area_high <- vapply(area_ci, function(ci) ci[1, "high"], numeric(1))
+  } else {
+    # a UD without a ctmm UD object (e.g. from hr_tt_kde(), in a table that
+    # combines it with UDs from hr_tt_akde()) has no confidence intervals
+    area_low <- area_high <- rep(NA_real_, nrow(iso))
+  }
   iso$area_low <- units::as_units(area_low, "m^2")
   iso$area_high <- units::as_units(area_high, "m^2")
   dplyr::relocate(

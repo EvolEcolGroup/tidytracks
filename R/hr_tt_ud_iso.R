@@ -20,7 +20,8 @@
 #'   `ud_ctmm`) and, for each UD, one row per level with these three columns.
 #'   For the UDs estimated with `ctmm`, the columns `area_low` and `area_high`
 #'   (the confidence interval of the home range area at each level, as
-#'   estimated by `ctmm`) are added after `area`.
+#'   estimated by `ctmm`) are added after `area` (in a table that combines
+#'   them with other UDs, e.g. from [hr_tt_kde()], the other UDs get `NA`).
 #' @export
 #' @family home_range
 #' @examples

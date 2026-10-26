@@ -139,6 +139,18 @@ test_that("hr_tt_ud_iso adds the confidence intervals to AKDE isopleths", {
     hr_tt_ud_iso(akde, levels = 0.95, ci_level = NA_real_),
     "ci_level must be"
   )
+  # in a table that also has UDs from hr_tt_kde() (without a ctmm UD
+  # object), those UDs get NA intervals
+  kde <- hr_tt_kde(
+    x,
+    bbox = unlist(akde[1, c("xmin", "ymin", "xmax", "ymax")]),
+    res = akde$res[1]
+  )
+  iso_mixed <- hr_tt_ud_iso(dplyr::bind_rows(akde, kde), levels = 0.95)
+  expect_equal(iso_mixed$method, c("akde", "akde", "kde", "kde"))
+  expect_false(anyNA(iso_mixed$area_low[1:2]))
+  expect_true(all(is.na(iso_mixed$area_low[3:4])))
+  expect_true(all(is.na(iso_mixed$area_high[3:4])))
 })
 
 test_that("hr_tt_akde UDs work with the other hr_tt_ functions", {

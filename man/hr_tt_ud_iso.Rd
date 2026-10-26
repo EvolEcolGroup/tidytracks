@@ -38,7 +38,8 @@ class \code{hr_tt_poly_tbl} with the columns of \code{x} (except \code{ud} and
 \code{ud_ctmm}) and, for each UD, one row per level with these three columns.
 For the UDs estimated with \code{ctmm}, the columns \code{area_low} and \code{area_high}
 (the confidence interval of the home range area at each level, as
-estimated by \code{ctmm}) are added after \code{area}.
+estimated by \code{ctmm}) are added after \code{area} (in a table that combines
+them with other UDs, e.g. from \code{\link[=hr_tt_kde]{hr_tt_kde()}}, the other UDs get \code{NA}).
 }
 \description{
 This method can be applied to a whole tibble of UDs, or to an individual UD.
