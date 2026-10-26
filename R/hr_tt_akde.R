@@ -455,13 +455,10 @@ akde_group_grids <- function(
     default_bboxes <- lapply(seq_len(n_groups), function(i) {
       akde_default_bbox(tel_list[[i]], fits[[i]], bandwidths[[i]], tolerance)
     })
+    # (the buffer moves xmin and ymin down, and xmax and ymax up)
     buffer <- max(res)
-    shared_bbox <- c(
-      xmin = min(vapply(default_bboxes, `[[`, numeric(1), "xmin")) - buffer,
-      ymin = min(vapply(default_bboxes, `[[`, numeric(1), "ymin")) - buffer,
-      xmax = max(vapply(default_bboxes, `[[`, numeric(1), "xmax")) + buffer,
-      ymax = max(vapply(default_bboxes, `[[`, numeric(1), "ymax")) + buffer
-    )
+    shared_bbox <- bbox_union(default_bboxes) + # nolint: object_usage_linter.
+      c(-buffer, -buffer, buffer, buffer)
     bbox <- rep(list(shared_bbox), n_groups)
   } else if (is_kde_bbox(bbox)) {
     # a single bbox, shared by all groups

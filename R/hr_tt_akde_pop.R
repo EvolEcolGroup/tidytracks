@@ -144,13 +144,11 @@ hr_tt_akde_pop <- function(
   if (!is.logical(sample) || length(sample) != 1 || is.na(sample)) {
     stop("sample must be TRUE or FALSE")
   }
-  if (
-    !is.numeric(tolerance) ||
-      length(tolerance) != 1 ||
-      tolerance <= 0 ||
-      tolerance >= 1
-  ) {
-    stop("tolerance must be a single number between 0 and 1")
+  check_probability_arg(tolerance, "tolerance") # nolint: object_usage_linter.
+  # ci_level is only used for the isopleths (by hr_tt_ud_iso(), which also
+  # checks it), but we check it now rather than after estimating all the UDs
+  if (!is.null(levels)) {
+    check_probability_arg(ci_level, "ci_level") # nolint: object_usage_linter.
   }
   # work with a plain list of rasters (in case the UDs were wrapped)
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.

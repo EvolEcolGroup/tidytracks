@@ -218,4 +218,13 @@ test_that("hr_tt_akde_pop checks its inputs", {
     hr_tt_akde_pop(akde_south, method = "mean", tolerance = 2),
     "tolerance must be"
   )
+  expect_error(
+    hr_tt_akde_pop(akde_south, method = "mean", tolerance = NA_real_),
+    "tolerance must be"
+  )
+  # ci_level is checked (before estimating the UDs) only if levels are given
+  expect_error(
+    hr_tt_akde_pop(akde_south, method = "mean", levels = 0.95, ci_level = 95),
+    "ci_level must be"
+  )
 })
