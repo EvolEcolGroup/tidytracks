@@ -10,10 +10,10 @@
 #' `remotes::install_github("move2universe/move2utils")`).
 #'
 #' The suggestion is purely data-driven: check it against what is known about
-#' the species (see also [max_speed_allometric()]). No suggestion (`NA`) is
-#' given when no break is found, e.g. when a track has no outliers, or when it
-#' has fewer than 10 steps with a positive speed. Events without a location
-#' are ignored. `x` must be ordered by time within each track (see
+#' the species (see also [move2utils::v_phys_estimate()]). No suggestion
+#' (`NA`) is given when no break is found, e.g. when a track has no outliers,
+#' or when it has fewer than 10 steps with a positive speed. Events without a
+#' location are ignored. `x` must be ordered by time within each track (see
 #' [tt_order_time()]), and have a geographic CRS or a projected CRS in metres
 #' (`move2utils` takes projected coordinates to be in metres).
 #'

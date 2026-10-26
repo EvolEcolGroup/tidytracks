@@ -57,7 +57,6 @@ reference:
     contents:
         - dist_category
         - same_category
-        - max_speed_allometric
   - title: "Example datasets"
     desc: "Example datasets for testing and demonstration."
     contents:

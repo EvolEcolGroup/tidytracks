@@ -30,7 +30,6 @@ passed to `move2utils`, which does not accept them).
 
 | `tidytracks` | `move2utils` |
 |---|---|
-| `max_speed_allometric()` | `v_phys_estimate()` |
 | `track_suggest_max_speed()` | `mt_suggest_speed_cap()` |
 | `event_flag_outliers()`, `tt_clean_outliers()` | `mt_clean_track()`, `mt_flag_speed_cap()`, `mt_flag_outliers_detour()`, `mt_flag_outliers_bridge()`, `mt_flag_outliers()` |
 | `event_flag_thin_time()`, `tt_thin_time()` | `mt_thin_time()` |
@@ -92,20 +91,23 @@ shags_crs <- paste0(
 ## Choosing a maximum speed
 
 Speed filters such as `tt_clean_mcconnell()` need a maximum speed. When no
-published value is available for a species, `max_speed_allometric()` predicts
-the maximum speed of an animal from its body mass and mode of locomotion
-(Hirt et al. 2017). For a flying bird of about 2.5 kg:
+published value is available for a species, `move2utils::v_phys_estimate()`
+predicts the maximum speed of an animal from its body mass and mode of
+locomotion (Hirt et al. 2017). For a flying bird of about 2.5 kg:
 
 ```{r allometric}
-# the prediction is in m/s; convert it to km/h to compare with published values
-max_speed_allometric(as_units(2.5, "kg"), mode = "flying") %>%
-  set_units("km/h")
+# move2utils takes the mass as a plain number in kg; the prediction is
+# printed in both m/s and km/h
+v_phys <- move2utils::v_phys_estimate(mass = 2.5, mode = "flying")
+v_phys
 ```
 
 This is a ceiling on what an animal of that mass can physically do, and here
 it is about twice the 58 km/h observed for shags: a published,
 species-specific value (as used in the main vignette) should be preferred when
-available.
+available. The prediction is a plain number in m/s; to use it as `max_speed`
+in `tt_clean_mcconnell()`, give it its units with
+`as_units(as.numeric(v_phys), "m/s")`.
 
 Alternatively, `track_suggest_max_speed()` looks, in each track, for a break
 in the distribution of speeds that separates plausible steps from outliers:
@@ -200,9 +202,26 @@ whilst McConnell's filter, which uses the speeds to the neighbouring events,
 flags a single event per spike and keeps steps that are only just too fast.
 With its default settings, however, `mt_clean_track()` also flags many events
 where the birds were moving slowly (e.g. `kb_19` and `kb_42`). Whatever the
-method, look at the flagged events before removing them. To inspect the
-diagnostics of a `move2utils` method, call it directly on the tibble of
-tracks, e.g. `move2utils::mt_clean_track(shags_tt, remove = FALSE)`.
+method, look at the flagged events before removing them.
+
+This is a known limitation of `mt_clean_track()` (see
+`vignette("OUTLIER_6_troubleshooting", package = "move2utils")`): its checks
+compare each event with a single distribution (e.g. of speeds) for the whole
+track, so, for animals that alternate between very different behaviours, such
+as shags resting at the colony and flying at sea, the normal events of one
+behaviour can look like outliers. Its remedies are to give it the top speed of
+the animal when it is known (with `v_max`, or with the body `mass` and `mode`
+of locomotion, from which it predicts one with `v_phys_estimate()`),
+rather than letting it choose one from the data, and to clean each behaviour
+separately, giving the behaviour of each event with the `state` argument
+(e.g. with
+`event_flag_outliers(., v_max = as_units(60, "km/h"), state = "behaviour")`,
+for a column `behaviour` of the events; see
+`vignette("OUTLIER_3_state_conditional", package = "move2utils")`). To inspect
+the diagnostics of a `move2utils` method, call it directly on the tibble of
+tracks, e.g. `move2utils::mt_clean_track(shags_tt, remove = FALSE)`, and pass
+the result of `mt_clean_track()` to `move2utils::mt_diagnose_clean_track()`,
+which plots diagnostics of the run and suggests remedies.
 
 `tt_clean_outliers()` acts on the outliers in the same ways as
 `tt_clean_mcconnell()`: it removes them, sets their location to empty, or

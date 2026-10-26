@@ -57,9 +57,13 @@ as \code{units} objects (e.g. \code{v_max = as_units(50, "km/h")}), and are conv
 to the units expected by \code{move2utils}: speeds (\code{v_max},
 \code{physiological_ceiling}), distances (\code{location_error}, \code{jitter},
 \code{residual_floor}, \code{step_floor}, \code{min_leg}) and masses (\code{mass}).
-\code{location_error} can also be the name of a column of \code{x} (with the errors
-in metres). The \code{move2utils} functions are run without plots
-and messages; to inspect their diagnostics, call them directly on \code{x}.
+\code{location_error} (for the "clean_track" and "bridge" methods) can be a
+single value, one value per event, the name of a column of \code{x} with the
+errors (as a \code{units} object), or \code{"auto"}, with which \code{move2utils} uses the
+column \code{eobs_horizontal_accuracy_estimate} (which must then be a \code{units}
+object) or, failing that, the Argos location classes. The \code{move2utils}
+functions are run without plots and messages; to inspect their
+diagnostics, call them directly on \code{x}.
 
 \code{x} must be ordered by time within each track (see \code{\link[=tt_order_time]{tt_order_time()}}).
 Some methods also require events with duplicated times to be removed first

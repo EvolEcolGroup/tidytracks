@@ -101,7 +101,8 @@ move2utils_units <- c(
 #' The physical arguments of `move2utils` functions (see `move2utils_units`)
 #' must be given as `units` objects, which are converted to numbers in the
 #' units expected by `move2utils`. `NULL` and character values (e.g. the name
-#' of a column for `location_error`) are passed unchanged. Other arguments are
+#' of a column for `location_error`, whose units are checked by the wrappers
+#' with `location_error_column()`) are passed unchanged. Other arguments are
 #' passed unchanged, except that `units` objects are rejected, as the units
 #' that `move2utils` expects for them are not known (e.g. some times are in
 #' seconds and others in minutes).
@@ -152,6 +153,35 @@ units_to_move2utils <- function(args) {
     args[[i]] <- as.numeric(units::set_units(arg, expected, mode = "standard"))
   }
   args
+}
+
+#' Get a column of location errors, checking its units
+#'
+#' Location errors can be given to the `move2utils` wrappers as the name of a
+#' column of `x`, which must be a `units` object with units of length: a
+#' column of plain numbers is rejected rather than assumed to be in metres.
+#'
+#' @param x A `move2` object.
+#' @param col The name of the column.
+#' @returns The column, a `units` object.
+#' @keywords internal
+#' @noRd
+location_error_column <- function(x, col) {
+  if (!col %in% names(x)) {
+    stop("location_error ('", col, "') is not a column of x")
+  }
+  error <- x[[col]]
+  if (
+    !inherits(error, "units") ||
+      !units::ud_are_convertible(units::deparse_unit(error), "m")
+  ) {
+    stop(
+      "the column '", col, "' used for location_error must be a units ",
+      "object with units of length: e.g. mutate(x, ", col, " = as_units(",
+      col, ", 'm'))"
+    )
+  }
+  error
 }
 
 #' Check that a move2 object is ordered by time within each track

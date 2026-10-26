@@ -8,9 +8,6 @@
   that follow the tidytracks conventions: physical quantities are given as
   `units` objects, and events without a location are allowed. Projected
   coordinates must be in metres, as `move2utils` assumes.
-  * `max_speed_allometric()` predicts the maximum speed of an animal from its
-    body mass and mode of locomotion (Hirt et al. 2017), for use as
-    `max_speed` in `event_flag_mcconnell()` and `tt_clean_mcconnell()`.
   * `track_suggest_max_speed()` suggests a maximum speed for each track from
     a break in the distribution of the speeds of its steps.
   * `event_flag_outliers()` and `tt_clean_outliers()` detect outliers with
@@ -42,6 +39,11 @@
 * `hr_tt_ud_sum()` now works with tables of UDs from methods other than
   `hr_tt_kde()` (it previously required the column `h`), and keeps the
   parameters of the method (e.g. `window_size` and `margin`).
+* The new article "Reading and cleaning data", on the package website, shows
+  how to read tracking data (including date-times in different formats), and
+  how to clean them step by step: removing locations at null island,
+  duplicated records and outliers, interpolating missing locations, and
+  resampling tracks to a regular interval.
 
 # tidytracks 0.2.1
 

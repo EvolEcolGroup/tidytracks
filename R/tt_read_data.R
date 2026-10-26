@@ -20,8 +20,9 @@
 #' @details This function makes a number of assumptions about the data. If your
 #'   data does not meet these assumptions, you may need to preprocess it before
 #'   using this function, or create a `move2` object manually using the
-#'   `move2::mt_as_move2()` function. See the `reading_data` vignette for more
-#'   details.
+#'   `move2::mt_as_move2()` function. See the article "Reading and cleaning
+#'   data" on the package website for more details, including how to read
+#'   date-times in different formats.
 #'
 #' @param events A path to a CSV file containing the event data, OR a dataframe
 #'   in R containing the event data.

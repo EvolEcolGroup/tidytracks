@@ -103,6 +103,75 @@ test_that("event_flag_outliers passes further arguments, converting units", {
   )
 })
 
+test_that("event_flag_outliers requires location errors with units", {
+  skip_if_not_installed("move2utils")
+  x <- create_spiky_tracks()
+  x$error_metres <- rep(20, nrow(x))
+  direct <- move2utils::mt_flag_outliers_bridge(
+    x,
+    location_error = "error_metres",
+    plot = FALSE,
+    silent = TRUE
+  )
+  # a column of plain numbers is not assumed to be in metres
+  expect_error(
+    event_flag_outliers(x, method = "bridge", location_error = "error_metres"),
+    "the column 'error_metres' used for location_error must be a units object"
+  )
+  expect_error(
+    event_flag_outliers(x, method = "bridge", location_error = "not_a_column"),
+    "location_error \\('not_a_column'\\) is not a column of x"
+  )
+  # a column with units, in any units of length
+  x$error_units <- as_units(rep(0.02, nrow(x)), "km")
+  expect_identical(
+    event_flag_outliers(x, method = "bridge", location_error = "error_units"),
+    !direct$is_outlier
+  )
+  # one value per event
+  expect_identical(
+    event_flag_outliers(
+      x,
+      method = "bridge",
+      location_error = as_units(rep(20, nrow(x)), "m")
+    ),
+    !direct$is_outlier
+  )
+  expect_error(
+    event_flag_outliers(
+      x,
+      method = "bridge",
+      location_error = rep(20, nrow(x))
+    ),
+    "location_error must be a units object"
+  )
+  expect_error(
+    event_flag_outliers(
+      x,
+      method = "bridge",
+      location_error = as_units(c(10, 20), "m")
+    ),
+    "location_error must have one value, or one value per event"
+  )
+  # with "auto", move2utils uses the accuracy of e-obs tags, which must have
+  # units too
+  x$eobs_horizontal_accuracy_estimate <- rep(20, nrow(x))
+  expect_error(
+    event_flag_outliers(x, method = "bridge", location_error = "auto"),
+    "the column 'eobs_horizontal_accuracy_estimate' used for location_error"
+  )
+  x$eobs_horizontal_accuracy_estimate <- x$error_units
+  expect_message(
+    valid <- event_flag_outliers(
+      x,
+      method = "bridge",
+      location_error = "auto"
+    ),
+    "using `eobs_horizontal_accuracy_estimate`"
+  )
+  expect_identical(valid, !direct$is_outlier)
+})
+
 test_that("event_flag_outliers returns events without a location as valid", {
   skip_if_not_installed("move2utils")
   x <- create_spiky_tracks()
@@ -113,6 +182,22 @@ test_that("event_flag_outliers returns events without a location as valid", {
   expect_identical(
     valid[-c(10, 20)],
     event_flag_outliers(x[-c(10, 20), ], method = "detour")
+  )
+  # location errors given per event are matched to the located events
+  errors <- as_units(seq(10, 30, length.out = nrow(x)), "m")
+  valid <- event_flag_outliers(
+    x_empty,
+    method = "bridge",
+    location_error = errors
+  )
+  expect_true(all(valid[c(10, 20)]))
+  expect_identical(
+    valid[-c(10, 20)],
+    event_flag_outliers(
+      x[-c(10, 20), ],
+      method = "bridge",
+      location_error = errors[-c(10, 20)]
+    )
   )
 })
 

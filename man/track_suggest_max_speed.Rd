@@ -42,10 +42,10 @@ which requires the suggested package \code{move2utils} (install it with
 }
 \details{
 The suggestion is purely data-driven: check it against what is known about
-the species (see also \code{\link[=max_speed_allometric]{max_speed_allometric()}}). No suggestion (\code{NA}) is
-given when no break is found, e.g. when a track has no outliers, or when it
-has fewer than 10 steps with a positive speed. Events without a location
-are ignored. \code{x} must be ordered by time within each track (see
+the species (see also \code{\link[move2utils:v_phys_estimate]{move2utils::v_phys_estimate()}}). No suggestion
+(\code{NA}) is given when no break is found, e.g. when a track has no outliers,
+or when it has fewer than 10 steps with a positive speed. Events without a
+location are ignored. \code{x} must be ordered by time within each track (see
 \code{\link[=tt_order_time]{tt_order_time()}}), and have a geographic CRS or a projected CRS in metres
 (\code{move2utils} takes projected coordinates to be in metres).
 

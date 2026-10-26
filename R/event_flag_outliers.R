@@ -28,9 +28,13 @@
 #' to the units expected by `move2utils`: speeds (`v_max`,
 #' `physiological_ceiling`), distances (`location_error`, `jitter`,
 #' `residual_floor`, `step_floor`, `min_leg`) and masses (`mass`).
-#' `location_error` can also be the name of a column of `x` (with the errors
-#' in metres). The `move2utils` functions are run without plots
-#' and messages; to inspect their diagnostics, call them directly on `x`.
+#' `location_error` (for the "clean_track" and "bridge" methods) can be a
+#' single value, one value per event, the name of a column of `x` with the
+#' errors (as a `units` object), or `"auto"`, with which `move2utils` uses the
+#' column `eobs_horizontal_accuracy_estimate` (which must then be a `units`
+#' object) or, failing that, the Argos location classes. The `move2utils`
+#' functions are run without plots and messages; to inspect their
+#' diagnostics, call them directly on `x`.
 #'
 #' `x` must be ordered by time within each track (see [tt_order_time()]).
 #' Some methods also require events with duplicated times to be removed first
@@ -89,6 +93,17 @@ event_flag_outliers <- function(
     probability = move2utils::mt_flag_outliers
   )
 
+  args <- list(...)
+  # a column of errors, or one error per event, is stored in metres in a
+  # column of x, so that it is subset with the events passed to move2utils
+  # (which drops those without a location); a single value is left to
+  # units_to_move2utils() below
+  location_error <- args[["location_error"]]
+  if (is.character(location_error) || length(location_error) > 1) {
+    prepared <- outlier_location_error(x, location_error)
+    x <- prepared$x
+    args$location_error <- prepared$location_error
+  }
   # move2utils takes physical quantities as plain numbers in fixed units
   # (e.g. v_max in m/s), so the units objects given through ... are converted
   # first; arguments that move2utils validates itself (thresholds, iterations,
@@ -99,7 +114,7 @@ event_flag_outliers <- function(
     call_move2utils, # nolint: object_usage_linter.
     c(
       list(x = x, fn = fn),
-      units_to_move2utils(list(...)), # nolint: object_usage_linter.
+      units_to_move2utils(args), # nolint: object_usage_linter.
       list(cols = "is_outlier")
     )
   )
@@ -108,4 +123,56 @@ event_flag_outliers <- function(
   # is no location to judge; %in% also treats any NA from move2utils itself
   # as not flagged
   !(res$is_outlier %in% TRUE)
+}
+
+#' Prepare a location error given by column or per event for move2utils
+#'
+#' `move2utils` takes the name of a column of `x` with the errors in metres,
+#' or `"auto"`, with which it uses the column
+#' `eobs_horizontal_accuracy_estimate` (in metres) or, failing that, the Argos
+#' location classes. Columns must be `units` objects, which are converted to
+#' metres in a copy of `x`, and errors given per event are stored in a new
+#' column, so that they are subset with the events.
+#'
+#' @param x A `move2` object.
+#' @param location_error The name of a column of `x`, `"auto"`, or a `units`
+#'   object with one value per event.
+#' @returns A list with `x` (with the errors in metres) and `location_error`
+#'   (the name of the column, or `"auto"`, to pass to `move2utils`).
+#' @keywords internal
+#' @noRd
+outlier_location_error <- function(x, location_error) {
+  if (is.character(location_error) && length(location_error) == 1) {
+    # with "auto", the Argos location classes are converted to metres by
+    # move2utils, so only the accuracy of e-obs tags needs its units checked
+    col <- if (location_error == "auto") {
+      "eobs_horizontal_accuracy_estimate"
+    } else {
+      location_error
+    }
+    if (location_error != "auto" || col %in% names(x)) {
+      error <- location_error_column(x, col) # nolint: object_usage_linter.
+      x[[col]] <- as.numeric(units::set_units(error, "m", mode = "standard"))
+    }
+    return(list(x = x, location_error = location_error))
+  }
+  # one value per event (a single value does not get here)
+  if (
+    !inherits(location_error, "units") ||
+      !units::ud_are_convertible(units::deparse_unit(location_error), "m")
+  ) {
+    stop(
+      "location_error must be a units object (e.g. as_units(20, 'm')), ",
+      "or the name of a column of x"
+    )
+  }
+  if (length(location_error) != nrow(x)) {
+    stop("location_error must have one value, or one value per event")
+  }
+  # a name that is unlikely to be a column of x already
+  col <- ".tidytracks_location_error"
+  x[[col]] <- as.numeric(
+    units::set_units(location_error, "m", mode = "standard")
+  )
+  list(x = x, location_error = col)
 }
