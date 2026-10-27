@@ -3,23 +3,10 @@
 ## New features
 
 * New interface to the package `ctmm`, to fit continuous-time movement models
-  to tibbles of tracks (see the new article "Movement models with ctmm"):
-  * `mt_as_telemetry()` converts a `move2` object into a list of `ctmm`
-    `telemetry` objects (the reverse of `move2::mt_as_move2()`).
-  * `ctmm_tt_fit()` fits a movement model to each track (by default, selecting
-    the best model), and returns a table of models with one row per track, in
-    the order of the metadata.
-  * `ctmm_tt_summary()` returns the parameters of the models (e.g. home range
-    area and crossing time), with confidence intervals.
-  * `hr_tt_akde()` estimates home ranges with autocorrelated kernel density
-    estimation (AKDE), using the fitted models. The UDs are returned as an
-    `hr_tt_ud_tbl`, so that they can be used with the other `hr_tt_`
-    functions.
-  * `hr_tt_akde_pop()` combines AKDE home ranges (for all tracks, or for
-    each group of a grouped table of UDs) into population home ranges, with
-    population kernel density estimation (`ctmm::pkde()`) or the average of
-    the UDs, with confidence intervals of the population home range areas.
-* `hr_tt_ud_sum()` works with tables of UDs without a bandwidth column `h`.
+  to tibbles of tracks (see the new article "Movement models with ctmm").
+  This includes the new functions: `mt_as_telemetry()`, `ctmm_tt_fit()`,
+  `ctmm_tt_summary()`, `hr_tt_akde()`, and `hr_tt_akde_pop()`
+* `hr_tt_ud_sum()` now works with tables of UDs without a bandwidth column `h`.
 
 # tidytracks 0.2.1
 

@@ -104,7 +104,8 @@ home ranges, where we are interested in areas, an equal-area projection is a
 good choice (the default of `crstools::suggest_crs()`):
 
 ```{r suggest_crs, message=FALSE}
-buffalo_crs <- crstools::suggest_crs(buffalo_tt, quiet = TRUE)
+library(crstools)
+buffalo_crs <- suggest_crs(buffalo_tt, quiet = TRUE)
 buffalo_crs$description
 buffalo_tt <- sf::st_transform(buffalo_tt, buffalo_crs$wkt)
 ```
@@ -207,7 +208,9 @@ names(buffalo_summary)
 Each parameter has three columns: the lower bound of its confidence interval
 (`_low`), its estimate (`_est`) and the upper bound (`_high`). Printing such a
 wide table is not very useful, as the columns that do not fit in the console
-are hidden. To look at the parameters we are interested in, we can use
+are hidden. 
+
+To look at the parameters we are interested in, we can use
 `transmute()` from `dplyr`, which keeps only the columns that we list, and
 can modify them at the same time (it combines `select()` and `mutate()`).
 
