@@ -62,3 +62,16 @@ test_that("filter_by_meta is not affected by columns named as its variables", {
   expect_equal(nrow(result), 6L)
   expect_equal(as.character(show_meta(result)$bird_id), "id_2")
 })
+
+test_that("filter_by_meta works on grouped objects", {
+  toy_tt <- dplyr::group_by(create_toy_tt(), bird_id)
+  result <- filter_by_meta(toy_tt, species == "species_a")
+  expect_equal(nrow(result), 24L)
+  expect_equal(as.character(show_meta(result)$bird_id), "id_1")
+  expect_equal(dplyr::group_vars(result), "bird_id")
+  expect_equal(dplyr::n_groups(result), 1L)
+
+  result <- filter_by_meta(toy_tt, .track_id = "id_2")
+  expect_equal(nrow(result), 6L)
+  expect_equal(dplyr::n_groups(result), 1L)
+})

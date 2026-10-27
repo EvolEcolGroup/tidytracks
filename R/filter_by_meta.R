@@ -38,11 +38,15 @@ filter_by_meta <- function(.data, ..., .track_id = NULL) {
     dplyr::select(!!rlang::sym(move2::mt_track_id_column(.data))) |>
     dplyr::pull()
   # Now we apply the filtering to the EVENTS DATA
-  # Find the events whose track ID is in the vector of track IDs we want to
-  # keep, and filter the events table to these events (the condition is
-  # injected, so that it cannot be masked by a column of the events table)
-  keep_events <- event_track_id(.data) %in% new_tracks
-  .data <- .data |> dplyr::filter(!!keep_events)
+  # Keep the events whose track ID is in the vector of track IDs we want to
+  # keep (the ids are injected, so that they cannot be masked by a column of
+  # the events table; the condition is evaluated on the track id column, rather
+  # than injected as a logical vector over all events, so that it also works
+  # within the groups of a grouped object)
+  .data <- .data |>
+    dplyr::filter(
+      !!rlang::sym(move2::mt_track_id_column(.data)) %in% !!new_tracks
+    )
   # Finally, reset the metadata of the newly filtered events table
   .data <- move2::mt_set_track_data(.data, new_id_data)
   return(.data)
