@@ -12,7 +12,8 @@ track_tot_distance(x, units = as_units("m"))
 \item{units}{The units to use for the distance. Default is "m".}
 }
 \value{
-A vector of total distances for each track
+A vector of total distances for each track, named by track id and in
+the same order as the tracks in the metadata (see \code{\link[=show_meta]{show_meta()}})
 }
 \description{
 Compute the total distance of each track

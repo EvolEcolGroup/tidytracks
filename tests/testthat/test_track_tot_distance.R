@@ -44,3 +44,32 @@ test_that("track_tot_distance returns values in original order", {
     tolerance = 1e-6
   )
 })
+
+test_that("track_tot_distance returns values in the order of the metadata", {
+  example_tt_2 <- readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
+  # after ordering, the events are in the order a, b, c, whilst the metadata
+  # is still in the order b, a, c
+  example_tt_2 <- tt_order_time(example_tt_2)
+  expect_equal(
+    unique(as.character(event_track_id(example_tt_2))),
+    c("a", "b", "c")
+  )
+
+  distances <- track_tot_distance(example_tt_2)
+  expect_equal(names(distances), c("b", "a", "c"))
+  expect_equal(
+    unname(distances),
+    as_units(c(1559776.1, 870617.4, 474273.1), "m"),
+    tolerance = 1e-6
+  )
+
+  # so they can be added to the metadata
+  show_meta(example_tt_2)$tot_distance <- track_tot_distance(example_tt_2)
+  expect_equal(
+    show_meta(example_tt_2)$tot_distance[
+      show_meta(example_tt_2)$track_id == "a"
+    ],
+    as_units(870617.4, "m"),
+    tolerance = 1e-6
+  )
+})
