@@ -73,6 +73,12 @@ test_that("event_speed gives error for objects without a CRS", {
   )
 })
 
+test_that("event_speed returns one value per event without events", {
+  expect_length(event_speed(example_tt[0, ]), 0)
+  # a single event has no segment
+  expect_equal(event_speed(example_tt[1, ]), as_units(NA_real_, "m/min"))
+})
+
 test_that("the event_speed tests restore the s2 setting", {
   expect_identical(sf::sf_use_s2(), s2_at_start)
 })

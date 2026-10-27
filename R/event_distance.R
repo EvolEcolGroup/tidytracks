@@ -42,8 +42,9 @@ event_distance <- function(x, units = as_units("m")) {
 
   n <- nrow(coords)
 
-  # segment belongs to same track
-  same_track <- c(track_id[-1] == track_id[-n], FALSE)
+  # segment belongs to same track (subset to n values, as there is no last
+  # event to pad if there are no events)
+  same_track <- c(track_id[-1] == track_id[-n], FALSE)[seq_len(n)]
 
   # distances for all consecutive pairs
   dist <- c(
@@ -55,7 +56,7 @@ event_distance <- function(x, units = as_units("m")) {
       longlat = longlat
     ),
     NA_real_
-  )
+  )[seq_len(n)]
 
   # invalidate track boundaries
   dist[!same_track] <- NA_real_

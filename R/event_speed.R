@@ -41,13 +41,14 @@ event_speed <- function(x, units = as_units("m/min")) {
 
   n <- length(track_id)
 
-  # segment belongs to same track
-  same_track <- c(track_id[-1] == track_id[-n], FALSE)
+  # segment belongs to same track (subset to n values, as there is no last
+  # event to pad if there are no events)
+  same_track <- c(track_id[-1] == track_id[-n], FALSE)[seq_len(n)]
 
   # distances for all consecutive pairs
   dist <- event_distance(x)
 
-  dt <- as_units(c(diff(time), NA_real_))
+  dt <- as_units(c(diff(time), NA_real_)[seq_len(n)])
 
   dt[!same_track] <- NA_real_
 
