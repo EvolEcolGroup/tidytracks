@@ -8,14 +8,15 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include = FALSE}
+```{r setup, include = FALSE, purl = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 # the code of the benchmark is in two scripts in the directory code (one to
 # simulate the tracks, one to run the benchmark), from which the chunks below
-# are read
+# are read (purl = FALSE because pkgdown purls this file from the package
+# root when looking for images, where these relative paths do not exist)
 knitr::read_chunk("code/hr_benchmark_tracks.R")
 knitr::read_chunk("code/hr_packages_benchmark.R")
 # amt is a suggested package, needed to simulate the example tracks
