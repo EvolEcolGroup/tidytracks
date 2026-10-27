@@ -2,6 +2,11 @@
 
 ## New features
 
+* New interface to the package `ctmm`, to fit continuous-time movement models
+  to tibbles of tracks (see the new article "Movement models with ctmm").
+  This includes the new functions: `mt_as_telemetry()`, `ctmm_tt_fit()`,
+  `ctmm_tt_summary()`, `hr_tt_akde()`, and `hr_tt_akde_pop()`
+* `hr_tt_ud_sum()` now works with tables of UDs without a bandwidth column `h`.
 * `hr_tt_locoh()`, a fast implementation to estimate home ranges with local
   convex hulls (LoCoH).
 * `hr_tt_kde()` gains a `method` argument. Its new default, `"binned"`, bins

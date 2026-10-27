@@ -29,10 +29,11 @@ test_that("hr_tt_ud_iso converts a table of utilisation distributions", {
     logical(1)
   )))
 
+  # the same isopleths (including the attributes of the sf table) as those
+  # returned by hr_tt_kde() with levels
   expect_equal(
     boar_iso,
-    hr_tt_kde(boar_tt, levels = c(0.5, 0.95), res = 50),
-    ignore_attr = TRUE
+    hr_tt_kde(boar_tt, levels = c(0.5, 0.95), res = 50)
   )
 })
 

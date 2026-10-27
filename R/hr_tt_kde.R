@@ -305,6 +305,16 @@ hr_tt_kde <- function(
     ymax = vapply(bbox[group_unique], function(b) b[["ymax"]], numeric(1)),
     res = res[group_unique]
   )
+  # if there was a single grouping variable, rename the group_id column (before
+  # the isopleths are added: renaming an sf table of isopleths would leave its
+  # attributes (e.g. agr) with the old names)
+  if (length(dplyr::group_vars(x)) == 1) {
+    kde_results <- kde_results %>%
+      dplyr::rename_with(
+        ~ dplyr::group_vars(x),
+        dplyr::all_of("group_id")
+      )
+  }
   if (is.null(levels)) {
     # the full UDs, as a list column of rasters
     kde_results$ud <- stats::setNames(uds, group_labels[group_unique])
@@ -314,25 +324,6 @@ hr_tt_kde <- function(
     kde_results <- isopleth_table( # nolint: object_usage_linter.
       kde_results,
       uds
-    )
-  }
-
-  # if there was a single grouping variable, rename the group_id column
-  if (length(dplyr::group_vars(x)) == 1) {
-    kde_results <- kde_results %>%
-      dplyr::rename_with(
-        ~ dplyr::group_vars(x),
-        dplyr::all_of("group_id")
-      )
-  }
-
-  # combining the isopleths of the groups with rbind() and renaming the
-  # group_id column do not keep the hr_tt_poly_tbl class set by
-  # hr_tt_ud_iso(), so restore it
-  if (!is.null(levels)) {
-    class(kde_results) <- c(
-      "hr_tt_poly_tbl",
-      setdiff(class(kde_results), "hr_tt_poly_tbl")
     )
   }
 

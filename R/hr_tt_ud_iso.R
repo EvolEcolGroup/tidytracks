@@ -8,11 +8,20 @@
 #' @param levels numeric vector of isopleth levels to create. Default is
 #'   `c(0.50, 0.95)`, which will create 50% and 95% isopleths. Levels should be
 #'   between 0 and 1.
+#' @param ci_level The confidence level of the confidence intervals of the
+#'   areas of the isopleths, which are computed for the UDs estimated with
+#'   `ctmm` (i.e. a table with a `ud_ctmm` column, as returned by
+#'   [hr_tt_akde()] and [hr_tt_akde_pop()]); it is ignored for other UDs.
+#'   Default is 0.95.
 #' @return If `x` is a `SpatRaster`, an `sf` object with one row per level and
 #'   columns `level`, `area` (the area of the isopleth) and `geometry` (a
 #'   `MULTIPOLYGON` for the isopleth). If `x` is a tibble, an `sf` tibble of
-#'   class `hr_tt_poly_tbl` with the columns of `x` (except `ud`) and, for each
-#'   UD, one row per level with these three columns.
+#'   class `hr_tt_poly_tbl` with the columns of `x` (except `ud` and
+#'   `ud_ctmm`) and, for each UD, one row per level with these three columns.
+#'   For the UDs estimated with `ctmm`, the columns `area_low` and `area_high`
+#'   (the confidence interval of the home range area at each level, as
+#'   estimated by `ctmm`) are added after `area` (in a table that combines
+#'   them with other UDs, e.g. from [hr_tt_kde()], the other UDs get `NA`).
 #' @export
 #' @family home_range
 #' @examples
@@ -24,7 +33,7 @@
 #' library(ggplot2)
 #' ggplot(example_iso) +
 #'   geom_sf(aes(fill = track_id), alpha = 0.7)
-hr_tt_ud_iso <- function(x, levels = c(0.50, 0.95)) {
+hr_tt_ud_iso <- function(x, levels = c(0.50, 0.95), ci_level = 0.95) {
   UseMethod("hr_tt_ud_iso")
 }
 
@@ -32,12 +41,26 @@ hr_tt_ud_iso <- function(x, levels = c(0.50, 0.95)) {
 #' @rdname hr_tt_ud_iso
 # Note that we have a generic method for a tibble as the hr_tt_ud_tbl
 # class is lost on group_map operations
-hr_tt_ud_iso.tbl_df <- function(x, levels = c(0.50, 0.95)) {
+hr_tt_ud_iso.tbl_df <- function(
+  x,
+  levels = c(0.50, 0.95),
+  ci_level = 0.95
+) {
   stopifnot_hr_tt_ud_table(x) # nolint: object_usage_linter.
   # Work with a plain list locally while preserving a loaded object's packing.
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
   levels <- sort(levels)
+  # the UDs estimated with ctmm (by hr_tt_akde() or hr_tt_akde_pop()), which
+  # come with their ctmm UD objects in column ud_ctmm, get the confidence
+  # intervals of the areas of their isopleths
+  with_ci <- "ud_ctmm" %in% names(x)
+  if (with_ci) {
+    check_probability_arg(ci_level, "ci_level") # nolint: object_usage_linter.
+    # the intervals are computed by summary() of the ctmm UD objects, whose
+    # method needs ctmm
+    check_ctmm_installed() # nolint: object_usage_linter.
+  }
 
   # The isopleths of each UD, without their areas. sf looks up the
   # parameters of the CRS (with PROJ) every time it is given a CRS, which
@@ -48,6 +71,16 @@ hr_tt_ud_iso.tbl_df <- function(x, levels = c(0.50, 0.95)) {
   iso <- lapply(x$ud, function(ud) {
     raster_isopleths(ud, levels = levels, crs_cache = crs_cache)
   })
+  if (with_ci) {
+    iso <- purrr::map2(
+      iso,
+      x$ud_ctmm,
+      akde_iso_area_ci, # nolint: object_usage_linter.
+      ci_level = ci_level
+    )
+    x$ud_ctmm <- NULL
+  }
+  # the UDs (including the ctmm UD objects) are replaced by their isopleths
   x$ud <- NULL
   isopleth_table(x, iso)
 }
@@ -55,7 +88,11 @@ hr_tt_ud_iso.tbl_df <- function(x, levels = c(0.50, 0.95)) {
 
 #' @export
 #' @rdname hr_tt_ud_iso
-hr_tt_ud_iso.SpatRaster <- function(x, levels = c(0.50, 0.95)) {
+hr_tt_ud_iso.SpatRaster <- function(
+  x,
+  levels = c(0.50, 0.95),
+  ci_level = 0.95
+) {
   iso <- raster_isopleths(x, levels = levels)
   if (nrow(iso) == 0) {
     return(iso)

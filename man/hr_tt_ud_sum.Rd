@@ -46,6 +46,10 @@ example_kde_grouped <- example_kde \%>\%
 hr_tt_ud_sum(example_kde_grouped)
 }
 \seealso{
+\code{\link[=hr_tt_akde_pop]{hr_tt_akde_pop()}} to combine UDs estimated with \code{\link[=hr_tt_akde]{hr_tt_akde()}}
+into population UDs with the methods of \code{ctmm} (with confidence
+intervals of the population home range areas).
+
 Other home_range:
 \code{\link[=hr_tt_ud_iso]{hr_tt_ud_iso()}}
 }

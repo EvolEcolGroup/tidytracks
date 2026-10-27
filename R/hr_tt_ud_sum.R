@@ -22,6 +22,9 @@
 #'   left_join(show_meta(example_tt)) %>%
 #'   group_by(sex)
 #' hr_tt_ud_sum(example_kde_grouped)
+#' @seealso [hr_tt_akde_pop()] to combine UDs estimated with [hr_tt_akde()]
+#'   into population UDs with the methods of `ctmm` (with confidence
+#'   intervals of the population home range areas).
 #' @family home_range
 
 hr_tt_ud_sum <- function(x) {
@@ -58,9 +61,10 @@ hr_tt_ud_sum.tbl_df <- function(x) {
   # Work with a plain list locally while preserving a loaded object's packing.
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
-  # create a new tibble with the summed UD
+  # create a new tibble with the summed UD (UDs from hr_tt_akde() have no
+  # bandwidth column h)
   sum_tbl <- x %>%
-    dplyr::select(dplyr::all_of(
+    dplyr::select(dplyr::any_of(
       c("method", "h", "xmin", "ymin", "xmax", "ymax", "res")
     )) %>%
     dplyr::distinct()
