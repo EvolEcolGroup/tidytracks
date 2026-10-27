@@ -122,6 +122,26 @@ test_that("hr_tt_locoh accepts one n per group", {
   )
 })
 
+test_that("hr_tt_locoh returns the groups in the order of the group keys", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  # the groups are sorted in the reverse order of the tracks in the data:
+  # Jean, Chou, Calou, Brock
+  boar_tt$group <- factor(boar_tt$name, levels = rev(levels(boar_tt$name)))
+  n <- c(5, 6, 7, 8)
+  grouped_locoh <- hr_tt_locoh(
+    dplyr::group_by(boar_tt, group),
+    n = n,
+    levels = 0.9
+  )
+
+  expect_equal(grouped_locoh$group, rev(levels(boar_tt$name)))
+  expect_equal(grouped_locoh$n, n)
+  expect_equal(
+    grouped_locoh$area[grouped_locoh$group == "Jean"],
+    hr_tt_locoh(boar_tt[boar_tt$name == "Jean", ], n = 5, levels = 0.9)$area
+  )
+})
+
 test_that("hr_tt_locoh validates its arguments", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
 

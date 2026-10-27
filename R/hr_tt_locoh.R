@@ -67,7 +67,8 @@
 #'   leaves them as they are; a small positive value (e.g. 1e-5, as in
 #'   `amt::hr_locoh()`) also includes the hulls with no area (see Details).
 #' @returns An `sf` tibble of subclass `hr_tt_poly_tbl` of results, with one
-#' row per group and level, and columns:
+#' row per group and level (with the groups in the order of
+#' [dplyr::group_keys()], i.e. sorted by the grouping variables), and columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
 #'   grouping of `x`
@@ -133,7 +134,6 @@ hr_tt_locoh <- function(
 
   # get the group indices
   group_index <- dplyr::group_indices(x)
-  group_unique <- unique(group_index)
   group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
   # extract coordinates
@@ -162,7 +162,10 @@ hr_tt_locoh <- function(
   longlat <- isTRUE(sf::st_is_longlat(crs))
 
   group_id <- NULL # hack to avoid it being flagged as global in checks
-  locoh_results <- foreach::foreach(group_id = group_unique) %do% {
+  # one result per group, in the order of the group keys (rather than in the
+  # order in which the groups appear in x), as for the values of n; all
+  # groups have locations
+  locoh_results <- foreach::foreach(group_id = seq_along(group_labels)) %do% {
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, , drop = FALSE]
     # take n for this group now: inside tibble() below, group_id refers to
