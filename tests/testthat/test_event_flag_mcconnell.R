@@ -291,6 +291,24 @@ test_that("empty locations are ignored by the filter", {
   expect_true(sf::st_is_empty(sf::st_geometry(cleaned)[3]))
 })
 
+test_that("events not stored in time order are filtered in time order", {
+  x <- make_test_move2(
+    x = c(0, 100, 200, 300, 400, 50000, 600, 700, 800, 900),
+    y = rep(0, 10),
+    time = as.POSIXct("2020-01-01 00:00:00", tz = "UTC") + (0:9) * 600,
+    track_id = rep("a", 10)
+  )
+  # the spike (sixth location in time) is stored first
+  shuffled <- c(6, 1:5, 7:10)
+  out <- with_time_limit(
+    event_flag_mcconnell(
+      x[shuffled, ],
+      max_speed = units::as_units(10, "km/h")
+    )
+  )
+  expect_identical(out, shuffled != 6)
+})
+
 # Check equivalency to trip::speedfilter
 skip_if_not_installed("trip")
 

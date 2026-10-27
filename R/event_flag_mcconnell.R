@@ -13,7 +13,9 @@
 #' If an endpoint is removed, the McConnell filter is rerun on the reduced
 #' track, and the endpoint check is repeated until the result is stable.
 #'
-#' Events with an empty geometry (i.e. no location) are ignored by the filter
+#' Speeds are computed between consecutive events of each track in time order,
+#' whatever the order in which the events are stored in `x`. Events with an
+#' empty geometry (i.e. no location) are ignored by the filter
 #' and returned as valid. Consecutive events at the same location are treated
 #' as having zero speed, even when they share the same timestamp (e.g.
 #' duplicated records).
@@ -493,8 +495,11 @@ event_flag_mcconnell <- function(
   located <- !is.na(coords[, 1]) & !is.na(coords[, 2])
 
   for (i_track in track_ids) {
-    # Select the located events belonging to the track.
-    this_track <- id == i_track & located
+    # Select the located events belonging to the track, in time order (speeds
+    # are computed between consecutive events, and the events of x are not
+    # necessarily stored in time order).
+    this_track <- which(id == i_track & located)
+    this_track <- this_track[order(time[this_track])]
 
     # Track coordinates.
     xy <- coords[this_track, , drop = FALSE]
