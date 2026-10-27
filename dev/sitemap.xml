@@ -63,12 +63,14 @@
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/sub-.PackedSpatRaster_list.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/sub-sub-.PackedSpatRaster_list.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/sub-subset-.PackedSpatRaster_list.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tidytracks-deprecated.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tidytracks-package.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tidytracks_printing.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/track_duration.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/track_lines.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/track_summary_health.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/track_summary_stats.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/track_tot_distance.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_clean_mcconnell.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_drop_units.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_order_time.html</loc></url>

@@ -17,15 +17,6 @@ hr_tt_kde(
   levels = NULL,
   method = c("binned", "exact")
 )
-
-hr_kde(
-  x,
-  h = "h_ref_mean",
-  bbox = NULL,
-  res = NULL,
-  levels = NULL,
-  method = c("binned", "exact")
-)
 ```
 
 ## Arguments

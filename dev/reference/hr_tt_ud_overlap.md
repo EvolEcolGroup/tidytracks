@@ -30,8 +30,6 @@ hr_tt_ud_overlap(
   method = c("ba", "vi", "udoi", "earth_mover"),
   cond_level = NULL
 )
-
-hr_ud_overlap(...)
 ```
 
 ## Arguments

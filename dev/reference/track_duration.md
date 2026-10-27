@@ -31,4 +31,8 @@ track_duration(example_tt)
 #> Units: [d]
 #>          a          b          c 
 #> 0.05555556 0.05555556 0.05555556 
+track_duration(example_tt, units = "hours")
+#> Units: [h]
+#>        a        b        c 
+#> 1.333333 1.333333 1.333333 
 ```

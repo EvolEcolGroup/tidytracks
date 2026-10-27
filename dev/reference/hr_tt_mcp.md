@@ -8,8 +8,6 @@ location) are ignored.
 
 ``` r
 hr_tt_mcp(x, levels = c(0.5, 0.95))
-
-hr_mcp(x, levels = c(0.5, 0.95))
 ```
 
 ## Arguments

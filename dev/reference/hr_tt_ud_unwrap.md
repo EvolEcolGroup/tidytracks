@@ -13,8 +13,6 @@ across multiple operations.
 
 ``` r
 hr_tt_ud_unwrap(x)
-
-hr_ud_unwrap(x)
 ```
 
 ## Arguments

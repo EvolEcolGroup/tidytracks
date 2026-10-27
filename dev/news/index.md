@@ -23,6 +23,10 @@
   locations onto the grid and then smooths them with the kernel, which
   is much faster for many locations (see the article “Benchmarking home
   ranges against amt and adehabitatHR”).
+- New
+  [`track_tot_distance()`](https://evolecolgroup.github.io/tidytracks/dev/reference/track_tot_distance.md)
+  to compute the total distance travelled along each track, with a
+  `units` argument to choose the output units.
 
 ### Minor improvements
 

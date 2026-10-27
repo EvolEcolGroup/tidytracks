@@ -10,8 +10,6 @@ to restore the standard in-memory representation.
 
 ``` r
 hr_tt_ud_wrap(x)
-
-hr_ud_wrap(x)
 ```
 
 ## Arguments

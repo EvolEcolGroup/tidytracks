@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +51,7 @@
 <code><a href="../reference/hr_tt_locoh.html">hr_tt_locoh()</a></code>, a fast implementation to estimate home ranges with local convex hulls (LoCoH).</li>
 <li>
 <code><a href="../reference/hr_tt_kde.html">hr_tt_kde()</a></code> gains a <code>method</code> argument. Its new default, <code>"binned"</code>, bins the locations onto the grid and then smooths them with the kernel, which is much faster for many locations (see the article “Benchmarking home ranges against amt and adehabitatHR”).</li>
+<li>New <code><a href="../reference/track_tot_distance.html">track_tot_distance()</a></code> to compute the total distance travelled along each track, with a <code>units</code> argument to choose the output units.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="minor-improvements-development-version">Minor improvements<a class="anchor" aria-label="anchor" href="#minor-improvements-development-version"></a></h3>

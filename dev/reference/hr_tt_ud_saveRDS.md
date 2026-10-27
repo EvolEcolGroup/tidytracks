@@ -15,8 +15,6 @@ to restore it explicitly for repeated analyses.
 
 ``` r
 hr_tt_ud_saveRDS(x, file, compress = TRUE, version = NULL, ...)
-
-hr_ud_saveRDS(...)
 ```
 
 ## Arguments

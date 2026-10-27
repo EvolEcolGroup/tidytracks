@@ -19,8 +19,6 @@ hr_tt_ud_sum(x)
 
 # S3 method for class 'grouped_df'
 hr_tt_ud_sum(x)
-
-hr_ud_sum(x)
 ```
 
 ## Arguments

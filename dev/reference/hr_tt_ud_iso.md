@@ -13,8 +13,6 @@ hr_tt_ud_iso(x, levels = c(0.5, 0.95), ci_level = 0.95)
 
 # S3 method for class 'SpatRaster'
 hr_tt_ud_iso(x, levels = c(0.5, 0.95), ci_level = 0.95)
-
-hr_ud_iso(x, levels = c(0.5, 0.95))
 ```
 
 ## Arguments

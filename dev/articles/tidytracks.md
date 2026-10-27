@@ -322,6 +322,30 @@ shags_tt %>%
 #> 13.632778
 ```
 
+These `track_` functions can be used to add extra columns to the
+metadata containing track statistics such as duration and total distance
+covered:
+
+``` r
+
+show_meta(shags_tt) <- show_meta(shags_tt) %>%
+  dplyr::mutate(
+    duration = track_duration(shags_tt, units = "hours"),
+    tot_distance = track_tot_distance(shags_tt, units = "km")
+  )
+show_meta(shags_tt)
+#>   bird_id colony_lon colony_lat    sex      duration    tot_distance
+#> 1   kb_17  -68.06893  -67.57072   male 37.228611 [h] 115.461066 [km]
+#> 2   kb_19  -68.06893  -67.57072   male 37.321389 [h]  72.972377 [km]
+#> 3   kb_27  -68.06893  -67.57072 female 37.261111 [h] 183.789976 [km]
+#> 4   kb_29  -68.06893  -67.57072   male 47.732222 [h] 103.902888 [km]
+#> 5   kb_38  -68.06893  -67.57072   male 19.472778 [h]   3.638568 [km]
+#> 6   kb_40  -68.06893  -67.57072   male  6.418611 [h]  76.289621 [km]
+#> 7   kb_42  -68.06893  -67.57072 female 33.415833 [h] 120.043135 [km]
+#> 8   kb_43  -68.06893  -67.57072 female 40.146944 [h] 137.069931 [km]
+#> 9   kb_45  -68.06893  -67.57072 female 13.632778 [h] 108.570848 [km]
+```
+
 This naming convention helps clarifying the scope of a given function,
 avoiding ambiguities.
 
@@ -583,11 +607,15 @@ Let’s look at the metadata:
 ``` r
 
 str(show_meta(shags_tt_split))
-#> 'data.frame':    12 obs. of  7 variables:
+#> 'data.frame':    12 obs. of  9 variables:
 #>  $ bird_id     : Factor w/ 9 levels "kb_17","kb_19",..: 1 2 2 3 3 3 4 7 8 8 ...
 #>  $ colony_lon  : num  -68.1 -68.1 -68.1 -68.1 -68.1 ...
 #>  $ colony_lat  : num  -67.6 -67.6 -67.6 -67.6 -67.6 ...
 #>  $ sex         : chr  "male" "male" "male" "female" ...
+#>  $ duration    : Units: [h] Named num  37.2 37.3 37.3 37.3 37.3 ...
+#>   ..- attr(*, "names")= chr [1:12] "kb_17" "kb_19" "kb_19" "kb_27" ...
+#>  $ tot_distance: Units: [km] Named num  115 73 73 184 184 ...
+#>   ..- attr(*, "names")= chr [1:12] "kb_17" "kb_19" "kb_19" "kb_27" ...
 #>  $ colony_coord:sfc_POINT of length 12; first list element:  'XY' num  -68.1 -67.6
 #>  $ trip_id     : chr  "kb_17_trip_1" "kb_19_trip_1" "kb_19_trip_2" "kb_27_trip_1" ...
 #>  $ trip_type   : chr  "complete" "complete" "complete" "complete" ...
@@ -685,24 +713,24 @@ to filter the dataset:
 shags_females <- shags_tt_split %>%
   filter_by_meta(sex == "female")
 show_meta(shags_females)
-#>   bird_id colony_lon colony_lat    sex                colony_coord      trip_id
-#> 1   kb_27  -68.06893  -67.57072 female POINT (-68.06893 -67.57072) kb_27_trip_1
-#> 2   kb_27  -68.06893  -67.57072 female POINT (-68.06893 -67.57072) kb_27_trip_2
-#> 3   kb_27  -68.06893  -67.57072 female POINT (-68.06893 -67.57072) kb_27_trip_3
-#> 4   kb_42  -68.06893  -67.57072 female POINT (-68.06893 -67.57072) kb_42_trip_1
-#> 5   kb_43  -68.06893  -67.57072 female POINT (-68.06893 -67.57072) kb_43_trip_1
-#> 6   kb_43  -68.06893  -67.57072 female POINT (-68.06893 -67.57072) kb_43_trip_2
-#> 7   kb_43  -68.06893  -67.57072 female POINT (-68.06893 -67.57072) kb_43_trip_3
-#> 8   kb_45  -68.06893  -67.57072 female POINT (-68.06893 -67.57072) kb_45_trip_1
-#>   trip_type
-#> 1  complete
-#> 2  complete
-#> 3  complete
-#> 4  complete
-#> 5  complete
-#> 6  complete
-#> 7  complete
-#> 8  complete
+#>   bird_id colony_lon colony_lat    sex     duration  tot_distance
+#> 1   kb_27  -68.06893  -67.57072 female 37.26111 [h] 183.7900 [km]
+#> 2   kb_27  -68.06893  -67.57072 female 37.26111 [h] 183.7900 [km]
+#> 3   kb_27  -68.06893  -67.57072 female 37.26111 [h] 183.7900 [km]
+#> 4   kb_42  -68.06893  -67.57072 female 33.41583 [h] 120.0431 [km]
+#> 5   kb_43  -68.06893  -67.57072 female 40.14694 [h] 137.0699 [km]
+#> 6   kb_43  -68.06893  -67.57072 female 40.14694 [h] 137.0699 [km]
+#> 7   kb_43  -68.06893  -67.57072 female 40.14694 [h] 137.0699 [km]
+#> 8   kb_45  -68.06893  -67.57072 female 13.63278 [h] 108.5708 [km]
+#>                  colony_coord      trip_id trip_type
+#> 1 POINT (-68.06893 -67.57072) kb_27_trip_1  complete
+#> 2 POINT (-68.06893 -67.57072) kb_27_trip_2  complete
+#> 3 POINT (-68.06893 -67.57072) kb_27_trip_3  complete
+#> 4 POINT (-68.06893 -67.57072) kb_42_trip_1  complete
+#> 5 POINT (-68.06893 -67.57072) kb_43_trip_1  complete
+#> 6 POINT (-68.06893 -67.57072) kb_43_trip_2  complete
+#> 7 POINT (-68.06893 -67.57072) kb_43_trip_3  complete
+#> 8 POINT (-68.06893 -67.57072) kb_45_trip_1  complete
 ```
 
 We can now plot the trips:
@@ -737,58 +765,58 @@ show_meta(shags_tt_split) <- show_meta(shags_tt_split) %>%
   )
 
 show_meta(shags_tt_split)
-#>    bird_id colony_lon colony_lat    sex                colony_coord
-#> 1    kb_17  -68.06893  -67.57072   male POINT (-68.06893 -67.57072)
-#> 2    kb_19  -68.06893  -67.57072   male POINT (-68.06893 -67.57072)
-#> 3    kb_19  -68.06893  -67.57072   male POINT (-68.06893 -67.57072)
-#> 4    kb_27  -68.06893  -67.57072 female POINT (-68.06893 -67.57072)
-#> 5    kb_27  -68.06893  -67.57072 female POINT (-68.06893 -67.57072)
-#> 6    kb_27  -68.06893  -67.57072 female POINT (-68.06893 -67.57072)
-#> 7    kb_29  -68.06893  -67.57072   male POINT (-68.06893 -67.57072)
-#> 8    kb_42  -68.06893  -67.57072 female POINT (-68.06893 -67.57072)
-#> 9    kb_43  -68.06893  -67.57072 female POINT (-68.06893 -67.57072)
-#> 10   kb_43  -68.06893  -67.57072 female POINT (-68.06893 -67.57072)
-#> 11   kb_43  -68.06893  -67.57072 female POINT (-68.06893 -67.57072)
-#> 12   kb_45  -68.06893  -67.57072 female POINT (-68.06893 -67.57072)
-#>         trip_id trip_type   tot_duration  tot_distance max_latitude
-#> 1  kb_17_trip_1  complete 0.27710648 [d] 64153.775 [m]    -67.28459
-#> 2  kb_19_trip_1  complete 0.27953704 [d] 13062.336 [m]    -67.44403
-#> 3  kb_19_trip_2  complete 0.27980324 [d] 14646.337 [m]    -67.44572
-#> 4  kb_27_trip_1  complete 0.17011574 [d]  7075.436 [m]    -67.54630
-#> 5  kb_27_trip_2  complete 0.12056713 [d] 15544.376 [m]    -67.54576
-#> 6  kb_27_trip_3  complete 0.27295139 [d] 16880.422 [m]    -67.54584
-#> 7  kb_29_trip_2  complete 0.27776620 [d] 36207.127 [m]    -67.41631
-#> 8  kb_42_trip_1  complete 0.03231481 [d]  7633.125 [m]    -67.54379
-#> 9  kb_43_trip_1  complete 0.16469907 [d] 13981.456 [m]    -67.54466
-#> 10 kb_43_trip_2  complete 0.08687500 [d] 10385.042 [m]    -67.54457
-#> 11 kb_43_trip_3  complete 0.07430556 [d] 10788.633 [m]    -67.54638
-#> 12 kb_45_trip_1  complete 0.10421296 [d] 34343.099 [m]    -67.32233
-#>    min_latitude max_longitude min_longitude max_dist_centre
-#> 1     -67.54373     -67.76814     -68.05746   33889.752 [m]
-#> 2     -67.48943     -67.93273     -68.00242   15227.878 [m]
-#> 3     -67.48667     -67.93512     -68.00620   15019.282 [m]
-#> 4     -67.55208     -67.78400     -67.93001   12379.712 [m]
-#> 5     -67.56658     -67.78343     -67.99485   12432.770 [m]
-#> 6     -67.56340     -67.69097     -67.92603   16259.348 [m]
-#> 7     -67.52197     -67.60288     -67.96283   26222.073 [m]
-#> 8     -67.56457     -68.16519     -68.23206    7535.107 [m]
-#> 9     -67.56682     -67.79789     -67.98416   11817.800 [m]
-#> 10    -67.56003     -67.79424     -67.97876   11879.825 [m]
-#> 11    -67.56438     -67.79609     -67.95639   11880.917 [m]
-#> 12    -67.53412     -67.70416     -68.05644   31698.399 [m]
-#>    lat_at_max_dist_centre lon_at_max_dist_centre
-#> 1               -67.28865              -67.76814
-#> 2               -67.44403              -67.93295
-#> 3               -67.44572              -67.93512
-#> 4               -67.54697              -67.78400
-#> 5               -67.54576              -67.78343
-#> 6               -67.54697              -67.69097
-#> 7               -67.41649              -67.60288
-#> 8               -67.54399              -68.23206
-#> 9               -67.54644              -67.79789
-#> 10              -67.55022              -67.79424
-#> 11              -67.54642              -67.79637
-#> 12              -67.32233              -67.70420
+#>    bird_id colony_lon colony_lat    sex     duration tot_distance.x
+#> 1    kb_17  -68.06893  -67.57072   male 37.22861 [h] 115.46107 [km]
+#> 2    kb_19  -68.06893  -67.57072   male 37.32139 [h]  72.97238 [km]
+#> 3    kb_19  -68.06893  -67.57072   male 37.32139 [h]  72.97238 [km]
+#> 4    kb_27  -68.06893  -67.57072 female 37.26111 [h] 183.78998 [km]
+#> 5    kb_27  -68.06893  -67.57072 female 37.26111 [h] 183.78998 [km]
+#> 6    kb_27  -68.06893  -67.57072 female 37.26111 [h] 183.78998 [km]
+#> 7    kb_29  -68.06893  -67.57072   male 47.73222 [h] 103.90289 [km]
+#> 8    kb_42  -68.06893  -67.57072 female 33.41583 [h] 120.04313 [km]
+#> 9    kb_43  -68.06893  -67.57072 female 40.14694 [h] 137.06993 [km]
+#> 10   kb_43  -68.06893  -67.57072 female 40.14694 [h] 137.06993 [km]
+#> 11   kb_43  -68.06893  -67.57072 female 40.14694 [h] 137.06993 [km]
+#> 12   kb_45  -68.06893  -67.57072 female 13.63278 [h] 108.57085 [km]
+#>                   colony_coord      trip_id trip_type   tot_duration
+#> 1  POINT (-68.06893 -67.57072) kb_17_trip_1  complete 0.27710648 [d]
+#> 2  POINT (-68.06893 -67.57072) kb_19_trip_1  complete 0.27953704 [d]
+#> 3  POINT (-68.06893 -67.57072) kb_19_trip_2  complete 0.27980324 [d]
+#> 4  POINT (-68.06893 -67.57072) kb_27_trip_1  complete 0.17011574 [d]
+#> 5  POINT (-68.06893 -67.57072) kb_27_trip_2  complete 0.12056713 [d]
+#> 6  POINT (-68.06893 -67.57072) kb_27_trip_3  complete 0.27295139 [d]
+#> 7  POINT (-68.06893 -67.57072) kb_29_trip_2  complete 0.27776620 [d]
+#> 8  POINT (-68.06893 -67.57072) kb_42_trip_1  complete 0.03231481 [d]
+#> 9  POINT (-68.06893 -67.57072) kb_43_trip_1  complete 0.16469907 [d]
+#> 10 POINT (-68.06893 -67.57072) kb_43_trip_2  complete 0.08687500 [d]
+#> 11 POINT (-68.06893 -67.57072) kb_43_trip_3  complete 0.07430556 [d]
+#> 12 POINT (-68.06893 -67.57072) kb_45_trip_1  complete 0.10421296 [d]
+#>    tot_distance.y max_latitude min_latitude max_longitude min_longitude
+#> 1   64153.775 [m]    -67.28459    -67.54373     -67.76814     -68.05746
+#> 2   13062.336 [m]    -67.44403    -67.48943     -67.93273     -68.00242
+#> 3   14646.337 [m]    -67.44572    -67.48667     -67.93512     -68.00620
+#> 4    7075.436 [m]    -67.54630    -67.55208     -67.78400     -67.93001
+#> 5   15544.376 [m]    -67.54576    -67.56658     -67.78343     -67.99485
+#> 6   16880.422 [m]    -67.54584    -67.56340     -67.69097     -67.92603
+#> 7   36207.127 [m]    -67.41631    -67.52197     -67.60288     -67.96283
+#> 8    7633.125 [m]    -67.54379    -67.56457     -68.16519     -68.23206
+#> 9   13981.456 [m]    -67.54466    -67.56682     -67.79789     -67.98416
+#> 10  10385.042 [m]    -67.54457    -67.56003     -67.79424     -67.97876
+#> 11  10788.633 [m]    -67.54638    -67.56438     -67.79609     -67.95639
+#> 12  34343.099 [m]    -67.32233    -67.53412     -67.70416     -68.05644
+#>    max_dist_centre lat_at_max_dist_centre lon_at_max_dist_centre
+#> 1    33889.752 [m]              -67.28865              -67.76814
+#> 2    15227.878 [m]              -67.44403              -67.93295
+#> 3    15019.282 [m]              -67.44572              -67.93512
+#> 4    12379.712 [m]              -67.54697              -67.78400
+#> 5    12432.770 [m]              -67.54576              -67.78343
+#> 6    16259.348 [m]              -67.54697              -67.69097
+#> 7    26222.073 [m]              -67.41649              -67.60288
+#> 8     7535.107 [m]              -67.54399              -68.23206
+#> 9    11817.800 [m]              -67.54644              -67.79789
+#> 10   11879.825 [m]              -67.55022              -67.79424
+#> 11   11880.917 [m]              -67.54642              -67.79637
+#> 12   31698.399 [m]              -67.32233              -67.70420
 ```
 
 We may wish to move metadata to the events table (using
