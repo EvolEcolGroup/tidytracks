@@ -173,6 +173,22 @@ test_that("tt_split_trips accepts one centre per track", {
     "centre_col must be a `sfc_POINT` column in the metadata table"
   )
 
+  show_meta(test_mt)$centre_sf <- sf::st_sfc(
+    sf::st_point(),
+    sf::st_point(c(0, 0)),
+    crs = 4326
+  )
+  expect_error(
+    tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_outbound = as_units(100, "km"),
+      buffer_inbound = as_units(100, "km"),
+      complete = FALSE
+    ),
+    "centre_col must not contain empty geometries"
+  )
+
   # Remove the CRS from center_sf and check that the expected error is raised.
   show_meta(test_mt)$centre_sf <- sf_point_col(x = c(0, 0), y = c(0, 0))
   expect_error(
@@ -241,4 +257,129 @@ test_that("tt_split_trips marks trips starting outside incomplete", {
   expect_equal(nrow(show_meta(result_complete)), 0)
 })
 
-# @TODO write tests with centre inputs as different from each others
+
+test_that("tt_split_trips pairs each track with its own centre", {
+  # each bird makes one trip from its own nest; the nests are 50 degrees apart
+  coords_df <- data.frame(
+    bird_id = rep(c("b", "a"), each = 5),
+    longitude = c(0, 0.5, 1, 0.5, 0, 50, 50.5, 51, 50.5, 50),
+    latitude = 0,
+    date_time = as.POSIXct("2020-01-01", tz = "UTC") + rep(0:4, 2) * 3600
+  )
+  test_mt <- move2::mt_as_move2(
+    sf::st_as_sf(coords_df, coords = c("longitude", "latitude"), crs = 4326),
+    time_column = "date_time",
+    track_id_column = "bird_id"
+  )
+  show_meta(test_mt)$centre_sf <- sf_point_col(
+    x = ifelse(show_meta(test_mt)$bird_id == "b", 0, 50),
+    y = c(0, 0),
+    crs = 4326
+  )
+  # reorder the events so that they are no longer in the same track order as
+  # the metadata
+  test_mt <- tt_order_time(test_mt)
+  expect_false(identical(
+    unique(as.character(event_track_id(test_mt))),
+    as.character(show_meta(test_mt)$bird_id)
+  ))
+
+  result <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(10, "km"),
+    complete = FALSE
+  )
+  expect_identical(
+    result$trip_id,
+    paste0(
+      rep(c("a", "b"), each = 5),
+      c("_trip_na", "_trip_1", "_trip_1", "_trip_1", "_trip_na")
+    )
+  )
+  meta <- show_meta(result)
+  expect_equal(
+    meta$trip_type[meta$trip_id %in% c("a_trip_1", "b_trip_1")],
+    c("complete", "complete")
+  )
+})
+
+test_that("tt_split_trips labels events that are not grouped or sorted", {
+  centre <- sf_point_col(x = c(0, 0), y = c(0, 0), crs = 4326)
+  make_tracks <- function(coords_df) {
+    test_mt <- move2::mt_as_move2(
+      sf::st_as_sf(coords_df, coords = c("longitude", "latitude"), crs = 4326),
+      time_column = "date_time",
+      track_id_column = "bird_id"
+    )
+    show_meta(test_mt)$centre_sf <- centre[seq_len(nrow(show_meta(test_mt)))]
+    test_mt
+  }
+  split_trips <- function(test_mt) {
+    tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_outbound = as_units(10, "km"),
+      buffer_inbound = as_units(10, "km"),
+      complete = FALSE
+    )$trip_id
+  }
+  trip_pattern <- c("_trip_na", "_trip_1", "_trip_1", "_trip_1", "_trip_na")
+
+  # events of two tracks interleaved in time order
+  interleaved <- data.frame(
+    bird_id = rep(c("a", "b"), 5),
+    longitude = rep(c(0, 0.5, 1, 0.5, 0), each = 2),
+    latitude = rep(c(0, 0.01), 5),
+    date_time = as.POSIXct("2020-01-01", tz = "UTC") + rep(0:4, each = 2) * 3600
+  )
+  expect_identical(
+    split_trips(make_tracks(interleaved)),
+    paste0(rep(c("a", "b"), 5), rep(trip_pattern, each = 2))
+  )
+
+  # events of one track that are not in time order
+  shuffled <- data.frame(
+    bird_id = "a",
+    longitude = c(0, 0.5, 1, 0.5, 0),
+    latitude = 0,
+    date_time = as.POSIXct("2020-01-01", tz = "UTC") + (0:4) * 3600
+  )[c(1, 3, 2, 5, 4), ]
+  expect_identical(
+    split_trips(make_tracks(shuffled)),
+    paste0("a", trip_pattern[c(1, 3, 2, 5, 4)])
+  )
+})
+
+test_that("tt_split_trips handles events without a location", {
+  coords_df <- data.frame(
+    bird_id = "a",
+    longitude = c(0.5, 0, 0.5, 1, 0.5, 0, 0.5),
+    latitude = 0,
+    date_time = as.POSIXct("2020-01-01", tz = "UTC") + (0:6) * 3600
+  )
+  test_mt <- move2::mt_as_move2(
+    sf::st_as_sf(coords_df, coords = c("longitude", "latitude"), crs = 4326),
+    time_column = "date_time",
+    track_id_column = "bird_id"
+  )
+  show_meta(test_mt)$centre_sf <- sf_point_col(x = 0, y = 0, crs = 4326)
+  # remove the first location (before the bird is first seen at the nest),
+  # one during the trip and the last one (after the bird is back at the nest)
+  sf::st_geometry(test_mt)[c(1, 4, 7)] <- sf::st_point()
+
+  result <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(10, "km"),
+    complete = FALSE
+  )
+  expect_identical(
+    result$trip_id,
+    paste0("a", c(rep("_trip_na", 2), rep("_trip_1", 3), rep("_trip_na", 2)))
+  )
+  meta <- show_meta(result)
+  expect_equal(meta$trip_type[meta$trip_id == "a_trip_1"], "complete")
+})

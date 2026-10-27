@@ -5,6 +5,8 @@
 #' @importFrom rlang .data
 #' @importFrom rlang !!
 #' @importFrom rlang !!!
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib tidytracks, .registration = TRUE
 ## usethis namespace: end
 NULL
 

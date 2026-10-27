@@ -5,7 +5,8 @@
 #' number of points, actual number of points, and the proportion of expected
 #' points that are missing (due to gaps in track).
 #' @param x A `move2` object
-#' @return A tibble with one row per track and the following columns:
+#' @return A tibble with one row per track (in the same order as the tracks in
+#'   the metadata, see [show_meta()]) and the following columns:
 #' \itemize{
 #'  \item \code{<track id column>}: The track ID from \code{x}
 #'  \item median_sampling_interval: The median sampling interval in seconds
@@ -24,8 +25,8 @@ track_summary_health <- function(x) {
     stop("x must be a move2 object")
   }
 
-  # Get the track IDs
-  track_ids <- unique(event_track_id(x))
+  # Get the track IDs, in the same order as in the metadata
+  track_ids <- show_meta(x)[[move2::mt_track_id_column(x)]]
 
   # Create a tibble to store the results
   results <- tibble::tibble(
@@ -43,7 +44,9 @@ track_summary_health <- function(x) {
   # Loop through each track and calculate the summary statistics
   for (i in seq_along(track_ids)) {
     track_id <- track_ids[i]
-    track_data <- x[event_track_id(x) == track_id, ]
+    track_data <- x[
+      as.character(event_track_id(x)) == as.character(track_id),
+    ]
 
     # Calculate the median sampling interval
     sampling_intervals <- as.numeric(diff(

@@ -145,7 +145,7 @@ max_speed <- units::ud_convert(unclass(max_speed), units(max_speed), target_unit
 - Always update roxygen2 comments and regenerate with `devtools::document()`
 - Use `@keywords internal` for functions not meant to be exported
 - The package uses lazy data loading (`LazyData: true`)
-- Minimum R version is 3.5
+- Minimum R version is 4.1.0 (see `Depends` in `DESCRIPTION`)
 
 ## Git and Version Control
 

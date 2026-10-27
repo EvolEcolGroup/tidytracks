@@ -13,7 +13,17 @@ test_that("hr_tt_ud_overlap works", {
 
   pairwise_overlap <- function(method, cond_level = NULL) {
     n <- nrow(boar_kde)
+    # the overlap of a UD with itself is 1 for BA and VI, but not for UDOI
     result <- diag(1, n)
+    if (method == "udoi") {
+      diag(result) <- vapply(
+        boar_kde$ud,
+        function(ud) {
+          hr_tt_ud_overlap(ud, ud, method = method, cond_level = cond_level)
+        },
+        numeric(1)
+      )
+    }
     for (i in seq_len(n - 1L)) {
       for (j in seq.int(i + 1L, n)) {
         result[i, j] <- result[j, i] <- hr_tt_ud_overlap(
@@ -110,6 +120,59 @@ test_that("hr_tt_ud_overlap works", {
     cond_level = 0.5
   )
   expect_true(boar_overlap_cond < boar_overlap[1, 2])
+})
+
+test_that("hr_tt_ud_overlap computes the UDOI independently of resolution", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_kde_100 <- hr_tt_kde(boar_tt, res = 100)
+  bbox <- unlist(boar_kde_100[1, c("xmin", "ymin", "xmax", "ymax")])
+  boar_kde_50 <- hr_tt_kde(boar_tt, res = 50, bbox = bbox)
+
+  udoi_100 <- hr_tt_ud_overlap(boar_kde_100, method = "udoi")
+  udoi_50 <- hr_tt_ud_overlap(boar_kde_50, method = "udoi")
+  expect_equal(udoi_100, udoi_50, tolerance = 0.02)
+
+  # the diagonal is the UDOI of each UD with itself, which is not 1
+  self_udoi <- hr_tt_ud_overlap(
+    boar_kde_50$ud[[1]],
+    boar_kde_50$ud[[1]],
+    method = "udoi"
+  )
+  expect_equal(udoi_50[1, 1], self_udoi)
+  expect_true(self_udoi > 1)
+})
+
+test_that("hr_tt_ud_overlap rejects isopleths without cells", {
+  # on a coarse grid, a single cell can hold more than 95% of a UD, so its
+  # 95% isopleth contains no cells
+  x <- terra::rast(ncols = 2, nrows = 1, xmin = 0, xmax = 2, ymin = 0, ymax = 1)
+  names(x) <- "ud"
+  terra::values(x) <- c(0.96, 0.04)
+  ud_tbl <- tibble::tibble(id = c("x", "y"), ud = list(x, x))
+  class(ud_tbl) <- c("hr_tt_ud_tbl", class(ud_tbl))
+
+  expect_error(
+    hr_tt_ud_overlap(x, x, method = "udoi"),
+    "the 95% isopleth of a UD contains no cells"
+  )
+  expect_error(
+    hr_tt_ud_overlap(ud_tbl, method = "udoi"),
+    "the 95% isopleth of a UD contains no cells"
+  )
+  expect_error(
+    hr_tt_ud_overlap(x, x, method = "ba", cond_level = 0.5),
+    "the 50% isopleth of a UD contains no cells"
+  )
+  expect_error(
+    hr_tt_ud_overlap(ud_tbl, method = "vi", cond_level = 0.5),
+    "the 50% isopleth of a UD contains no cells"
+  )
+  # an isopleth that contains a cell is fine (here, the UDs within the
+  # isopleth are a single cell, uniformly distributed, and identical)
+  expect_equal(
+    hr_tt_ud_overlap(x, x, method = "udoi", cond_level = 0.97),
+    1
+  )
 })
 
 test_that("hr_tt_ud_overlap calculates Earth Mover's Distance when available", {

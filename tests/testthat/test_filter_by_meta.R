@@ -45,3 +45,20 @@ test_that("filter_by_meta can filter on the metadata geometry column", {
   expect_equal(nrow(show_meta(result)), 1L)
   expect_equal(as.character(show_meta(result)$bird_id), "id_1")
 })
+
+test_that("filter_by_meta is not affected by columns named as its variables", {
+  toy_tt <- create_toy_tt()
+  # columns with the names of variables used internally by filter_by_meta
+  toy_tt$ids <- "not an id"
+  toy_tt$new_tracks <- "not an id"
+  toy_tt$keep_events <- FALSE
+  show_meta(toy_tt)$track_ids_to_keep <- "not an id"
+
+  result <- filter_by_meta(toy_tt, species == "species_a")
+  expect_equal(nrow(result), 24L)
+  expect_equal(as.character(show_meta(result)$bird_id), "id_1")
+
+  result <- filter_by_meta(toy_tt, .track_id = "id_2")
+  expect_equal(nrow(result), 6L)
+  expect_equal(as.character(show_meta(result)$bird_id), "id_2")
+})

@@ -60,14 +60,10 @@ geom_event_path <- function(
     stop("data must be a move2 object")
   }
 
-  # make segments between each pair of points using move2::mt_segments
-  data_steps <- data %>%
-    dplyr::mutate(geom_steps = move2::mt_segments(data))
-
-  # change the geometry column
-  data_steps <- data_steps %>%
-    dplyr::mutate(geometry = .data$geom_steps) %>%
-    dplyr::select(-dplyr::all_of("geom_steps"))
+  # replace the points in the (active) geometry column, whatever its name, by
+  # the segments between each pair of points, using move2::mt_segments
+  data_steps <- data
+  sf::st_geometry(data_steps) <- move2::mt_segments(data)
 
   # drop all units
   data_steps <- tt_drop_units(data_steps)

@@ -2,6 +2,9 @@
 #'
 #' @description This function splits tracks into trips for central place
 #'   foragers by identifying the trips based on a distance from the colony/nest.
+#'   Events with an empty geometry (i.e. no location) are assigned to the same
+#'   trip as the preceding event with a location (or the following one, at the
+#'   start of a track).
 #'
 #' @param x A move2 object
 #' @param centre_col character string, the name of the column in the metadata
@@ -9,12 +12,15 @@
 #'   column must be of class `sfc_POINT` and should have a valid coordinate
 #'   reference system (CRS) specified. The function `sf_point_col()` can be used
 #'   to create this column.
-#' @param buffer_outbound the distance from the centre to define outbound trips,
-#'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
-#'   "km")`.
-#' @param buffer_inbound the distance from the centre to define inbound trips,
-#'   specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
-#'   "km")`.
+#' @param buffer_outbound the distance from the centre that delimits trips: a
+#'   trip starts when the animal moves further than this distance from the
+#'   centre, and ends when it comes back within it. Specified as a unit object,
+#'   e.g `as_units(10000, "m")` or `as_units(10, "km")`.
+#' @param buffer_inbound the distance from the centre within which the last
+#'   location of a track has to be for the last trip of the track to be
+#'   complete (rather than incomplete, i.e. the data end before the animal
+#'   returned to the centre). Specified as a unit object, e.g
+#'   `as_units(10000, "m")` or `as_units(10, "km")`.
 #' @param complete boolean, if TRUE, only complete trips (i.e. the ones that
 #'   started in the outbound buffer and ended within the inbound buffer) are
 #'   kept. If FALSE, all trips are kept, and events at the colony (i.e.
@@ -73,6 +79,9 @@ tt_split_trips <- function(
     if (is.na(sf::st_crs(centre_col))) {
       stop("centre_col must have a crs specified")
     }
+    if (any(sf::st_is_empty(centre_col), na.rm = TRUE)) {
+      stop("centre_col must not contain empty geometries")
+    }
     # project the centre_col to the same crs as x
     if (!(sf::st_crs(centre_col) == sf::st_crs(x))) {
       centre_col <- sf::st_transform(centre_col, sf::st_crs(x))
@@ -99,28 +108,40 @@ tt_split_trips <- function(
     units::set_units(buffer_inbound, dist_units, mode = "standard")
   )
 
-  # Get coordinates and metadata
+  # Get coordinates, track ids and times of the events
   coords <- sf::st_coordinates(x)
-  ids <- event_track_id(x)
-  unique_ids <- unique(ids)
+  ids <- as.character(event_track_id(x))
+  times <- event_time(x)
+  # the centres are in the same order as the tracks in the metadata, which can
+  # differ from the order of the tracks in the events table
+  meta_ids <- show_meta(x)[[move2::mt_track_id_column(x)]]
 
   i <- NULL # avoid global variable warning (i is used by foreach)
-  # Loop through each track and split into trips
-  trip_list <- foreach::foreach(i = seq_len(nrow(show_meta(x)))) %do% {
-    split_one_track(
-      unique_ids[i],
-      coords[ids == unique_ids[i], 1],
-      coords[ids == unique_ids[i], 2],
+  # Loop through each track and split its events, in time order, into trips
+  trip_list <- foreach::foreach(i = seq_along(meta_ids)) %do% {
+    track_rows <- which(ids == as.character(meta_ids[i]))
+    track_rows <- track_rows[order(times[track_rows])]
+    trips <- split_one_track(
+      meta_ids[i],
+      coords[track_rows, 1],
+      coords[track_rows, 2],
       is_lonlat = is_longlat,
       centre_x = centre_col[i, 1],
       centre_y = centre_col[i, 2],
       buffer_inbound = buffer_in_uless,
       buffer_outbound = buffer_out_uless
     )
+    trips$track_rows <- track_rows
+    trips
   }
 
-  # Combine trip IDs into a single vector
-  x$trip_id <- unlist(purrr::map_depth(trip_list, 1, "trip_labels"))
+  # Assign the trip IDs back to the events they were computed for (events are
+  # not required to be grouped by track or ordered by time)
+  trip_ids <- character(nrow(x))
+  for (trips in trip_list) {
+    trip_ids[trips$track_rows] <- trips$trip_labels
+  }
+  x$trip_id <- trip_ids
   # now get the trip meta and update the track meta accordingly
   trip_meta <- purrr::map_depth(trip_list, 1, "trip_meta") %>%
     dplyr::bind_rows()
@@ -150,8 +171,8 @@ tt_split_trips <- function(
 #'
 #' @description an internal function that works on single tracks
 #' @param label the label for the track
-#' @param x the x coordinates
-#' @param y the y coordinates
+#' @param x the x coordinates, in time order
+#' @param y the y coordinates, in time order
 #' @param is_lonlat a logical indicating if the coordinates are in lonlat
 #' @param centre_x the x coordinate for the central place (e.g. colony, nest)
 #' @param centre_y the y coordinate for the central place (e.g. colony, nest)
@@ -183,6 +204,16 @@ split_one_track <- function(
   )
   # define distances outside the outbound buffer
   out_events <- dist_to_centre > buffer_outbound
+  # events without a location (empty geometries) take the state of the
+  # preceding located event (or of the following one, at the start of the
+  # track); a track without any location is considered to be at the centre
+  located <- which(!is.na(out_events))
+  if (length(located) == 0) {
+    out_events[] <- FALSE
+  } else {
+    nearest <- pmax(findInterval(seq_along(out_events), located), 1)
+    out_events <- out_events[located[nearest]]
+  }
   # label trips
   runs <- rle(out_events)
   # now we can label the trips
@@ -202,7 +233,8 @@ split_one_track <- function(
     )
   )
   # check if last trip is incomplete (data ends outside colony)
-  if (dist_to_centre[length(dist_to_centre)] > buffer_inbound) {
+  last_dist <- utils::tail(dist_to_centre[!is.na(dist_to_centre)], 1)
+  if (length(last_dist) == 1 && last_dist > buffer_inbound) {
     trip_meta$trip_type[nrow(trip_meta)] <- "incomplete"
   }
   # check if first trip is incomplete (data starts outside colony)

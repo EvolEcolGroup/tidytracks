@@ -6,7 +6,7 @@
 \alias{tidytracks-package}
 \title{tidytracks: Functions to Analyse Tracking Data}
 \description{
-Tidy functions to analyse tracking data, based on the move2 objects.
+A grammar for animal tracking data analysis based on 'move2' objects. The package provides a consistent and expressive set of tools for manipulating tracks and associated metadata, allowing common movement-ecology workflows to be combined into clear and reproducible analyses. Functionality includes location filtering, trip segmentation, summary statistics, home range estimation and visualisation. Built on the 'sf' spatial framework, it integrates naturally with the tidyverse ecosystem.
 }
 \seealso{
 Useful links:

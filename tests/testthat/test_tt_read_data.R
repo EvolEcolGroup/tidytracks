@@ -399,6 +399,99 @@ test_that("tt_read_data works with a variety of date_time field(s) formats", {
 })
 
 
+test_that("tt_read_data reads 2-digit years in auto-detected formats", {
+  read_date_times <- function(date_times) {
+    events <- data.frame(
+      track_id = "a",
+      lon = seq_along(date_times),
+      lat = 0,
+      date_time = date_times
+    )
+    event_time(tt_read_data(
+      events,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    ))
+  }
+  expected <- as.POSIXct(
+    c("2024-01-15 13:45:30", "2024-02-01 14:45:00"),
+    tz = "UTC"
+  )
+
+  expect_equal(
+    read_date_times(c("15/01/24 13:45:30", "01/02/24 14:45:00")),
+    expected
+  )
+  expect_equal(
+    read_date_times(c("15-01-24 13:45:30", "01-02-24 14:45:00")),
+    expected
+  )
+  expect_equal(
+    read_date_times(c("15/01/24 13:45", "01/02/24 14:45")),
+    expected - c(30, 0)
+  )
+  # 4-digit years are still read as before
+  expect_equal(
+    read_date_times(c("15/01/2024 13:45:30", "01/02/2024 14:45:00")),
+    expected
+  )
+  expect_equal(
+    read_date_times(c("2024/01/15 13:45:30", "2024/02/01 14:45:00")),
+    expected
+  )
+})
+
+test_that("tt_read_data auto-detects MDY (American) date_time formats", {
+  read_date_times <- function(date_times) {
+    events <- data.frame(
+      track_id = "a",
+      lon = seq_along(date_times),
+      lat = 0,
+      date_time = date_times
+    )
+    event_time(tt_read_data(
+      events,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    ))
+  }
+  # unambiguous MDY: day (15) is not a valid month, so these can only be
+  # parsed as month/day, not day/month
+  expected <- as.POSIXct(
+    c("2024-01-15 13:45:30", "2024-02-01 14:45:00"),
+    tz = "UTC"
+  )
+
+  expect_equal(
+    read_date_times(c("01/15/24 13:45:30", "02/01/24 14:45:00")),
+    expected
+  )
+  expect_equal(
+    read_date_times(c("01-15-24 13:45:30", "02-01-24 14:45:00")),
+    expected
+  )
+  expect_equal(
+    read_date_times(c("01/15/2024 13:45:30", "02/01/2024 14:45:00")),
+    expected
+  )
+  expect_equal(
+    read_date_times(c("01-15-2024 13:45:30", "02-01-2024 14:45:00")),
+    expected
+  )
+
+  # ambiguous day/month (both <= 12): DMY is tried before MDY, so these
+  # should be parsed as day/month, not month/day
+  expect_equal(
+    read_date_times(c("01/02/2024 13:45:30", "02/01/2024 14:45:00")),
+    as.POSIXct(
+      c("2024-02-01 13:45:30", "2024-01-02 14:45:00"),
+      tz = "UTC"
+    )
+  )
+})
+
 # test with specifying the format_date_time parameter
 test_that("tt_read_data works with format_date_time parameter", {
   # test with date_time formats starting with dd instead of yyyy
@@ -618,4 +711,28 @@ test_that("tt_read_data gives errors for wrong input types", {
     ),
     "meta must be either NULL, a data frame or a path to a csv file."
   )
+})
+
+test_that("tt_read_data joins metadata with numeric track ids", {
+  events <- data.frame(
+    bird_id = c(1, 1, 2, 2),
+    lon = c(0, 1, 0, 1),
+    lat = 0,
+    date_time = rep(c("2024-01-01 00:00:00", "2024-01-01 01:00:00"), 2)
+  )
+  # integer ids (as read by read.csv), in a different order, and with an extra
+  # track that is not in the events
+  meta <- data.frame(bird_id = c(2L, 3L, 1L), sex = c("m", "f", "f"))
+
+  test_tt <- tt_read_data(
+    events = events,
+    meta = meta,
+    col_track_id = "bird_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "date_time"
+  )
+  test_meta <- show_meta(test_tt)
+  expect_s3_class(test_meta$bird_id, "factor")
+  expect_equal(as.character(test_meta$bird_id), c("1", "2"))
+  expect_equal(test_meta$sex, c("f", "m"))
 })

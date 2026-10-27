@@ -13,6 +13,11 @@
 #' If an endpoint is removed, the McConnell filter is rerun on the reduced
 #' track, and the endpoint check is repeated until the result is stable.
 #'
+#' Events with an empty geometry (i.e. no location) are ignored by the filter
+#' and returned as valid. Consecutive events at the same location are treated
+#' as having zero speed, even when they share the same timestamp (e.g.
+#' duplicated records).
+#'
 #' @param x A move2 object.
 #' @param max_speed Speed, provided as a `units` object, e.g.
 #'   `as_units(50, "m/s")`.
@@ -52,6 +57,11 @@ event_flag_mcconnell <- function(
     stop("max_speed must be a units object: e.g. as_units(50, 'm/s')")
   }
 
+  # Distances (and thus speeds) require a coordinate reference system.
+  if (is.na(sf::st_crs(x))) {
+    stop("x must have a coordinate reference system (CRS) defined")
+  }
+
   # Determine whether coordinates are projected or longitude/latitude.
   # This controls how distances are calculated later.
   projected <- !sf::st_is_longlat(x)
@@ -66,7 +76,7 @@ event_flag_mcconnell <- function(
   # used by the track. Distances are divided by 60 hours simply to
   # produce a speed unit compatible with the track CRS.
   ref_units <- units(
-    sf::st_distance(x$geometry[1:2]) /
+    sf::st_distance(sf::st_geometry(x)[1:2]) /
       units::as_units(60, "h")
   )
 
@@ -110,14 +120,25 @@ event_flag_mcconnell <- function(
   # Elapsed time is expressed in hours, ensuring consistency with the
   # original McConnell implementation.
   speed_between <- function(xy, tt, i, j, projected) {
-    dist_fast(
-      xy[i, 1],
-      xy[i, 2],
-      xy[j, 1],
-      xy[j, 2],
-      longlat = !projected
-    ) /
-      ((unclass(tt[j]) - unclass(tt[i])) / 3600)
+    segment_speed(
+      dist_fast(
+        xy[i, 1],
+        xy[i, 2],
+        xy[j, 1],
+        xy[j, 2],
+        longlat = !projected
+      ),
+      (unclass(tt[j]) - unclass(tt[i])) / 3600
+    )
+  }
+
+  # Speed for vectors of distances and elapsed times. A segment with no
+  # displacement has zero speed even if no time elapsed (e.g. duplicated
+  # records), rather than NaN, which would stop bad segments being detected.
+  segment_speed <- function(dist, elapsed_time) {
+    speed <- dist / elapsed_time
+    speed[!is.na(dist) & dist == 0] <- 0
+    speed
   }
 
   # ---------------------------------------------------------------------------
@@ -191,14 +212,16 @@ event_flag_mcconnell <- function(
       #   point 1 -> point 2
       #   point 2 -> point 3
       #   ...
-      speed1 <- dist_fast(
-        x1[-nrow(x1), 1],
-        x1[-nrow(x1), 2],
-        x1[-1, 1],
-        x1[-1, 2],
-        longlat = !projected
-      ) /
-        (diff(unclass(track_time[valid_track])) / 3600)
+      speed1 <- segment_speed(
+        dist_fast(
+          x1[-nrow(x1), 1],
+          x1[-nrow(x1), 2],
+          x1[-1, 1],
+          x1[-1, 2],
+          longlat = !projected
+        ),
+        diff(unclass(track_time[valid_track])) / 3600
+      )
 
       # ---------------------------------------------------------------------
       # Skip-one speed estimates
@@ -212,14 +235,16 @@ event_flag_mcconnell <- function(
       elapsed_time2 <- (unclass(track_time[valid_track][-c(1, 2)]) -
                           unclass(track_time[valid_track][-c(n - 1, n)])) /
         3600
-      speed2 <- dist_fast(
-        x1[-((nrow(x1) - 1):nrow(x1)), 1],
-        x1[-((nrow(x1) - 1):nrow(x1)), 2],
-        x1[-(1:2), 1],
-        x1[-(1:2), 2],
-        longlat = !projected
-      ) /
+      speed2 <- segment_speed(
+        dist_fast(
+          x1[-((nrow(x1) - 1):nrow(x1)), 1],
+          x1[-((nrow(x1) - 1):nrow(x1)), 2],
+          x1[-(1:2), 1],
+          x1[-(1:2), 2],
+          longlat = !projected
+        ),
         elapsed_time2
+      )
 
       # Indices corresponding to currently retained points.
       this_index <- index[valid_track]
@@ -227,9 +252,11 @@ event_flag_mcconnell <- function(
       # Number of adjacent segments.
       nseg <- length(speed1)
 
-      # Too few segments to compute RMS windows.
+      # Too few segments to compute RMS windows. The original implementation
+      # used `next` here, which never terminates as the RMS values are not
+      # updated; nothing more can be filtered, so stop instead.
       if (nseg < pprm) {
-        next
+        break
       }
 
       # ---------------------------------------------------------------------
@@ -258,8 +285,10 @@ event_flag_mcconnell <- function(
       # Original implementation forces final position to zero.
       rms[length(rms)] <- 0
 
-      # Identify windows exceeding maximum speed.
-      bad <- rms > max_speed
+      # Identify windows exceeding maximum speed. Windows with an undefined
+      # RMS are not flagged; leaving NAs in `bad` would break the grouping of
+      # contiguous bad windows below and stop the loop from terminating.
+      bad <- !is.na(rms) & rms > max_speed
 
       # Group contiguous bad windows.
       segs <- cumsum(c(0, abs(diff(bad))))
@@ -459,9 +488,13 @@ event_flag_mcconnell <- function(
   # ---------------------------------------------------------------------------
   valid_all <- rep(TRUE, nrow(coords))
 
+  # Events with an empty geometry have no location; they are left out of the
+  # filter (and returned as valid).
+  located <- !is.na(coords[, 1]) & !is.na(coords[, 2])
+
   for (i_track in track_ids) {
-    # Select events belonging to the track.
-    this_track <- id == i_track
+    # Select the located events belonging to the track.
+    this_track <- id == i_track & located
 
     # Track coordinates.
     xy <- coords[this_track, , drop = FALSE]
