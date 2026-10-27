@@ -1,3 +1,27 @@
+# tidytracks (development version)
+
+## New features
+
+* `hr_tt_locoh()`, a fast implementation to estimate home ranges with local
+  convex hulls (LoCoH).
+* `hr_tt_kde()` gains a `method` argument. Its new default, `"binned"`, bins
+  the locations onto the grid and then
+  smooths them with the kernel, which is much faster
+  for many locations (see the article "Benchmarking home ranges against amt and
+  adehabitatHR").
+
+## Minor improvements
+
+* Speed improvements (same results) for `hr_tt_mcp()`, `hr_tt_kde()` and
+  `hr_tt_ud_iso()`.
+
+## Documentation
+
+* New article, "Benchmarking home ranges against amt and adehabitatHR", which
+  compares the time taken by the MCP, KDE and LoCoH estimators of tidytracks,
+  amt and adehabitatHR on tracks simulated with amt, and checks that they give
+  the same home ranges.
+
 # tidytracks 0.2.1
 
 ## Bug fixes

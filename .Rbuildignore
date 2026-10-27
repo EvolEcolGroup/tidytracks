@@ -11,3 +11,5 @@
 ^\.claude$
 ^_pkgdown\.yml$
 ^pkgdown$
+^bench$
+^vignettes/articles$
