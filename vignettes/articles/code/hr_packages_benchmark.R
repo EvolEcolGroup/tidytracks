@@ -102,9 +102,11 @@ make_grid <- function(df) {
 ## ---- estimators ----
 iso_levels <- c(0.5, 0.95)
 
-# The home range of each track, with each method and package, from the input
-# of the package (all the tracks) and the grid for the KDE. amt estimates the
-# home range of a single track, so it is applied to each track in turn.
+# The home range of each track, with each method and estimator, from the
+# input of its package (all the tracks) and the grid for the KDE. Each
+# estimator is named after its package (its first word), followed, for the
+# KDE of tidytracks, by its method. amt estimates the home range of a single
+# track, so it is applied to each track in turn.
 estimators <- list(
   mcp = list(
     tidytracks = function(input, grid) {
@@ -122,10 +124,28 @@ estimators <- list(
       })
     }
   ),
-  # the UDs, with the reference bandwidth of each track
+  # the UDs, with the reference bandwidth of each track, and tidytracks with
+  # both of its methods: binned (its default, which bins the locations onto
+  # the grid before smoothing them, as amt does) and exact (which evaluates
+  # the kernel of every location at every cell, as adehabitatHR does)
   kde_ud = list(
-    tidytracks = function(input, grid) {
-      hr_tt_kde(input, h = "h_ref_indiv", bbox = grid$bbox, res = grid$res)
+    "tidytracks (binned)" = function(input, grid) {
+      hr_tt_kde(
+        input,
+        h = "h_ref_indiv",
+        bbox = grid$bbox,
+        res = grid$res,
+        method = "binned"
+      )
+    },
+    "tidytracks (exact)" = function(input, grid) {
+      hr_tt_kde(
+        input,
+        h = "h_ref_indiv",
+        bbox = grid$bbox,
+        res = grid$res,
+        method = "exact"
+      )
     },
     amt = function(input, grid) {
       input |>
@@ -138,13 +158,24 @@ estimators <- list(
   ),
   # the isopleths, starting from the locations (i.e. including the UDs)
   kde_iso = list(
-    tidytracks = function(input, grid) {
+    "tidytracks (binned)" = function(input, grid) {
       hr_tt_kde(
         input,
         h = "h_ref_indiv",
         bbox = grid$bbox,
         res = grid$res,
-        levels = iso_levels
+        levels = iso_levels,
+        method = "binned"
+      )
+    },
+    "tidytracks (exact)" = function(input, grid) {
+      hr_tt_kde(
+        input,
+        h = "h_ref_indiv",
+        bbox = grid$bbox,
+        res = grid$res,
+        levels = iso_levels,
+        method = "exact"
       )
     },
     amt = function(input, grid) {
@@ -275,15 +306,19 @@ for (dataset in names(datasets)) {
   grid <- make_grid(df)
   n_tracks <- length(unique(df$id))
   for (method in names(estimators)) {
-    for (package in names(estimators[[method]])) {
+    for (estimator in names(estimators[[method]])) {
+      # the package of the estimator, i.e. the first word of its name (e.g.
+      # tidytracks for "tidytracks (exact)"), which gives its input and how
+      # to extract its areas
+      package <- sub(" .*", "", estimator)
       # LoCoH in adehabitatHR would take hours on the long tracks (see the
       # scaling below)
       if (method == "locoh" && package == "adehabitatHR" && dataset == "long") {
         next
       }
-      message("Timing ", dataset, ", ", method, ", ", package)
+      message("Timing ", dataset, ", ", method, ", ", estimator)
       timed <- time_estimator(
-        estimators[[method]][[package]],
+        estimators[[method]][[estimator]],
         inputs[[package]],
         grid
       )
@@ -293,6 +328,7 @@ for (dataset in names(datasets)) {
         locations = nrow(df) / n_tracks,
         method = method,
         package = package,
+        estimator = estimator,
         seconds = timed$seconds,
         runs = timed$runs
       )
@@ -301,6 +337,7 @@ for (dataset in names(datasets)) {
           dataset = dataset,
           method = method,
           package = package,
+          estimator = estimator,
           areas[[method]][[package]](timed$result)
         )
       }
@@ -401,18 +438,20 @@ write.csv(
 )
 print(timings)
 print(locoh_scaling)
-# the largest relative difference between the areas from each package and
-# those from tidytracks, for each data set, method and level
-reference <- area_results[area_results$package == "tidytracks", ]
+# the largest relative difference between the areas from each estimator and
+# those from tidytracks (with its exact method, for the KDE), for each data
+# set, method and level
+is_reference <- area_results$estimator %in%
+  c("tidytracks", "tidytracks (exact)")
 compared <- merge(
-  area_results[area_results$package != "tidytracks", ],
-  reference[, c("dataset", "method", "id", "level", "area")],
+  area_results[!is_reference, ],
+  area_results[is_reference, c("dataset", "method", "id", "level", "area")],
   by = c("dataset", "method", "id", "level"),
-  suffixes = c("", "_tidytracks")
+  suffixes = c("", "_reference")
 )
-compared$rel_diff <- abs(compared$area / compared$area_tidytracks - 1)
+compared$rel_diff <- abs(compared$area / compared$area_reference - 1)
 print(aggregate(
-  rel_diff ~ dataset + method + package + level,
+  rel_diff ~ dataset + method + estimator + level,
   data = compared,
   FUN = max
 ))

@@ -54,6 +54,7 @@ Suggests:
     av,
     basemaps,
     emdist,
+    KernSmooth,
     sp,
     knitr,
     rmarkdown,

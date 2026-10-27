@@ -10,6 +10,23 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// kde_linbin_cpp
+Rcpp::NumericMatrix kde_linbin_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y, double x0, double y0, double res, int nx, int ny);
+RcppExport SEXP _tidytracks_kde_linbin_cpp(SEXP xSEXP, SEXP ySEXP, SEXP x0SEXP, SEXP y0SEXP, SEXP resSEXP, SEXP nxSEXP, SEXP nySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< double >::type x0(x0SEXP);
+    Rcpp::traits::input_parameter< double >::type y0(y0SEXP);
+    Rcpp::traits::input_parameter< double >::type res(resSEXP);
+    Rcpp::traits::input_parameter< int >::type nx(nxSEXP);
+    Rcpp::traits::input_parameter< int >::type ny(nySEXP);
+    rcpp_result_gen = Rcpp::wrap(kde_linbin_cpp(x, y, x0, y0, res, nx, ny));
+    return rcpp_result_gen;
+END_RCPP
+}
 // locoh_neighbours_cpp
 Rcpp::List locoh_neighbours_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y, std::string type, double n);
 RcppExport SEXP _tidytracks_locoh_neighbours_cpp(SEXP xSEXP, SEXP ySEXP, SEXP typeSEXP, SEXP nSEXP) {
@@ -56,6 +73,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_tidytracks_kde_linbin_cpp", (DL_FUNC) &_tidytracks_kde_linbin_cpp, 7},
     {"_tidytracks_locoh_neighbours_cpp", (DL_FUNC) &_tidytracks_locoh_neighbours_cpp, 4},
     {"_tidytracks_locoh_cpp", (DL_FUNC) &_tidytracks_locoh_cpp, 8},
     {"_tidytracks_convex_hull_cpp", (DL_FUNC) &_tidytracks_convex_hull_cpp, 2},

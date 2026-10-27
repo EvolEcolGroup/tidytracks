@@ -84,15 +84,15 @@ The neighbour search, the hulls, their areas and the number of hulls needed
 for each level are computed in C++ (with a k-d tree for the neighbour
 search); the union of the hulls is computed with \code{\link[sf:st_union]{sf::st_union()}}.
 
-The rules follow \code{amt::hr_locoh()}, which this function reproduces: each
+The rules follow \code{amt::hr_locoh()}: each
 level is matched to the union of hulls whose coverage (the proportion of
 locations in the hulls) is closest to it, so the actual coverage can be a
 little above or below the requested level. A hull with no area (when all its
-locations lie on a line, or are at the same place) counts towards the
+locations lie on a line, or are at the same place, as it may be the case
+for locations at the den or nest) counts towards the
 coverage, but only becomes part of the isopleth if \code{buffer} is positive.
 \code{amt::hr_locoh()} buffers every hull by 1e-5 (its \code{rand_buffer}); setting
-\code{buffer = 1e-5} here gives the same isopleths, but buffering the union is
-much faster than buffering each hull.
+\code{buffer = 1e-5} here gives the same isopleths.
 
 Distances are computed in the units of the projection of \code{x}, and hulls are
 built and merged on a plane. For unprojected data (longitude/latitude),

@@ -120,10 +120,11 @@ The KDEs are estimated on the same grid for all the packages:
 ```
 
 The home ranges are then estimated with each method and package, at the 50%
-and 95% levels. `tidytracks` and `adehabitatHR` estimate the home ranges of
-all the tracks in one call; `amt` estimates the home range of a single track,
-so its estimators are applied to each track in turn, after nesting the
-tracks as shown in the documentation of `amt`:
+and 95% levels, and with both of the methods of `tidytracks` for the KDE (see
+below). `tidytracks` and `adehabitatHR` estimate the home ranges of all the
+tracks in one call; `amt` estimates the home range of a single track, so its
+estimators are applied to each track in turn, after nesting the tracks as
+shown in the documentation of `amt`:
 
 ```{r estimators, eval = FALSE}
 ```
@@ -136,10 +137,17 @@ The settings are matched so that the packages estimate the same home ranges:
   bandwidth of each track (\(h = \sqrt{(\sigma^2_x + \sigma^2_y)/2} \, n^{-1/6}\)),
   on the same grid. The UDs are timed on their own (`kde_ud`), and with
   their isopleths (`kde_iso`, i.e. from the locations to the isopleths).
-  `tidytracks` (with `MASS::kde2d()`) and `adehabitatHR` evaluate the kernel
-  of every location at the centre of every cell, whilst `amt` (with
-  `KernSmooth::bkde2D()`) first bins the locations onto the grid, which is
-  faster but approximate.
+  The UD on a grid can be estimated in two ways. The exact estimators
+  evaluate the kernel of every location at the centre of every cell: those
+  of `adehabitatHR`, and of `tidytracks` with `method = "exact"` (which uses
+  `MASS::kde2d()`). The binned estimators first bin the locations onto the
+  grid (splitting each location between the four cells whose centres
+  surround it), and then smooth the bin counts with the kernel, which is
+  faster but approximate: those of `amt` (with `KernSmooth::bkde2D()`, which
+  smooths them with fast Fourier transforms), and of `tidytracks` with
+  `method = "binned"`, its default (which bins the locations as
+  `KernSmooth::bkde2D()` does, but smooths them with two matrix products, one
+  along each axis of the grid, as the Gaussian kernel is separable).
 - **LoCoH**: hulls of each location and its 10 nearest neighbours (`n = 10`
   in `tidytracks` and `amt`, `k = 11` in `adehabitatHR`, which counts the
   location itself). For each level, the isopleth is the union of the
@@ -163,21 +171,29 @@ package (with the functions in `areas`, in the script). `LoCoH.k()` from
 # Do the packages give the same home ranges?
 
 For each method, data set and level, we compare the area of the home range of
-each track from `amt` and `adehabitatHR` with the area from `tidytracks`:
+each track from each estimator with the area from `tidytracks` (with its
+exact method, for the KDE):
 
 ```{r read_areas}
 area_results <- read.csv("data/hr_benchmark_areas.csv")
+# the estimators, in the order of the tables and plots
+estimator_levels <- c(
+  "tidytracks", "tidytracks (binned)", "tidytracks (exact)",
+  "amt", "adehabitatHR"
+)
+# the estimators with which the others are compared
+reference_estimators <- c("tidytracks", "tidytracks (exact)")
 area_diff <- area_results %>%
-  filter(package != "tidytracks") %>%
+  filter(!estimator %in% reference_estimators) %>%
   inner_join(
     area_results %>%
-      filter(package == "tidytracks") %>%
-      select(dataset, method, id, level, area_tidytracks = area),
+      filter(estimator %in% reference_estimators) %>%
+      select(dataset, method, id, level, area_reference = area),
     by = c("dataset", "method", "id", "level")
   ) %>%
   # the relative difference, in %
-  mutate(diff = 100 * abs(area / area_tidytracks - 1)) %>%
-  group_by(method, package, level) %>%
+  mutate(diff = 100 * abs(area / area_reference - 1)) %>%
+  group_by(method, estimator, level) %>%
   summarise(
     median_diff = median(diff),
     max_diff = max(diff),
@@ -204,22 +220,44 @@ area_diff %>%
       )
     )
   ) %>%
-  arrange(match(method, c("MCP", "KDE", "LoCoH")), package, level) %>%
+  arrange(
+    match(method, c("MCP", "KDE", "LoCoH")),
+    match(estimator, estimator_levels),
+    level
+  ) %>%
   knitr::kable(
     col.names = c(
-      "Method", "Package", "Level",
+      "Method", "Estimator", "Level",
       "Median difference (%)", "Largest difference (%)"
     ),
     align = "lllrr"
   )
 ```
 
+```{r area_numbers, include = FALSE}
+# the largest difference (in %) between the KDE isopleths of an estimator and
+# the exact ones of tidytracks, for the text
+kde_max_diff <- function(estimator) {
+  signif(max(area_diff$max_diff[
+    area_diff$method == "kde_iso" & area_diff$estimator == estimator
+  ]), 2)
+}
+```
+
 MCP and LoCoH give the same home ranges in all three packages (the tiny
 differences for LoCoH in `amt` come from its buffering of each hull by
-0.00001 m). The KDE isopleths of `adehabitatHR` are within 0.1% of those of
-`tidytracks`: both evaluate the same kernels at the same points, and differ
-only in how they draw the isopleths from the UDs. Those of `amt` differ by
-about 1%, as it approximates the KDE by binning the locations.
+0.00001 m). For the KDE, the isopleths of `adehabitatHR` are within
+`r kde_max_diff("adehabitatHR")`% of the exact ones of `tidytracks`: both
+evaluate the same kernels at the same points, and differ only in how they
+draw the isopleths from the UDs. The binned estimators approximate the KDE,
+as binning moves each location by less than a cell: the binned isopleths of
+`tidytracks` are within `r kde_max_diff("tidytracks (binned)")`% of the exact
+ones, and those of `amt` within `r kde_max_diff("amt")`%. Both bin the
+locations in the same way, and smooth them with the same kernel, but `amt`
+(with `KernSmooth::bkde2D()`) estimates the density at
+grid points that go from edge to edge of its raster, rather than at the
+centres of its cells: they are slightly more than a cell apart, so its UD is
+stretched by up to half a cell towards the edges of the grid.
 
 # How long do they take?
 
@@ -241,47 +279,74 @@ timings <- timings %>%
     ),
     data_set = factor(data_set, unique(data_set)),
     method = factor(method_labels[method], method_labels),
-    package = factor(package, package_levels)
+    package = factor(package, package_levels),
+    estimator = factor(estimator, estimator_levels)
   )
 ```
 
 ```{r timing_ratios, include = FALSE}
-# the time taken by a package, and relative to tidytracks, for the text
-time_of <- function(dataset, method, package) {
+# the time taken by an estimator, and relative to another one (by default
+# tidytracks), for the text
+time_of <- function(dataset, method, estimator) {
   timings$seconds[
     timings$dataset == dataset &
       timings$method == method_labels[[method]] &
-      timings$package == package
+      timings$estimator == estimator
   ]
 }
-ratio <- function(dataset, method, package) {
+ratio <- function(dataset, method, estimator, reference = "tidytracks") {
   signif(
-    time_of(dataset, method, package) /
-      time_of(dataset, method, "tidytracks"),
+    time_of(dataset, method, estimator) /
+      time_of(dataset, method, reference),
     2
   )
 }
+# a range of ratios, e.g. "2 to 3", or "2" if they are the same
+ratio_range <- function(ratios) {
+  ratios <- range(ratios)
+  if (ratios[1] == ratios[2]) {
+    format(ratios[1])
+  } else {
+    paste(ratios[1], "to", ratios[2])
+  }
+}
+binned <- "tidytracks (binned)"
+exact <- "tidytracks (exact)"
+# the time to estimate the UDs of the medium tracks, with tidytracks (with
+# either method) and amt, with one decimal (e.g. 4.0 rather than 4)
+medium_ud <- format(
+  signif(
+    range(vapply(
+      c(binned, exact, "amt"),
+      function(estimator) time_of("medium", "kde_ud", estimator),
+      numeric(1)
+    )),
+    2
+  ),
+  nsmall = 1
+)
 ```
 
-```{r plot_timings, fig.width = 7, fig.height = 5.5}
-# one colour per package (and its name on the y axis)
+```{r plot_timings, fig.width = 7, fig.height = 6.5}
+# one colour per package (and the name of each estimator on the y axis)
 package_colours <- c(
   tidytracks = "#2a78d6",
   amt = "#eb6834",
   adehabitatHR = "#1baf7a"
 )
-ggplot(timings, aes(x = seconds, y = package, colour = package)) +
+ggplot(timings, aes(x = seconds, y = estimator, colour = package)) +
   geom_point(size = 3) +
   # the combinations that were not run
   geom_text(
     data = timings %>%
-      complete(data_set, method, package) %>%
+      complete(data_set, nesting(method, estimator, package)) %>%
       filter(is.na(seconds)),
     aes(x = 1, label = "not run"),
     colour = "grey40",
     size = 3
   ) +
-  facet_grid(method ~ data_set) +
+  # each method with its own estimators
+  facet_grid(method ~ data_set, scales = "free_y", space = "free_y") +
   scale_x_log10(
     breaks = c(0.1, 1, 10, 100, 1000),
     labels = c("0.1", "1", "10", "100", "1000")
@@ -299,23 +364,47 @@ ggplot(timings, aes(x = seconds, y = package, colour = package)) +
 ```
 
 ```{r table_timings, echo = FALSE}
+# one column per package, plus one for the exact KDE of tidytracks (the
+# column of tidytracks has its default, binned, KDE)
+table_columns <- c("tidytracks", "tidytracks (exact)", "amt", "adehabitatHR")
 timings %>%
-  select(data_set, method, package, seconds) %>%
-  arrange(package) %>%
-  pivot_wider(names_from = package, values_from = seconds) %>%
-  mutate(across(
-    any_of(package_levels),
-    ~ ifelse(
-      is.na(.x),
-      "not run",
-      formatC(signif(.x, 2), format = "fg", digits = 2, big.mark = ",")
+  mutate(
+    column = recode(
+      as.character(estimator),
+      "tidytracks (binned)" = "tidytracks"
+    ),
+    column = factor(column, table_columns)
+  ) %>%
+  select(data_set, method, column, seconds) %>%
+  arrange(column) %>%
+  pivot_wider(names_from = column, values_from = seconds) %>%
+  mutate(
+    across(
+      all_of(table_columns),
+      ~ ifelse(
+        is.na(.x),
+        "not run",
+        formatC(signif(.x, 2), format = "fg", digits = 2, big.mark = ",")
+      )
+    ),
+    # tidytracks only has an exact method for the KDE
+    `tidytracks (exact)` = ifelse(
+      grepl("KDE", method),
+      `tidytracks (exact)`,
+      ""
     )
-  )) %>%
+  ) %>%
   arrange(data_set, method) %>%
   knitr::kable(
-    col.names = c("Data set", "Method", package_levels),
-    align = "llrrr",
-    caption = "Time (s) to estimate the home ranges of all the tracks."
+    col.names = c(
+      "Data set", "Method", "tidytracks", "tidytracks (exact KDE)", "amt",
+      "adehabitatHR"
+    ),
+    align = "llrrrr",
+    caption = paste(
+      "Time (s) to estimate the home ranges of all the tracks. For the KDE,",
+      "the column tidytracks is for its default, binned, method."
+    )
   )
 ```
 
@@ -324,32 +413,42 @@ timings %>%
   on the medium tracks, and `adehabitatHR` `r ratio("medium", "mcp",
   "adehabitatHR")` times (`r ratio("long", "mcp", "adehabitatHR")` times on
   the long tracks).
-- **KDE**: `tidytracks` and `adehabitatHR` evaluate the kernel of every
-  location in every cell of the grid, which takes a time proportional to the
-  number of locations times the number of cells, whilst `amt` first bins
-  the locations onto the grid, so that its time hardly depends on the number
-  of locations. For the UDs of the medium tracks, `tidytracks` and `amt`
-  take about the same time, and `adehabitatHR` `r ratio("medium", "kde_ud",
-  "adehabitatHR")` times as long; for the long tracks, `amt` is
-  `r signif(1 / ratio("long", "kde_ud", "amt"), 2)` times faster than
-  `tidytracks`, at the cost of its approximation. Drawing the isopleths, on
-  the other hand, adds little to the time of `tidytracks`
-  (`r signif(time_of("medium", "kde_iso", "tidytracks") - time_of("medium", "kde_ud", "tidytracks"), 1)` s
-  for the 100 medium tracks), but more to those of `amt`
-  (`r signif(time_of("medium", "kde_iso", "amt") - time_of("medium", "kde_ud", "amt"), 1)` s)
-  and `adehabitatHR`
-  (`r signif(time_of("medium", "kde_iso", "adehabitatHR") - time_of("medium", "kde_ud", "adehabitatHR"), 2)` s).
-  From the locations to the isopleths, `tidytracks` is thus the fastest for
-  many tracks of medium length (`amt` takes
-  `r ratio("medium", "kde_iso", "amt")` times as long, and `adehabitatHR`
-  `r ratio("medium", "kde_iso", "adehabitatHR")` times), and `amt` for a few
-  long tracks (`r signif(1 / ratio("long", "kde_iso", "amt"), 2)` times
-  faster than `tidytracks`). Most of the time of `tidytracks` on long tracks
+- **KDE**: the exact estimators (`tidytracks` with `method = "exact"`, and
+  `adehabitatHR`) evaluate the kernel of every location in every cell of the
+  grid, which takes a time proportional to the number of locations times the
+  number of cells, whilst the binned estimators (`tidytracks` with its
+  default, `method = "binned"`, and `amt`) first bin the locations onto the
+  grid, so that their time hardly depends on the number of locations. On the
+  long tracks, the binned estimators are thus much faster: the UDs take
+  `r signif(time_of("long", "kde_ud", binned), 2)` s with `tidytracks` and
+  `r signif(time_of("long", "kde_ud", "amt"), 2)` s with `amt`, against
+  `r signif(time_of("long", "kde_ud", exact), 2)` s with the exact method of
+  `tidytracks` (`r ratio("long", "kde_ud", exact, binned)` times as long) and
+  `r signif(time_of("long", "kde_ud", "adehabitatHR"), 2)` s with
+  `adehabitatHR`. On the medium tracks, which have fewer locations, the
+  kernels take less time than building the UD of each track: `tidytracks`
+  (with either method) and `amt` take `r medium_ud[1]` to `r medium_ud[2]` s,
+  and `adehabitatHR` `r signif(time_of("medium", "kde_ud", "adehabitatHR"), 2)` s.
+  Drawing the isopleths of the medium tracks adds little to the time of
+  `tidytracks`, which draws them straight from the UDs, without building
+  rasters (`r signif(time_of("medium", "kde_iso", binned) - time_of("medium", "kde_ud", binned), 1)` s
+  with the binned method), but
+  `r signif(time_of("medium", "kde_iso", "amt") - time_of("medium", "kde_ud", "amt"), 2)` s
+  to that of `amt`, and
+  `r signif(time_of("medium", "kde_iso", "adehabitatHR") - time_of("medium", "kde_ud", "adehabitatHR"), 2)` s
+  to that of `adehabitatHR`. From the locations to the
+  isopleths, the binned method of `tidytracks` is thus the fastest on both
+  data sets: `amt` takes
+  `r ratio_range(c(ratio("medium", "kde_iso", "amt", binned), ratio("long", "kde_iso", "amt", binned)))`
+  times as long, and `adehabitatHR`
+  `r ratio_range(c(ratio("medium", "kde_iso", "adehabitatHR", binned), ratio("long", "kde_iso", "adehabitatHR", binned)))`
+  times. Most of the time of the exact method of `tidytracks` on long tracks
   is spent in a matrix product (in `MASS::kde2d()`), which an optimised BLAS
-  (such as OpenBLAS) can make several times faster; this benchmark used the
-  reference BLAS of R.
+  (such as OpenBLAS) can make several times faster, as it can the matrix
+  products of the binned method; this benchmark used the reference BLAS of
+  R.
 - **LoCoH**: `tidytracks` is the fastest, by far: `amt` takes
-  `r ratio("medium", "locoh", "amt")` to `r ratio("long", "locoh", "amt")`
+  `r ratio_range(c(ratio("medium", "locoh", "amt"), ratio("long", "locoh", "amt")))`
   times as long, and `adehabitatHR`
   `r ratio("medium", "locoh", "adehabitatHR")` times as long on the medium
   tracks (`r round(time_of("medium", "locoh", "adehabitatHR") / 60)` minutes,
@@ -418,14 +517,17 @@ per track for `tidytracks`.
 # Summary
 
 - Given the same settings, the three packages give the same MCP and LoCoH
-  home ranges, and KDE isopleths within 0.1% (`tidytracks` and
-  `adehabitatHR`) or about 1% (`amt`, which approximates the KDE).
+  home ranges. The KDE isopleths of `adehabitatHR`, and those of the binned
+  method of `tidytracks`, are within about 0.1% of the exact ones of
+  `tidytracks`, and those of `amt` within about 1%, as its grid points are
+  not at the centres of the cells.
 - `tidytracks` is the fastest for MCP and LoCoH (more than 10 times faster
   than `amt`, and more than 100 times faster than `adehabitatHR`, for
-  LoCoH), and for the KDE isopleths of many tracks.
-- For the KDE of long tracks, `amt` is the fastest, thanks to its binned
-  approximation; `tidytracks` computes the exact KDE, slightly faster than
-  `adehabitatHR`.
+  LoCoH), and, with its default binned method, for the KDE isopleths (2 to 3
+  times faster than `amt`).
+- For the UDs of long tracks, the binned methods of `tidytracks` and `amt`
+  are the fastest (`tidytracks` slightly faster), more than 20 times faster
+  than the exact methods.
 - LoCoH in `adehabitatHR` becomes impractical beyond a few thousand
   locations per track.
 
