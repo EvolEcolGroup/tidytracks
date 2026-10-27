@@ -385,3 +385,11 @@ test_that("full point wakes use shadow_mark", {
   result <- animate_map(make_points_map(x), wake_length = 1)
   expect_true(inherits(result$shadow, "ShadowMark"))
 })
+
+test_that("point animation handles events without a location", {
+  x_empty <- x
+  sf::st_geometry(x_empty)[c(3, 14)] <- sf::st_point()
+  result <- animate_map(make_points_map(x_empty))
+  # building the frames tweens the points between time steps
+  expect_no_error(ggplot2::ggplot_build(result))
+})

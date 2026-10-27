@@ -4,6 +4,8 @@
 #'   points. It is a wrapper around `[ggplot2::geom_sf()]`, thus allowing for
 #'   projections to be set using the [ggplot2::coord_sf()]` function. See
 #'   [ggplot2::geom_sf()] for details
+#' @details Events without a location (empty points) are not plotted.
+#'
 #' @param mapping Set of aesthetic mappings created by [ggplot2::aes()].
 #'   Variables from the events table can be used for mapping. If none is
 #'   provided a basic aesthetics for the `sf` points will be used, as it is the
@@ -47,6 +49,9 @@ geom_event_point <- function(
   }
   # drop the units, as they are not compatible with ggplot
   data <- tt_drop_units(data)
+  # drop the events without a location: they are not drawn, and their empty
+  # points break the tweening of the geometries in animate_map()
+  data <- data[!sf::st_is_empty(data), ]
   # Tag so animate_map() can identify this as a tidytracks track layer.
   attr(data, "tidytracks_geom") <- "event_point"
   attr(data, "tidytracks_data_name") <- data_name
