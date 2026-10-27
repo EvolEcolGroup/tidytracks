@@ -54,6 +54,7 @@ Suggests:
     av,
     basemaps,
     ctmm,
+    crstools,
     emdist,
     KernSmooth,
     sp,
