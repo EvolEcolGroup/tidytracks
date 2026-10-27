@@ -339,6 +339,20 @@ test_that("animate_map with path layer embeds label_format in title", {
   expect_true(grepl("frame_time", result$labels$title, fixed = TRUE))
 })
 
+test_that("animate_map labels frames in the time zone of the tracks", {
+  # a time zone different from that of the session
+  x_tz <- x
+  attr(x_tz$date_time, "tzone") <- "Etc/GMT+12"
+  fmt <- "%Y-%m-%d %H:%M"
+  result <- animate_map(make_paths_map(x_tz), label_format = fmt)
+  built <- ggplot2::ggplot_build(result)
+  first_frame <- built$scene$get_frame(built, 1)
+  expect_equal(
+    as.character(first_frame$plot$labels$title),
+    format(min(x_tz$date_time), fmt)
+  )
+})
+
 test_that("animate_map with path layer works when piped from a ggplot", {
   expect_s3_class(make_paths_map(x) |> animate_map(), "gganim")
 })

@@ -49,7 +49,8 @@
 #'   shown at full opacity (a permanently growing path or dot trail).
 #' @param label_format A character string specifying the
 #'   \code{\link[base]{format.POSIXct}} format for the date-time label shown on
-#'   each frame. Default is `"\%Y-\%m-\%d \%H:\%M:\%S"`.
+#'   each frame, in the time zone of the track times. Default is
+#'   `"%Y-%m-%d %H:%M:%S"`.
 #'
 #' @return A `gganim` object ready to pass to `gganimate::animate()`. The
 #'   number of unique time steps in the track layer data is attached as
@@ -173,9 +174,19 @@ animate_map <- function(
   # --- Add a dynamic frame-time label to the plot title ---
   # gganimate evaluates the title string as a glue expression, so wrapping the
   # format() call in {} causes it to be re-evaluated and updated on every frame.
+  # gganimate drops the time zone of frame_time, which would thus be formatted
+  # in the time zone of the session: format it in that of the track times ("",
+  # i.e. the session's, if they have none)
+  tz <- c(attr(detected$data[[time_col]], "tzone"), "")[1]
   p_anim <- p_anim +
     ggplot2::labs(
-      title = paste0("{format(frame_time, '", label_format, "')}")
+      title = paste0(
+        "{format(frame_time, '",
+        label_format,
+        "', tz = '",
+        tz,
+        "')}"
+      )
     )
 
   # Attach the frame count as an attribute so callers can pass it directly to
