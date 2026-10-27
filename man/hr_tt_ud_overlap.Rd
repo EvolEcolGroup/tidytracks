@@ -4,7 +4,6 @@
 \alias{hr_tt_ud_overlap}
 \alias{hr_tt_ud_overlap.SpatRaster}
 \alias{hr_tt_ud_overlap.hr_tt_ud_tbl}
-\alias{hr_ud_overlap}
 \title{Compute overlap for utilisation distributions}
 \usage{
 hr_tt_ud_overlap(x, ..., method = c("ba", "vi", "udoi", "earth_mover"))
@@ -23,8 +22,6 @@ hr_tt_ud_overlap(x, ..., method = c("ba", "vi", "udoi", "earth_mover"))
   method = c("ba", "vi", "udoi", "earth_mover"),
   cond_level = NULL
 )
-
-hr_ud_overlap(...)
 }
 \arguments{
 \item{x}{A SpatRaster of the utilisation distribution (with a layer \code{ud}), or

@@ -68,3 +68,4 @@ reference:
     contents:
       - reexports
       - pipe
+      - tidytracks-deprecated

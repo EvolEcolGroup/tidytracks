@@ -131,7 +131,7 @@ stopifnot_hr_tt_ud_tbl <- function(x) {
 
 
 # deprecated function for backward compatibility
-#' @name hr_tt_ud_wrap
+#' @rdname tidytracks-deprecated
 #' @export
 hr_ud_wrap <- function(x) {
   warning(
@@ -142,7 +142,7 @@ hr_ud_wrap <- function(x) {
 }
 
 # deprecated function for backward compatibility
-#' @name hr_tt_ud_unwrap
+#' @rdname tidytracks-deprecated
 #' @export
 hr_ud_unwrap <- function(x) {
   warning(
@@ -153,7 +153,7 @@ hr_ud_unwrap <- function(x) {
 }
 
 # deprecated function for backward compatibility
-#' @name hr_tt_ud_saveRDS
+#' @rdname tidytracks-deprecated
 #' @export
 hr_ud_saveRDS <- function(...) {   # nolint: object_name_linter.
   warning(

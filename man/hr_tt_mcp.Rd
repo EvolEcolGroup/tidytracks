@@ -2,12 +2,9 @@
 % Please edit documentation in R/hr_tt_mcp.R
 \name{hr_tt_mcp}
 \alias{hr_tt_mcp}
-\alias{hr_mcp}
 \title{Quantify the home range using minimum convex polygon (MCP)}
 \usage{
 hr_tt_mcp(x, levels = c(0.5, 0.95))
-
-hr_mcp(x, levels = c(0.5, 0.95))
 }
 \arguments{
 \item{x}{A move2 object; if explicitly grouped, the home range is estimated

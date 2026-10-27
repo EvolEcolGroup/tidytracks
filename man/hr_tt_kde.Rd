@@ -2,19 +2,9 @@
 % Please edit documentation in R/hr_tt_kde.R
 \name{hr_tt_kde}
 \alias{hr_tt_kde}
-\alias{hr_kde}
 \title{Quantify the home range using kernel density estimation}
 \usage{
 hr_tt_kde(
-  x,
-  h = "h_ref_mean",
-  bbox = NULL,
-  res = NULL,
-  levels = NULL,
-  method = c("binned", "exact")
-)
-
-hr_kde(
   x,
   h = "h_ref_mean",
   bbox = NULL,

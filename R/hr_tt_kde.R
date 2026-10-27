@@ -663,7 +663,7 @@ kde_raster <- function(density, grid, h, id) {
 }
 
 # deprecated function for backward compatibility
-#' @name hr_tt_kde
+#' @rdname tidytracks-deprecated
 #' @export
 hr_kde <- function(
   x,

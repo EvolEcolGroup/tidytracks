@@ -329,7 +329,7 @@ cud_isopleths <- function(cud, x, y, levels, ops_crs, cud_raster) {
 }
 
 # deprecated function for backward compatibility
-#' @name hr_tt_ud_iso
+#' @rdname tidytracks-deprecated
 #' @export
 hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
   warning(

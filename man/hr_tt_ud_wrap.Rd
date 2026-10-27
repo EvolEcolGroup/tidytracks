@@ -2,12 +2,9 @@
 % Please edit documentation in R/hr_tt_ud_storage.R
 \name{hr_tt_ud_wrap}
 \alias{hr_tt_ud_wrap}
-\alias{hr_ud_wrap}
 \title{Wrap utilisation distributions for storage}
 \usage{
 hr_tt_ud_wrap(x)
-
-hr_ud_wrap(x)
 }
 \arguments{
 \item{x}{An \code{hr_tt_ud_tbl} with a \code{ud} list-column.}

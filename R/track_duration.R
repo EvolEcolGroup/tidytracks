@@ -7,7 +7,7 @@
 #' @export
 #' @examples
 #' track_duration(example_tt)
-#' track_duration(example_tt, units = "hours)
+#' track_duration(example_tt, units = "hours")
 #'
 track_duration <- function(x, units = as_units(1, "days")) {
   # Check if x is a move2 object

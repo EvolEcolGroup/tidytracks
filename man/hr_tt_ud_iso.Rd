@@ -4,7 +4,6 @@
 \alias{hr_tt_ud_iso}
 \alias{hr_tt_ud_iso.tbl_df}
 \alias{hr_tt_ud_iso.SpatRaster}
-\alias{hr_ud_iso}
 \title{Create isopleths from utilisation distributions}
 \usage{
 hr_tt_ud_iso(x, levels = c(0.5, 0.95), ci_level = 0.95)
@@ -12,8 +11,6 @@ hr_tt_ud_iso(x, levels = c(0.5, 0.95), ci_level = 0.95)
 \method{hr_tt_ud_iso}{tbl_df}(x, levels = c(0.5, 0.95), ci_level = 0.95)
 
 \method{hr_tt_ud_iso}{SpatRaster}(x, levels = c(0.5, 0.95), ci_level = 0.95)
-
-hr_ud_iso(x, levels = c(0.5, 0.95))
 }
 \arguments{
 \item{x}{either a tibble of class \code{hr_tt_ud_tbl}, as created by

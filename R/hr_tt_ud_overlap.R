@@ -404,7 +404,7 @@ check_earth_mover_available <- function() {
 
 
 # deprecated function for backward compatibility
-#' @name hr_tt_ud_overlap
+#' @rdname tidytracks-deprecated
 #' @export
 hr_ud_overlap <- function(...) {
   warning(

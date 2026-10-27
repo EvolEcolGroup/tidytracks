@@ -20,4 +20,6 @@ Compute the total duration of each track
 }
 \examples{
 track_duration(example_tt)
+track_duration(example_tt, units = "hours")
+
 }

@@ -2,12 +2,9 @@
 % Please edit documentation in R/hr_tt_ud_storage.R
 \name{hr_tt_ud_saveRDS}
 \alias{hr_tt_ud_saveRDS}
-\alias{hr_ud_saveRDS}
 \title{Save utilisation distributions as an RDS file}
 \usage{
 hr_tt_ud_saveRDS(x, file, compress = TRUE, version = NULL, ...)
-
-hr_ud_saveRDS(...)
 }
 \arguments{
 \item{x}{An \code{hr_tt_ud_tbl} with a \code{ud} list-column.}
