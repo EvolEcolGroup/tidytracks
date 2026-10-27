@@ -19,7 +19,10 @@ track_summary_health(x)
 
 ## Value
 
-A tibble with one row per track and the following columns:
+A tibble with one row per track (in the same order as the tracks in the
+metadata, see
+[`show_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md))
+and the following columns:
 
 - `<track id column>`: The track ID from `x`
 

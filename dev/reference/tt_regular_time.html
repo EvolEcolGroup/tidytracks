@@ -15,7 +15,7 @@ have matching time stamps (as the starting points are different)."><meta name="r
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,6 +28,8 @@ have matching time stamps (as the starting points are different)."><meta name="r
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
+    <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -99,8 +101,8 @@ overlapping tracks will have identical timestamps at each step.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>move2</code> object on a regular time grid.  The CRS, time-column name,
-track-id column name, and track-level attributes of <code>x</code> are all
-preserved.</p>
+track-id column name, geometry column name, and track-level attributes of
+<code>x</code> are all preserved.</p>
     </div>
     <div class="section level2">
     <h2 id="spatial-interpolation">Spatial interpolation<a class="anchor" aria-label="anchor" href="#spatial-interpolation"></a></h2>
@@ -122,19 +124,20 @@ are transformed back to the original CRS.</p></li>
     <p>Raw observations are often unevenly
 spaced in both time and space. <code>tt_regular_time</code> accounts for this by
 first computing the normalised arc-length fraction of every input point
-along the path (using <code><a href="https://r-spatial.github.io/s2/reference/s2_is_collection.html" class="external-link">s2::s2_distance()</a></code> for geographic CRS and Euclidean
-distance otherwise), then using <code><a href="https://rdrr.io/r/stats/approxfun.html" class="external-link">stats::approx()</a></code> to linearly interpolate
-those fractions at each new time step.  A stationary stretch of the track
-(many observations covering little distance) is therefore correctly treated
-as slow movement, not as a spatial shortcut.</p>
+along the path that is interpolated (using <code><a href="https://r-spatial.github.io/s2/reference/s2_is_collection.html" class="external-link">s2::s2_distance()</a></code> along the
+spherical path for geographic and projected CRS, and Euclidean distance
+when there is no CRS), then using <code><a href="https://rdrr.io/r/stats/approxfun.html" class="external-link">stats::approx()</a></code> to linearly
+interpolate those fractions at each new time step.  A stationary stretch
+of the track (many observations covering little distance) is therefore
+correctly treated as slow movement, not as a spatial shortcut.</p>
     </div>
     <div class="section level2">
     <h2 id="attribute-interpolation">Attribute interpolation<a class="anchor" aria-label="anchor" href="#attribute-interpolation"></a></h2>
     <p>Numeric event-level columns are linearly
 interpolated at the new time steps using <code><a href="https://rdrr.io/r/stats/approxfun.html" class="external-link">stats::approx()</a></code>. Non-numeric
-columns receive the value of the nearest preceding observation via
-<code><a href="https://rdrr.io/r/base/findInterval.html" class="external-link">findInterval</a></code>. Track-level attributes stored in
-<code><a href="https://bartk.gitlab.io/move2/reference/mt_track_data.html" class="external-link">mt_track_data</a></code> are preserved unchanged.</p>
+columns receive the value of the nearest preceding (or simultaneous)
+observation via <code><a href="https://rdrr.io/r/base/findInterval.html" class="external-link">findInterval</a></code>. Track-level attributes
+stored in <code><a href="https://bartk.gitlab.io/move2/reference/mt_track_data.html" class="external-link">mt_track_data</a></code> are preserved unchanged.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

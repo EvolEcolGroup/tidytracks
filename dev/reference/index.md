@@ -39,6 +39,11 @@ Functions for loading, saving and displaying tibbles of tracks.
 
   Method to convert `trip` objects to `move2` objects
 
+- [`mt_as_telemetry()`](https://evolecolgroup.github.io/tidytracks/dev/reference/mt_as_telemetry.md)
+  :
+
+  Convert a `move2` object to a list of `ctmm` telemetry objects
+
 - [`sf_point_col()`](https://evolecolgroup.github.io/tidytracks/dev/reference/sf_point_col.md)
   : Create a simple feature POINT geometry column
 
@@ -134,9 +139,16 @@ Functions to visualise movement.
 
 Estimate home range and habitat use from movement data.
 
+- [`hr_tt_akde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_akde.md)
+  : Quantify the home range using autocorrelated kernel density
+  estimation
+- [`hr_tt_akde_pop()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_akde_pop.md)
+  : Combine AKDE home ranges into population home ranges
 - [`hr_tt_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md)
   [`hr_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md)
   : Quantify the home range using kernel density estimation
+- [`hr_tt_locoh()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_locoh.md)
+  : Quantify the home range using local convex hulls (LoCoH)
 - [`hr_tt_mcp()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_mcp.md)
   [`hr_mcp()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_mcp.md)
   : Quantify the home range using minimum convex polygon (MCP)
@@ -158,6 +170,20 @@ Estimate home range and habitat use from movement data.
 - [`hr_tt_ud_wrap()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_wrap.md)
   [`hr_ud_wrap()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_wrap.md)
   : Wrap utilisation distributions for storage
+
+## Continuous-time movement models
+
+Fit continuous-time movement models to tracks with ctmm.
+
+- [`ctmm_tt_fit()`](https://evolecolgroup.github.io/tidytracks/dev/reference/ctmm_tt_fit.md)
+  :
+
+  Fit continuous-time movement models to each track with `ctmm`
+
+- [`ctmm_tt_summary()`](https://evolecolgroup.github.io/tidytracks/dev/reference/ctmm_tt_summary.md)
+  :
+
+  Summarise the parameters of the movement models fitted with `ctmm`
 
 ## List of PackedRasters
 

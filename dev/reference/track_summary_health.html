@@ -13,7 +13,7 @@ points that are missing (due to gaps in track)."><meta name="robots" content="no
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,6 +26,8 @@ points that are missing (due to gaps in track)."><meta name="robots" content="no
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
+    <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -66,7 +68,8 @@ points that are missing (due to gaps in track).</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A tibble with one row per track and the following columns:</p><ul><li><p><code>&lt;track id column&gt;</code>: The track ID from <code>x</code></p></li>
+    <p>A tibble with one row per track (in the same order as the tracks in
+the metadata, see <code><a href="show_meta.html">show_meta()</a></code>) and the following columns:</p><ul><li><p><code>&lt;track id column&gt;</code>: The track ID from <code>x</code></p></li>
 <li><p>median_sampling_interval: The median sampling interval in seconds</p></li>
 <li><p>track_duration: The duration of the track in seconds</p></li>
 <li><p>expected_points: The expected number of points based on the

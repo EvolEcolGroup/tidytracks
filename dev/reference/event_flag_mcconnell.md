@@ -46,6 +46,11 @@ Square (RMS):
 If an endpoint is removed, the McConnell filter is rerun on the reduced
 track, and the endpoint check is repeated until the result is stable.
 
+Events with an empty geometry (i.e. no location) are ignored by the
+filter and returned as valid. Consecutive events at the same location
+are treated as having zero speed, even when they share the same
+timestamp (e.g. duplicated records).
+
 ## Examples
 
 ``` r

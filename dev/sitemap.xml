@@ -1,6 +1,8 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/LICENSE.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/animations.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/ctmm_models.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/hr_benchmark.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/index.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/tidytracks.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/authors.html</loc></url>
@@ -17,6 +19,8 @@
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/autoplot.hr_tt_ud_tbl.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/cash-.PackedSpatRaster_list.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/cash-set-.PackedSpatRaster_list.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/ctmm_tt_fit.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/ctmm_tt_summary.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/dist_category.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/dot-get_tt_printing_stored.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/dot-is_tt_print_registered.html</loc></url>
@@ -35,7 +39,10 @@
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/geom_event_path.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/geom_event_point.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/geom_track_path.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_akde.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_akde_pop.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_locoh.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_mcp.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_iso.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_overlap.html</loc></url>
@@ -45,6 +52,7 @@
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_wrap.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/index.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/mt_as_move2.trip.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/mt_as_telemetry.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/pipe.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/print.PackedSpatRaster_list.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/print_move2_tt.html</loc></url>

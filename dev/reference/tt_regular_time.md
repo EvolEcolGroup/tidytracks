@@ -54,8 +54,8 @@ tt_regular_time(x, interval, max_time_lag = NULL, snap_times = FALSE)
 ## Value
 
 A `move2` object on a regular time grid. The CRS, time-column name,
-track-id column name, and track-level attributes of `x` are all
-preserved.
+track-id column name, geometry column name, and track-level attributes
+of `x` are all preserved.
 
 ## Spatial interpolation
 
@@ -81,9 +81,11 @@ strategy dependent on the map projection (using a strategy similar to
 
 Raw observations are often unevenly spaced in both time and space.
 `tt_regular_time` accounts for this by first computing the normalised
-arc-length fraction of every input point along the path (using
+arc-length fraction of every input point along the path that is
+interpolated (using
 [`s2::s2_distance()`](https://r-spatial.github.io/s2/reference/s2_is_collection.html)
-for geographic CRS and Euclidean distance otherwise), then using
+along the spherical path for geographic and projected CRS, and Euclidean
+distance when there is no CRS), then using
 [`stats::approx()`](https://rdrr.io/r/stats/approxfun.html) to linearly
 interpolate those fractions at each new time step. A stationary stretch
 of the track (many observations covering little distance) is therefore
@@ -93,8 +95,8 @@ correctly treated as slow movement, not as a spatial shortcut.
 
 Numeric event-level columns are linearly interpolated at the new time
 steps using [`stats::approx()`](https://rdrr.io/r/stats/approxfun.html).
-Non-numeric columns receive the value of the nearest preceding
-observation via
+Non-numeric columns receive the value of the nearest preceding (or
+simultaneous) observation via
 [`findInterval`](https://rdrr.io/r/base/findInterval.html). Track-level
 attributes stored in
 [`mt_track_data`](https://bartk.gitlab.io/move2/reference/mt_track_data.html)

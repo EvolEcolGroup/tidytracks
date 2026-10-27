@@ -13,7 +13,7 @@ the distance between events divided by the time between events."><meta name="rob
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,6 +26,8 @@ the distance between events divided by the time between events."><meta name="rob
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
+    <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -65,8 +67,9 @@ the distance between events divided by the time between events.</p>
 
 
 <dt id="arg-units">units<a class="anchor" aria-label="anchor" href="#arg-units"></a></dt>
-<dd><p>Optional units to use for speed. The default is <code>"m/min"</code>.
-Other speed units supported by the <code>units</code> package can also be supplied.</p></dd>
+<dd><p>The units to use for speed, as a <code>units</code> object. The default is
+metres per minute (<code>as_units("m/min")</code>); other speed units supported by
+the <code>units</code> package can also be supplied (e.g. <code>as_units("m/s")</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">

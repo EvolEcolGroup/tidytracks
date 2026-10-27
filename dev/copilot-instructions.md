@@ -53,9 +53,7 @@ ecosystem.
 - Linter excludes `return_linter` by default
 - Some ggplot2 wrapper functions have `object_name_linter` disabled to
   match ggplot2 conventions
-- Run
-  [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html)
-  before committing changes
+- Run `lintr::lint_package()` before committing changes
 
 ### Error Handling
 
@@ -173,7 +171,7 @@ max_speed <- units::ud_convert(unclass(max_speed), units(max_speed), target_unit
   `devtools::document()`
 - Use `@keywords internal` for functions not meant to be exported
 - The package uses lazy data loading (`LazyData: true`)
-- Minimum R version is 3.5
+- Minimum R version is 4.1.0 (see `Depends` in `DESCRIPTION`)
 
 ## Git and Version Control
 

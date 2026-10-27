@@ -21,7 +21,7 @@ areas of the UDs."><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,6 +34,8 @@ areas of the UDs."><meta name="robots" content="noindex"></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
+    <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -104,10 +106,10 @@ a tibble of UDs of class <code>hr_tt_ud_tbl</code> (e.g. as created with
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
 <dd><p>A character string specifying the method to use for overlap
 calculation. Options are <code>"ba"</code> (Bhattacharyya's Affinity), <code>"vi"</code> (Volume
-of Intersection), <code>"udoi"</code> (Utilisation Distribution Overlap Index), and
-<code>"earth_mover"</code> (Earth Mover's Distance). <code>"earth_mover"</code> returns a
-distance, where zero indicates identical UDs, and requires the suggested
-package <code>emdist</code>. Default is <code>"ba"</code>.</p></dd>
+of Intersection), <code>"udoi"</code> (Utilisation Distribution Overlap Index, see
+details), and <code>"earth_mover"</code> (Earth Mover's Distance). <code>"earth_mover"</code>
+returns a distance, where zero indicates identical UDs, and requires the
+suggested package <code>emdist</code>. Default is <code>"ba"</code>.</p></dd>
 
 
 <dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
@@ -132,6 +134,26 @@ tibble of multiple UDs.</p>
 cell values, and conditionally masked once before all pairwise comparisons
 are calculated. This avoids repeated raster reads and
 cumulative-distribution calculations for UDs that occur in multiple pairs.</p>
+<p>The UDOI is computed as defined by Fieberg &amp; Kochanny (2005), as
+\(A_{1,2} \int\int UD_1(x,y) UD_2(x,y) dx dy\), where \(A_{1,2}\) is
+the area of overlap between the home ranges of the two animals. The home
+ranges are the <code>cond_level</code> isopleths of the UDs or, if <code>cond_level</code> is
+<code>NULL</code>, their 95% isopleths (as in <code><a href="https://rdrr.io/pkg/adehabitatHR/man/kerneloverlap.html" class="external-link">adehabitatHR::kerneloverlaphr()</a></code>). The
+UDOI is 0 for UDs that do not overlap and 1 for two identical, uniformly
+distributed UDs, and can be larger than 1 for non-uniform UDs that overlap
+considerably. Unlike the other indices, the UDOI of a UD with itself is
+therefore not 1, and it is reported on the diagonal of the matrix returned
+for a table of UDs.</p>
+<p>The isopleths used with <code>cond_level</code>, and for the UDOI, must contain at
+least one cell of the grid: an error is given if a single cell holds more
+than <code>cond_level</code> (or, for the UDOI with <code>cond_level = NULL</code>, 95%) of a
+UD, as can happen on a grid that is coarse relative to the UD.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Fieberg, J. &amp; Kochanny, C.O. (2005) Quantifying home-range
+overlap: the importance of the utilization distribution. Journal of
+Wildlife Management, 69, 1346-1359.</p>
     </div>
 
     <div class="section level2">
@@ -139,9 +161,9 @@ cumulative-distribution calculations for UDs that occur in multiple pairs.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">example_kde</span> <span class="op">&lt;-</span> <span class="fu"><a href="hr_tt_kde.html">hr_tt_kde</a></span><span class="op">(</span><span class="va">example_tt</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">hr_tt_ud_overlap</span><span class="op">(</span><span class="va">example_kde</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           a         b         c</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> a 1.0000000 0.2287909 0.1684975</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> b 0.2287909 1.0000000 0.5419589</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> c 0.1684975 0.5419589 1.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> a 1.0000000 0.2336369 0.1684640</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> b 0.2336369 1.0000000 0.5498266</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> c 0.1684640 0.5498266 1.0000000</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

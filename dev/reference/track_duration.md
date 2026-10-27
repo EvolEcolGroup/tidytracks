@@ -20,7 +20,9 @@ track_duration(x, units = as_units(1, "days"))
 
 ## Value
 
-A vector of total durations for each track
+A vector of total durations for each track, named by track id and in the
+same order as the tracks in the metadata (see
+[`show_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md))
 
 ## Examples
 

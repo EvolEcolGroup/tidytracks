@@ -3,8 +3,10 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   articles/animations: animations.html
+  articles/ctmm_models: ctmm_models.html
+  articles/hr_benchmark: hr_benchmark.html
   tidytracks: tidytracks.html
-last_built: 2026-10-02T12:15Z
+last_built: 2026-10-27T20:16Z
 urls:
   reference: https://evolecolgroup.github.io/tidytracks/reference
   article: https://evolecolgroup.github.io/tidytracks/articles

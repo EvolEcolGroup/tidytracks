@@ -1,30 +1,33 @@
 # tidytracks ![tidytracks_logo](./reference/figures/tidytracks_logo_readme.png)
 
-`tidytracks` is a tidyverse-friendly R package for processing, analysing
-and visualising animal tracking data.
+`tidytracks` is a tidyverse-friendly R package that provides a coherent
+and expressive grammar for processing, analysing and visualising animal
+tracking data.
 
 Movement ecology has been transformed by the availability of
-high-resolution tracking data, creating demand for tools that enable
-fast and reproducible data analysis.
+high-resolution tracking data, creating demand for tools that support
+fast, readable and reproducible analytical workflows.
 
 Built on the modern [`sf`](https://r-spatial.github.io/sf/) spatial
 infrastructure and leveraging the
 [`move2`](https://bartk.gitlab.io/move2/) object class, `tidytracks`
 organises data into efficient, relational tables that link
-spatiotemporal tracks with animal- and deployment-level metadata. Its
-consistent grammar of functions condenses complex workflows into a few
-lines of clear, intuitive code.
+spatiotemporal tracks with animal- and deployment-level metadata. It
+provides a consistent and expressive set of verbs for working with
+tracking data, allowing complex analytical workflows to be written as a
+sequence of intuitive operations.
 
-`tidytracks` includes fast implementations of essential analysis steps -
-including speed filtering, trip splitting, summary statistics, and home
-range estimation - that previously required data class conversions
-across multiple packages. Integration with
-[`ggplot2`](https://ggplot2.tidyverse.org/) enables easy plotting of
-maps and figures.
+Rather than requiring users to combine multiple packages with different
+interfaces and data structures, tidytracks brings common
+movement-analysis tasks into a unified framework. The package includes
+tools for speed filtering, trip splitting, summary statistics,
+home-range estimation and visualisation, all designed to work together
+through the same grammar.
 
-By simplifying and standardising common tasks in movement analysis,
-`tidytracks` accelerates exploratory workflows and promotes
-reproducibility in movement ecology.
+By providing an expressive grammar for movement-data analysis,
+`tidytracks` simplifies and standardises workflows, improves code
+readability and reproducibility, and facilitates the integration of
+tracking analyses within the wider tidyverse ecosystem.
 
 ## Installation
 
@@ -77,6 +80,11 @@ Functions for loading, saving and displaying tibbles of tracks.
   :
 
   Method to convert `trip` objects to `move2` objects
+
+- [`mt_as_telemetry()`](https://evolecolgroup.github.io/tidytracks/dev/reference/mt_as_telemetry.md)
+  :
+
+  Convert a `move2` object to a list of `ctmm` telemetry objects
 
 - [`sf_point_col()`](https://evolecolgroup.github.io/tidytracks/dev/reference/sf_point_col.md)
   : Create a simple feature POINT geometry column
@@ -173,9 +181,16 @@ Functions to visualise movement.
 
 Estimate home range and habitat use from movement data.
 
+- [`hr_tt_akde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_akde.md)
+  : Quantify the home range using autocorrelated kernel density
+  estimation
+- [`hr_tt_akde_pop()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_akde_pop.md)
+  : Combine AKDE home ranges into population home ranges
 - [`hr_tt_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md)
   [`hr_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md)
   : Quantify the home range using kernel density estimation
+- [`hr_tt_locoh()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_locoh.md)
+  : Quantify the home range using local convex hulls (LoCoH)
 - [`hr_tt_mcp()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_mcp.md)
   [`hr_mcp()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_mcp.md)
   : Quantify the home range using minimum convex polygon (MCP)
@@ -197,6 +212,20 @@ Estimate home range and habitat use from movement data.
 - [`hr_tt_ud_wrap()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_wrap.md)
   [`hr_ud_wrap()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_wrap.md)
   : Wrap utilisation distributions for storage
+
+## Continuous-time movement models
+
+Fit continuous-time movement models to tracks with ctmm.
+
+- [`ctmm_tt_fit()`](https://evolecolgroup.github.io/tidytracks/dev/reference/ctmm_tt_fit.md)
+  :
+
+  Fit continuous-time movement models to each track with `ctmm`
+
+- [`ctmm_tt_summary()`](https://evolecolgroup.github.io/tidytracks/dev/reference/ctmm_tt_summary.md)
+  :
+
+  Summarise the parameters of the movement models fitted with `ctmm`
 
 ## List of PackedRasters
 
@@ -271,4 +300,8 @@ Example datasets for testing and demonstration.
 
 - [Animations and
   maps](https://evolecolgroup.github.io/tidytracks/dev/articles/animations.md):
+- [Movement models with
+  ctmm](https://evolecolgroup.github.io/tidytracks/dev/articles/ctmm_models.md):
+- [Benchmarking home ranges against amt and
+  adehabitatHR](https://evolecolgroup.github.io/tidytracks/dev/articles/hr_benchmark.md):
 - [tidytracks](https://evolecolgroup.github.io/tidytracks/dev/articles/tidytracks.md):

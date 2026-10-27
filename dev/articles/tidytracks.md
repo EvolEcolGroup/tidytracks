@@ -874,12 +874,13 @@ the units of the projection, in this case m^2) and a geometry column:
 ``` r
 
 class(shags_females_kde)
-#> [1] "sf"         "tbl_df"     "tbl"        "data.frame"
+#> [1] "hr_tt_poly_tbl" "sf"             "tbl_df"         "tbl"           
+#> [5] "data.frame"
 shags_females_kde
 #> Simple feature collection with 7 features and 10 fields
 #> Geometry type: MULTIPOLYGON
 #> Dimension:     XY
-#> Bounding box:  xmin: -12532.04 ymin: -65387.44 xmax: 15833.51 ymax: -32453.28
+#> Bounding box:  xmin: -13168.23 ymin: -66382.19 xmax: 17715.83 ymax: -30782.79
 #> Projected CRS: PROJCRS["unknown",
 #>     BASEGEOGCRS["unknown",
 #>         DATUM["World Geodetic System 1984",
@@ -915,14 +916,14 @@ shags_females_kde
 #>                 ID["EPSG",9001]]]]
 #> # A tibble: 7 × 11
 #>   bird_id method     h    xmin    ymin   xmax   ymax   res level       area
-#>   <chr>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <dbl>      [m^2]
-#> 1 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5    1575861.
-#> 2 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95  63707449.
-#> 3 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5    1523079.
-#> 4 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95  37970734.
-#> 5 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95  37543242.
-#> 6 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5    5799420.
-#> 7 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95 135138832.
+#> * <chr>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <dbl>      [m^2]
+#> 1 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5    3061168.
+#> 2 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95  81214737.
+#> 3 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5    3127135.
+#> 4 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95  54845334.
+#> 5 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95  49596057.
+#> 6 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5   11262205.
+#> 7 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95 175160296.
 #> # ℹ 1 more variable: geometry <MULTIPOLYGON [m]>
 ```
 
@@ -941,7 +942,7 @@ shags_females_kde %>%
 #> Simple feature collection with 7 features and 3 fields
 #> Geometry type: MULTIPOLYGON
 #> Dimension:     XY
-#> Bounding box:  xmin: -12532.04 ymin: -65387.44 xmax: 15833.51 ymax: -32453.28
+#> Bounding box:  xmin: -13168.23 ymin: -66382.19 xmax: 17715.83 ymax: -30782.79
 #> Projected CRS: PROJCRS["unknown",
 #>     BASEGEOGCRS["unknown",
 #>         DATUM["World Geodetic System 1984",
@@ -978,13 +979,13 @@ shags_females_kde %>%
 #> # A tibble: 7 × 4
 #>   bird_id level   area                                                  geometry
 #>   <chr>   <dbl> [km^2]                                        <MULTIPOLYGON [m]>
-#> 1 kb_27    0.5    1.58 (((8650.566 -61680.33, 7899.318 -60725.04, 8650.566 -599…
-#> 2 kb_27    0.95  63.7  (((3894.128 -64041.44, 2406.969 -63103.26, 3894.128 -619…
-#> 3 kb_42    0.5    1.52 (((-7996.968 -63824.54, -8800.773 -63103.26, -7996.968 -…
-#> 4 kb_42    0.95  38.0  (((-10375.19 -64211.16, -11503.66 -63103.26, -12532.04 -…
-#> 5 kb_43    0.95  37.5  (((6272.347 -64237.05, 4150.268 -63103.26, 4375.144 -607…
-#> 6 kb_45    0.5    5.80 (((11028.78 -37579.89, 10762.96 -36942.85, 11028.78 -364…
-#> 7 kb_45    0.95 135.   (((-3240.529 -59680.11, -3980.504 -58346.82, -3240.529 -…
+#> 1 kb_27    0.5    3.06 (((8650.566 -62056.02, 7656.484 -60725.04, 8650.566 -597…
+#> 2 kb_27    0.95  81.2  (((3894.128 -64163.58, 1679.644 -63103.26, 3894.128 -612…
+#> 3 kb_42    0.5    3.13 (((-10375.19 -61079.42, -10642.43 -60725.04, -10375.19 -…
+#> 4 kb_42    0.95  54.8  (((-12753.41 -61170.03, -13168.23 -60725.04, -12753.41 -…
+#> 5 kb_43    0.95  49.6  (((3894.128 -63953.93, 2601.81 -63103.26, 3894.128 -6078…
+#> 6 kb_45    0.5   11.3  (((11028.78 -38461.67, 10203.89 -36942.85, 11028.78 -358…
+#> 7 kb_45    0.95 175.   (((-3240.529 -59910.46, -4264.69 -58346.82, -3249.08 -55…
 ```
 
 We can plot the home ranges:
@@ -1132,6 +1133,61 @@ ggplot() +
 ```
 
 ![](tidytracks_files/figure-html/plot_mcp-1.png)
+
+### Local Convex Hulls
+
+Local convex hulls (LoCoH) build a convex hull around each location and
+its nearest neighbours, and merge the smallest hulls until they cover
+the requested proportion of locations. Unlike MCPs, the resulting home
+ranges can have several parts and follow concave edges, so they leave
+out areas that are never visited. Here we use each location and its 10
+nearest neighbours (`type = "k"`, the default; see
+[`?hr_tt_locoh`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_locoh.md)
+for the other types):
+
+``` r
+
+shags_females_locoh <- shags_females_proj %>%
+  group_by(bird_id) %>%
+  hr_tt_locoh(n = 10, levels = c(0.5, 0.95))
+shags_females_locoh
+#> Simple feature collection with 8 features and 6 fields
+#> Geometry type: MULTIPOLYGON
+#> Dimension:     XY
+#> Bounding box:  xmin: -9895.828 ymin: -62973.02 xmax: 13176.61 ymax: -35977.72
+#> Projected CRS: +proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs
+#> # A tibble: 8 × 7
+#>   bird_id method type      n level      area                            geometry
+#>   <chr>   <chr>  <chr> <dbl> <dbl>     [m^2]                  <MULTIPOLYGON [m]>
+#> 1 kb_27   locoh  k        10  0.95   916673. (((12408.76 -62099.71, 12862.28 -6…
+#> 2 kb_27   locoh  k        10  0.5      6277. (((9113.809 -61062.36, 9153.918 -6…
+#> 3 kb_42   locoh  k        10  0.95  1100060. (((-7038.056 -62973.02, -8571.001 …
+#> 4 kb_42   locoh  k        10  0.5    484613. (((-8885.465 -61600.95, -7038.056 …
+#> 5 kb_43   locoh  k        10  0.95   633590. (((5451.011 -62093.43, 5470.327 -6…
+#> 6 kb_43   locoh  k        10  0.5       791. (((8545.706 -61060.69, 8549.168 -6…
+#> 7 kb_45   locoh  k        10  0.95 13975059. (((12355.65 -36040.09, 12452.26 -3…
+#> 8 kb_45   locoh  k        10  0.5      8136. (((12528.72 -36151.12, 12515.26 -3…
+```
+
+``` r
+
+ggplot() +
+  geom_sf(
+    data = shags_females_locoh,
+    aes(fill = bird_id), alpha = 0.7
+  ) +
+  geom_event_point(
+    data = shags_females_proj,
+    size = 0.1
+  ) +
+  facet_wrap(~bird_id) +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+![](tidytracks_files/figure-html/plot_locoh-1.png)
 
 ### Save your data
 

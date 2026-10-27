@@ -11,8 +11,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Functions to Analyse Tracking Data">
-<meta name="description" content="Tidy functions to analyse tracking data, based on the move2 objects.">
-<meta property="og:description" content="Tidy functions to analyse tracking data, based on the move2 objects.">
+<meta name="description" content="A grammar for animal tracking data analysis based on move2 objects. The package provides a consistent and expressive set of tools for manipulating tracks and associated metadata, allowing common movement-ecology workflows to be combined into clear and reproducible analyses. Functionality includes location filtering, trip segmentation, summary statistics, home range estimation and visualisation. Built on the sf spatial framework, it integrates naturally with the tidyverse ecosystem.">
+<meta property="og:description" content="A grammar for animal tracking data analysis based on move2 objects. The package provides a consistent and expressive set of tools for manipulating tracks and associated metadata, allowing common movement-ecology workflows to be combined into clear and reproducible analyses. Functionality includes location filtering, trip segmentation, summary statistics, home range estimation and visualisation. Built on the sf spatial framework, it integrates naturally with the tidyverse ecosystem.">
 <meta name="robots" content="noindex">
 </head>
 <body>
@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,6 +38,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="articles/ctmm_models.html">Movement models with ctmm</a></li>
+    <li><a class="dropdown-item" href="articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -60,11 +62,11 @@
 <!-- badges: start -->
 
 <!-- badges: end -->
-<p><code>tidytracks</code> is a tidyverse-friendly R package for processing, analysing and visualising animal tracking data.</p>
-<p>Movement ecology has been transformed by the availability of high-resolution tracking data, creating demand for tools that enable fast and reproducible data analysis.</p>
-<p>Built on the modern <a href="https://r-spatial.github.io/sf/" class="external-link"><code>sf</code></a> spatial infrastructure and leveraging the <a href="https://bartk.gitlab.io/move2/" class="external-link"><code>move2</code></a> object class, <code>tidytracks</code> organises data into efficient, relational tables that link spatiotemporal tracks with animal- and deployment-level metadata. Its consistent grammar of functions condenses complex workflows into a few lines of clear, intuitive code.</p>
-<p><code>tidytracks</code> includes fast implementations of essential analysis steps - including speed filtering, trip splitting, summary statistics, and home range estimation - that previously required data class conversions across multiple packages. Integration with <a href="https://ggplot2.tidyverse.org/" class="external-link"><code>ggplot2</code></a> enables easy plotting of maps and figures.</p>
-<p>By simplifying and standardising common tasks in movement analysis, <code>tidytracks</code> accelerates exploratory workflows and promotes reproducibility in movement ecology.</p>
+<p><code>tidytracks</code> is a tidyverse-friendly R package that provides a coherent and expressive grammar for processing, analysing and visualising animal tracking data.</p>
+<p>Movement ecology has been transformed by the availability of high-resolution tracking data, creating demand for tools that support fast, readable and reproducible analytical workflows.</p>
+<p>Built on the modern <a href="https://r-spatial.github.io/sf/" class="external-link"><code>sf</code></a> spatial infrastructure and leveraging the <a href="https://bartk.gitlab.io/move2/" class="external-link"><code>move2</code></a> object class, <code>tidytracks</code> organises data into efficient, relational tables that link spatiotemporal tracks with animal- and deployment-level metadata. It provides a consistent and expressive set of verbs for working with tracking data, allowing complex analytical workflows to be written as a sequence of intuitive operations.</p>
+<p>Rather than requiring users to combine multiple packages with different interfaces and data structures, tidytracks brings common movement-analysis tasks into a unified framework. The package includes tools for speed filtering, trip splitting, summary statistics, home-range estimation and visualisation, all designed to work together through the same grammar.</p>
+<p>By providing an expressive grammar for movement-data analysis, <code>tidytracks</code> simplifies and standardises workflows, improves code readability and reproducibility, and facilitates the integration of tracking analyses within the wider tidyverse ecosystem.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>

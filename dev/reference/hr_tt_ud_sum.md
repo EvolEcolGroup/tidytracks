@@ -38,6 +38,12 @@ SpatRaster if `x` is a list of SpatRaster objects.
 
 ## See also
 
+[`hr_tt_akde_pop()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_akde_pop.md)
+to combine UDs estimated with
+[`hr_tt_akde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_akde.md)
+into population UDs with the methods of `ctmm` (with confidence
+intervals of the population home range areas).
+
 Other home_range:
 [`hr_tt_ud_iso()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_iso.md)
 

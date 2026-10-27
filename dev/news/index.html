@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
+    <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -37,6 +39,63 @@
       <small>Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="tidytracks-development-version">tidytracks (development version)<a class="anchor" aria-label="anchor" href="#tidytracks-development-version"></a></h2>
+<div class="section level3">
+<h3 id="new-features-development-version">New features<a class="anchor" aria-label="anchor" href="#new-features-development-version"></a></h3>
+<ul><li>New interface to the package <code>ctmm</code>, to fit continuous-time movement models to tibbles of tracks (see the new article “Movement models with ctmm”). This includes the new functions: <code><a href="../reference/mt_as_telemetry.html">mt_as_telemetry()</a></code>, <code><a href="../reference/ctmm_tt_fit.html">ctmm_tt_fit()</a></code>, <code><a href="../reference/ctmm_tt_summary.html">ctmm_tt_summary()</a></code>, <code><a href="../reference/hr_tt_akde.html">hr_tt_akde()</a></code>, and <code><a href="../reference/hr_tt_akde_pop.html">hr_tt_akde_pop()</a></code>
+</li>
+<li>
+<code><a href="../reference/hr_tt_ud_sum.html">hr_tt_ud_sum()</a></code> now works with tables of UDs without a bandwidth column <code>h</code>.</li>
+<li>
+<code><a href="../reference/hr_tt_locoh.html">hr_tt_locoh()</a></code>, a fast implementation to estimate home ranges with local convex hulls (LoCoH).</li>
+<li>
+<code><a href="../reference/hr_tt_kde.html">hr_tt_kde()</a></code> gains a <code>method</code> argument. Its new default, <code>"binned"</code>, bins the locations onto the grid and then smooths them with the kernel, which is much faster for many locations (see the article “Benchmarking home ranges against amt and adehabitatHR”).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="minor-improvements-development-version">Minor improvements<a class="anchor" aria-label="anchor" href="#minor-improvements-development-version"></a></h3>
+<ul><li>Speed improvements (same results) for <code><a href="../reference/hr_tt_mcp.html">hr_tt_mcp()</a></code>, <code><a href="../reference/hr_tt_kde.html">hr_tt_kde()</a></code> and <code><a href="../reference/hr_tt_ud_iso.html">hr_tt_ud_iso()</a></code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-development-version">Documentation<a class="anchor" aria-label="anchor" href="#documentation-development-version"></a></h3>
+<ul><li>New article, “Benchmarking home ranges against amt and adehabitatHR”, which compares the time taken by the MCP, KDE and LoCoH estimators of tidytracks, amt and adehabitatHR on tracks simulated with amt, and checks that they give the same home ranges.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.1" id="tidytracks-021">tidytracks 0.2.1<a class="anchor" aria-label="anchor" href="#tidytracks-021"></a></h2>
+<div class="section level3">
+<h3 id="bug-fixes-0-2-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-2-1"></a></h3>
+<ul><li>
+<code>hr_tt_kde(h = "h_ref_indiv")</code> no longer assigns the bandwidths to the wrong groups when the tracks are not stored in the order of the groups.</li>
+<li>
+<code><a href="../reference/tt_split_trips.html">tt_split_trips()</a></code> no longer uses the centre of another track, or mislabels events, when the events are not in the same track order as the metadata, are interleaved, or are not ordered by time.</li>
+<li>
+<code><a href="../reference/event_flag_mcconnell.html">event_flag_mcconnell()</a></code> and <code><a href="../reference/tt_clean_mcconnell.html">tt_clean_mcconnell()</a></code> no longer run forever when a track contains a duplicated record or an event without a location.</li>
+<li>
+<code><a href="../reference/tt_read_data.html">tt_read_data()</a></code> reads dates with 2-digit years correctly (e.g. <code>15/01/24</code> was read as 24 January of year 15), and joins metadata with numeric track ids.</li>
+<li>
+<code>hr_tt_ud_overlap(method = "udoi")</code> computes the UDOI of Fieberg &amp; Kochanny (2005), as <code>adehabitatHR</code> does; the previous values depended on the resolution of the grid.</li>
+<li>
+<code><a href="../reference/hr_tt_ud_overlap.html">hr_tt_ud_overlap()</a></code> gives an error, instead of an overlap of 0, when the isopleth used with <code>cond_level</code> (or for the UDOI) contains no cells of the grid, i.e. when a single cell holds more than that proportion of a UD.</li>
+<li>
+<code><a href="../reference/hr_tt_ud_iso.html">hr_tt_ud_iso()</a></code> keeps holes in isopleths instead of filling them in.</li>
+<li>
+<code><a href="../reference/hr_tt_kde.html">hr_tt_kde()</a></code> and <code><a href="../reference/hr_tt_mcp.html">hr_tt_mcp()</a></code> give an informative error for a grouping with groups without events (e.g. from grouping by a factor with unused levels with <code>.drop = FALSE</code>), showing how to remove them; <code><a href="../reference/hr_tt_kde.html">hr_tt_kde()</a></code> failed with “subscript out of bounds”, and <code><a href="../reference/hr_tt_mcp.html">hr_tt_mcp()</a></code> ignored them.</li>
+<li>
+<code><a href="../reference/hr_tt_kde.html">hr_tt_kde()</a></code> returns isopleths (when <code>levels</code> is set) of class <code>hr_tt_poly_tbl</code>, as <code><a href="../reference/hr_tt_ud_iso.html">hr_tt_ud_iso()</a></code> does.</li>
+<li>
+<code><a href="../reference/track_duration.html">track_duration()</a></code> and <code><a href="../reference/track_summary_health.html">track_summary_health()</a></code> return the tracks in the order of the metadata.</li>
+<li>Functions work with geometry columns that are not called <code>geometry</code>.</li>
+<li>
+<code><a href="../reference/tt_split_trips.html">tt_split_trips()</a></code>, <code><a href="../reference/hr_tt_kde.html">hr_tt_kde()</a></code> and <code><a href="../reference/hr_tt_mcp.html">hr_tt_mcp()</a></code> handle events without a location, and <code><a href="../reference/hr_tt_kde.html">hr_tt_kde()</a></code> and <code><a href="../reference/hr_tt_mcp.html">hr_tt_mcp()</a></code> handle groups with few locations.</li>
+<li>
+<code><a href="../reference/tt_regular_time.html">tt_regular_time()</a></code> places interpolated points of projected tracks correctly, keeps the type of track ids and non-syntactic column names, and gives non-numeric columns the value of the observation at the last time.</li>
+<li>
+<code><a href="../reference/tt_write_data.html">tt_write_data()</a></code> writes times in UTC, with fractional seconds, so that they are not shifted when read back with <code><a href="../reference/tt_read_data.html">tt_read_data()</a></code>.</li>
+<li>
+<code><a href="../reference/event_distance.html">event_distance()</a></code>, <code><a href="../reference/event_speed.html">event_speed()</a></code> and <code><a href="../reference/event_flag_mcconnell.html">event_flag_mcconnell()</a></code> give an informative error for objects without a CRS.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="tidytracks-020">tidytracks 0.2.0<a class="anchor" aria-label="anchor" href="#tidytracks-020"></a></h2>
 <ul><li>Rename functions to <code>hr_tt_</code> prefix to avoid name clashes with other packages. (NOTE the old names are still available for backwards compatibility, but will be deprecated in future releases.)</li>

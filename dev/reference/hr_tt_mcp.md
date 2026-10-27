@@ -1,7 +1,8 @@
 # Quantify the home range using minimum convex polygon (MCP)
 
 This function estimates the home range of an animal using the minimum
-convex polygon (MCP) method.
+convex polygon (MCP) method. Events with an empty geometry (i.e. no
+location) are ignored.
 
 ## Usage
 
@@ -17,7 +18,9 @@ hr_mcp(x, levels = c(0.5, 0.95))
 
   A move2 object; if explicitly grouped, the home range is estimated for
   each group, combining all tracks within each group. Otherwise, the
-  track id is used as grouping variable.
+  track id is used as grouping variable. Every group must have events,
+  so groupings with empty groups (e.g. from grouping by a factor with
+  unused levels with `.drop = FALSE`) give an error.
 
 - levels:
 
@@ -26,13 +29,21 @@ hr_mcp(x, levels = c(0.5, 0.95))
 
 ## Value
 
-A tibble of subclass `hr_tt_poly_tbl` of results, with columns:
+An `sf` tibble of subclass `hr_tt_poly_tbl` of results, with one row per
+group and level, and columns:
 
-- `group_id`: the ids from the grouping of `x`
+- the grouping variable (as named in `x`; if `x` is grouped by multiple
+  variables, this column is named `group_id`): the ids from the grouping
+  of `x`
+
+- `method`: the method used to estimate the home range (`"mcp"`)
 
 - `level`: the level of the contour line
 
-- `geometry`: the geometry of the home range as a list of sf polygons
+- `area`: the area of the home range (as computed by
+  [`sf::st_area()`](https://r-spatial.github.io/sf/reference/geos_measures.html))
+
+- `geometry`: the geometry of the home range as sf polygons
 
 ## Examples
 

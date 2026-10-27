@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
+    <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -101,6 +103,13 @@
 
         </dt>
         <dd>Method to convert <code>trip</code> objects to <code>move2</code> objects</dd>
+
+        <dt>
+
+          <code><a href="mt_as_telemetry.html">mt_as_telemetry()</a></code>
+
+        </dt>
+        <dd>Convert a <code>move2</code> object to a list of <code>ctmm</code> telemetry objects</dd>
 
         <dt>
 
@@ -310,10 +319,31 @@
 
       <dl><dt>
 
+          <code><a href="hr_tt_akde.html">hr_tt_akde()</a></code>
+
+        </dt>
+        <dd>Quantify the home range using autocorrelated kernel density estimation</dd>
+
+        <dt>
+
+          <code><a href="hr_tt_akde_pop.html">hr_tt_akde_pop()</a></code>
+
+        </dt>
+        <dd>Combine AKDE home ranges into population home ranges</dd>
+
+        <dt>
+
           <code><a href="hr_tt_kde.html">hr_tt_kde()</a></code> <code><a href="hr_tt_kde.html">hr_kde()</a></code>
 
         </dt>
         <dd>Quantify the home range using kernel density estimation</dd>
+
+        <dt>
+
+          <code><a href="hr_tt_locoh.html">hr_tt_locoh()</a></code>
+
+        </dt>
+        <dd>Quantify the home range using local convex hulls (LoCoH)</dd>
 
         <dt>
 
@@ -363,6 +393,29 @@
 
         </dt>
         <dd>Wrap utilisation distributions for storage</dd>
+      </dl></div><div class="section level2">
+      <h2 id="continuous-time-movement-models">Continuous-time movement models<a class="anchor" aria-label="anchor" href="#continuous-time-movement-models"></a></h2>
+
+      <div class="section-desc"><p>Fit continuous-time movement models to tracks with ctmm.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="ctmm_tt_fit.html">ctmm_tt_fit()</a></code>
+
+        </dt>
+        <dd>Fit continuous-time movement models to each track with <code>ctmm</code></dd>
+
+        <dt>
+
+          <code><a href="ctmm_tt_summary.html">ctmm_tt_summary()</a></code>
+
+        </dt>
+        <dd>Summarise the parameters of the movement models fitted with <code>ctmm</code></dd>
       </dl></div><div class="section level2">
       <h2 id="list-of-packedrasters">List of PackedRasters<a class="anchor" aria-label="anchor" href="#list-of-packedrasters"></a></h2>
 
