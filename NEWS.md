@@ -14,6 +14,8 @@
   smooths them with the kernel, which is much faster
   for many locations (see the article "Benchmarking home ranges against amt and
   adehabitatHR").
+* New `track_tot_distance()` to compute the total distance travelled along each
+  track, with a `units` argument to choose the output units.
 
 ## Minor improvements
 

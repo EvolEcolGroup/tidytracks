@@ -116,7 +116,7 @@ stopifnot_hr_tt_ud_table <- function(x) {
 
 
 # deprecated function for backward compatibility
-#' @name hr_tt_ud_sum
+#' @rdname tidytracks-deprecated
 #' @export
 hr_ud_sum <- function(x) {
   warning(

@@ -5,7 +5,6 @@
 \alias{hr_tt_ud_sum.list}
 \alias{hr_tt_ud_sum.tbl_df}
 \alias{hr_tt_ud_sum.grouped_df}
-\alias{hr_ud_sum}
 \title{Compute the normalised sum of multiple UDs}
 \usage{
 hr_tt_ud_sum(x)
@@ -15,8 +14,6 @@ hr_tt_ud_sum(x)
 \method{hr_tt_ud_sum}{tbl_df}(x)
 
 \method{hr_tt_ud_sum}{grouped_df}(x)
-
-hr_ud_sum(x)
 }
 \arguments{
 \item{x}{A tibble of UDs (potentially grouped), where each row is a UD in the

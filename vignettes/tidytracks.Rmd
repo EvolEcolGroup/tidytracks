@@ -255,6 +255,19 @@ shags_tt %>%
   track_duration(units = "hours")
 ```
 
+These `track_` functions can be used to add extra columns to the metadata 
+containing track statistics such as duration and total distance covered:
+
+```{r add_track_duration_to_metadata}
+show_meta(shags_tt) <- show_meta(shags_tt) %>%
+  dplyr::mutate(
+    duration = track_duration(shags_tt, units = "hours"),
+    tot_distance = track_tot_distance(shags_tt, units = "km")
+  )
+show_meta(shags_tt)
+```
+
+
 This naming convention helps clarifying the scope of a given function, avoiding
 ambiguities. 
 
