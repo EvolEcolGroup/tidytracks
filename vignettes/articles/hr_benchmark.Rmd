@@ -1,0 +1,440 @@
+---
+title: "Benchmarking home ranges against amt and adehabitatHR"
+output:
+  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Benchmarking home ranges against amt and adehabitatHR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+# the code of the benchmark is in a script in the source code of the package,
+# from which the chunks below are read
+knitr::read_chunk("../../bench/hr_packages_benchmark.R")
+# amt is a suggested package, needed to simulate the example tracks
+has_amt <- requireNamespace("amt", quietly = TRUE)
+```
+
+`tidytracks`, `amt` (Signer et al. 2019) and `adehabitatHR` (Calenge 2006)
+can all estimate home ranges with minimum convex polygons (MCP), kernel
+density estimation (KDE) and local convex hulls (LoCoH). This article
+compares how long they take, on tracks simulated with `amt`, and checks
+that, given the same settings, they give the same home ranges.
+
+The benchmark takes about 40 minutes to run, so it was run once with the script
+`bench/hr_packages_benchmark.R` (in the source code of the package), and its
+results are read here from the directory `vignettes/articles/data`. The code
+shown below is taken from that script. Timings depend on the machine (see
+[Machine and software](#machine-and-software)), but the differences between
+the packages should be similar on other machines.
+
+```{r packages, message = FALSE}
+```
+
+```{r results_packages, message = FALSE}
+# to summarise and plot the results
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+# Simulating tracks with amt
+
+`amt` can simulate movement from an integrated step selection function
+(iSSF; Avgar et al. 2016), which combines a movement kernel (the
+distributions of step lengths and turning angles) with the selection of
+the places where steps end. To get tracks that stay within a home range,
+the selection decreases with the squared distance from a centre:
+
+```{r simulate-track, eval = has_amt}
+```
+
+For example, the first three tracks of the first data set below:
+
+```{r example_tracks, eval = has_amt}
+example_tracks <- lapply(1:3, function(i) {
+  simulate_track(
+    id = sprintf("medium_%03d", i),
+    n_locations = 500,
+    seed = 1000 + i
+  )
+})
+example_tracks <- do.call(rbind, example_tracks)
+```
+
+```{r plot_example_tracks, eval = has_amt, fig.width = 7, fig.height = 3}
+ggplot(example_tracks, aes(x, y)) +
+  geom_path(colour = "grey40", linewidth = 0.3) +
+  facet_wrap(~id) +
+  coord_equal() +
+  labs(x = "Easting (m)", y = "Northing (m)") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.minor = element_blank()
+  )
+```
+
+# The data sets
+
+We simulate two data sets, with the same model: many tracks of medium
+length, and a few long tracks (with one location per hour, about three
+weeks and fourteen months of tracking respectively):
+
+```{r simulate-datasets, eval = FALSE}
+```
+
+Simulating the tracks takes most of the time of the benchmark: each step
+takes about 10 ms, mostly in the bookkeeping of `amt` rather than in the
+simulation itself.
+
+# Running the estimators
+
+Each package works on its own class of objects: a `move2` object for
+`tidytracks`, a `track_xy` for `amt` and a `SpatialPointsDataFrame` (from
+`sp`) for `adehabitatHR`. These are built from the data frame of each data
+set (outside of the timings):
+
+```{r inputs, eval = FALSE}
+```
+
+The KDEs are estimated on the same grid for all the packages:
+
+```{r grid, eval = FALSE}
+```
+
+The home ranges are then estimated with each method and package, at the 50%
+and 95% levels. `tidytracks` and `adehabitatHR` estimate the home ranges of
+all the tracks in one call; `amt` estimates the home range of a single track,
+so its estimators are applied to each track in turn, after nesting the
+tracks as shown in the documentation of `amt`:
+
+```{r estimators, eval = FALSE}
+```
+
+The settings are matched so that the packages estimate the same home ranges:
+
+- **MCP**: all three packages exclude the locations farthest from the mean
+  of the locations, and build the convex hull of the others.
+- **KDE**: all three use a bivariate normal kernel, with the reference
+  bandwidth of each track (\(h = \sqrt{(\sigma^2_x + \sigma^2_y)/2} \, n^{-1/6}\)),
+  on the same grid. The UDs are timed on their own (`kde_ud`), and with
+  their isopleths (`kde_iso`, i.e. from the locations to the isopleths).
+  `tidytracks` (with `MASS::kde2d()`) and `adehabitatHR` evaluate the kernel
+  of every location at the centre of every cell, whilst `amt` (with
+  `KernSmooth::bkde2D()`) first bins the locations onto the grid, which is
+  faster but approximate.
+- **LoCoH**: hulls of each location and its 10 nearest neighbours (`n = 10`
+  in `tidytracks` and `amt`, `k = 11` in `adehabitatHR`, which counts the
+  location itself). For each level, the isopleth is the union of the
+  smallest hulls whose coverage (the proportion of locations in the hulls)
+  is closest to the level.
+
+Each estimator is run once, and, if that took less than a minute, five more
+times, of which the median time is reported:
+
+```{r timing, eval = FALSE}
+```
+
+```{r run-benchmark, eval = FALSE}
+```
+
+The areas of the home ranges are then extracted from the results of each
+package (with the functions in `areas`, in the script). `LoCoH.k()` from
+`adehabitatHR` is not run on the long tracks: it would take hours (see
+[LoCoH on a single track](#locoh-on-a-single-track)).
+
+# Do the packages give the same home ranges?
+
+For each method, data set and level, we compare the area of the home range of
+each track from `amt` and `adehabitatHR` with the area from `tidytracks`:
+
+```{r read_areas}
+area_results <- read.csv("data/hr_benchmark_areas.csv")
+area_diff <- area_results %>%
+  filter(package != "tidytracks") %>%
+  inner_join(
+    area_results %>%
+      filter(package == "tidytracks") %>%
+      select(dataset, method, id, level, area_tidytracks = area),
+    by = c("dataset", "method", "id", "level")
+  ) %>%
+  # the relative difference, in %
+  mutate(diff = 100 * abs(area / area_tidytracks - 1)) %>%
+  group_by(method, package, level) %>%
+  summarise(
+    median_diff = median(diff),
+    max_diff = max(diff),
+    .groups = "drop"
+  )
+```
+
+```{r table_areas, echo = FALSE}
+area_diff %>%
+  mutate(
+    method = recode(
+      method,
+      mcp = "MCP",
+      kde_iso = "KDE",
+      locoh = "LoCoH"
+    ),
+    level = paste0(100 * level, "%"),
+    across(
+      c(median_diff, max_diff),
+      ~ case_when(
+        .x == 0 ~ "0",
+        .x < 0.001 ~ "< 0.001",
+        TRUE ~ formatC(signif(.x, 2), format = "fg", digits = 2)
+      )
+    )
+  ) %>%
+  arrange(match(method, c("MCP", "KDE", "LoCoH")), package, level) %>%
+  knitr::kable(
+    col.names = c(
+      "Method", "Package", "Level",
+      "Median difference (%)", "Largest difference (%)"
+    ),
+    align = "lllrr"
+  )
+```
+
+MCP and LoCoH give the same home ranges in all three packages (the tiny
+differences for LoCoH in `amt` come from its buffering of each hull by
+0.00001 m). The KDE isopleths of `adehabitatHR` are within 0.1% of those of
+`tidytracks`: both evaluate the same kernels at the same points, and differ
+only in how they draw the isopleths from the UDs. Those of `amt` differ by
+about 1%, as it approximates the KDE by binning the locations.
+
+# How long do they take?
+
+```{r read_timings}
+timings <- read.csv("data/hr_benchmark_timings.csv")
+# labels for the plots and tables
+method_labels <- c(
+  mcp = "MCP",
+  kde_ud = "KDE: UD",
+  kde_iso = "KDE: isopleths",
+  locoh = "LoCoH"
+)
+package_levels <- c("tidytracks", "amt", "adehabitatHR")
+timings <- timings %>%
+  mutate(
+    data_set = paste(
+      tracks, "tracks of",
+      format(locations, big.mark = ",", trim = TRUE), "locations"
+    ),
+    data_set = factor(data_set, unique(data_set)),
+    method = factor(method_labels[method], method_labels),
+    package = factor(package, package_levels)
+  )
+```
+
+```{r timing_ratios, include = FALSE}
+# the time taken by a package, and relative to tidytracks, for the text
+time_of <- function(dataset, method, package) {
+  timings$seconds[
+    timings$dataset == dataset &
+      timings$method == method_labels[[method]] &
+      timings$package == package
+  ]
+}
+ratio <- function(dataset, method, package) {
+  signif(
+    time_of(dataset, method, package) /
+      time_of(dataset, method, "tidytracks"),
+    2
+  )
+}
+```
+
+```{r plot_timings, fig.width = 7, fig.height = 5.5}
+# one colour per package (and its name on the y axis)
+package_colours <- c(
+  tidytracks = "#2a78d6",
+  amt = "#eb6834",
+  adehabitatHR = "#1baf7a"
+)
+ggplot(timings, aes(x = seconds, y = package, colour = package)) +
+  geom_point(size = 3) +
+  # the combinations that were not run
+  geom_text(
+    data = timings %>%
+      complete(data_set, method, package) %>%
+      filter(is.na(seconds)),
+    aes(x = 1, label = "not run"),
+    colour = "grey40",
+    size = 3
+  ) +
+  facet_grid(method ~ data_set) +
+  scale_x_log10(
+    breaks = c(0.1, 1, 10, 100, 1000),
+    labels = c("0.1", "1", "10", "100", "1000")
+  ) +
+  scale_y_discrete(limits = rev) +
+  scale_colour_manual(values = package_colours, guide = "none") +
+  labs(x = "Time (s, log scale)", y = NULL) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.spacing.x = unit(2, "lines"),
+    strip.text.y = element_text(angle = 0, hjust = 0)
+  )
+```
+
+```{r table_timings, echo = FALSE}
+timings %>%
+  select(data_set, method, package, seconds) %>%
+  arrange(package) %>%
+  pivot_wider(names_from = package, values_from = seconds) %>%
+  mutate(across(
+    any_of(package_levels),
+    ~ ifelse(
+      is.na(.x),
+      "not run",
+      formatC(signif(.x, 2), format = "fg", digits = 2, big.mark = ",")
+    )
+  )) %>%
+  arrange(data_set, method) %>%
+  knitr::kable(
+    col.names = c("Data set", "Method", package_levels),
+    align = "llrrr",
+    caption = "Time (s) to estimate the home ranges of all the tracks."
+  )
+```
+
+- **MCP** takes at most about a second in all three packages. `tidytracks`
+  is the fastest: `amt` takes `r ratio("medium", "mcp", "amt")` times as long
+  on the medium tracks, and `adehabitatHR` `r ratio("medium", "mcp",
+  "adehabitatHR")` times (`r ratio("long", "mcp", "adehabitatHR")` times on
+  the long tracks).
+- **KDE**: `tidytracks` and `adehabitatHR` evaluate the kernel of every
+  location in every cell of the grid, which takes a time proportional to the
+  number of locations times the number of cells, whilst `amt` first bins
+  the locations onto the grid, so that its time hardly depends on the number
+  of locations. For the UDs of the medium tracks, `tidytracks` and `amt`
+  take about the same time, and `adehabitatHR` `r ratio("medium", "kde_ud",
+  "adehabitatHR")` times as long; for the long tracks, `amt` is
+  `r signif(1 / ratio("long", "kde_ud", "amt"), 2)` times faster than
+  `tidytracks`, at the cost of its approximation. Drawing the isopleths, on
+  the other hand, adds little to the time of `tidytracks`
+  (`r signif(time_of("medium", "kde_iso", "tidytracks") - time_of("medium", "kde_ud", "tidytracks"), 1)` s
+  for the 100 medium tracks), but more to those of `amt`
+  (`r signif(time_of("medium", "kde_iso", "amt") - time_of("medium", "kde_ud", "amt"), 1)` s)
+  and `adehabitatHR`
+  (`r signif(time_of("medium", "kde_iso", "adehabitatHR") - time_of("medium", "kde_ud", "adehabitatHR"), 2)` s).
+  From the locations to the isopleths, `tidytracks` is thus the fastest for
+  many tracks of medium length (`amt` takes
+  `r ratio("medium", "kde_iso", "amt")` times as long, and `adehabitatHR`
+  `r ratio("medium", "kde_iso", "adehabitatHR")` times), and `amt` for a few
+  long tracks (`r signif(1 / ratio("long", "kde_iso", "amt"), 2)` times
+  faster than `tidytracks`). Most of the time of `tidytracks` on long tracks
+  is spent in a matrix product (in `MASS::kde2d()`), which an optimised BLAS
+  (such as OpenBLAS) can make several times faster; this benchmark used the
+  reference BLAS of R.
+- **LoCoH**: `tidytracks` is the fastest, by far: `amt` takes
+  `r ratio("medium", "locoh", "amt")` to `r ratio("long", "locoh", "amt")`
+  times as long, and `adehabitatHR`
+  `r ratio("medium", "locoh", "adehabitatHR")` times as long on the medium
+  tracks (`r round(time_of("medium", "locoh", "adehabitatHR") / 60)` minutes,
+  against `r signif(time_of("medium", "locoh", "tidytracks"), 2)` s).
+
+# LoCoH on a single track
+
+```{r read_scaling}
+locoh_scaling <- read.csv("data/hr_benchmark_locoh_scaling.csv") %>%
+  mutate(package = factor(package, package_levels))
+```
+
+```{r plot_scaling, fig.width = 6, fig.height = 4}
+ggplot(locoh_scaling, aes(x = locations, y = seconds, colour = package)) +
+  geom_line(linewidth = 0.8) +
+  geom_point(size = 2.5) +
+  # each line labelled at its last point
+  geom_text(
+    data = locoh_scaling %>%
+      group_by(package) %>%
+      filter(locations == max(locations)),
+    aes(label = package),
+    hjust = 0,
+    # in log10 units, as the x axis is on a log scale
+    nudge_x = 0.06,
+    colour = "grey20",
+    size = 3.5
+  ) +
+  scale_x_log10(
+    breaks = c(500, 1000, 2000, 5000, 10000),
+    labels = c("500", "1,000", "2,000", "5,000", "10,000"),
+    expand = expansion(mult = c(0.05, 0.3))
+  ) +
+  scale_y_log10(
+    breaks = c(0.1, 1, 10, 100),
+    labels = c("0.1", "1", "10", "100")
+  ) +
+  scale_colour_manual(values = package_colours) +
+  labs(
+    x = "Locations (log scale)",
+    y = "Time (s, log scale)",
+    colour = NULL
+  ) +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(), legend.position = "top")
+```
+
+```{r extrapolation, include = FALSE}
+# adehabitatHR on 2000 locations, and extrapolated to 10,000 locations,
+# assuming that its time grows with the square of the number of locations
+ade_2000 <- locoh_scaling$seconds[
+  locoh_scaling$package == "adehabitatHR" & locoh_scaling$locations == 2000
+]
+ade_10000 <- ade_2000 * (10000 / 2000)^2
+```
+
+The time taken by `tidytracks` and `amt` grows about linearly with the
+number of locations, whilst that of `adehabitatHR`, which computes the
+distances between all pairs of locations (in R), roughly quadruples each time
+the number of locations doubles. A track of 10,000 locations would thus take
+it about `r round(ade_10000 / 60, -1)` minutes, and the 10 long tracks about
+`r round(10 * ade_10000 / 3600)` hours, against
+`r signif(locoh_scaling$seconds[locoh_scaling$package == "tidytracks" & locoh_scaling$locations == 10000], 1)` s
+per track for `tidytracks`.
+
+# Summary
+
+- Given the same settings, the three packages give the same MCP and LoCoH
+  home ranges, and KDE isopleths within 0.1% (`tidytracks` and
+  `adehabitatHR`) or about 1% (`amt`, which approximates the KDE).
+- `tidytracks` is the fastest for MCP and LoCoH (more than 10 times faster
+  than `amt`, and more than 100 times faster than `adehabitatHR`, for
+  LoCoH), and for the KDE isopleths of many tracks.
+- For the KDE of long tracks, `amt` is the fastest, thanks to its binned
+  approximation; `tidytracks` computes the exact KDE, slightly faster than
+  `adehabitatHR`.
+- LoCoH in `adehabitatHR` becomes impractical beyond a few thousand
+  locations per track.
+
+# Machine and software
+
+```{r table_session, echo = FALSE}
+read.csv("data/hr_benchmark_session.csv") %>%
+  knitr::kable(col.names = c("", ""))
+```
+
+# References
+
+Avgar, T., Potts, J. R., Lewis, M. A. & Boyce, M. S. (2016). Integrated step
+selection analysis: bridging the gap between resource selection and animal
+movement. *Methods in Ecology and Evolution*, 7, 619-630.
+
+Calenge, C. (2006). The package "adehabitat" for the R software: a tool for
+the analysis of space and habitat use by animals. *Ecological Modelling*,
+197, 516-519.
+
+Signer, J., Fieberg, J. & Avgar, T. (2019). Animal movement tools (amt): R
+package for managing tracking data and conducting habitat selection
+analyses. *Ecology and Evolution*, 9, 880-890.

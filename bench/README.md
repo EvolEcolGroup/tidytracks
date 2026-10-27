@@ -353,3 +353,23 @@ above:
 
 The isopleths now cost about 10 ms per short track, and full UDs about 9 ms
 (mostly creating the terra raster, which full UDs need).
+
+# Comparison with amt and adehabitatHR
+
+`hr_packages_benchmark.R` times the MCP, KDE (UDs, and isopleths) and LoCoH
+estimators of tidytracks, amt and adehabitatHR, on two data sets simulated
+with amt (100 tracks of 500 locations, and 10 tracks of 10,000 locations),
+and checks that they give the same home ranges. Its results are shown in the
+article "Benchmarking home ranges against amt and adehabitatHR"
+(`vignettes/articles/hr_benchmark.Rmd`), which also shows its code (read with
+`knitr::read_chunk()`). Run it from the root of the package with:
+
+```sh
+Rscript bench/hr_packages_benchmark.R
+```
+
+It takes about 40 minutes on 4 cores, and saves its results in
+`vignettes/articles/data/hr_benchmark_*.csv`, and the simulated tracks in
+`bench/hr_benchmark_tracks.rds` (not committed; they are reused by later
+runs). `Rscript bench/hr_packages_benchmark.R quick` checks the script on tiny
+data sets.

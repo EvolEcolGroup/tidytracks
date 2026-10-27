@@ -18,6 +18,13 @@
   building terra objects for them, and the CRS is looked up once rather than
   for every track and operation.
 
+## Documentation
+
+* New article, "Benchmarking home ranges against amt and adehabitatHR", which
+  compares the time taken by the MCP, KDE and LoCoH estimators of tidytracks,
+  amt and adehabitatHR on tracks simulated with amt, and checks that they give
+  the same home ranges.
+
 # tidytracks 0.2.1
 
 ## Bug fixes

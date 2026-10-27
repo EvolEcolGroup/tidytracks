@@ -124,7 +124,7 @@ raster_isopleths <- function(x, levels, crs_cache = NULL) {
 
 #' Isopleths as an sf data frame
 #'
-#' @param iso the isopleths, as returned by [cud_isopleths()].
+#' @param iso the isopleths, as returned by `cud_isopleths()`.
 #' @param crs the CRS of the isopleths.
 #' @returns An `sf` data frame with columns `level`, `area` (`NA`, or an empty
 #'   `numeric` if there are no isopleths) and `geometry`.
@@ -153,7 +153,7 @@ iso_sf <- function(iso, crs) {
 #'
 #' @param x a tibble with one row per UD (without the `ud` column).
 #' @param iso a list with the isopleths of each UD, as returned by
-#'   [iso_sf()].
+#'   `iso_sf()`.
 #' @returns An `sf` tibble of class `hr_tt_poly_tbl`.
 #' @keywords internal
 #' @noRd
