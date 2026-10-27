@@ -193,3 +193,15 @@ test_that("print function works correctly", {
   expect_true(any(grepl("show_meta", output)))
   expect_true(any(grepl("Simple feature", output)))
 })
+
+
+test_that("print function works with objects without events", {
+  on.exit(restore_move2_printing(), add = TRUE)
+
+  tidytracks::tidytracks_printing(TRUE, sticky = FALSE)
+
+  # e.g. after filtering out all the tracks
+  expect_no_warning(output <- capture.output(print(example_tt[0, ])))
+  expect_true(any(grepl("Containing 0 tracks", output)))
+  expect_true(any(grepl("show_meta", output)))
+})
