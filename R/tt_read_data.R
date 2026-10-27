@@ -100,8 +100,9 @@ tt_read_data <- function(
   if (!col_track_id %in% names(events)) {
     stop(paste("Column", col_track_id, "not found in the events data."))
   } else {
-    # Ensure col_track_id is a factor
-    events[[col_track_id]] <- as.factor(events[[col_track_id]])
+    # Ensure col_track_id is a factor, without levels that have no events
+    # (e.g. if events is a subset of a larger data frame), which are not tracks
+    events[[col_track_id]] <- droplevels(as.factor(events[[col_track_id]]))
   }
   if (!all(col_coords %in% names(events))) {
     stop(paste(

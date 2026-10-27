@@ -736,3 +736,23 @@ test_that("tt_read_data joins metadata with numeric track ids", {
   expect_equal(as.character(test_meta$bird_id), c("1", "2"))
   expect_equal(test_meta$sex, c("f", "m"))
 })
+
+test_that("tt_read_data drops unused levels of factor track ids", {
+  # e.g. a subset of a data frame with the track ids stored as a factor
+  events <- data.frame(
+    bird_id = factor(c("a", "a", "b", "b"), levels = c("a", "b", "c")),
+    lon = c(0, 1, 0, 1),
+    lat = 0,
+    sex = c("f", "f", "m", "m"),
+    date_time = rep(c("2024-01-01 00:00:00", "2024-01-01 01:00:00"), 2)
+  )
+
+  test_tt <- tt_read_data(
+    events = events,
+    col_track_id = "bird_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "date_time"
+  )
+  expect_equal(levels(event_track_id(test_tt)), c("a", "b"))
+  expect_equal(show_meta(test_tt)$sex, c("f", "m"))
+})
