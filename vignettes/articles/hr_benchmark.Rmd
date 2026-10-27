@@ -13,9 +13,11 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-# the code of the benchmark is in a script in the source code of the package,
-# from which the chunks below are read
-knitr::read_chunk("../../bench/hr_packages_benchmark.R")
+# the code of the benchmark is in two scripts in the directory code (one to
+# simulate the tracks, one to run the benchmark), from which the chunks below
+# are read
+knitr::read_chunk("code/hr_benchmark_tracks.R")
+knitr::read_chunk("code/hr_packages_benchmark.R")
 # amt is a suggested package, needed to simulate the example tracks
 has_amt <- requireNamespace("amt", quietly = TRUE)
 ```
@@ -26,10 +28,14 @@ density estimation (KDE) and local convex hulls (LoCoH). This article
 compares how long they take, on tracks simulated with `amt`, and checks
 that, given the same settings, they give the same home ranges.
 
-The benchmark takes about 40 minutes to run, so it was run once with the script
-`bench/hr_packages_benchmark.R` (in the source code of the package), and its
-results are read here from the directory `vignettes/articles/data`. The code
-shown below is taken from that script. Timings depend on the machine (see
+The benchmark takes about 35 minutes to run, so it was run once with the
+script `vignettes/articles/code/hr_packages_benchmark.R` (in the source code
+of the package), and its results are read here from the directory
+`vignettes/articles/data`. It uses tracks simulated beforehand with the
+script `vignettes/articles/code/hr_benchmark_tracks.R`, and stored in the
+same directory, so it can be run again (e.g. on another machine) without
+simulating them. The code shown below is taken from these two scripts.
+Timings depend on the machine (see
 [Machine and software](#machine-and-software)), but the differences between
 the packages should be similar on other machines.
 
@@ -89,9 +95,14 @@ weeks and fourteen months of tracking respectively):
 ```{r simulate-datasets, eval = FALSE}
 ```
 
-Simulating the tracks takes most of the time of the benchmark: each step
-takes about 10 ms, mostly in the bookkeeping of `amt` rather than in the
-simulation itself.
+Simulating the tracks takes about 8 minutes on 4 cores: each step takes
+about 10 ms, mostly in the bookkeeping of `amt` rather than in the simulation
+itself. So the tracks were simulated once (with `code/hr_benchmark_tracks.R`) and
+stored in `data/hr_benchmark_tracks.rds`, from which the benchmark reads
+them:
+
+```{r read-tracks, eval = FALSE}
+```
 
 # Running the estimators
 

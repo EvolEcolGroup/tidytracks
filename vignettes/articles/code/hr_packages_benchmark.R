@@ -1,122 +1,51 @@
 # Benchmark of the home range estimators of tidytracks (MCP, KDE and LoCoH)
-# against those of amt and adehabitatHR, on tracks simulated with amt. The
-# results are shown in the article "Benchmarking home ranges against amt and
-# adehabitatHR" (vignettes/articles/hr_benchmark.Rmd), which also shows the
-# code of the chunks of this script (the sections that start with a
-# "## ---- label" line, read with knitr::read_chunk()).
+# against those of amt and adehabitatHR, on tracks simulated with amt (by
+# hr_benchmark_tracks.R, in the same directory as this script, and stored in
+# vignettes/articles/data/hr_benchmark_tracks.rds). The results are shown in
+# the article "Benchmarking home ranges against amt and adehabitatHR"
+# (hr_benchmark.Rmd, in the parent directory of this script), which also
+# shows the code of the chunks of this script (the sections that
+# start with a "## ---- label" line, read with knitr::read_chunk()).
 #
-# Run from the root of the package, with tidytracks installed with
-# R CMD INSTALL (devtools::load_all() compiles the C++ code of hr_tt_locoh()
-# without optimisation), and amt, adehabitatHR, sp and bench available:
+# Run from the directory of the article (vignettes/articles), with tidytracks
+# installed with R CMD INSTALL (devtools::load_all() compiles the C++ code of
+# hr_tt_locoh() without optimisation), and amt, adehabitatHR, sp and bench
+# available:
 #
-#   Rscript bench/hr_packages_benchmark.R
+#   cd vignettes/articles
+#   Rscript code/hr_packages_benchmark.R
 #
-# Run it on an otherwise idle machine: it takes about 40 minutes on 4 cores,
-# and saves its results in vignettes/articles/data/hr_benchmark_*.csv. The
-# simulated tracks are saved in bench/hr_benchmark_tracks.rds, and reused by
-# later runs (delete the file to simulate them again).
-# `Rscript bench/hr_packages_benchmark.R quick` runs everything on tiny data
-# sets, to check the script, and saves its results in a temporary directory.
+# Run it on an otherwise idle machine: it takes about 35 minutes (on an Intel
+# i7-10510U), and saves its results in data/hr_benchmark_*.csv, which the
+# article reads. `Rscript code/hr_packages_benchmark.R quick` runs everything
+# on the first locations of a few tracks, to check the script, and saves its
+# results in a temporary directory.
 
 ## ---- script-setup ----
+start_time <- Sys.time()
 quick <- identical(commandArgs(trailingOnly = TRUE), "quick")
-out_dir <- if (quick) tempdir() else "vignettes/articles/data"
-tracks_file <- if (quick) tempfile() else "bench/hr_benchmark_tracks.rds"
+out_dir <- if (quick) tempdir() else "data"
 
 ## ---- packages ----
 library(tidytracks)
 # amt and adehabitatHR are not attached: their functions are called with ::,
 # to make clear which package each of them comes from
 
-## ---- simulate-track ----
-# amt simulates movement from a redistribution kernel, which needs a map of
-# the landscape; this one is uniform, as the model below only depends on the
-# position of the animal
-landscape <- terra::rast(
-  xmin = -20000, xmax = 20000, ymin = -20000, ymax = 20000,
-  resolution = 100, crs = "EPSG:32630", vals = 0, names = "habitat"
-)
-# an integrated step selection model: step lengths with a gamma distribution
-# (200 m per hour on average), turning angles with a von Mises distribution
-# (some directional persistence), and selection against locations far from
-# the centre of the home range, at (0, 0)
-movement_model <- amt::make_issf_model(
-  coefs = c("I(x2_^2 + y2_^2)" = -1e-6),
-  sl = amt::make_gamma_distr(shape = 2, scale = 100),
-  ta = amt::make_vonmises_distr(kappa = 1)
-)
+## ---- read-tracks ----
+# the tracks simulated by hr_benchmark_tracks.R: a list of two data frames
+# (medium and long) with the id, coordinates (x and y, in EPSG:32630) and time
+# of each location
+datasets <- readRDS("data/hr_benchmark_tracks.rds")
 
-# simulate a track with one location per hour
-simulate_track <- function(id, n_locations, seed) {
-  set.seed(seed)
-  start <- amt::make_start(
-    c(0, 0),
-    time = as.POSIXct("2024-01-01", tz = "UTC"),
-    crs = 32630
-  )
-  kernel <- amt::redistribution_kernel(
-    movement_model,
-    start = start,
-    map = landscape,
-    # the model only uses the coordinates at the end of each step, so the
-    # landscape does not need to be queried
-    fun = function(xy, map) xy,
-    # the number of candidate steps drawn at each step (the default, 1e6, is
-    # much slower)
-    n.control = 1e3
-  )
-  path <- amt::simulate_path(kernel, n.steps = n_locations - 1)
-  data.frame(
-    id = id,
-    # moved to the centre of UTM zone 30N
-    x = path$x_ + 500000,
-    y = path$y_ + 4000000,
-    time = path$t_
-  )
-}
-
-## ---- simulate-datasets ----
-# the number of tracks and of locations per track of each data set
-sizes <- list(
-  medium = c(tracks = 100, locations = 500),
-  long = c(tracks = 10, locations = 10000)
-)
-
-# simulate the tracks of a data set in parallel (with forked processes, which
-# are not available on Windows), each track with its own seed
-simulate_dataset <- function(name) {
-  size <- sizes[[name]]
-  tracks <- parallel::mclapply(
-    seq_len(size[["tracks"]]),
-    function(i) {
-      simulate_track(
-        id = sprintf("%s_%03d", name, i),
-        n_locations = size[["locations"]],
-        seed = 1000 * match(name, names(sizes)) + i
-      )
-    },
-    mc.cores = parallel::detectCores()
-  )
-  # a failed simulation returns an error instead of a data frame
-  stopifnot(all(vapply(tracks, is.data.frame, logical(1))))
-  do.call(rbind, tracks)
-}
-
-## ---- run-simulations ----
+## ---- quick-tracks ----
 if (quick) {
-  sizes <- list(
-    medium = c(tracks = 3, locations = 50),
-    long = c(tracks = 2, locations = 300)
-  )
-}
-# the tracks are reused if they have already been simulated
-if (file.exists(tracks_file)) {
-  datasets <- readRDS(tracks_file)
-} else {
-  message("Simulating the tracks")
-  datasets <- lapply(names(sizes), simulate_dataset)
-  names(datasets) <- names(sizes)
-  saveRDS(datasets, tracks_file)
+  # the first locations of the first tracks of each data set
+  first_locations <- function(df, tracks, locations) {
+    df <- df[df$id %in% unique(df$id)[seq_len(tracks)], ]
+    df[stats::ave(seq_len(nrow(df)), df$id, FUN = seq_along) <= locations, ]
+  }
+  datasets$medium <- first_locations(datasets$medium, 3, 50)
+  datasets$long <- first_locations(datasets$long, 2, 300)
 }
 
 ## ---- inputs ----
@@ -487,4 +416,7 @@ print(aggregate(
   data = compared,
   FUN = max
 ))
-message("Results saved in ", out_dir)
+message(
+  "Results saved in ", out_dir, ", after ",
+  format(round(difftime(Sys.time(), start_time, units = "mins"), 1))
+)

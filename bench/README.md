@@ -356,20 +356,25 @@ The isopleths now cost about 10 ms per short track, and full UDs about 9 ms
 
 # Comparison with amt and adehabitatHR
 
-`hr_packages_benchmark.R` times the MCP, KDE (UDs, and isopleths) and LoCoH
-estimators of tidytracks, amt and adehabitatHR, on two data sets simulated
-with amt (100 tracks of 500 locations, and 10 tracks of 10,000 locations),
-and checks that they give the same home ranges. Its results are shown in the
-article "Benchmarking home ranges against amt and adehabitatHR"
-(`vignettes/articles/hr_benchmark.Rmd`), which also shows its code (read with
-`knitr::read_chunk()`). Run it from the root of the package with:
+`vignettes/articles/code/hr_packages_benchmark.R` times the MCP, KDE (UDs,
+and isopleths) and LoCoH estimators of tidytracks, amt and adehabitatHR, on
+two data sets simulated with amt (100 tracks of 500 locations, and 10 tracks
+of 10,000 locations), and checks that they give the same home ranges. It is
+kept with the article that shows its results and code, "Benchmarking home
+ranges against amt and adehabitatHR" (`vignettes/articles/hr_benchmark.Rmd`).
+The tracks are simulated by `vignettes/articles/code/hr_benchmark_tracks.R`,
+and stored in `vignettes/articles/data/hr_benchmark_tracks.rds`, so the
+benchmark can be run without simulating them. Run the scripts from the
+directory of the article:
 
 ```sh
-Rscript bench/hr_packages_benchmark.R
+cd vignettes/articles
+# only to simulate the tracks again (about 8 minutes on 4 cores)
+Rscript code/hr_benchmark_tracks.R
+# the benchmark (about 35 minutes)
+Rscript code/hr_packages_benchmark.R
 ```
 
-It takes about 40 minutes on 4 cores, and saves its results in
-`vignettes/articles/data/hr_benchmark_*.csv`, and the simulated tracks in
-`bench/hr_benchmark_tracks.rds` (not committed; they are reused by later
-runs). `Rscript bench/hr_packages_benchmark.R quick` checks the script on tiny
-data sets.
+The benchmark saves its results in
+`vignettes/articles/data/hr_benchmark_*.csv`. With the argument `quick`, each
+script checks itself on tiny data sets.
