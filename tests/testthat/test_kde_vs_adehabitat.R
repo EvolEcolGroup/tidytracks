@@ -33,17 +33,20 @@ test_that("hr_tt_kde is equivalent to adehabitatHR", {
   wildboars_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   wildboars_tt <- wildboars_tt %>% dplyr::group_by(name)
   mask_xy <- as.data.frame(my_grid)
+  tt_bbox <- list(
+    xmin = min(mask_xy$x) - 25,
+    ymin = min(mask_xy$y) - 25,
+    xmax = max(mask_xy$x) + 25,
+    ymax = max(mask_xy$y) + 25
+  )
+  # adehabitatHR evaluates the kernel of every location at every cell
   wildboars_kde <- hr_tt_kde(
     wildboars_tt,
     levels = NULL,
     h = "h_ref_indiv",
     res = 50,
-    bbox = list(
-      xmin = min(mask_xy$x) - 25,
-      ymin = min(mask_xy$y) - 25,
-      xmax = max(mask_xy$x) + 25,
-      ymax = max(mask_xy$y) + 25
-    )
+    bbox = tt_bbox,
+    method = "exact"
   )
   # check that we have the same h value as adehabitat for Brock
   expect_true(brock_ade@h$h == wildboars_kde$h[1])
@@ -60,6 +63,21 @@ test_that("hr_tt_kde is equivalent to adehabitatHR", {
         brock_std_ud
     )) <
       1e-3
+  )
+  # the binned UD is close to it, binning the locations onto the grid
+  wildboars_binned <- hr_tt_kde(
+    wildboars_tt,
+    levels = NULL,
+    h = "h_ref_indiv",
+    res = 50,
+    bbox = tt_bbox
+  )
+  expect_true(
+    sum(abs(
+      as.vector(terra::as.array(wildboars_binned$ud[[1]])[, , 1]) -
+        brock_std_ud
+    )) <
+      1e-2
   )
 })
 

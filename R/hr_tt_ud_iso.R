@@ -62,25 +62,27 @@ hr_tt_ud_iso.tbl_df <- function(
     check_ctmm_installed() # nolint: object_usage_linter.
   }
 
-  # the isopleths of each UD (an sf object for each row)
-  res_tbl <- x %>%
-    dplyr::mutate(iso = purrr::map(.data$ud, hr_tt_ud_iso, levels = levels))
+  # The isopleths of each UD, without their areas. sf looks up the
+  # parameters of the CRS (with PROJ) every time it is given a CRS, which
+  # takes longer than the isopleths of a small UD, so the CRS is only looked
+  # up when it changes from one UD to the next, and the areas are computed
+  # for all UDs at once (in isopleth_table()).
+  crs_cache <- new.env()
+  iso <- lapply(x$ud, function(ud) {
+    raster_isopleths(ud, levels = levels, crs_cache = crs_cache)
+  })
   if (with_ci) {
-    res_tbl$iso <- purrr::map2(
-      res_tbl$iso,
-      res_tbl$ud_ctmm,
+    iso <- purrr::map2(
+      iso,
+      x$ud_ctmm,
       akde_iso_area_ci, # nolint: object_usage_linter.
       ci_level = ci_level
     )
+    x$ud_ctmm <- NULL
   }
   # the UDs (including the ctmm UD objects) are replaced by their isopleths
-  res_tbl <- res_tbl %>%
-    dplyr::select(-dplyr::any_of(c("ud", "ud_ctmm"))) %>%
-    tidyr::unnest(dplyr::any_of("iso"))
-
-  res_tbl <- sf::st_as_sf(res_tbl)
-  class(res_tbl) <- c("hr_tt_poly_tbl", class(res_tbl))
-  res_tbl
+  x$ud <- NULL
+  isopleth_table(x, iso)
 }
 
 
@@ -91,6 +93,35 @@ hr_tt_ud_iso.SpatRaster <- function(
   levels = c(0.50, 0.95),
   ci_level = 0.95
 ) {
+  iso <- raster_isopleths(x, levels = levels)
+  if (nrow(iso) == 0) {
+    return(iso)
+  }
+  out <- dplyr::mutate(
+    iso,
+    area = sf::st_area(.data$geometry),
+    .after = "level"
+  )
+  sf::st_as_sf(out)
+}
+
+#' Isopleths of a UD stored in a SpatRaster
+#'
+#' Internal function used by the methods of [hr_tt_ud_iso()]: it checks the
+#' raster, computes its cumulative UD, and returns its isopleths, without
+#' their areas.
+#'
+#' @param x a `SpatRaster` with a layer named `ud`.
+#' @param levels the levels of the isopleths.
+#' @param crs_cache an environment, shared between the calls for several
+#'   rasters, which holds the last CRS looked up (in `wkt` and `crs`), or
+#'   `NULL`.
+#' @returns An `sf` data frame with columns `level`, `area` (`NA` for now; an
+#'   empty `numeric` if there are no isopleths) and `geometry` (in the CRS of
+#'   `x`).
+#' @keywords internal
+#' @noRd
+raster_isopleths <- function(x, levels, crs_cache = NULL) {
   if (any(levels < 0 | levels > 1)) {
     stop("levels should be between 0 and 1")
   }
@@ -101,112 +132,201 @@ hr_tt_ud_iso.SpatRaster <- function(
     stop("x must have a layer named 'ud'")
   }
 
-  empty_iso <- function(x) {
-    sf::st_sf(
+  # look up the CRS, unless it is the same as for the previous raster
+  wkt <- terra::crs(x)
+  if (is.null(crs_cache) || !identical(crs_cache$wkt, wkt)) {
+    if (is.null(crs_cache)) {
+      crs_cache <- new.env()
+    }
+    crs_cache$wkt <- wkt
+    crs_cache$crs <- sf::st_crs(wkt)
+    crs_cache$longlat <- isTRUE(sf::st_is_longlat(crs_cache$crs))
+  }
+
+  # the cumulative UD, as a matrix laid out as the raster (subsetting the
+  # layer creates a new raster, which takes a while, so it is only done if
+  # there are other layers)
+  ud <- as.matrix(if (terra::nlyr(x) == 1) x else x[["ud"]], wide = TRUE)
+  cud <- hr_tt_cud(ud) # nolint: object_usage_linter.
+  iso <- cud_isopleths(
+    cud,
+    x = terra::xFromCol(x, seq_len(ncol(x))),
+    y = terra::yFromRow(x, rev(seq_len(nrow(x)))),
+    levels = levels,
+    ops_crs = if (crs_cache$longlat) crs_cache$crs else sf::NA_crs_,
+    cud_raster = function() hr_tt_cud(x) # nolint: object_usage_linter.
+  )
+  iso_sf(iso, crs_cache$crs)
+}
+
+#' Isopleths as an sf data frame
+#'
+#' @param iso the isopleths, as returned by `cud_isopleths()`.
+#' @param crs the CRS of the isopleths.
+#' @returns An `sf` data frame with columns `level`, `area` (`NA`, or an empty
+#'   `numeric` if there are no isopleths) and `geometry`.
+#' @keywords internal
+#' @noRd
+iso_sf <- function(iso, crs) {
+  if (is.null(iso)) {
+    return(sf::st_sf(
       level = numeric(0),
       area = numeric(0),
-      geometry = sf::st_sfc(crs = sf::st_crs(terra::crs(x)))
+      geometry = sf::st_sfc(crs = crs)
+    ))
+  }
+  sf::st_sf(
+    level = iso$level,
+    area = NA_real_,
+    geometry = sf::st_sfc(iso$geometry, crs = crs)
+  )
+}
+
+#' Table of isopleths
+#'
+#' Internal function: combines a table with one row per UD and the isopleths
+#' of each UD into a table with one row per UD and level, as returned by
+#' [hr_tt_ud_iso()], and computes the areas of all the isopleths at once.
+#'
+#' @param x a tibble with one row per UD (without the `ud` column).
+#' @param iso a list with the isopleths of each UD, as returned by
+#'   `iso_sf()`.
+#' @returns An `sf` tibble of class `hr_tt_poly_tbl`.
+#' @keywords internal
+#' @noRd
+isopleth_table <- function(x, iso) {
+  # assigned directly rather than with mutate(), which would evaluate it
+  # within each group of a grouped x (e.g. from hr_tt_ud_sum())
+  x$iso <- iso
+  res_tbl <- tidyr::unnest(x, dplyr::any_of("iso"))
+  res_tbl <- sf::st_as_sf(res_tbl)
+  if (nrow(res_tbl) > 0) {
+    res_tbl$area <- sf::st_area(res_tbl)
+  }
+  class(res_tbl) <- c("hr_tt_poly_tbl", class(res_tbl))
+  res_tbl
+}
+
+#' Isopleths of a cumulative UD
+#'
+#' Internal function: computes the contour lines of a cumulative UD at the
+#' given levels and turns them into multipolygons. A location lies within
+#' the isopleth for a level if it is inside an odd number of the contour lines
+#' for that level (a contour line nested within another one is a hole).
+#'
+#' @param cud a matrix with the cumulative UD, laid out as the raster (rows
+#'   from north to south).
+#' @param x,y the coordinates of the centres of the columns, and of the rows
+#'   from south to north.
+#' @param levels the levels of the isopleths, sorted.
+#' @param ops_crs the CRS for the geometric operations: `sf::NA_crs_` for
+#'   data, so that GEOS carries them out without sf looking up the parameters
+#'   of the CRS for each of them, or the CRS for longitudes and latitudes, so
+#'   that sf carries them out as it does for such data (with s2, on the
+#'   sphere, by default).
+#' @param cud_raster a function returning the cumulative UD as a
+#'   `SpatRaster`, used for rasters of more than 100,000 cells.
+#' @returns A list with `level` (a numeric vector) and `geometry` (an `sfc` of
+#'   multipolygons, with the CRS `ops_crs`), or `NULL` (with a warning) if
+#'   there are no isopleths.
+#' @keywords internal
+#' @noRd
+cud_isopleths <- function(cud, x, y, levels, ops_crs, cud_raster) {
+  # 1) The contour lines, each with its level. These are the lines that
+  # terra::as.contour() would give, without building the SpatVector (which
+  # takes much longer than the contours of a small raster): it calls
+  # grDevices::contourLines() on the values of the raster, after sampling a
+  # raster of more than 100,000 cells down to that size, in which case it is
+  # used as it is.
+  if (length(cud) <= 1e5) {
+    lines <- tryCatch(
+      grDevices::contourLines(
+        x = x,
+        y = y,
+        z = t(cud[rev(seq_len(nrow(cud))), ]),
+        levels = levels
+      ),
+      error = function(e) {
+        warning("No isopleths could be computed: ", conditionMessage(e))
+        NULL
+      }
     )
-  }
-
-  # 1) Try to create contours
-  contours <- tryCatch(
-    terra::as.contour(
-      hr_tt_cud(x), # nolint: object_usage_linter.
-      levels = levels
-    ),
-    error = function(e) {
-      warning("No isopleths could be computed: ", conditionMessage(e))
-      return(empty_iso(x))
+    if (is.null(lines)) {
+      return(NULL)
     }
-  )
-
-  # If tryCatch returned already-empty sf, stop here
-  if (inherits(contours, "sf")) {
-    return(contours)
+    line_level <- vapply(lines, function(l) l$level, numeric(1))
+    line_coords <- lapply(lines, function(l) cbind(l$x, l$y))
+  } else {
+    contours <- tryCatch(
+      terra::as.contour(cud_raster(), levels = levels),
+      error = function(e) {
+        warning("No isopleths could be computed: ", conditionMessage(e))
+        NULL
+      }
+    )
+    if (is.null(contours)) {
+      return(NULL)
+    }
+    # one geometry per level, with one part per contour line
+    g <- terra::geom(contours)
+    part_id <- paste(g[, "geom"], g[, "part"])
+    parts <- split(seq_len(nrow(g)), factor(part_id, unique(part_id)))
+    line_level <- vapply(parts, function(i) {
+      contours$level[g[i[1], "geom"]]
+    }, numeric(1), USE.NAMES = FALSE)
+    line_coords <- lapply(parts, function(i) unname(g[i, c("x", "y")]))
   }
-
-  # 2) If no geometries, return empty
-  if (is.null(contours) || nrow(contours) == 0) {
+  if (length(line_level) == 0) {
     warning("No isopleths could be computed")
-    return(empty_iso(x))
+    return(NULL)
   }
 
-  # 3) Convert to sf
-  contours_sf <- tryCatch(
-    sf::st_as_sf(contours),
-    error = function(e) {
-      warning("Contours could not be converted to sf: ", conditionMessage(e))
-      return(empty_iso(x))
-    }
-  )
-
-  if (nrow(contours_sf) == 0) {
-    return(empty_iso(x))
-  }
-
-  # Make sure level exists
-  if (!"level" %in% names(contours_sf)) {
-    warning("Contour object has no `level` column")
-    return(empty_iso(x))
-  }
-
-  # 4) Split by level and build polygons
-  split_contours <- split(contours_sf, contours_sf$level)
-
-  poly_list <- purrr::imap(
-    split_contours,
-    function(cont_lines, lvl) {
-      tryCatch(
-        {
-          rings <- cont_lines %>%
-            dplyr::select(dplyr::any_of("geometry")) %>%
-            sf::st_cast("LINESTRING") %>%
-            sf::st_cast("POLYGON") %>%
-            sf::st_geometry()
-          # Contour lines of a surface never cross, so a location lies within
-          # the isopleth if it is inside an odd number of rings: a ring nested
-          # within another ring is a hole (e.g. a low-density area surrounded
-          # by high density), which a union of the rings would fill in.
-          geom <- rings[1]
-          for (i in seq_along(rings)[-1]) {
-            geom <- sf::st_sym_difference(geom, rings[i])
-          }
-          geom <- geom %>%
-            sf::st_union() %>%
-            sf::st_cast("MULTIPOLYGON")
-
-          sf::st_sf(
-            level = as.numeric(lvl),
-            geometry = sf::st_sfc(geom, crs = sf::st_crs(contours_sf))
-          )
-        },
-        error = function(e) {
-          warning(
-            "Failed to build polygon for level ",
-            lvl,
-            ": ",
-            conditionMessage(e)
-          )
-          NULL
+  # 2) The isopleth for each level (see ops_crs for the CRS used)
+  by_level <- split(seq_along(line_level), line_level)
+  poly_list <- lapply(names(by_level), function(lvl) {
+    tryCatch(
+      {
+        rings <- sf::st_sfc(
+          lapply(line_coords[by_level[[lvl]]], sf::st_linestring),
+          crs = ops_crs
+        )
+        rings <- sf::st_cast(rings, "POLYGON")
+        # Contour lines of a surface never cross, so a location lies within
+        # the isopleth if it is inside an odd number of rings: a ring nested
+        # within another ring is a hole (e.g. a low-density area surrounded
+        # by high density), which a union of the rings would fill in.
+        geom <- rings[1]
+        for (i in seq_along(rings)[-1]) {
+          geom <- sf::st_sym_difference(geom, rings[i])
         }
-      )
-    }
-  )
-
-  poly_list <- purrr::compact(poly_list)
+        geom <- sf::st_cast(sf::st_union(geom), "MULTIPOLYGON")
+        # st_cast() leaves the attributes of the sfc (including its CRS) on
+        # the multipolygon itself, where they serve no purpose: drop them
+        attributes(geom[[1]]) <- list(class = class(geom[[1]]))
+        list(level = as.numeric(lvl), geometry = geom)
+      },
+      error = function(e) {
+        warning(
+          "Failed to build polygon for level ",
+          lvl,
+          ": ",
+          conditionMessage(e)
+        )
+        NULL
+      }
+    )
+  })
+  poly_list <- poly_list[!vapply(poly_list, is.null, logical(1))]
 
   if (length(poly_list) == 0) {
     warning("No isopleths could be polygonized")
-    return(empty_iso(x))
+    return(NULL)
   }
-
-  out <- dplyr::bind_rows(poly_list) %>%
-    dplyr::mutate(area = sf::st_area(.data$geometry), .after = "level")
-
-  sf::st_as_sf(out)
+  list(
+    level = vapply(poly_list, function(p) p$level, numeric(1)),
+    geometry = do.call(c, lapply(poly_list, function(p) p$geometry))
+  )
 }
-
 
 # deprecated function for backward compatibility
 #' @name hr_tt_ud_iso
