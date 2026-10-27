@@ -2,12 +2,9 @@
 % Please edit documentation in R/hr_tt_ud_storage.R
 \name{hr_tt_ud_unwrap}
 \alias{hr_tt_ud_unwrap}
-\alias{hr_ud_unwrap}
 \title{Unwrap utilisation distributions after loading}
 \usage{
 hr_tt_ud_unwrap(x)
-
-hr_ud_unwrap(x)
 }
 \arguments{
 \item{x}{An \code{hr_tt_ud_tbl} with a \code{ud} list-column.}

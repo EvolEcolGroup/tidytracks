@@ -255,6 +255,19 @@ shags_tt %>%
   track_duration(units = "hours")
 ```
 
+These `track_` functions can be used to add extra columns to the metadata 
+containing track statistics such as duration and total distance covered:
+
+```{r add_track_duration_to_metadata}
+show_meta(shags_tt) <- show_meta(shags_tt) %>%
+  dplyr::mutate(
+    duration = track_duration(shags_tt, units = "hours"),
+    tot_distance = track_tot_distance(shags_tt, units = "km")
+  )
+show_meta(shags_tt)
+```
+
+
 This naming convention helps clarifying the scope of a given function, avoiding
 ambiguities. 
 
@@ -672,6 +685,38 @@ We can plot the MCPs with:
 ggplot() +
   geom_sf(
     data = shags_females_mcp,
+    aes(fill = bird_id), alpha = 0.7
+  ) +
+  geom_event_point(
+    data = shags_females_proj,
+    size = 0.1
+  ) +
+  facet_wrap(~bird_id) +
+  theme(
+    aspect.ratio = 1,
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+## Local Convex Hulls
+
+Local convex hulls (LoCoH) build a convex hull around each location and its
+nearest neighbours, and merge the smallest hulls until they cover the requested
+proportion of locations. Unlike MCPs, the resulting home ranges can have
+several parts and follow concave edges, so they leave out areas that are never
+visited. Here we use each location and its 10 nearest neighbours (`type = "k"`,
+the default; see `?hr_tt_locoh` for the other types):
+```{r compute_locoh}
+shags_females_locoh <- shags_females_proj %>%
+  group_by(bird_id) %>%
+  hr_tt_locoh(n = 10, levels = c(0.5, 0.95))
+shags_females_locoh
+```
+
+```{r plot_locoh, fig.width=6, fig.height=4}
+ggplot() +
+  geom_sf(
+    data = shags_females_locoh,
     aes(fill = bird_id), alpha = 0.7
   ) +
   geom_event_point(

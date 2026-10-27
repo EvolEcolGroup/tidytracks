@@ -8,3 +8,7 @@ inst/doc
 .positai
 /docs/
 docs
+src/*.o
+src/*.so
+src/*.dll
+bench/*.rds

@@ -22,6 +22,9 @@
 #'   left_join(show_meta(example_tt)) %>%
 #'   group_by(sex)
 #' hr_tt_ud_sum(example_kde_grouped)
+#' @seealso [hr_tt_akde_pop()] to combine UDs estimated with [hr_tt_akde()]
+#'   into population UDs with the methods of `ctmm` (with confidence
+#'   intervals of the population home range areas).
 #' @family home_range
 
 hr_tt_ud_sum <- function(x) {
@@ -59,9 +62,10 @@ hr_tt_ud_sum.tbl_df <- function(x) {
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
   # create a new tibble with the summed UD, keeping the parameters of the
-  # method (e.g. h for hr_tt_kde(), window_size and margin for hr_tt_dbbmm()):
-  # each method has its own, so they are optional, and they are placed after
-  # the method (as h was before) by the order of the selection
+  # method (e.g. h for hr_tt_kde(), window_size and margin for hr_tt_dbbmm(),
+  # none for hr_tt_akde()): each method has its own, so they are optional, and
+  # they are placed after the method (as h was before) by the order of the
+  # selection
   sum_tbl <- x %>%
     dplyr::select(
       dplyr::all_of("method"),
@@ -117,7 +121,7 @@ stopifnot_hr_tt_ud_table <- function(x) {
 
 
 # deprecated function for backward compatibility
-#' @name hr_tt_ud_sum
+#' @rdname tidytracks-deprecated
 #' @export
 hr_ud_sum <- function(x) {
   warning(

@@ -1,2 +1,4 @@
 *.html
 *.R
+# the scripts used by the articles
+!articles/code/*.R

@@ -2,6 +2,23 @@
 
 ## New features
 
+* New interface to the package `ctmm`, to fit continuous-time movement models
+  to tibbles of tracks (see the new article "Movement models with ctmm").
+  This includes the new functions: `mt_as_telemetry()`, `ctmm_tt_fit()`,
+  `ctmm_tt_summary()`, `hr_tt_akde()`, and `hr_tt_akde_pop()`
+* `hr_tt_ud_sum()` now works with tables of UDs from methods other than
+  `hr_tt_kde()`, such as `hr_tt_akde()` and `hr_tt_dbbmm()` (it previously
+  required the column `h`), and keeps the parameters of the method (e.g.
+  `window_size` and `margin`).
+* `hr_tt_locoh()`, a fast implementation to estimate home ranges with local
+  convex hulls (LoCoH).
+* `hr_tt_kde()` gains a `method` argument. Its new default, `"binned"`, bins
+  the locations onto the grid and then
+  smooths them with the kernel, which is much faster
+  for many locations (see the article "Benchmarking home ranges against amt and
+  adehabitatHR").
+* New `track_tot_distance()` to compute the total distance travelled along each
+  track, with a `units` argument to choose the output units.
 * tidytracks can now use the methods of `move2utils`, a suggested package
   installed from GitHub with
   `remotes::install_github("move2universe/move2utils")`, through wrappers
@@ -36,9 +53,18 @@
     approximation of the Earth Mover's Distance.
   * The new article "Using move2utils with tidytracks", on the package
     website, shows these functions in use.
-* `hr_tt_ud_sum()` now works with tables of UDs from methods other than
-  `hr_tt_kde()` (it previously required the column `h`), and keeps the
-  parameters of the method (e.g. `window_size` and `margin`).
+
+## Minor improvements
+
+* Speed improvements (same results) for `hr_tt_mcp()`, `hr_tt_kde()` and
+  `hr_tt_ud_iso()`.
+
+## Documentation
+
+* New article, "Benchmarking home ranges against amt and adehabitatHR", which
+  compares the time taken by the MCP, KDE and LoCoH estimators of tidytracks,
+  amt and adehabitatHR on tracks simulated with amt, and checks that they give
+  the same home ranges.
 * The new article "Reading and cleaning data", on the package website, shows
   how to read tracking data (including date-times in different formats), and
   how to clean them step by step: removing locations at null island,

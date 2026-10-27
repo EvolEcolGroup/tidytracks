@@ -64,29 +64,31 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   }
 
   group_id <- NULL # hack to avoid it being flagged as global in checks
-  mcp_results <- foreach::foreach(
-    group_id = group_unique,
-    .combine = dplyr::bind_rows
-  ) %do% {
+  mcp_results <- foreach::foreach(group_id = group_unique) %do% {
     # Filter the data for the current group
     xy_sub <- xy[group_index == group_id, , drop = FALSE]
-    # Create MCP for each level
-    geometry <- mcp_one_group(xy_sub, levels, crs = sf::st_crs(x))
-    # Calculate area
-    area <- sf::st_area(geometry)
+    # Create MCP for each level (without a CRS, which is set for all groups
+    # at once below)
+    geometry <- mcp_one_group(xy_sub, levels)
 
-    # Create a tibble with the results
+    # Create a tibble with the results (areas are computed below)
     tibble::tibble(
       group_id = group_labels[group_id],
       method = "mcp",
       level = levels,
-      area = area,
+      area = NA_real_,
       geometry = geometry
     )
   }
 
-  # now cast the results to an sf object
+  # Combine the groups in one go (combining them one at a time, as foreach's
+  # .combine does, takes time quadratic in the number of groups), cast the
+  # results to an sf object, and compute all the areas in one call: sf looks
+  # up the parameters of the CRS (with PROJ) every time it computes areas,
+  # which takes longer than the MCP of a short track
+  mcp_results <- dplyr::bind_rows(mcp_results)
   mcp_results <- sf::st_as_sf(mcp_results, crs = sf::st_crs(x))
+  mcp_results$area <- sf::st_area(mcp_results)
 
   # if there was a single grouping variable, rename the group_id column
   if (length(dplyr::group_vars(x)) == 1) {
@@ -113,16 +115,16 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
 #'
 #' @param xy a matrix of coordinates
 #' @param levels A vector of levels for the contour lines
-#' @param crs the crs of the coordinates (to use in the geometry)
-#' @returns A list of sf polygons representing the MCP at each level
+#' @returns An `sfc` of polygons (without a CRS) representing the MCP at each
+#'   level
 #' @keywords internal
 #' @noRd
-mcp_one_group <- function(xy, levels, crs) {
+mcp_one_group <- function(xy, levels) {
   mxy <- colMeans(xy)
   sqd <- (xy[, 1] - mxy[1])^2 + (xy[, 2] - mxy[2])^2
   qts <- stats::quantile(sqd, levels)
   geometry <- lapply(qts, function(i) chull_mcp(xy[sqd <= i, , drop = FALSE]))
-  geometry <- sf::st_as_sfc(geometry, crs = crs)
+  sf::st_sfc(geometry)
 }
 
 # chull function from amt package (or shall we use sf::st_convex_hull?)
@@ -135,7 +137,7 @@ chull_mcp <- function(x) {
 
 
 # deprecated function for backward compatibility
-#' @name hr_tt_mcp
+#' @rdname tidytracks-deprecated
 #' @export
 hr_mcp <- function(x, levels = c(0.5, 0.95)) {
   warning("hr_mcp is deprecated. Please use hr_tt_mcp instead.", call. = FALSE)

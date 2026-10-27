@@ -4,16 +4,13 @@
 \alias{hr_tt_ud_iso}
 \alias{hr_tt_ud_iso.tbl_df}
 \alias{hr_tt_ud_iso.SpatRaster}
-\alias{hr_ud_iso}
 \title{Create isopleths from utilisation distributions}
 \usage{
-hr_tt_ud_iso(x, levels = c(0.5, 0.95))
+hr_tt_ud_iso(x, levels = c(0.5, 0.95), ci_level = 0.95)
 
-\method{hr_tt_ud_iso}{tbl_df}(x, levels = c(0.5, 0.95))
+\method{hr_tt_ud_iso}{tbl_df}(x, levels = c(0.5, 0.95), ci_level = 0.95)
 
-\method{hr_tt_ud_iso}{SpatRaster}(x, levels = c(0.5, 0.95))
-
-hr_ud_iso(x, levels = c(0.5, 0.95))
+\method{hr_tt_ud_iso}{SpatRaster}(x, levels = c(0.5, 0.95), ci_level = 0.95)
 }
 \arguments{
 \item{x}{either a tibble of class \code{hr_tt_ud_tbl}, as created by
@@ -23,13 +20,23 @@ hr_ud_iso(x, levels = c(0.5, 0.95))
 \item{levels}{numeric vector of isopleth levels to create. Default is
 \code{c(0.50, 0.95)}, which will create 50\% and 95\% isopleths. Levels should be
 between 0 and 1.}
+
+\item{ci_level}{The confidence level of the confidence intervals of the
+areas of the isopleths, which are computed for the UDs estimated with
+\code{ctmm} (i.e. a table with a \code{ud_ctmm} column, as returned by
+\code{\link[=hr_tt_akde]{hr_tt_akde()}} and \code{\link[=hr_tt_akde_pop]{hr_tt_akde_pop()}}); it is ignored for other UDs.
+Default is 0.95.}
 }
 \value{
 If \code{x} is a \code{SpatRaster}, an \code{sf} object with one row per level and
 columns \code{level}, \code{area} (the area of the isopleth) and \code{geometry} (a
 \code{MULTIPOLYGON} for the isopleth). If \code{x} is a tibble, an \code{sf} tibble of
-class \code{hr_tt_poly_tbl} with the columns of \code{x} (except \code{ud}) and, for each
-UD, one row per level with these three columns.
+class \code{hr_tt_poly_tbl} with the columns of \code{x} (except \code{ud} and
+\code{ud_ctmm}) and, for each UD, one row per level with these three columns.
+For the UDs estimated with \code{ctmm}, the columns \code{area_low} and \code{area_high}
+(the confidence interval of the home range area at each level, as
+estimated by \code{ctmm}) are added after \code{area} (in a table that combines
+them with other UDs, e.g. from \code{\link[=hr_tt_kde]{hr_tt_kde()}}, the other UDs get \code{NA}).
 }
 \description{
 This method can be applied to a whole tibble of UDs, or to an individual UD.

@@ -1,6 +1,6 @@
 Package: tidytracks
 Title: Functions to Analyse Tracking Data
-Version: 0.2.1
+Version: 0.2.1.9003
 Authors@R: c(
     person("Lizzie", "Pearmain", role = c("aut")),
     person("Paul","Whitelaw", role = c("aut")),
@@ -36,6 +36,7 @@ Imports:
   MASS,
   patchwork,
   purrr,
+  Rcpp,
   rlang,
   s2,
   scales,
@@ -49,15 +50,20 @@ Imports:
   vctrs
 Suggests:
     adehabitatHR,
+    amt,
     av,
     basemaps,
+    ctmm,
+    crstools,
     emdist,
+    KernSmooth,
     sp,
     knitr,
     rmarkdown,
     reshape2,
     lwgeom,
     move2utils,
+    quadprog,
     rnaturalearth,
     testthat (>= 3.0.0),
     trip,
@@ -65,6 +71,8 @@ Suggests:
     spelling
 Remotes:
     move2universe/move2utils
+LinkingTo:
+    Rcpp
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 LazyData: true
