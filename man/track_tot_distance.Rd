@@ -4,10 +4,12 @@
 \alias{track_tot_distance}
 \title{Compute the total distance of each track}
 \usage{
-track_tot_distance(x)
+track_tot_distance(x, units = as_units("m"))
 }
 \arguments{
 \item{x}{A \code{move2} object}
+
+\item{units}{The units to use for the distance. Default is "m".}
 }
 \value{
 A vector of total distances for each track
@@ -17,5 +19,6 @@ Compute the total distance of each track
 }
 \examples{
 track_tot_distance(example_tt)
+track_tot_distance(example_tt, units = "km")
 
 }

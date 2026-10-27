@@ -14,6 +14,24 @@ test_that("track_tot_distance correctly computes track distance", {
   )
 })
 
+test_that("track_tot_distance correctly converts units", {
+  distances_km <- track_tot_distance(example_tt, units = "km")
+  expect_equal(
+    units(distances_km)$numerator,
+    "km"
+  )
+  expect_equal(
+    unname(distances_km),
+    as_units(c(1170.5066, 870.6174, 812.6574), "km"),
+    tolerance = 1e-6
+  )
+  # same underlying quantity, regardless of the requested units
+  expect_equal(
+    distances_km,
+    units::set_units(track_tot_distance(example_tt), "km")
+  )
+})
+
 test_that("track_tot_distance returns values in original order", {
   example_tt_2 <- readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
   # example_tt_2 has tracks that first appear in the order b, a, c, which

@@ -17,6 +17,19 @@ test_that("track_duration correctly computes track duration", {
   )
 })
 
+test_that("track_duration correctly converts units", {
+  durations_hours <- track_duration(example_tt, units = "hours")
+  expect_equal(
+    units(durations_hours)$numerator,
+    "h"
+  )
+  # same underlying quantity, regardless of the requested units
+  expect_equal(
+    durations_hours,
+    units::set_units(track_duration(example_tt, units = "days"), "hours")
+  )
+})
+
 test_that("track_duration returns values in original order", {
   example_tt_2 <- readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
   # example_tt_2 has tracks that first appear in the order b, a, c, which
