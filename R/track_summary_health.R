@@ -4,6 +4,13 @@
 #' object. It calculates the median sampling interval, track duration, expected
 #' number of points, actual number of points, and the proportion of expected
 #' points that are missing (due to gaps in track).
+#'
+#' Events without a location (i.e. with an empty geometry, e.g. failed fixes)
+#' are not counted: the sampling interval, the duration and the number of
+#' points are those of the events with a location, so that failed fixes count
+#' as missing points. The duration can thus be shorter than that given by
+#' [track_duration()], which uses all the events. Tracks without any event
+#' with a location have 0 actual points, and `NA` for the other columns.
 #' @param x A `move2` object
 #' @return A tibble with one row per track (in the same order as the tracks in
 #'   the metadata, see [show_meta()]) and the following columns:
@@ -41,10 +48,15 @@ track_summary_health <- function(x) {
   )
 
   # Split the times of the events by track once (rather than subsetting x for
-  # each track), in the order of the metadata
+  # each track), in the order of the metadata; events without a location
+  # (e.g. failed fixes) are not counted, so that they count as missing points
+  located <- !sf::st_is_empty(x)
   track_times <- split(
-    event_time(x),
-    factor(as.character(event_track_id(x)), levels = as.character(track_ids))
+    event_time(x)[located],
+    factor(
+      as.character(event_track_id(x))[located],
+      levels = as.character(track_ids)
+    )
   )
 
   # Loop through each track and calculate the summary statistics
@@ -52,6 +64,12 @@ track_summary_health <- function(x) {
     # Ensure the times are ordered within the track (as tt_order_time())
     track_time <- track_times[[i]]
     track_time <- track_time[order(track_time)]
+
+    # A track without any location has no sampling interval or duration
+    if (length(track_time) == 0) {
+      results$actual_points[i] <- 0L
+      next
+    }
 
     # Calculate the median sampling interval
     sampling_intervals <- as.numeric(diff(

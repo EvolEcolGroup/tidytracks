@@ -57,6 +57,25 @@ test_that("track_summary_health returns tracks in the order of the metadata", {
   expect_equal(result$track_duration, as_units(c(5, 4, 3) * 20 * 60, "s"))
 })
 
+test_that("track_summary_health does not count events without a location", {
+  # an event without a location in the middle of track a counts as missing,
+  # as if it had been removed
+  x <- example_tt
+  sf::st_geometry(x)[3] <- sf::st_point()
+  result <- track_summary_health(x)
+  expect_equal(result, track_summary_health(example_tt[-3, ]))
+  expect_equal(result$actual_points[1], 4L)
+  expect_equal(result$proportion_missing[1], 0.2)
+  # a track without any location has no interval, duration or expected points
+  sf::st_geometry(x)[move2::mt_track_id(x) == "c"] <- sf::st_point()
+  result <- track_summary_health(x)
+  expect_equal(result$actual_points[3], 0L)
+  expect_true(is.na(result$median_sampling_interval[3]))
+  expect_true(is.na(result$track_duration[3]))
+  expect_true(is.na(result$expected_points[3]))
+  expect_true(is.na(result$proportion_missing[3]))
+})
+
 test_that("track_summary_health gives the times in seconds as units", {
   result <- track_summary_health(example_tt)
   expect_equal(units(result$median_sampling_interval)$numerator, "s")
