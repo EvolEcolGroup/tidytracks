@@ -53,9 +53,24 @@
     approximation of the Earth Mover's Distance.
   * The new article "Using move2utils with tidytracks", on the package
     website, shows these functions in use.
-
-## Minor improvements
-
+  * `hr_tt_kde()`, `hr_tt_mcp()`, `hr_tt_locoh()`, `hr_tt_akde()`,
+    `hr_tt_dbbmm()` and `hr_tt_dbgb()`:
+    Ungrouped data return the tracks in the order of the metadata.
+    Per-group values (h, bbox, res, n) are matched in that same order.
+    Before, they were matched in the order of the sorted track ids.
+    Grouped data return the groups in the order of their keys.
+  * `event_azimuth()` returns degrees by default, as documented.
+  * `track_summary_health()`:
+    It returns the sampling interval and the duration as units, in seconds,
+    and it does not count events without a location.
+  * `event_speed()` gives an error for events not ordered by time, pointing to
+    `tt_order_time()`.
+  * `sf` metadata:
+    It is stored as a plain table, with its geometry kept as an sfc column.
+    A metadata column called like the geometry of the events is renamed, e.g.
+    to geometry.meta.
+  * Some invalid inputs that were silently accepted now give an error, e.g.
+duplicated track ids in the metadata.
 * Speed improvements (same results) for `hr_tt_mcp()`, `hr_tt_kde()` and
   `hr_tt_ud_iso()`.
 
