@@ -230,6 +230,12 @@ distance_ratios <- fmt(range(vapply(
   },
   numeric(2)
 )))
+# the text below assumes that the overhead of each track is less than a
+# millisecond for the speed filter and the trips of tidytracks
+stopifnot(
+  as.numeric(per_track("speed_filter", "tidytracks")) < 1,
+  as.numeric(per_track("trip_split", "tidytracks")) < 1
+)
 ```
 
 ```{r plot_functions, include = FALSE}
@@ -273,11 +279,14 @@ series_plot <- function(data, x, x_label) {
   `r distance_ratios[2]` times as long, and `track2KBA` takes
   `r ratio_range("trip_split", "track2KBA")` times as long to split the
   tracks into trips. Its speed filter runs the same algorithm as that of
-  `trip`, in similar times.
-- The time of `tidytracks` grows in proportion to the number of locations,
-  and the operations that handle each track in turn have an overhead of a
-  few milliseconds per track, which matters only for data sets with many
-  short tracks.
+  `trip`, which takes `r ratio_range("speed_filter", "trip")` times as long.
+- The time of `tidytracks` grows in proportion to the number of locations.
+  It computes the step distances of all the tracks at once, and its speed
+  filter and trip splitting add less than a millisecond per track
+  (`r per_track("speed_filter", "tidytracks")` ms and
+  `r per_track("trip_split", "tidytracks")` ms), whereas `amt` adds
+  `r per_track("distance", "amt")` ms per track to the step distances. This
+  overhead matters only for data sets with many short tracks.
 
 The packages are compared on two data sets of simulated tracks, as in the
 [home range benchmark](hr_benchmark.html): many tracks of medium length
@@ -402,8 +411,8 @@ compared %>%
   distances of all the tracks at once (with `geodist`), whereas `amt` and
   `trip` measure each track in turn.
 - **Speed filter**: `tidytracks` and `trip` run the same algorithm, in R, and
-  take similar times: `trip` takes `r ratio_range("speed_filter", "trip")`
-  times as long as `tidytracks`.
+  `tidytracks` is a little faster: `trip` takes
+  `r ratio_range("speed_filter", "trip")` times as long.
 - **Trips**: `track2KBA` takes `r ratio_range("trip_split", "track2KBA")`
   times as long as `tidytracks`, as it goes through the locations of each
   track one at a time, in R.
