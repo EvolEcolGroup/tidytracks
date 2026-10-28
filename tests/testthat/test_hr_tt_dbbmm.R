@@ -104,9 +104,10 @@ test_that("hr_tt_dbbmm returns an hr_tt_ud_tbl matching move2utils", {
       "ymax", "res", "ud"
     )
   )
-  # rows are in the same order as hr_tt_kde() for ungrouped data
-  expect_identical(ud$id, c("a", "b"))
-  expect_identical(names(ud$ud), c("a", "b"))
+  # rows are in the order of the tracks in the metadata (b, then a), as for
+  # hr_tt_kde() with ungrouped data
+  expect_identical(ud$id, c("b", "a"))
+  expect_identical(names(ud$ud), c("b", "a"))
   expect_identical(ud$method, c("dbbmm", "dbbmm"))
   expect_identical(ud$window_size, c(31, 31))
   expect_identical(ud$margin, c(11, 11))
@@ -122,11 +123,11 @@ test_that("hr_tt_dbbmm returns an hr_tt_ud_tbl matching move2utils", {
     verbose = FALSE
   )
   expect_equal(
-    terra::values(ud$ud[[1]], mat = FALSE),
+    terra::values(ud$ud[["a"]], mat = FALSE),
     terra::values(direct[["a"]], mat = FALSE)
   )
   expect_equal(
-    terra::values(ud$ud[[2]], mat = FALSE),
+    terra::values(ud$ud[["b"]], mat = FALSE),
     terra::values(direct[["b"]], mat = FALSE)
   )
 })
@@ -228,10 +229,15 @@ test_that("hr_tt_dbbmm warns if the cells are much wider than the bridges", {
 test_that("hr_tt_dbbmm accepts data grouped by track id", {
   skip_if_not_installed("move2utils")
   x <- create_irregular_tracks()
-  expect_equal_ud_tbl(
-    hr_tt_dbbmm(dplyr::group_by(x, id), location_error = as_units(20, "m")),
-    hr_tt_dbbmm(x, location_error = as_units(20, "m"))
+  ud_grouped <- hr_tt_dbbmm(
+    dplyr::group_by(x, id),
+    location_error = as_units(20, "m")
   )
+  ud <- hr_tt_dbbmm(x, location_error = as_units(20, "m"))
+  # the same UDs, with the tracks in the order of the group keys (a, then b)
+  # rather than in the order of the metadata (b, then a)
+  expect_identical(ud_grouped$id, c("a", "b"))
+  expect_equal_ud_tbl(ud_grouped, ud[2:1, ])
 })
 
 test_that("hr_tt_dbbmm accepts location errors in several forms", {
@@ -302,7 +308,7 @@ test_that("hr_tt_dbbmm replaces missing location errors within each track", {
     verbose = FALSE
   )
   expect_equal(
-    terra::values(ud$ud[[1]], mat = FALSE),
+    terra::values(ud$ud[["a"]], mat = FALSE),
     terra::values(direct[["a"]], mat = FALSE)
   )
 })
@@ -331,7 +337,7 @@ test_that("hr_tt_dbbmm passes the sliding window and time step", {
     verbose = FALSE
   )
   expect_equal(
-    terra::values(ud$ud[[1]], mat = FALSE),
+    terra::values(ud$ud[["a"]], mat = FALSE),
     terra::values(direct[["a"]], mat = FALSE)
   )
 })
@@ -406,7 +412,7 @@ test_that("hr_tt_dbbmm returns isopleths when levels are set", {
   )
   expect_s3_class(iso, "hr_tt_poly_tbl")
   expect_identical(iso$level, c(0.5, 0.95, 0.5, 0.95))
-  expect_identical(iso$id, c("a", "a", "b", "b"))
+  expect_identical(iso$id, c("b", "b", "a", "a"))
 })
 
 test_that("hr_tt_dbgb matches move2utils", {
@@ -423,7 +429,7 @@ test_that("hr_tt_dbgb matches move2utils", {
     verbose = FALSE
   )
   expect_equal(
-    terra::values(ud$ud[[2]], mat = FALSE),
+    terra::values(ud$ud[["b"]], mat = FALSE),
     terra::values(direct[["b"]], mat = FALSE)
   )
 })
