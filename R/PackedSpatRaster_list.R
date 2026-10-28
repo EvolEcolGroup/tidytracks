@@ -257,15 +257,21 @@ print.PackedSpatRaster_list <- function(x, ...) {
 
   if (n > 0L) {
     for (i in seq_len(n)) {
-      r <- x[[i]]
-      dims <- paste0(nrow(r), "x", ncol(r), "x", terra::nlyr(r))
-      crs <- terra::crs(r, describe = TRUE)$name
-      label <- if (!is.na(crs) && nzchar(crs)) crs else "no CRS"
-      tag <- if (!is.null(nms) && nzchar(nms[i])) {
+      tag <- if (!is.null(nms) && !is.na(nms[i]) && nzchar(nms[i])) {
         paste0("$", nms[i])
       } else {
         paste0("[[", i, "]]")
       }
+      r <- x[[i]]
+      # a missing element (e.g. from subsetting with NA, or from a left join
+      # of a table with a wrapped ud column) has no raster to describe
+      if (is.null(r)) {
+        cat(sprintf("  %s <NULL>\n", tag))
+        next
+      }
+      dims <- paste0(nrow(r), "x", ncol(r), "x", terra::nlyr(r))
+      crs <- terra::crs(r, describe = TRUE)$name
+      label <- if (!is.na(crs) && nzchar(crs)) crs else "no CRS"
       cat(sprintf("  %s <SpatRaster [%s] %s>\n", tag, dims, label))
     }
   }

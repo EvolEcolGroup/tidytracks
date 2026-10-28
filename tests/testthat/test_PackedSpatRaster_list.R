@@ -110,3 +110,11 @@ test_that("c() combines PackedSpatRaster_list objects", {
     all(vapply(unclass(pl), inherits, logical(1), "PackedSpatRaster"))
   )
 })
+
+test_that("PackedSpatRaster_list prints missing elements", {
+  r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+  # e.g. from a left join of a wrapped UD table, for rows without a UD
+  pl <- PackedSpatRaster_list(a = r1, b = r1)[c(1, NA)]
+  expect_output(print(pl), "\\$a <SpatRaster \\[4x4x1\\] WGS 84>")
+  expect_output(print(pl), "\\[\\[2\\]\\] <NULL>")
+})
