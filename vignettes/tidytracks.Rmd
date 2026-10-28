@@ -472,9 +472,11 @@ Note that `track_summary_stats()` will return a tibble with one row per track,
 rather than the vector with one element per track that is produced by
 `track_duration()` above.
 
-Note that these distance calculations are being done on unprojected data in
-Euclidean distance. Reprojection within the `ggplot` map only applies within the
-map itself and doesn't change the `tidytracks` object.
+Note that these data are unprojected (longitudes and latitudes), so the
+distances are geodesic distances, in metres (for projected data, they would be
+Euclidean distances in the units of the projection). Reprojection within the
+`ggplot` map only applies within the map itself and doesn't change the
+`tidytracks` object.
 
 ## Filter trips
 
