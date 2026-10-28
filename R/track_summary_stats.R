@@ -110,25 +110,29 @@ track_summary_stats <- function(
   }
 
   # 1 - total duration
-  # this is a named vector of difftimes
+  # this is a named vector of difftimes, in the order of the metadata
   tot_duration <- track_duration(x, units = units_duration)
-  # get tot_duration as a tibble with track_id field
+  # get tot_duration as a tibble with track_id field (taken from the
+  # metadata rather than the names, to keep the type of the track ids, e.g.
+  # integer, for the joins below)
   tot_duration_df <- tibble::tibble(
-    track_id = names(tot_duration),
+    track_id = show_meta(x)[[.group_var]],
     tot_duration = tot_duration
   ) # has its units still
 
   # 2 - total distance travelled
-  # this is a named vector of distances, in the units of the projection
-  # (metres for geographic coordinates), as returned by sf::st_distance()
+  # this is a named vector of distances, in the order of the metadata and in
+  # the units of the projection (metres for geographic coordinates), as
+  # returned by sf::st_distance()
   dist_units <- units(sf::st_distance(sf::st_geometry(x)[1]))
   tot_distance <- track_tot_distance( # nolint: object_usage_linter.
     x,
     units = as_units(1, dist_units)
   )
-  # get tot_distance as a tibble with track_id field
+  # get tot_distance as a tibble with track_id field (also in the order of
+  # the metadata)
   tot_distance_df <- tibble::tibble(
-    track_id = names(tot_distance),
+    track_id = show_meta(x)[[.group_var]],
     tot_distance = unname(tot_distance)
   ) # has its units still
 

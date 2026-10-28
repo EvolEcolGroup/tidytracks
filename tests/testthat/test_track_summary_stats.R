@@ -233,5 +233,20 @@ test_that("track_summary_stats gives the same distance as track_tot_distance", {
   )
 })
 
+test_that("track_summary_stats works with integer track ids", {
+  x_int <- move2::mt_set_track_id(
+    example_tt,
+    as.integer(event_track_id(example_tt))
+  )
+  sums_int <- track_summary_stats(x_int)
+  # the track ids keep their type, as in the metadata
+  expect_identical(sums_int$track_id, show_meta(x_int)$track_id)
+  expect_equal(
+    sums_int[, -1],
+    track_summary_stats(example_tt)[, -1],
+    ignore_attr = "names"
+  )
+})
+
 # TODO add test for where there are >10 trips per individual (to make sure
 # the trip_id field is carrying through the function correctly)
