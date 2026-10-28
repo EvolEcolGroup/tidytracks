@@ -310,6 +310,15 @@ test_that("units attributes keep units class after interpolation", {
   )
 })
 
+test_that("the time zone of the time stamps is preserved", {
+  for (tz in c("", "Europe/Rome")) {
+    track <- make_track(crs = NA)
+    attr(track$timestamp, "tzone") <- tz
+    out <- tt_regular_time(track, interval = s(100))
+    expect_identical(attr(move2::mt_time(out), "tzone"), tz)
+  }
+})
+
 test_that("numeric attributes with fewer than two values give NA", {
   track <- make_track(crs = NA)
   track$heading <- NA_real_

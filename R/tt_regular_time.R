@@ -288,7 +288,8 @@ tt_regular_time <- function(
 
   times <- move2::mt_time(track)
   t_sec <- as.numeric(times)
-  tz <- attr(times, "tzone") %||% "UTC"
+  # keep the time zone of the input (including "", the local time zone)
+  tz <- attr(times, "tzone")
 
   t_start <- if (isTRUE(snap_times)) {
     # First whole-interval boundary strictly after the track's first timestamp.
@@ -367,7 +368,7 @@ tt_regular_time <- function(
   }
 
   attr_cols <- setdiff(names(track), c(time_col, track_col, geom_col))
-  new_times <- as.POSIXct(t_new, origin = "1970-01-01", tz = tz)
+  new_times <- .POSIXct(t_new, tz = tz)
   n_new <- length(t_new)
 
   base_df <- data.frame(
