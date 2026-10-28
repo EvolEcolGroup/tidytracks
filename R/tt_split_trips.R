@@ -115,11 +115,17 @@ tt_split_trips <- function(
   # the centres are in the same order as the tracks in the metadata, which can
   # differ from the order of the tracks in the events table
   meta_ids <- show_meta(x)[[move2::mt_track_id_column(x)]]
+  # the events of each track (splitting the rows once is much faster, with
+  # many tracks, than finding the rows of each track among all the rows)
+  rows_by_track <- split(
+    seq_along(ids),
+    factor(ids, levels = unique(as.character(meta_ids)))
+  )
 
   i <- NULL # avoid global variable warning (i is used by foreach)
   # Loop through each track and split its events, in time order, into trips
   trip_list <- foreach::foreach(i = seq_along(meta_ids)) %do% {
-    track_rows <- which(ids == as.character(meta_ids[i]))
+    track_rows <- rows_by_track[[as.character(meta_ids[i])]]
     track_rows <- track_rows[order(times[track_rows])]
     trips <- split_one_track(
       meta_ids[i],
@@ -223,14 +229,20 @@ split_one_track <- function(
   trip_labels_vec <- rep(trip_labels, times = runs$lengths)
 
   # create the metadata for the labels
-  trip_meta <- tibble::tibble(
-    track_id = rep(label, length(unique(trip_labels))),
-    trip_id = unique(trip_labels),
-    trip_type = ifelse(
-      unique(trip_labels) != paste0(label, "_trip_na"),
-      "complete",
-      "at_centre"
-    )
+  # (tibble::new_tibble() rather than tibble::tibble(), whose checks take
+  # about a millisecond, i.e. most of the time taken by a short track)
+  trip_ids <- unique(trip_labels)
+  trip_meta <- tibble::new_tibble(
+    list(
+      track_id = rep(label, length(trip_ids)),
+      trip_id = trip_ids,
+      trip_type = ifelse(
+        trip_ids != paste0(label, "_trip_na"),
+        "complete",
+        "at_centre"
+      )
+    ),
+    nrow = length(trip_ids)
   )
   # check if last trip is incomplete (data ends outside colony); the last trip
   # is not necessarily the last row of trip_meta (e.g. if the track starts
