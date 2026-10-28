@@ -99,5 +99,9 @@ ud_level_one <- function(x, ud) {
   }
   # move2utils reprojects the events to the crs of the UD, and gives NA for
   # events outside the grid
-  move2utils::ud_outer_probability(x, ud)
+  level <- move2utils::ud_outer_probability(x, ud)
+  # the levels are cumulative sums of the UD, which can exceed 1 by rounding
+  # (e.g. on Apple silicon, where R has no extended precision for sum()), so
+  # they are kept between 0 and 1, as they are proportions
+  pmin(pmax(level, 0), 1)
 }

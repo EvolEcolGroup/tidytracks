@@ -105,3 +105,27 @@ test_that("event_ud_level reprojects events to the CRS of the UD", {
     event_ud_level(x_proj, ud)
   )
 })
+
+test_that("event_ud_level gives levels no larger than 1", {
+  skip_if_not_installed("move2utils")
+  x <- example_tt[1, ]
+  xy <- sf::st_coordinates(x)
+  # a UD of 2 x 3 cells, with the event in its least dense cell (the top
+  # right one), the last of the cumulative sum of the UD, which exceeds 1 by
+  # rounding (as it can for any UD on Apple silicon, where R has no extended
+  # precision)
+  ud <- terra::rast(
+    nrows = 2,
+    ncols = 3,
+    xmin = xy[1] - 2.5,
+    xmax = xy[1] + 0.5,
+    ymin = xy[2] - 1.5,
+    ymax = xy[2] + 0.5,
+    crs = "EPSG:4326",
+    vals = c(0.6, 0.9, 0.5, 0.9, 0.6, 0.6),
+    names = "ud"
+  )
+  level <- event_ud_level(x, ud)
+  expect_lte(level, 1)
+  expect_equal(level, 1)
+})
