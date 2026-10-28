@@ -3,6 +3,7 @@
 S3method("$",PackedSpatRaster_list)
 S3method("$<-",PackedSpatRaster_list)
 S3method("[",PackedSpatRaster_list)
+S3method("[<-",PackedSpatRaster_list)
 S3method("[[",PackedSpatRaster_list)
 S3method("[[<-",PackedSpatRaster_list)
 S3method(as.data.frame,move2)
