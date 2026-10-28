@@ -206,13 +206,39 @@ event_flag_mcconnell <- function(
       return(valid_track)
     }
 
+    # Distances between pairs of points (i, j) computed in the previous pass,
+    # with the key i * npts + j of each pair. Each pass needs the distances
+    # between consecutive valid points and between valid points two apart;
+    # after some points have been removed, most of these pairs are unchanged
+    # (and some consecutive pairs were two apart before), so only the new
+    # pairs are computed, rather than all of them again: computing distances
+    # (geodesic ones, for longitudes and latitudes) takes most of the time of
+    # a pass.
+    pair_keys <- numeric(0)
+    pair_dists <- numeric(0)
+    pair_dist <- function(i, j) {
+      keys <- i * npts + j
+      known <- match(keys, pair_keys)
+      d <- pair_dists[known]
+      new <- is.na(known)
+      if (any(new)) {
+        d[new] <- dist_fast(
+          xy[i[new], 1],
+          xy[i[new], 2],
+          xy[j[new], 1],
+          xy[j[new], 2],
+          longlat = !projected
+        )
+      }
+      d
+    }
+
     # Continue until all RMS values are below the threshold.
     while (any(rms > max_speed, na.rm = TRUE)) {
-      # Number of currently valid points.
-      n <- length(which(valid_track))
-
-      # Subset coordinates to valid points only.
-      x1 <- xy[valid_track, , drop = FALSE]
+      # Indices of the currently valid points, and their number.
+      this_index <- index[valid_track]
+      n <- length(this_index)
+      valid_time <- unclass(track_time[valid_track])
 
       # ---------------------------------------------------------------------
       # Consecutive-point speed estimates
@@ -221,16 +247,10 @@ event_flag_mcconnell <- function(
       #   point 1 -> point 2
       #   point 2 -> point 3
       #   ...
-      speed1 <- segment_speed(
-        dist_fast(
-          x1[-nrow(x1), 1],
-          x1[-nrow(x1), 2],
-          x1[-1, 1],
-          x1[-1, 2],
-          longlat = !projected
-        ),
-        diff(unclass(track_time[valid_track])) / 3600
-      )
+      from1 <- this_index[-n]
+      to1 <- this_index[-1]
+      dist1 <- pair_dist(from1, to1)
+      speed1 <- segment_speed(dist1, diff(valid_time) / 3600)
 
       # ---------------------------------------------------------------------
       # Skip-one speed estimates
@@ -241,22 +261,15 @@ event_flag_mcconnell <- function(
       #   ...
       #
       # These help identify isolated spikes.
-      elapsed_time2 <- (unclass(track_time[valid_track][-c(1, 2)]) -
-                          unclass(track_time[valid_track][-c(n - 1, n)])) /
-        3600
-      speed2 <- segment_speed(
-        dist_fast(
-          x1[-((nrow(x1) - 1):nrow(x1)), 1],
-          x1[-((nrow(x1) - 1):nrow(x1)), 2],
-          x1[-(1:2), 1],
-          x1[-(1:2), 2],
-          longlat = !projected
-        ),
-        elapsed_time2
-      )
+      from2 <- this_index[-c(n - 1, n)]
+      to2 <- this_index[-c(1, 2)]
+      dist2 <- pair_dist(from2, to2)
+      elapsed_time2 <- (valid_time[-c(1, 2)] - valid_time[-c(n - 1, n)]) / 3600
+      speed2 <- segment_speed(dist2, elapsed_time2)
 
-      # Indices corresponding to currently retained points.
-      this_index <- index[valid_track]
+      # Keep the distances of this pass for the next one.
+      pair_keys <- c(from1 * npts + to1, from2 * npts + to2)
+      pair_dists <- c(dist1, dist2)
 
       # Number of adjacent segments.
       nseg <- length(speed1)
@@ -306,16 +319,15 @@ event_flag_mcconnell <- function(
       # Candidate point selection
       # ---------------------------------------------------------------------
       # Within each contiguous bad region, select only the point with
-      # the highest RMS value.
-      rms_flag <- unlist(
-        lapply(split(rms, segs), function(z) {
-          ifelse(seq_along(z) == which.max(z), TRUE, FALSE)
-        }),
-        use.names = FALSE
-      )
-
-      # Ignore regions below threshold.
-      rms_flag[!bad] <- FALSE
+      # the highest RMS value (the first one, if several share it, as
+      # which.max() does): the bad windows are ordered by region and by
+      # decreasing RMS (order() is stable, so ties keep their order), and the
+      # first one of each region is selected.
+      bad_windows <- which(bad)
+      bad_region <- segs[bad_windows]
+      by_rms <- order(bad_region, -rms[bad_windows])
+      rms_flag <- rep(FALSE, length(rms))
+      rms_flag[bad_windows[by_rms[!duplicated(bad_region[by_rms])]]] <- TRUE
 
       # Mark candidate RMS values.
       rms[rms_flag] <- -10
