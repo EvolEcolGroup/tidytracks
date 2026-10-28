@@ -121,6 +121,17 @@ test_that("mt_as_telemetry passes the error columns", {
   )
 })
 
+test_that("mt_as_telemetry passes the time to fix, used with timeout", {
+  x <- ctmm_example_tt(n = 10)
+  # with timeout, ctmm classifies the locations by their time to fix
+  x$gps_time_to_fix <- rep(c(30, 90), length.out = nrow(x))
+  tel <- suppressMessages(mt_as_telemetry(x, timeout = 60))
+  expect_equal(
+    as.character(tel$Cilla$class),
+    rep(c("in-time", "timeout"), length.out = 10)
+  )
+})
+
 test_that("mt_as_telemetry requires a projected CRS in metres", {
   x <- ctmm_example_tt(n = 10)
   expect_error(
