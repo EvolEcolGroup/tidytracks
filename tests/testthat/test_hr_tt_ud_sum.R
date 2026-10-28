@@ -26,3 +26,21 @@ test_that("hr_tt_ud_sum works", {
   # check that there is a column sex
   expect_true("sex" %in% names(grouped_sum))
 })
+
+test_that("hr_tt_ud_sum sums UDs estimated with different bandwidths", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_kde <- hr_tt_kde(boar_tt, res = 50, h = "h_ref_indiv")
+  tibble_sum <- hr_tt_ud_sum(boar_kde)
+  expect_equal(nrow(tibble_sum), 1)
+  expect_equal(
+    as.matrix(tibble_sum$ud[[1]]),
+    as.matrix(hr_tt_ud_sum(boar_kde$ud))
+  )
+  # whose sum has no single bandwidth
+  expect_identical(tibble_sum$h, NA_real_)
+  # but UDs on different grids cannot be summed
+  expect_error(
+    hr_tt_ud_sum(hr_tt_kde(boar_tt, res = c(50, 25, 50, 50))),
+    "all UDs should have the same extent and resolution"
+  )
+})

@@ -383,3 +383,36 @@ test_that("tt_split_trips handles events without a location", {
   meta <- show_meta(result)
   expect_equal(meta$trip_type[meta$trip_id == "a_trip_1"], "complete")
 })
+
+test_that("tt_split_trips marks the last trip, not the centre, incomplete", {
+  # the inbound buffer is smaller than the outbound one, and both tracks end
+  # 5 km from the nest: "a" never leaves the outbound buffer, and "b" starts
+  # with a trip and then stays within the outbound buffer
+  coords_df <- data.frame(
+    bird_id = rep(c("a", "b"), each = 4),
+    longitude = c(0, 0.01, 0.03, 0.045, 0.5, 0.3, 0.045, 0.045),
+    latitude = 0,
+    date_time = as.POSIXct("2020-01-01", tz = "UTC") + rep(0:3, 2) * 3600
+  )
+  test_mt <- move2::mt_as_move2(
+    sf::st_as_sf(coords_df, coords = c("longitude", "latitude"), crs = 4326),
+    time_column = "date_time",
+    track_id_column = "bird_id"
+  )
+  show_meta(test_mt)$centre_sf <- sf_point_col(
+    x = c(0, 0),
+    y = c(0, 0),
+    crs = 4326
+  )
+
+  result <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(1, "km"),
+    complete = FALSE
+  )
+  meta <- show_meta(result)
+  expect_identical(meta$trip_id, c("a_trip_na", "b_trip_1", "b_trip_na"))
+  expect_identical(meta$trip_type, c("at_centre", "incomplete", "at_centre"))
+})

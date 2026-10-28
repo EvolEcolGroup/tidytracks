@@ -10,7 +10,9 @@
 #'   column named "ud", or a list of SpatRaster objects representing UDs.
 #' @returns either a tibble of UDs with the number of rows equal to the number
 #'   of groups in `x` (or just one row for an ungrouped tibble), or a single
-#'   SpatRaster if `x` is a list of SpatRaster objects.
+#'   SpatRaster if `x` is a list of SpatRaster objects. The UDs must be on the
+#'   same grid; the parameters of the method (e.g. `h` for [hr_tt_kde()]) are
+#'   kept if they are the same for all the summed UDs, and are `NA` otherwise.
 #' @export
 #' @examples
 #' example_kde <- hr_tt_kde(example_tt)
@@ -61,16 +63,31 @@ hr_tt_ud_sum.tbl_df <- function(x) {
   # Work with a plain list locally while preserving a loaded object's packing.
   x <- unwrap_ud_column(x) # nolint: object_usage_linter.
 
-  # create a new tibble with the summed UD (UDs from hr_tt_akde() have no
-  # bandwidth column h)
+  # create a new tibble with the summed UD, keeping the parameters of the
+  # method (e.g. h for hr_tt_kde(), window_size and margin for hr_tt_dbbmm(),
+  # none for hr_tt_akde()): each method has its own, so they are optional, and
+  # they are placed after the method (as h was before) by the order of the
+  # selection
+  params <- intersect(c("h", "window_size", "margin"), names(x))
   sum_tbl <- x %>%
-    dplyr::select(dplyr::any_of(
-      c("method", "h", "xmin", "ymin", "xmax", "ymax", "res")
-    )) %>%
-    dplyr::distinct()
-  # check that we only have one row in the sum_tbl
-  if (nrow(sum_tbl) != 1) {
+    dplyr::select(
+      dplyr::all_of("method"),
+      dplyr::all_of(params),
+      dplyr::all_of(c("xmin", "ymin", "xmax", "ymax", "res"))
+    )
+  # check that all the UDs are on the same grid (the parameters of the
+  # method may differ, e.g. h for hr_tt_kde(h = "h_ref_indiv"))
+  grids <- dplyr::distinct(dplyr::select(sum_tbl, !dplyr::all_of(params)))
+  if (nrow(grids) != 1) {
     stop("all UDs should have the same extent and resolution")
+  }
+  # a parameter that differs between the UDs has no single value for their
+  # sum (it is NA, of the type of the parameter)
+  sum_tbl <- sum_tbl[1, ]
+  for (param in params) {
+    if (dplyr::n_distinct(x[[param]]) > 1) {
+      sum_tbl[[param]] <- sum_tbl[[param]][NA_integer_]
+    }
   }
   # we can use the hr_tt_ud_sum.list method to sum the UDs
   sum_tbl$ud <- list(hr_tt_ud_sum(x$ud))

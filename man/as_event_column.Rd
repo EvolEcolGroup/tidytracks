@@ -27,6 +27,11 @@ This function moves one or more columns from the metadata of a \code{move2} obje
 to the event data, adding them as new columns. This is useful when you want
 to include metadata information in the event-level analysis.
 }
+\details{
+An \code{sf} table of metadata is turned into a plain table first, with its
+geometry kept as an \code{sfc} column, which is renamed if it has the name of
+the geometry column of the events (see \code{\link[=show_meta]{show_meta()}}).
+}
 \examples{
 example_tt2 <- as_event_column(example_tt, sex)
 example_tt2 # now showing sex in the events table

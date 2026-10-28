@@ -7,7 +7,10 @@
 #' @param x A `move2` object
 #' @param ...	additional arguments to be passed to or from methods.
 #' @param include_meta Logical, whether to include the metadata attributes in
-#'   the resulting data frame. Default is FALSE.
+#'   the resulting data frame. Default is FALSE. An `sf` table of metadata is
+#'   turned into a plain table first, with its geometry kept as an `sfc`
+#'   column, which is renamed if it has the name of the geometry column of the
+#'   events (see [show_meta()]).
 #' @param drop_geometry Logical, whether to drop the geometry column from the
 #'  resulting data frame. Default is FALSE. If TRUE, the coordinates are stored
 #'  in separate columns (`X` and `Y`).
@@ -25,7 +28,9 @@ as.data.frame.move2 <- function(
   drop_geometry = FALSE
 ) {
   # If include_meta is TRUE, join the metadata attributes to the data frame
+  # (move2 cannot join an sf table of metadata to the events)
   if (include_meta) {
+    x <- with_plain_meta(x) # nolint: object_usage_linter.
     x <- x |> move2::mt_as_event_attribute(dplyr::any_of(names(show_meta(x))))
   }
 

@@ -34,10 +34,12 @@ default) or \code{"mean"} (see Details).}
 with \code{\link[=ctmm_tt_fit]{ctmm_tt_fit()}} (only needed with \code{method = "pkde"}).}
 
 \item{weights}{The weights of the individuals in the population UD. Either
-\code{NULL} (the default) for equal weights, the name of a numeric column of
-\code{x} with the relative weight of each UD (non-negative, and not all zero
-within a group), or, with \code{method = "pkde"}, \code{TRUE} to optimise the
-weights (see \code{\link[ctmm:pkde]{ctmm::pkde()}}; this requires the package \code{quadprog}).}
+\code{NULL} (the default) for equal weights, or, with \code{method = "mean"}, the
+name of a numeric column of \code{x} with the relative weight of each UD
+(non-negative, and not all zero within a group), or, with
+\code{method = "pkde"}, \code{TRUE} to optimise the weights (see \code{\link[ctmm:pkde]{ctmm::pkde()}};
+this requires the package \code{quadprog}). \code{\link[ctmm:pkde]{ctmm::pkde()}} cannot use weights
+given by the user.}
 
 \item{sample}{Logical; with \code{method = "mean"}, whether the tracks are a
 sample of a larger population (\code{TRUE}, the default) or the whole
@@ -151,6 +153,8 @@ buffalo_sub <- buffalo_tt \%>\%
   dplyr::group_by(track) \%>\%
   dplyr::slice_head(n = 100) \%>\%
   dplyr::ungroup()
+# fitting the models and estimating the UDs take several seconds
+\donttest{
 buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 buffalo_akde <- hr_tt_akde(buffalo_sub, buffalo_fit)
 # population UD with population kernel density estimation (setting the seed
@@ -165,6 +169,7 @@ buffalo_pop
 # or as the average of the individual UDs, with the 95\% home range
 set.seed(1)
 hr_tt_akde_pop(buffalo_akde, method = "mean", levels = 0.95)
+}
 \dontshow{\}) # examplesIf}
 }
 \seealso{

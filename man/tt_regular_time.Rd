@@ -42,7 +42,8 @@ Resamples one or more tracks stored in a \code{move2} object onto a regular time
 grid.  A new grid point is placed every \code{interval} time units from the start
 of the track. Tracks are processed independently, so different tracks may
 have different temporal extents and the points from different tracks will not
-have matching time stamps (as the starting points are different).
+have matching time stamps (as the starting points are different). Events
+with an empty geometry (i.e. no location) are ignored.
 }
 \section{Spatial interpolation}{
  Positions are linearly interpolated along the
@@ -50,8 +51,8 @@ observed path, with a strategy dependent on the map projection (using a
 strategy similar to \code{\link[move2:mt_interpolate]{move2::mt_interpolate()}}):
 
 \itemize{
-\item \strong{No CRS} – \code{\link[sf:st_line_sample]{sf::st_line_sample()}} is called on the
-Euclidean linestring connecting the observations.
+\item \strong{No CRS} – positions are linearly interpolated along the
+Euclidean segments connecting consecutive observations.
 \item \strong{Geographic CRS (lon/lat)} – the path is treated as a
 spherical polyline and \code{\link[s2:s2_interpolate_normalized]{s2::s2_interpolate_normalized()}} is
 used, which follows great-circle arcs between consecutive points.
@@ -76,7 +77,8 @@ correctly treated as slow movement, not as a spatial shortcut.
 
 \section{Attribute interpolation}{
  Numeric event-level columns are linearly
-interpolated at the new time steps using \code{\link[stats:approx]{stats::approx()}}. Non-numeric
+interpolated at the new time steps using \code{\link[stats:approx]{stats::approx()}} (they are \code{NA}
+for tracks with fewer than two non-missing values). Non-numeric
 columns receive the value of the nearest preceding (or simultaneous)
 observation via \code{\link[base]{findInterval}}. Track-level attributes
 stored in \code{\link[move2]{mt_track_data}} are preserved unchanged.
@@ -129,6 +131,5 @@ resampled_snap
 the same spatial strategy with flexible time targets (including
 interpolating to specific missing timestamps);
 \code{\link[units:as_units]{units::as_units()}} for constructing the required \code{units}
-objects; \code{\link[sf:st_line_sample]{sf::st_line_sample()}} for Euclidean path sampling;
-\code{\link[s2:s2_interpolate_normalized]{s2::s2_interpolate_normalized()}} for spherical arc sampling.
+objects; \code{\link[s2:s2_interpolate_normalized]{s2::s2_interpolate_normalized()}} for spherical arc sampling.
 }

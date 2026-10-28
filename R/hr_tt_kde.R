@@ -61,8 +61,10 @@
 #'   resolution that produces approximately 1000 cells.
 #'
 #'   Per-group values of `h`, `bbox` and `res` are matched to the groups in the
-#'   order of [dplyr::group_keys()] (i.e. sorted by the grouping variables),
-#'   not in the order in which the groups appear in `x`.
+#'   order in which they are returned: the order of the tracks in the metadata
+#'   (see [show_meta()]) if `x` is not grouped, or else the order of
+#'   [dplyr::group_keys()] (i.e. sorted by the grouping variables), not the
+#'   order in which the groups appear in `x`.
 #' @param levels A vector of levels for the isopleths (i.e. contour lines), as
 #'   numbers between 0 and 1. If set to NULL (the default), the full utilisation
 #'   distribution is returned; otherwise just the isopleths are returned. It is
@@ -77,7 +79,8 @@
 #' [hr_tt_ud_iso()]), with columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
-#'   grouping of `x`
+#'   grouping of `x`, in the order of the tracks in the metadata if `x` is not
+#'   grouped, or else in the order of [dplyr::group_keys()]
 #' - `method`: the method used to estimate the home range (`"kde"`)
 #' - `h`: the bandwidth used for the KDE
 #' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
@@ -121,11 +124,13 @@ hr_tt_kde <- function(
 ) {
   method <- match.arg(method)
   # if x is not grouped, use the track ID column as grouping variable
-  if (!inherits(x, "grouped_df")) {
+  by_track <- !inherits(x, "grouped_df")
+  if (by_track) {
     x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
   # per-group values (h, bbox and res) are matched to the groups by their
-  # position in the group keys, which must therefore all be estimated
+  # position in the order in which they are returned, so every group listed
+  # in the group keys must be estimated
   check_no_empty_groups(x) # nolint: object_usage_linter.
 
   # Check if levels are valid
@@ -135,11 +140,16 @@ hr_tt_kde <- function(
   # reorder levels from big to small
   levels <- sort(levels, decreasing = TRUE)
 
-  # get the group indices
-  group_index <- dplyr::group_indices(x)
-  group_unique <- unique(group_index)
+  # get the group indices; the groups are estimated (and returned) in the
+  # order of the tracks in the metadata if x was not grouped, or else in the
+  # order of their keys, as for the other hr_tt_* functions, rather than in
+  # the order in which they appear in x: they are numbered in that order
+  group_order <- hr_group_order(x, by_track) # nolint: object_usage_linter.
+  group_index <- match(dplyr::group_indices(x), group_order)
+  group_unique <- seq_along(group_order)
   group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
+  group_labels <- group_labels[group_order]
   # extract coordinates
   xy <- sf::st_coordinates(x)
   # events with an empty geometry have no location to contribute to the KDE
@@ -273,6 +283,16 @@ hr_tt_kde <- function(
       res = res[group_id],
       h = h[group_id]
     )
+    # if the kernels of the locations do not reach the grid, the density is 0
+    # on all its cells, and cannot be standardised (it would be NaN)
+    if (!isTRUE(density$density_sum > 0)) {
+      stop(
+        "the UD of group ", group_labels[group_id], " is 0 on the whole ",
+        "grid, as its locations are too far from it; use a bbox that ",
+        "covers them",
+        call. = FALSE
+      )
+    }
     if (is.null(levels)) {
       # return the full UD, as a raster
       kde_raster(density, grid, h = h[group_id], id = group_id)
@@ -284,6 +304,7 @@ hr_tt_kde <- function(
         cud,
         x = grid$x,
         y = grid$y,
+        res = grid$res,
         levels = iso_levels,
         ops_crs = if (grid$longlat) grid$iso_crs else sf::NA_crs_,
         cud_raster = function() {
@@ -397,8 +418,9 @@ align_kde_bbox <- function(bbox, res) {
 #' @returns A list with `template` (an empty `terra::SpatRaster`) and, if
 #'   `isopleths` is `TRUE`, `iso_crs` (the CRS of the isopleths, as obtained
 #'   from the raster), `longlat` (whether that CRS is in longitude/latitude),
-#'   and `x` and `y` (the coordinates of the centres of the columns, and of the
-#'   rows from south to north).
+#'   `x` and `y` (the coordinates of the centres of the columns, and of the
+#'   rows from south to north), and `res` (the size of the cells along x and
+#'   along y).
 #' @keywords internal
 #' @noRd
 kde_grid <- function(bbox, res, crs, isopleths) {
@@ -424,7 +446,8 @@ kde_grid <- function(bbox, res, crs, isopleths) {
     iso_crs = iso_crs,
     longlat = isTRUE(sf::st_is_longlat(iso_crs)),
     x = terra::xFromCol(template, seq_len(n[1])),
-    y = terra::yFromRow(template, rev(seq_len(n[2])))
+    y = terra::yFromRow(template, rev(seq_len(n[2]))),
+    res = terra::res(template)
   )
 }
 

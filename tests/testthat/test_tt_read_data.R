@@ -442,6 +442,31 @@ test_that("tt_read_data reads 2-digit years in auto-detected formats", {
   )
 })
 
+test_that("tt_read_data does not drop seconds of auto-detected times", {
+  # only some of the times have seconds: no format matches all of them (a
+  # format without seconds would parse them, but drop the seconds)
+  events <- data.frame(
+    track_id = "a",
+    lon = 1:3,
+    lat = 0,
+    date_time = c(
+      "2024-01-15 13:45:30",
+      "2024-01-15 13:46",
+      "2024-01-15 13:47:59"
+    )
+  )
+  expect_error(
+    tt_read_data(
+      events,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    ),
+    regexp = "Failed to parse date-time field(s) 'date_time'",
+    fixed = TRUE
+  )
+})
+
 test_that("tt_read_data auto-detects MDY (American) date_time formats", {
   read_date_times <- function(date_times) {
     events <- data.frame(
@@ -735,4 +760,92 @@ test_that("tt_read_data joins metadata with numeric track ids", {
   expect_s3_class(test_meta$bird_id, "factor")
   expect_equal(as.character(test_meta$bird_id), c("1", "2"))
   expect_equal(test_meta$sex, c("f", "m"))
+})
+
+test_that("tt_read_data joins metadata with large numeric track ids", {
+  # as.character() gives "1e+05" for 100000 as a double, but "100000" as an
+  # integer (as read from a csv file)
+  events <- data.frame(
+    bird_id = c(100000, 100000, 200000, 200000),
+    lon = c(0, 1, 0, 1),
+    lat = 0,
+    date_time = rep(c("2024-01-01 00:00:00", "2024-01-01 01:00:00"), 2)
+  )
+  meta <- data.frame(bird_id = c(200000L, 100000L), sex = c("m", "f"))
+
+  test_tt <- tt_read_data(
+    events = events,
+    meta = meta,
+    col_track_id = "bird_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "date_time"
+  )
+  expect_equal(show_meta(test_tt)$sex, c("f", "m"))
+})
+
+test_that("tt_read_data rejects metadata with duplicated track ids", {
+  events <- data.frame(
+    bird_id = c("a", "a", "b", "b"),
+    lon = c(0, 1, 0, 1),
+    lat = 0,
+    date_time = rep(c("2024-01-01 00:00:00", "2024-01-01 01:00:00"), 2)
+  )
+  meta <- data.frame(bird_id = c("a", "a", "b"), sex = c("f", "m", "m"))
+
+  expect_error(
+    tt_read_data(
+      events = events,
+      meta = meta,
+      col_track_id = "bird_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    ),
+    "The metadata has more than one row for track(s) a",
+    fixed = TRUE
+  )
+})
+
+test_that("tt_read_data compares duplicated columns of different types", {
+  # age is moved from the events (as an integer, as read from a csv file) to
+  # the metadata, and is also in the metadata (as a double)
+  events <- data.frame(
+    bird_id = c("a", "a", "b", "b"),
+    lon = c(0, 1, 0, 1),
+    lat = 0,
+    age = c(1L, 1L, 3L, 3L),
+    date_time = rep(c("2024-01-01 00:00:00", "2024-01-01 01:00:00"), 2)
+  )
+  meta <- data.frame(bird_id = c("a", "b"), age = c(1, 3))
+
+  expect_no_warning(
+    test_tt <- tt_read_data(
+      events = events,
+      meta = meta,
+      col_track_id = "bird_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    )
+  )
+  expect_named(show_meta(test_tt), c("bird_id", "age"))
+  expect_equal(show_meta(test_tt)$age, c(1, 3))
+})
+
+test_that("tt_read_data drops unused levels of factor track ids", {
+  # e.g. a subset of a data frame with the track ids stored as a factor
+  events <- data.frame(
+    bird_id = factor(c("a", "a", "b", "b"), levels = c("a", "b", "c")),
+    lon = c(0, 1, 0, 1),
+    lat = 0,
+    sex = c("f", "f", "m", "m"),
+    date_time = rep(c("2024-01-01 00:00:00", "2024-01-01 01:00:00"), 2)
+  )
+
+  test_tt <- tt_read_data(
+    events = events,
+    col_track_id = "bird_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "date_time"
+  )
+  expect_equal(levels(event_track_id(test_tt)), c("a", "b"))
+  expect_equal(show_meta(test_tt)$sex, c("f", "m"))
 })

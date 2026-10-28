@@ -310,6 +310,27 @@ test_that("units attributes keep units class after interpolation", {
   )
 })
 
+test_that("the time zone of the time stamps is preserved", {
+  for (tz in c("", "Europe/Rome")) {
+    track <- make_track(crs = NA)
+    attr(track$timestamp, "tzone") <- tz
+    out <- tt_regular_time(track, interval = s(100))
+    expect_identical(attr(move2::mt_time(out), "tzone"), tz)
+  }
+})
+
+test_that("numeric attributes with fewer than two values give NA", {
+  track <- make_track(crs = NA)
+  track$heading <- NA_real_
+  track$speed <- units::set_units(c(NA, 2, NA), "m/s")
+
+  out <- tt_regular_time(track, interval = s(100))
+
+  expect_equal(out$heading, rep(NA_real_, 3))
+  expect_true(inherits(out$speed, "units"))
+  expect_equal(as.numeric(out$speed), rep(NA_real_, 3))
+})
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 7. IRREGULAR INPUT SPACING
@@ -560,6 +581,20 @@ test_that("unsorted input timestamps are handled correctly", {
     sorted_coords(out_sorted),
     tolerance = tol_coord
   )
+})
+
+test_that("events without a location are ignored", {
+  tracks <- list(
+    make_track(crs = NA),
+    make_track(crs = 4326),
+    sf::st_transform(make_track(crs = 4326), 32631)
+  )
+  for (track in tracks) {
+    expected <- sorted_coords(tt_regular_time(track, interval = s(100)))
+    sf::st_geometry(track)[2] <- sf::st_point()
+    out <- tt_regular_time(track, interval = s(100))
+    expect_equal(sorted_coords(out), expected, tolerance = tol_coord)
+  }
 })
 
 test_that("tracks fully removed by gap filtering return valid empty output", {

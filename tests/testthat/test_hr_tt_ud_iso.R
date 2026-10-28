@@ -144,3 +144,51 @@ test_that("hr_tt_ud_iso keeps holes in isopleths", {
     tolerance = 0.02
   )
 })
+
+test_that("hr_tt_ud_iso closes isopleths along the edges of the grid", {
+  # UDs cut by the edges of the grid: a band that crosses the grid from south
+  # to north, and a bump centred on its north-east corner (with more than
+  # 100,000 cells, whose contours are computed on a sample of the cells)
+  for (n_cells in c(100, 400)) {
+    ud <- terra::rast(
+      nrows = n_cells,
+      ncols = n_cells,
+      xmin = -50,
+      xmax = 50,
+      ymin = -50,
+      ymax = 50,
+      crs = "EPSG:32630"
+    )
+    xy <- terra::crds(ud)
+    for (density in list(
+      exp(-(xy[, 1]^2) / (2 * 10^2)),
+      exp(-((xy[, 1] - 50)^2 + (xy[, 2] - 50)^2) / (2 * 20^2))
+    )) {
+      terra::values(ud) <- density / sum(density)
+      names(ud) <- "ud"
+      iso <- hr_tt_ud_iso(ud, levels = c(0.5, 0.95))
+      expect_true(all(sf::st_is_valid(iso)))
+      # the isopleths cover the cells within them, up to the edges
+      cud <- terra::values(hr_tt_cud(ud))
+      expect_equal(
+        as.numeric(iso$area),
+        c(sum(cud <= 0.5), sum(cud <= 0.95)) * prod(terra::res(ud)),
+        tolerance = 0.02
+      )
+    }
+  }
+})
+
+test_that("hr_tt_ud_iso ignores duplicated levels", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  expect_equal(
+    hr_tt_ud_iso(boar_kde, levels = c(0.5, 0.95, 0.5)),
+    hr_tt_ud_iso(boar_kde, levels = c(0.5, 0.95))
+  )
+  # including when computed directly by hr_tt_kde()
+  expect_equal(
+    hr_tt_kde(boar_tt, res = 50, levels = c(0.5, 0.95, 0.5)),
+    hr_tt_kde(boar_tt, res = 50, levels = c(0.5, 0.95))
+  )
+})

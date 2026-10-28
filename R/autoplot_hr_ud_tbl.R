@@ -48,8 +48,9 @@ autoplot.hr_tt_ud_tbl <- function(
     if (!all(id_to_plot %in% object[[1]])) {
       stop("all id_to_plot must be in the first column of the tibble")
     }
-    object <- object %>%
-      dplyr::filter(object[[1]] %in% id_to_plot)
+    # subset the rows directly: a filter() on object[[1]] would fail on a
+    # grouped tibble (e.g. from hr_tt_ud_sum()), as it is evaluated by group
+    object <- object[object[[1]] %in% id_to_plot, ]
   } else {
     id_to_plot <- object[[1]]
   }

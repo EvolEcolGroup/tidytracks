@@ -73,6 +73,30 @@ test_that("event_speed gives error for objects without a CRS", {
   )
 })
 
+test_that("event_speed gives error for events not ordered by time", {
+  # the first two events of track a in the reverse order of their times
+  expect_error(
+    event_speed(example_tt[c(2, 1, 3:15), ]),
+    "use tt_order_time\\(x\\) to order it"
+  )
+  # the events of the tracks interleaved
+  expect_error(
+    event_speed(example_tt[c(1, 6, 2:5, 7:15), ]),
+    "use tt_order_time\\(x\\) to order it"
+  )
+  # which tt_order_time() fixes
+  expect_equal(
+    event_speed(tt_order_time(example_tt[c(2, 1, 3:15), ])),
+    event_speed(example_tt)
+  )
+})
+
+test_that("event_speed returns one value per event without events", {
+  expect_length(event_speed(example_tt[0, ]), 0)
+  # a single event has no segment
+  expect_equal(event_speed(example_tt[1, ]), as_units(NA_real_, "m/min"))
+})
+
 test_that("the event_speed tests restore the s2 setting", {
   expect_identical(sf::sf_use_s2(), s2_at_start)
 })

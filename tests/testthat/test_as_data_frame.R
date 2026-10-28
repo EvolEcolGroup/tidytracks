@@ -22,6 +22,43 @@ test_that("as.data.frame.move2 can include metadata attributes", {
   }
 })
 
+test_that("as.data.frame.move2 can include sf metadata", {
+  # an sf table of metadata, set without show_meta<- (which would turn it
+  # into a plain table)
+  meta_sf <- sf::st_as_sf(
+    show_meta(example_tt),
+    coords = c("nest_lon", "nest_lat"),
+    crs = 4326,
+    remove = FALSE
+  )
+  test_tt <- move2::mt_set_track_data(example_tt, meta_sf)
+  # its geometry has the name of the geometry of the events, so it is renamed
+  expect_message(
+    result <- as.data.frame(test_tt, include_meta = TRUE),
+    "so it has been renamed 'geometry.meta'"
+  )
+  expect_equal(
+    result$sex,
+    as.data.frame(example_tt, include_meta = TRUE)$sex
+  )
+  expect_true(inherits(result$geometry.meta, "sfc"))
+  # the events keep their own geometry, also when it is replaced by the
+  # coordinates
+  expect_equal(result$geometry, sf::st_geometry(example_tt))
+  expect_message(
+    result_xy <- as.data.frame(
+      test_tt,
+      include_meta = TRUE,
+      drop_geometry = TRUE
+    ),
+    "geometry.meta"
+  )
+  expect_equal(
+    result_xy[c("X", "Y")],
+    as.data.frame(example_tt, drop_geometry = TRUE)[c("X", "Y")]
+  )
+})
+
 test_that("as.data.frame.move2 can replace geometry with coordinates", {
   result <- as.data.frame(
     example_tt,

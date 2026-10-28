@@ -42,8 +42,9 @@ event_distance <- function(x, units = as_units("m")) {
 
   n <- nrow(coords)
 
-  # segment belongs to same track
-  same_track <- c(track_id[-1] == track_id[-n], FALSE)
+  # segment belongs to same track (subset to n values, as there is no last
+  # event to pad if there are no events)
+  same_track <- c(track_id[-1] == track_id[-n], FALSE)[seq_len(n)]
 
   # distances for all consecutive pairs
   dist <- c(
@@ -55,7 +56,7 @@ event_distance <- function(x, units = as_units("m")) {
       longlat = longlat
     ),
     NA_real_
-  )
+  )[seq_len(n)]
 
   # invalidate track boundaries
   dist[!same_track] <- NA_real_
@@ -68,11 +69,15 @@ event_distance <- function(x, units = as_units("m")) {
 
   # convert to requested units
   dist <- units::set_units(
-    units::ud_convert(
-      x = unclass(dist),
-      from = units(dist),
-      to = units::deparse_unit(units)
-    ),
+    # units::ud_convert() converts the values one at a time, which is slow
+    # for many events; distance units only differ by a scale factor, so the
+    # values are multiplied by the conversion factor instead
+    as.numeric(dist) *
+      units::ud_convert(
+        x = 1,
+        from = units(dist),
+        to = units::deparse_unit(units)
+      ),
     units,
     mode = "standard"
   )

@@ -28,6 +28,16 @@ a data.frame/tibble. If providing a new metadata table, make sure that
 the number of rows matches the number of tracks in the \code{move2} object, and
 that the track IDs correspond to those in the \code{move2} object.
 }
+\details{
+Locations in the metadata (e.g. of a colony) are best stored as \code{sfc}
+columns of a plain table (see \code{\link[=sf_point_col]{sf_point_col()}}). An \code{sf} table of metadata
+is stored as a plain table, with its geometry kept as an \code{sfc} column, as
+move2 cannot join an \code{sf} table to the events (e.g. in \code{\link[=as_event_column]{as_event_column()}}).
+A metadata column with the same name as the geometry column of the events
+(e.g. \code{geometry}, the default name of the geometry of an \code{sf} table) would
+replace it when joined to the events, so it is renamed with a \code{.meta}
+suffix (e.g. \code{geometry.meta}), with a message.
+}
 \examples{
 show_meta(example_tt)
 show_meta(example_tt)$age <- c(2, 3, 2)

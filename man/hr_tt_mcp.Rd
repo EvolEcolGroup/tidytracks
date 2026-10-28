@@ -18,7 +18,10 @@ levels with \code{.drop = FALSE}) give an error.}
 }
 \value{
 An \code{sf} tibble of subclass \code{hr_tt_poly_tbl} of results, with one
-row per group and level, and columns:
+row per group and level (with the tracks in the order of the metadata, see
+\code{\link[=show_meta]{show_meta()}}, if \code{x} is not grouped, or else with the groups in the order
+of \code{\link[dplyr:group_keys]{dplyr::group_keys()}}, i.e. sorted by the grouping variables), and
+columns:
 \itemize{
 \item the grouping variable (as named in \code{x}; if \code{x} is grouped by
 multiple variables, this column is named \code{group_id}): the ids from the
@@ -26,7 +29,10 @@ grouping of \code{x}
 \item \code{method}: the method used to estimate the home range (\code{"mcp"})
 \item \code{level}: the level of the contour line
 \item \code{area}: the area of the home range (as computed by \code{sf::st_area()})
-\item \code{geometry}: the geometry of the home range as sf polygons
+\item \code{geometry}: the geometry of the home range as sf polygons; the polygon
+is empty (and its area is 0) if the locations within the level are all
+at the same place or on a line (e.g. for small levels or groups with few
+locations)
 }
 }
 \description{

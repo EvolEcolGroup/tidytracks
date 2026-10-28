@@ -76,19 +76,20 @@ test_that("hr_tt_kde accepts a separate grid for each group", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds")) %>%
     dplyr::group_by(name)
   group_names <- dplyr::group_keys(boar_tt)$name
+  # grids within reach of the kernels of the locations of every group
   bbox <- lapply(seq_along(group_names), function(i) {
     c(
-      xmin = i * 1000,
-      ymin = i * 2000,
-      xmax = i * 1000 + 500,
-      ymax = i * 2000 + 1000
+      xmin = 699000 + i * 200,
+      ymin = 3159800,
+      xmax = 699000 + i * 200 + 500,
+      ymax = 3160800
     )
   })
 
   boar_kde <- hr_tt_kde(boar_tt, bbox = bbox, res = c(25, 50, 100, 125))
 
-  expect_equal(boar_kde$xmin, c(1000, 2000, 3000, 4000))
-  expect_equal(boar_kde$xmax, c(1500, 2500, 3500, 4500))
+  expect_equal(boar_kde$xmin, c(699200, 699400, 699600, 699800))
+  expect_equal(boar_kde$xmax, c(699700, 699900, 700100, 700300))
   expect_equal(boar_kde$res, c(25, 50, 100, 125))
   expect_equal(
     unname(vapply(boar_kde$ud, terra::ncell, numeric(1))),
@@ -109,6 +110,43 @@ test_that("hr_tt_kde validates a collection of group-specific grids", {
     hr_tt_kde(boar_tt, bbox = rep(bbox, 4), res = c(10, 10)),
     "one value per group"
   )
+})
+
+test_that("hr_tt_kde returns the groups in the order of the group keys", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  # a grouping factor whose levels are in the reverse order of the
+  # appearance of the groups in the data
+  animals <- c("Jean", "Chou", "Calou", "Brock")
+  boar_tt$animal <- factor(as.character(boar_tt$name), levels = animals)
+  boar_grouped <- dplyr::group_by(boar_tt, animal)
+  kde <- hr_tt_kde(boar_grouped, res = 50)
+  expect_equal(kde$animal, animals)
+  expect_equal(names(kde$ud), animals)
+  # each with its own UD
+  kde_by_name <- hr_tt_kde(boar_tt, res = 50)
+  expect_equal(
+    lapply(kde$ud, terra::values),
+    lapply(kde_by_name$ud, terra::values)[animals]
+  )
+  # and so are the isopleths
+  iso <- hr_tt_kde(boar_grouped, res = 50, levels = 0.5)
+  expect_equal(iso$animal, animals)
+})
+
+test_that("hr_tt_kde rejects grids beyond the reach of a group's kernels", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds")) %>%
+    dplyr::group_by(name)
+  # the grid of the second group (Calou) is far from its locations, so the
+  # UD is 0 on all its cells, and cannot be standardised to sum to 1
+  ext <- sf::st_bbox(boar_tt)
+  bbox <- rep(list(ext), 4)
+  bbox[[2]] <- c(xmin = 0, ymin = 0, xmax = 1000, ymax = 1000)
+  for (method in c("binned", "exact")) {
+    expect_error(
+      hr_tt_kde(boar_tt, bbox = bbox, res = 50, method = method),
+      "the UD of group Calou is 0 on the whole grid"
+    )
+  }
 })
 
 test_that("hr_tt_kde matches individual bandwidths to the right group", {
@@ -149,13 +187,40 @@ test_that("hr_tt_kde matches individual bandwidths to the right group", {
     c(expected_h_ref("a"), expected_h_ref("b"))
   )
 
-  # a vector of bandwidths is matched to the groups in group key order
+  # a vector of bandwidths is matched to the tracks in the order of the
+  # metadata (b, then a), in which they are returned
   expect_warning(
     kde_h <- hr_tt_kde(tracks, h = c(10, 20)),
     "the bandwidth \\(h\\) of 2 group\\(s\\) is too small"
   )
-  expect_equal(kde_h$h[kde_h$id == "a"], 10)
-  expect_equal(kde_h$h[kde_h$id == "b"], 20)
+  expect_equal(kde_h$h[kde_h$id == "b"], 10)
+  expect_equal(kde_h$h[kde_h$id == "a"], 20)
+})
+
+test_that("hr_tt_kde returns the tracks of ungrouped data in metadata order", {
+  # the events are in the order a, b, c, whilst the metadata is in the order
+  # b, a, c
+  x <- tt_order_time(
+    readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
+  )
+  kde <- hr_tt_kde(x, h = c(1, 2, 3))
+  expect_equal(kde$track_id, c("b", "a", "c"))
+  expect_equal(names(kde$ud), c("b", "a", "c"))
+  # per-track values are matched in the same order
+  expect_equal(kde$h, c(1, 2, 3))
+  # each track with its own UD
+  kde_by_key <- hr_tt_kde(
+    dplyr::group_by(x, track_id),
+    h = c(2, 1, 3)
+  )
+  expect_equal(kde_by_key$track_id, c("a", "b", "c"))
+  expect_equal(
+    lapply(kde$ud, terra::values),
+    lapply(kde_by_key$ud, terra::values)[c("b", "a", "c")]
+  )
+  # and so are the isopleths
+  iso <- hr_tt_kde(x, h = c(1, 2, 3), levels = 0.5)
+  expect_equal(iso$track_id, c("b", "a", "c"))
 })
 
 test_that("hr_tt_kde ignores events without a location", {

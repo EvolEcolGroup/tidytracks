@@ -33,6 +33,24 @@ test_that("hr_tt_akde returns a table of UDs on a shared grid", {
   expect_true(sf::st_crs(akde$ud[[1]]) == sf::st_crs(x))
 })
 
+test_that("hr_tt_akde returns the tracks of ungrouped data in metadata order", {
+  # the metadata is in the order Gabs, Cilla, whilst the events of Cilla come
+  # first (as do its id in the group keys)
+  x_meta <- x
+  show_meta(x_meta) <- show_meta(x)[2:1, , drop = FALSE]
+  akde <- hr_tt_akde(x_meta, fits, res = c(500, 1000))
+  expect_equal(akde$track, c("Gabs", "Cilla"))
+  expect_equal(names(akde$ud), c("Gabs", "Cilla"))
+  # per-track values are matched in the same order
+  expect_equal(akde$res, c(500, 1000))
+  # each track with its own UD
+  akde_by_key <- hr_tt_akde(x, fits, res = c(1000, 500))
+  expect_equal(
+    lapply(akde$ud, terra::values),
+    lapply(akde_by_key$ud, terra::values)[c("Gabs", "Cilla")]
+  )
+})
+
 test_that("hr_tt_akde UDs are those estimated by ctmm", {
   akde <- hr_tt_akde(x, fits)
   # the raster of the ctmm UD (built by ctmm) has the same values
@@ -198,6 +216,27 @@ test_that("hr_tt_akde matches the models to the tracks", {
   fits_null <- fits
   fits_null$model[1] <- list(NULL)
   expect_error(hr_tt_akde(x, fits_null), "could not be fitted")
+})
+
+test_that("hr_tt_akde calibrates the location error as when fitting", {
+  # ctmm stores the calibration of the location error given by a UERE in the
+  # data rather than in the model, so the tracks must be calibrated again
+  x_cilla <- ctmm_example_tt(n = 60, tracks = "Cilla")
+  fits_uere <- suppressMessages(
+    ctmm_tt_fit(x_cilla, model = ctmm::ctmm(isotropic = TRUE), uere = 1000)
+  )
+  akde <- hr_tt_akde(x_cilla, fits_uere)
+  tel <- suppressMessages(mt_as_telemetry(x_cilla))$Cilla
+  suppressMessages(ctmm::uere(tel) <- 1000)
+  ud_ctmm <- ctmm::akde(tel, fits_uere$model[[1]], grid = akde$ud_ctmm[[1]])
+  expect_equal(akde$ud_ctmm[[1]]$PDF, ud_ctmm$PDF)
+  expect_equal(
+    summary(akde$ud_ctmm[[1]], units = FALSE)$CI,
+    summary(ud_ctmm, units = FALSE)$CI
+  )
+  # and so are the tracks used by hr_tt_akde_pop()
+  pop_tel <- akde_pop_telemetry(x_cilla, fits_uere, akde$ud_ctmm)
+  expect_equal(ctmm::uere(pop_tel[[1]]), ctmm::uere(tel))
 })
 
 test_that("hr_tt_akde checks its inputs", {

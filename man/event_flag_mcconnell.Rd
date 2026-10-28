@@ -23,7 +23,7 @@ A logical vector of the same length as the number of events in \code{x},
 indicating which points are valid.
 }
 \description{
-This function uses the algorithm by McConnell et al. (2012) to clean data
+This function uses the algorithm by McConnell et al. (1992) to clean data
 based on speed. This is a port of the \code{speedfilter} function from the \code{trip}
 package, with an optional endpoint check.
 }
@@ -39,7 +39,9 @@ last currently valid point of each track using an endpoint Root Mean Square
 If an endpoint is removed, the McConnell filter is rerun on the reduced
 track, and the endpoint check is repeated until the result is stable.
 
-Events with an empty geometry (i.e. no location) are ignored by the filter
+Speeds are computed between consecutive events of each track in time order,
+whatever the order in which the events are stored in \code{x}. Events with an
+empty geometry (i.e. no location) are ignored by the filter
 and returned as valid. Consecutive events at the same location are treated
 as having zero speed, even when they share the same timestamp (e.g.
 duplicated records).

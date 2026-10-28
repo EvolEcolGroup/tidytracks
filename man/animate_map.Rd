@@ -29,7 +29,8 @@ shown at full opacity (a permanently growing path or dot trail).}
 
 \item{label_format}{A character string specifying the
 \code{\link[base]{format.POSIXct}} format for the date-time label shown on
-each frame. Default is \code{"\\\%Y-\\\%m-\\\%d \\\%H:\\\%M:\\\%S"}.}
+each frame, in the time zone of the track times. Default is
+\code{"\%Y-\%m-\%d \%H:\%M:\%S"}.}
 }
 \value{
 A \code{gganim} object ready to pass to \code{gganimate::animate()}. The

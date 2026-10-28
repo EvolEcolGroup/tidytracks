@@ -94,8 +94,8 @@ fitted
 candidate models
 }
 
-The coordinate reference system of \code{x} and the error columns used are
-stored as attributes of the table.
+The coordinate reference system of \code{x}, the error columns and the \code{uere}
+used are stored as attributes of the table.
 }
 \description{
 This function fits a continuous-time movement model, using the package
@@ -144,8 +144,11 @@ buffalo_sub <- buffalo_tt \%>\%
   dplyr::group_by(track) \%>\%
   dplyr::slice_head(n = 100) \%>\%
   dplyr::ungroup()
+# fitting the models takes a few seconds
+\donttest{
 buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 buffalo_fit
+}
 \dontshow{\}) # examplesIf}
 }
 \seealso{

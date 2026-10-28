@@ -31,7 +31,8 @@
 #'   error of the locations, to be passed to `ctmm`. If `"auto"` (the
 #'   default), the columns with a name that `ctmm` recognises as error
 #'   information (with Movebank naming, e.g. `gps_hdop`,
-#'   `eobs_horizontal_accuracy_estimate`, `argos_lc`) are passed. Otherwise, a
+#'   `eobs_horizontal_accuracy_estimate`, `argos_lc`, or the time to fix
+#'   `gps_time_to_fix`, used with `timeout`) are passed. Otherwise, a
 #'   character vector of column names, or `NULL` to pass no error information.
 #'   `ctmm` ignores columns with names that it does not recognise (see
 #'   [ctmm::as.telemetry()]); such columns can be renamed by naming the
@@ -125,6 +126,11 @@ mt_as_telemetry <- function(x, error_cols = "auto", ...) {
   }
 
   ## create the telemetry objects
+  # ctmm::as.telemetry() sets options(digits.secs = 6), which would change how
+  # date-times are printed for the rest of the session, so we restore the
+  # option when we are done
+  old_options <- options(digits.secs = getOption("digits.secs"))
+  on.exit(options(old_options), add = TRUE)
   # one object per track, in the CRS of x (drop = FALSE always returns a
   # list, even for a single track); we keep the index column to match the
   # rows of each object to the events of x
@@ -269,6 +275,16 @@ ctmm_error_cols <- function(x, error_cols) {
       "gps.fix.type",
       "gps.fix.type.raw",
       "fix.type",
+      # time to fix (used to classify the locations with the `timeout`
+      # argument of ctmm::as.telemetry(), and ignored otherwise)
+      "gps.time.to.fix",
+      "time.to.fix",
+      "time.to.gps.fix",
+      "time.to.gps.fix.s",
+      "gps.ttf",
+      "time.to.get.fix",
+      "used.time.to.get.fix",
+      "e.obs.used.time.to.get.fix",
       # Argos location class and error ellipses
       "argos.lc",
       "argos.location.class",

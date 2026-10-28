@@ -4,7 +4,7 @@
 \alias{event_azimuth}
 \title{Measure the azimuth between two events}
 \usage{
-event_azimuth(x, units)
+event_azimuth(x, units = "degrees")
 }
 \arguments{
 \item{x}{A move2 object}
@@ -19,7 +19,8 @@ a vector of azimuths of the same length as the number of events in
 \description{
 This function measures the azimuth between two events. It returns a vector of
 azimuths of the same length as the number of events in \code{x}, with the azimuth
-for the last event of each track padded with an NA.
+for the last event of each track padded with an NA. The azimuth is also NA
+for the segments to and from events without a location (empty geometry).
 }
 \examples{
 event_azimuth(example_tt)

@@ -14,8 +14,10 @@ A tibble with one row per track (in the same order as the tracks in
 the metadata, see \code{\link[=show_meta]{show_meta()}}) and the following columns:
 \itemize{
 \item \code{<track id column>}: The track ID from \code{x}
-\item median_sampling_interval: The median sampling interval in seconds
-\item track_duration: The duration of the track in seconds
+\item median_sampling_interval: The median sampling interval, in seconds
+(as a \code{units} object)
+\item track_duration: The duration of the track, in seconds (as a \code{units}
+object)
 \item expected_points: The expected number of points based on the
 median sampling interval
 \item actual_points: The actual number of points in the track
@@ -27,6 +29,14 @@ This function creates a summary of the quality of each track in a \code{move2}
 object. It calculates the median sampling interval, track duration, expected
 number of points, actual number of points, and the proportion of expected
 points that are missing (due to gaps in track).
+}
+\details{
+Events without a location (i.e. with an empty geometry, e.g. failed fixes)
+are not counted: the sampling interval, the duration and the number of
+points are those of the events with a location, so that failed fixes count
+as missing points. The duration can thus be shorter than that given by
+\code{\link[=track_duration]{track_duration()}}, which uses all the events. Tracks without any event
+with a location have 0 actual points, and \code{NA} for the other columns.
 }
 \examples{
 track_summary_health(example_tt)

@@ -446,8 +446,8 @@ timings %>%
   times. Most of the time of the exact method of `tidytracks` on long tracks
   is spent in a matrix product (in `MASS::kde2d()`), which an optimised BLAS
   (such as OpenBLAS) can make several times faster, as it can the matrix
-  products of the binned method; this benchmark used the reference BLAS of
-  R.
+  products of the binned method; this benchmark used the reference BLAS
+  of R.
 - **LoCoH**: `tidytracks` is the fastest, by far: `amt` takes
   `r ratio_range(c(ratio("medium", "locoh", "amt"), ratio("long", "locoh", "amt")))`
   times as long, and `adehabitatHR`

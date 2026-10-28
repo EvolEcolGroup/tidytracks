@@ -216,6 +216,26 @@ test_that("check_first_last = TRUE reruns the algorithm deterministically", {
 })
 
 
+test_that("endpoint checks flag endpoints with an infinite speed", {
+  # the first location is 1 km away from the second one, at the same time
+  x <- make_test_move2(
+    x = c(1000, 0, 100, 200, 300, 400),
+    y = rep(0, 6),
+    time = as.POSIXct("2020-01-01 00:00:00", tz = "UTC") +
+      c(0, 0, 600, 1200, 1800, 2400),
+    track_id = rep("a", 6)
+  )
+
+  out <- event_flag_mcconnell(
+    x,
+    max_speed = units::as_units(10, "km/h"),
+    check_first_last = TRUE
+  )
+
+  expect_identical(out, c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE))
+})
+
+
 test_that("multiple track IDs are handled independently", {
   x <- make_test_move2(
     x = c(0, 20, 10, 0, 0, 5, 10, 15),
@@ -289,6 +309,48 @@ test_that("empty locations are ignored by the filter", {
   )
   expect_equal(nrow(cleaned), 9)
   expect_true(sf::st_is_empty(sf::st_geometry(cleaned)[3]))
+})
+
+test_that("events not stored in time order are filtered in time order", {
+  x <- make_test_move2(
+    x = c(0, 100, 200, 300, 400, 50000, 600, 700, 800, 900),
+    y = rep(0, 10),
+    time = as.POSIXct("2020-01-01 00:00:00", tz = "UTC") + (0:9) * 600,
+    track_id = rep("a", 10)
+  )
+  # the spike (sixth location in time) is stored first
+  shuffled <- c(6, 1:5, 7:10)
+  out <- with_time_limit(
+    event_flag_mcconnell(
+      x[shuffled, ],
+      max_speed = units::as_units(10, "km/h")
+    )
+  )
+  expect_identical(out, shuffled != 6)
+})
+
+test_that("timestamps that are dates or units are converted to seconds", {
+  # one location a day, with a spike of 500 km on the fifth day
+  events <- data.frame(
+    x = c(0, 1, 2, 3, 500, 5, 6, 7, 8, 9) * 1000,
+    y = 0,
+    track = "a"
+  )
+  for (time in list(
+    as.Date("2020-01-01") + 0:9,
+    units::set_units((0:9) * 24, "h")
+  )) {
+    events$time <- time
+    x <- move2::mt_as_move2(
+      sf::st_as_sf(events, coords = c("x", "y"), crs = 27700),
+      time_column = "time",
+      track_id_column = "track"
+    )
+    expect_identical(
+      event_flag_mcconnell(x, max_speed = units::as_units(100, "km/d")),
+      seq_len(10) != 5
+    )
+  }
 })
 
 # Check equivalency to trip::speedfilter

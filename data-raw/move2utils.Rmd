@@ -1,0 +1,488 @@
+---
+title: "Using move2utils with tidytracks"
+output:
+  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using move2utils with tidytracks}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  # move2utils is a suggested package, available from GitHub
+  eval = requireNamespace("move2utils", quietly = TRUE)
+)
+```
+
+[`move2utils`](https://move2universe.github.io/move2utils/) (Kranstauber,
+Safi & Scharf 2026) is a package of utility functions for `move2` objects,
+with methods for outlier detection, thinning, corridor detection and Brownian
+bridge utilisation distributions. As `tidytracks` is also built on `move2`,
+it provides wrappers around these methods that follow its own conventions:
+`event_` functions return one value per event, `tt_` functions return the
+modified tibble of tracks, `track_` functions return one value per track, and
+`hr_tt_` functions estimate home ranges. Physical quantities are given as
+`units` objects, and events without a location are allowed (they are not
+passed to `move2utils`, which does not accept them).
+
+| `tidytracks` | `move2utils` |
+|---|---|
+| `track_suggest_max_speed()` | `mt_suggest_speed_cap()` |
+| `event_flag_outliers()`, `tt_clean_outliers()` | `mt_clean_track()`, `mt_flag_speed_cap()`, `mt_flag_outliers_detour()`, `mt_flag_outliers_bridge()`, `mt_flag_outliers()` |
+| `event_flag_thin_time()`, `tt_thin_time()` | `mt_thin_time()` |
+| `event_flag_thin_distance()`, `tt_thin_distance()` | `mt_thin_distance()` |
+| `event_flag_corridor()` | `mt_corridor()` |
+| `hr_tt_dbbmm()`, `hr_tt_dbgb()` | `mt_dbbmm_variance()`, `mt_dbbmm_ud()`, `mt_dbgb_variance()`, `mt_dbgb_ud()` |
+| `event_ud_level()` | `ud_outer_probability()` |
+| `hr_tt_ud_overlap(method = "earth_mover_sinkhorn")` | `emd()` |
+
+`move2utils` is not on CRAN; install it from GitHub with:
+
+```{r install, eval = FALSE}
+remotes::install_github("move2universe/move2utils")
+```
+
+## The data
+
+We use the Antarctic shag tracks from the main `tidytracks` vignette
+(`vignette("tidytracks")`). Remember that these data were modified to show
+the functionality of `tidytracks`, and should not be used for analyses of shag
+movement.
+
+```{r read_data, message = FALSE}
+library(tidytracks)
+library(dplyr)
+library(ggplot2)
+library(sf)
+
+# read the GPS locations, one track per bird
+shags_tt <- tt_read_data(
+  events = system.file("extdata", "shags_example.csv", package = "tidytracks"),
+  col_track_id = "bird_id",
+  col_coords = c("lon", "lat"),
+  col_date_time = "date_time",
+  time_zone = "UTC",
+  crs = 4326
+)
+```
+
+Most `move2utils` methods work on the steps between consecutive events, so
+the wrappers require the events to be ordered by time within each track. If
+they are not, they give an error suggesting `tt_order_time()`:
+
+```{r order}
+# order the events by time within each track
+shags_tt <- shags_tt %>% tt_order_time()
+```
+
+Some analyses also need a projected coordinate reference system in metres:
+
+```{r projection}
+# an azimuthal equidistant projection centred on the colony, in metres
+shags_crs <- paste0(
+  "+proj=aeqd +lon_0=-68 +lat_0=-67 ",
+  "+units=m +datum=WGS84 +no_defs"
+)
+```
+
+## Choosing a maximum speed
+
+Speed filters such as `tt_clean_mcconnell()` need a maximum speed. When no
+published value is available for a species, `move2utils::v_phys_estimate()`
+predicts the maximum speed of an animal from its body mass and mode of
+locomotion (Hirt et al. 2017). For a flying bird of about 2.5 kg:
+
+```{r allometric}
+# move2utils takes the mass as a plain number in kg; the prediction is
+# printed in both m/s and km/h
+v_phys <- move2utils::v_phys_estimate(mass = 2.5, mode = "flying")
+v_phys
+```
+
+This is a ceiling on what an animal of that mass can physically do, and here
+it is about twice the 58 km/h observed for shags: a published,
+species-specific value (as used in the main vignette) should be preferred when
+available. The prediction is a plain number in m/s; to use it as `max_speed`
+in `tt_clean_mcconnell()`, give it its units with
+`as_units(as.numeric(v_phys), "m/s")`.
+
+Alternatively, `track_suggest_max_speed()` looks, in each track, for a break
+in the distribution of speeds that separates plausible steps from outliers:
+
+```{r suggest_speed}
+# one suggestion per track (NA if no break is found)
+track_suggest_max_speed(shags_tt, units = as_units("km/h"))
+```
+
+No break was found for most tracks (`NA`), and the suggestions for the others
+vary widely: for `kb_38`, which hardly moved, the break is more likely to
+separate resting from moving than plausible steps from outliers. Data-driven
+suggestions must always be checked against the biology of the species.
+
+## Detecting outliers
+
+`event_flag_outliers()` detects outliers with one of the methods of
+`move2utils` (described by Safi 2026), returning `TRUE` for valid events (as `event_flag_mcconnell()`
+does). Further arguments are passed to the `move2utils` function, with
+physical quantities given as `units` objects. Let us compare McConnell's
+filter with three of these methods: a hard speed cap at the same maximum
+speed, the detour method (which flags out-and-back spikes) and
+`mt_clean_track()`, the default, which combines several methods and chooses
+its thresholds from the data:
+
+```{r outliers}
+shags_flags <- shags_tt %>%
+  mutate(
+    # McConnell's filter, with the maximum speed used in the main vignette
+    mcconnell = event_flag_mcconnell(., max_speed = as_units(60, "km/h")),
+    # a fixed speed cap at the same speed, rather than one chosen from the data
+    speed_cap = event_flag_outliers(
+      .,
+      method = "speed_cap",
+      v_max = as_units(60, "km/h"),
+      threshold_type = "hard"
+    ),
+    # ignore spikes with legs shorter than 100 m, to avoid flagging GPS jitter
+    # while the birds rest
+    detour = event_flag_outliers(
+      .,
+      method = "detour",
+      min_leg = as_units(100, "m")
+    ),
+    # the default method, with all thresholds chosen from the data
+    clean_track = event_flag_outliers(.)
+  )
+
+# count the events flagged (FALSE) by each method
+n_flagged <- shags_flags %>%
+  as.data.frame(drop_geometry = TRUE) %>%
+  summarise(across(c(mcconnell, speed_cap, detour, clean_track), ~ sum(!.x)))
+n_flagged
+```
+
+The methods flag very different numbers of events, from
+`r min(n_flagged)` to `r max(n_flagged)`. Let us look at where they are, for
+three of the birds:
+
+```{r plot_outliers, fig.width = 7, fig.height = 8}
+shags_flags_long <- shags_flags %>%
+  filter(bird_id %in% c("kb_19", "kb_27", "kb_42")) %>%
+  # project the locations, so that distances are not distorted
+  st_transform(shags_crs) %>%
+  mutate(
+    x = st_coordinates(.)[, 1],
+    y = st_coordinates(.)[, 2]
+  ) %>%
+  as.data.frame(drop_geometry = TRUE) %>%
+  # one row per event and method, to plot the methods in separate panels
+  tidyr::pivot_longer(
+    c(mcconnell, speed_cap, detour, clean_track),
+    names_to = "method",
+    values_to = "valid"
+  )
+
+ggplot(shags_flags_long, aes(x, y)) +
+  geom_path(colour = "grey60") +
+  # flagged events in red
+  geom_point(
+    data = filter(shags_flags_long, !valid),
+    colour = "red",
+    size = 0.8
+  ) +
+  facet_grid(method ~ bird_id, scales = "free") +
+  theme(axis.text = element_blank(), axis.ticks = element_blank())
+```
+
+All methods detect the isolated locations far from the rest of the track. The
+speed cap flags the events at both ends of every step faster than 60 km/h,
+whilst McConnell's filter, which uses the speeds to the neighbouring events,
+flags a single event per spike and keeps steps that are only just too fast.
+With its default settings, however, `mt_clean_track()` also flags many events
+where the birds were moving slowly (e.g. `kb_19` and `kb_42`). Whatever the
+method, look at the flagged events before removing them.
+
+This is a known limitation of `mt_clean_track()` (see
+`vignette("OUTLIER_6_troubleshooting", package = "move2utils")`): its checks
+compare each event with a single distribution (e.g. of speeds) for the whole
+track, so, for animals that alternate between very different behaviours, such
+as shags resting at the colony and flying at sea, the normal events of one
+behaviour can look like outliers. Its remedies are to give it the top speed of
+the animal when it is known (with `v_max`, or with the body `mass` and `mode`
+of locomotion, from which it predicts one with `v_phys_estimate()`),
+rather than letting it choose one from the data, and to clean each behaviour
+separately, giving the behaviour of each event with the `state` argument
+(e.g. with
+`event_flag_outliers(., v_max = as_units(60, "km/h"), state = "behaviour")`,
+for a column `behaviour` of the events; see
+`vignette("OUTLIER_3_state_conditional", package = "move2utils")`). To inspect
+the diagnostics of a `move2utils` method, call it directly on the tibble of
+tracks, e.g. `move2utils::mt_clean_track(shags_tt, remove = FALSE)`, and pass
+the result of `mt_clean_track()` to `move2utils::mt_diagnose_clean_track()`,
+which plots diagnostics of the run and suggests remedies.
+
+`tt_clean_outliers()` acts on the outliers in the same ways as
+`tt_clean_mcconnell()`: it removes them, sets their location to empty, or
+replaces their location by interpolation:
+
+```{r clean_outliers}
+shags_interpolated <- shags_tt %>%
+  tt_clean_outliers(
+    method = "speed_cap",
+    v_max = as_units(60, "km/h"),
+    threshold_type = "hard",
+    # move the outliers to an interpolated location, rather than removing them
+    flag_action = "interpolate"
+  )
+# no event was removed
+nrow(shags_interpolated) == nrow(shags_tt)
+```
+
+For the rest of this article, we use McConnell's filter, as in the main
+vignette:
+
+```{r mcconnell}
+shags_clean <- shags_tt %>%
+  tt_clean_mcconnell(max_speed = as_units(60, "km/h"))
+```
+
+## Thinning tracks
+
+`tt_regular_time()` resamples tracks to a regular interval by interpolating
+new locations. To keep the original locations instead, `tt_thin_time()` keeps
+the largest subset of events whose intervals are within a tolerance of the
+target interval (by default, a tenth of it). The shags were tracked every 2 or
+10 minutes, so we thin all tracks to 10 minutes:
+
+```{r thin_time}
+# keep events 10 minutes apart (9 to 11 minutes, with the default tolerance)
+shags_10min <- shags_clean %>%
+  tt_thin_time(interval = as_units(10, "min"))
+nrow(shags_clean)
+nrow(shags_10min)
+# the intervals between the events kept
+summary(event_interval(shags_10min, units = as_units("min")))
+```
+
+The longer intervals are gaps in the data, which thinning never bridges (the
+`NA`s are the last event of each track).
+
+`tt_thin_distance()` thins tracks by the distance travelled along them; by
+default, it keeps an event every time the bird has travelled at least the
+given distance since the last kept event:
+
+```{r thin_distance}
+# distances are great-circle distances, as shags_clean is in longitude/latitude
+shags_500m <- shags_clean %>%
+  tt_thin_distance(distance = as_units(500, "m"))
+nrow(shags_500m)
+```
+
+The corresponding `event_flag_thin_time()` and `event_flag_thin_distance()`
+flag the events to keep, without removing the others.
+
+## Movement corridors
+
+`event_flag_corridor()` flags the steps that are part of corridors: steps
+whose nearby steps are mostly fast, and run in a similar direction (either way
+along the corridor). The thresholds are estimated from the data if not given,
+but explicit values make results comparable among datasets:
+
+```{r corridor, fig.width = 6, fig.height = 5}
+shags_corridor <- shags_clean %>%
+  # project the data, so that nearby steps are found with planar distances
+  st_transform(shags_crs) %>%
+  mutate(
+    corridor = event_flag_corridor(
+      .,
+      # a step is fast at 30 km/h or more
+      speed_threshold = as_units(30, "km/h"),
+      # nearby steps run in a similar direction if the circular variance of
+      # their directions is at most 0.2
+      circvar_threshold = 0.2
+    )
+  )
+
+ggplot() +
+  geom_event_path(data = shags_corridor, aes(colour = corridor)) +
+  scale_colour_manual(values = c(`FALSE` = "grey60", `TRUE` = "red"))
+```
+
+Here, the corridors are mostly on the routes leaving and returning to the
+colony.
+
+## Home ranges with Brownian bridges
+
+Unlike kernel density estimation (`hr_tt_kde()`), which treats locations as
+independent, dynamic Brownian bridge movement models (dBBMM, Kranstauber et
+al. 2012) model the movement between consecutive locations, so that the
+utilisation distribution (UD) reflects the time spent in each place.
+`hr_tt_dbbmm()` estimates the UD of each track (`hr_tt_dbgb()` does the same
+with dynamic bivariate Gaussian bridges). As bridges link consecutive events
+of a track, the data must be ungrouped, or grouped by track, and in a
+projected coordinate reference system in metres.
+
+Following the main vignette, we split the tracks into foraging trips (so that
+bridges do not span the long periods spent at the colony), keep the females,
+and project the data:
+
+```{r trips}
+# the colony location, as a point column in the metadata
+show_meta(shags_clean) <- show_meta(shags_clean) %>%
+  mutate(colony_coord = sf_point_col(colony_lon, colony_lat, crs = 4326))
+
+shags_females <- shags_clean %>%
+  # keep only the complete trips away from the colony (trip_id becomes the
+  # track id)
+  tt_split_trips(
+    centre_col = "colony_coord",
+    buffer_outbound = as_units(3, "km"),
+    buffer_inbound = as_units(3, "km"),
+    complete = TRUE
+  ) %>%
+  filter_by_meta(sex == "female") %>%
+  # bridges are computed in metres
+  st_transform(shags_crs)
+```
+
+We now estimate a UD for each trip, assuming a location error of 20 m for the
+GPS fixes. The motion variance is estimated in a sliding window, whose
+`window_size` and `margin` are numbers of locations, not durations: most
+females were tracked every 2 minutes (`kb_27` every 10 minutes), so a window
+of 15 locations covers 30 minutes for most trips.
+
+```{r dbbmm}
+trips_dbbmm <- shags_females %>%
+  hr_tt_dbbmm(
+    location_error = as_units(20, "m"),
+    # both must be odd numbers of locations
+    window_size = 15,
+    margin = 5
+  )
+trips_dbbmm
+```
+
+The UDs of all trips are estimated on a shared grid, which must contain the
+whole of every bridge (bridges can extend well beyond the locations), and be
+fine relative to the width of the bridges (as the densities are evaluated at
+the centres of the cells). By default, `hr_tt_dbbmm()` therefore estimates the
+motion variance first, and chooses a grid covering all the bridges, with cells
+as wide as the median width of the bridges, but no smaller than needed for the
+longest side of the grid to have 500 cells. These accurate, frequent locations
+give narrow bridges, so here the cells are as small as that limit allows
+(`r round(trips_dbbmm$res[1])` m). A grid can also be given with `bbox` and
+`res`: if it is too small to contain the bridges, an error reports the extent
+needed.
+
+The result is an `hr_tt_ud_tbl`, as returned by `hr_tt_kde()`, so it can be
+used with the other `hr_tt_ud_*()` functions. However, the default grid of
+`hr_tt_kde()` differs from that of `hr_tt_dbbmm()`, and UDs can only be
+compared on the same grid. Let us estimate kernel UDs of the trips on the grid
+of the bridges:
+
+```{r kde}
+# the grid used by hr_tt_dbbmm(), shared by all trips
+dbbmm_grid <- unlist(trips_dbbmm[1, c("xmin", "ymin", "xmax", "ymax")])
+
+trips_kde <- shags_females %>%
+  hr_tt_kde(bbox = dbbmm_grid, res = trips_dbbmm$res[1])
+```
+
+As both are on the same grid, we can compute their overlap for each trip (here
+with Bhattacharyya's affinity):
+
+```{r overlap}
+# both tables have one row per trip, in the same order
+tibble(
+  trip_id = trips_dbbmm$trip_id,
+  overlap = purrr::map2_dbl(trips_dbbmm$ud, trips_kde$ud, hr_tt_ud_overlap)
+)
+```
+
+The overlap is low for most trips: with accurate, frequent locations, the
+bridges are narrow, and the dBBMM UDs are concentrated along the paths and
+where the birds spent most time, whilst the kernel UDs spread around every
+location. Plotting the 50% and 95% isopleths of the only trip of `kb_42`:
+
+```{r plot_isopleths, fig.width = 6, fig.height = 5}
+# the isopleths of both methods, for one trip
+kb_42_iso <- bind_rows(
+  hr_tt_ud_iso(trips_dbbmm, levels = c(0.5, 0.95)),
+  hr_tt_ud_iso(trips_kde, levels = c(0.5, 0.95))
+) %>%
+  filter(trip_id == "kb_42_trip_1") %>%
+  mutate(level = factor(level))
+
+ggplot() +
+  geom_sf(
+    data = kb_42_iso,
+    aes(colour = method, linetype = level),
+    fill = NA
+  ) +
+  # the locations of the trip
+  geom_event_point(
+    data = filter(shags_females, trip_id == "kb_42_trip_1"),
+    size = 0.5
+  )
+```
+
+The other `hr_tt_ud_*()` functions work in the same way. For example, we can
+combine the trips of each bird with `hr_tt_ud_sum()`, which gives the same
+weight to each trip:
+
+```{r dbbmm_birds}
+birds_dbbmm <- trips_dbbmm %>%
+  # add the bird id of each trip from the metadata
+  left_join(
+    show_meta(shags_females) %>% select(trip_id, bird_id),
+    by = "trip_id"
+  ) %>%
+  mutate(bird_id = as.character(bird_id)) %>%
+  # sum the UDs of the trips of each bird
+  group_by(bird_id) %>%
+  hr_tt_ud_sum()
+birds_dbbmm
+```
+
+`event_ud_level()` gives, for each event, the level of the smallest isopleth
+of a UD that contains it (from 0 in the core to 1 at the edge). With a table
+of UDs, each event is matched to the UD of its own row, using the first column
+of the table (here `bird_id`, which is also a column of the events). For
+example, the proportion of the locations of each bird within its 50% isopleth
+is:
+
+```{r ud_level}
+shags_females %>%
+  mutate(ud_level = event_ud_level(., birds_dbbmm)) %>%
+  as.data.frame(drop_geometry = TRUE) %>%
+  group_by(bird_id) %>%
+  summarise(in_core = mean(ud_level <= 0.5))
+```
+
+Finally, the Earth Mover's Distance measures how far apart two UDs are (in the
+units of the projection, here metres). `method = "earth_mover_sinkhorn"`
+computes a fast approximation, which scales to large grids such as this one:
+
+```{r emd}
+# a matrix of the distances between the UDs of the birds
+hr_tt_ud_overlap(birds_dbbmm, method = "earth_mover_sinkhorn")
+```
+
+## References
+
+Hirt, M. R., Jetz, W., Rall, B. C. & Brose, U. (2017). A general scaling law
+reveals why the largest animals are not the fastest. *Nature Ecology &
+Evolution*, 1, 1116-1122.
+
+Kranstauber, B., Kays, R., LaPoint, S. D., Wikelski, M. & Safi, K. (2012). A
+dynamic Brownian bridge movement model to estimate utilization distributions
+for heterogeneous animal movement. *Journal of Animal Ecology*, 81, 738-746.
+
+Kranstauber, B., Safi, K. & Scharf, A. K. (2026). move2utils: a utility
+toolkit for the move2 ecosystem. *bioRxiv*.
+<https://doi.org/10.64898/2026.07.07.736908>
+
+Safi, K. (2026). Self-thresholding hierarchical outlier-detection for animal
+movement tracks. *bioRxiv*. <https://doi.org/10.64898/2026.07.11.737894>

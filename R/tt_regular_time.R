@@ -4,15 +4,16 @@
 #' grid.  A new grid point is placed every `interval` time units from the start
 #' of the track. Tracks are processed independently, so different tracks may
 #' have different temporal extents and the points from different tracks will not
-#' have matching time stamps (as the starting points are different).
+#' have matching time stamps (as the starting points are different). Events
+#' with an empty geometry (i.e. no location) are ignored.
 #'
 #' @section Spatial interpolation: Positions are linearly interpolated along the
 #'   observed path, with a strategy dependent on the map projection (using a
 #'   strategy similar to [move2::mt_interpolate()]):
 #'
 #' \itemize{
-#'   \item \strong{No CRS} – [sf::st_line_sample()] is called on the
-#'     Euclidean linestring connecting the observations.
+#'   \item \strong{No CRS} – positions are linearly interpolated along the
+#'     Euclidean segments connecting consecutive observations.
 #'   \item \strong{Geographic CRS (lon/lat)} – the path is treated as a
 #'     spherical polyline and [s2::s2_interpolate_normalized()] is
 #'     used, which follows great-circle arcs between consecutive points.
@@ -33,7 +34,8 @@
 #'   correctly treated as slow movement, not as a spatial shortcut.
 #'
 #' @section Attribute interpolation: Numeric event-level columns are linearly
-#'   interpolated at the new time steps using [stats::approx()]. Non-numeric
+#'   interpolated at the new time steps using [stats::approx()] (they are `NA`
+#'   for tracks with fewer than two non-missing values). Non-numeric
 #'   columns receive the value of the nearest preceding (or simultaneous)
 #'   observation via \code{\link[base]{findInterval}}. Track-level attributes
 #'   stored in \code{\link[move2]{mt_track_data}} are preserved unchanged.
@@ -68,8 +70,7 @@
 #'   the same spatial strategy with flexible time targets (including
 #'   interpolating to specific missing timestamps);
 #'   [units::as_units()] for constructing the required \code{units}
-#'   objects; [sf::st_line_sample()] for Euclidean path sampling;
-#'   [s2::s2_interpolate_normalized()] for spherical arc sampling.
+#'   objects; [s2::s2_interpolate_normalized()] for spherical arc sampling.
 #'
 #' @examples
 #' library(sf)
@@ -267,23 +268,27 @@ tt_regular_time <- function(
   track_col,
   geom_col
 ) {
+  track_label <- as.character(move2::mt_track_id(track)[1L])
+  # events without a location (empty geometry) are ignored
+  track <- track[!sf::st_is_empty(track), ]
   track <- track[order(move2::mt_time(track)), ]
 
   if (nrow(track) < 2L) {
     stop(
-      "Each track must have at least 2 observations to interpolate. ",
-      "Track '",
-      unique(as.character(move2::mt_track_id(track))),
+      "Each track must have at least 2 observations with a location to ",
+      "interpolate. Track '",
+      track_label,
       "' has only ",
       nrow(track),
-      " row(s).",
+      " row(s) with a location.",
       call. = FALSE
     )
   }
 
   times <- move2::mt_time(track)
   t_sec <- as.numeric(times)
-  tz <- attr(times, "tzone") %||% "UTC"
+  # keep the time zone of the input (including "", the local time zone)
+  tz <- attr(times, "tzone")
 
   t_start <- if (isTRUE(snap_times)) {
     # First whole-interval boundary strictly after the track's first timestamp.
@@ -352,17 +357,20 @@ tt_regular_time <- function(
     return(NULL)
   }
 
+  # find the segment of the path of each new location once, as interpolating
+  # along the whole path walks along it for each location (quadratic time)
+  on_path <- .locate_on_path(s_norm * total_len, seg_len)
   new_geom <- if (!has_crs) {
-    .interpolate_no_crs(track, s_norm)
+    .interpolate_no_crs(track, on_path)
   } else if (!is_projected) {
-    .interpolate_s2(track, s_norm, input_crs)
+    .interpolate_s2(track, on_path, input_crs)
   } else {
-    pts_geo <- .interpolate_s2(path, s_norm, path_crs)
+    pts_geo <- .interpolate_s2(path, on_path, path_crs)
     sf::st_transform(pts_geo, input_crs)
   }
 
   attr_cols <- setdiff(names(track), c(time_col, track_col, geom_col))
-  new_times <- as.POSIXct(t_new, origin = "1970-01-01", tz = tz)
+  new_times <- .POSIXct(t_new, tz = tz)
   n_new <- length(t_new)
 
   base_df <- data.frame(
@@ -379,29 +387,30 @@ tt_regular_time <- function(
   )
 
   if (length(attr_cols) > 0L) {
+    # approx() needs at least two values (e.g. a column can be all NA for a
+    # track); with fewer, the interpolated values are NA
+    interpolate_values <- function(vals) {
+      if (sum(!is.na(vals)) < 2L) {
+        return(rep(NA_real_, n_new))
+      }
+      stats::approx(
+        x = t_sec,
+        y = vals,
+        xout = t_new,
+        method = "linear",
+        rule = 1L
+      )$y
+    }
     attr_df <- lapply(stats::setNames(attr_cols, attr_cols), function(col) {
       vals <- track[[col]]
       if (inherits(vals, "units")) {
-        interpolated <- stats::approx(
-          x = t_sec,
-          y = as.numeric(vals),
-          xout = t_new,
-          method = "linear",
-          rule = 1L
-        )$y
         units::set_units(
-          interpolated,
+          interpolate_values(as.numeric(vals)),
           units::deparse_unit(vals),
           mode = "standard"
         )
       } else if (is.numeric(vals)) {
-        stats::approx(
-          x = t_sec,
-          y = vals,
-          xout = t_new,
-          method = "linear",
-          rule = 1L
-        )$y
+        interpolate_values(vals)
       } else {
         # value of the last observation at or before each new time (a time
         # equal to the last observation takes the value of that observation)
@@ -444,31 +453,67 @@ tt_regular_time <- function(
 }
 
 
-#' Interpolate along a path using \code{sf::st_line_sample} (no CRS)
+#' Locate distances along a path on the segments of the path
 #'
-#' @param sf_obj An sf POINT object with no CRS.
-#' @param s_norm Numeric vector of normalised distances in \[0, 1\].
-#' @return An \code{sfc_POINT} with \code{length(s_norm)} points and no CRS.
+#' @param dist    Numeric vector of distances along the path, between 0 and
+#'   the length of the path.
+#' @param seg_len Numeric vector of the lengths of the segments of the path
+#'   (as returned by \code{.path_lengths}), with a positive sum.
+#' @return A list with \code{index}, the segment in which each distance falls
+#'   (segment \code{i} goes from point \code{i} to point \code{i + 1}), and
+#'   \code{frac}, the fraction of that segment covered at that distance.
 #' @noRd
-.interpolate_no_crs <- function(sf_obj, s_norm) {
-  coords <- sf::st_coordinates(sf_obj)
-  line <- sf::st_sfc(sf::st_linestring(coords[, c("X", "Y")]))
-  sampled <- sf::st_line_sample(line, sample = s_norm)
-  sf::st_cast(sampled, "POINT")
+.locate_on_path <- function(dist, seg_len) {
+  cum_len <- c(0, cumsum(seg_len))
+  # segments of length zero are skipped, as the last point at or before each
+  # distance starts a segment of positive length; distances at the end of the
+  # path fall at the end of its last segment of positive length
+  index <- findInterval(dist, cum_len)
+  last_seg <- max(which(seg_len > 0))
+  at_end <- index > last_seg
+  index[at_end] <- last_seg
+  frac <- (dist - cum_len[index]) / seg_len[index]
+  frac[at_end] <- 1
+  list(index = index, frac = pmin(frac, 1))
 }
 
 
-#' Interpolate along a path using \code{s2::s2_interpolate_normalized}
+#' Interpolate along the segments of a path in Euclidean space (no CRS)
 #'
-#' @param sf_obj An sf POINT object with a geographic (lon/lat) CRS.
-#' @param s_norm Numeric vector of normalised arc-length fractions in \[0, 1\].
-#' @param crs    The CRS to attach to the output \code{sfc}.
-#' @return An \code{sfc_POINT} with \code{length(s_norm)} points.
+#' @param sf_obj  An sf POINT object with no CRS.
+#' @param on_path A list with the segments and fractions of the segments of
+#'   the points to interpolate, as returned by \code{.locate_on_path}.
+#' @return An \code{sfc_POINT} with \code{length(on_path$index)} points and no
+#'   CRS.
 #' @noRd
-.interpolate_s2 <- function(sf_obj, s_norm, crs) {
+.interpolate_no_crs <- function(sf_obj, on_path) {
+  xy <- sf::st_coordinates(sf_obj)[, c("X", "Y"), drop = FALSE]
+  from <- xy[on_path$index, , drop = FALSE]
+  to <- xy[on_path$index + 1L, , drop = FALSE]
+  new_xy <- from + on_path$frac * (to - from)
+  sf::st_cast(sf::st_sfc(sf::st_multipoint(new_xy)), "POINT")
+}
+
+
+#' Interpolate along the segments of a path using
+#' \code{s2::s2_interpolate_normalized}
+#'
+#' @param sf_obj  An sf POINT object with a geographic (lon/lat) CRS.
+#' @param on_path A list with the segments and fractions of the segments of
+#'   the points to interpolate, as returned by \code{.locate_on_path}.
+#' @param crs     The CRS to attach to the output \code{sfc}.
+#' @return An \code{sfc_POINT} with \code{length(on_path$index)} points.
+#' @noRd
+.interpolate_s2 <- function(sf_obj, on_path, crs) {
   xy <- sf::st_coordinates(sf_obj)
-  s2_line <- s2::s2_make_line(longitude = xy[, "X"], latitude = xy[, "Y"])
-  pts <- s2::s2_interpolate_normalized(s2_line, s_norm)
+  # one line for each point to interpolate, along its segment of the path
+  ends <- c(rbind(on_path$index, on_path$index + 1L))
+  s2_lines <- s2::s2_make_line(
+    longitude = xy[ends, "X"],
+    latitude = xy[ends, "Y"],
+    feature_id = rep(seq_along(on_path$index), each = 2L)
+  )
+  pts <- s2::s2_interpolate_normalized(s2_lines, on_path$frac)
   sf::st_as_sfc(pts, crs = crs)
 }
 

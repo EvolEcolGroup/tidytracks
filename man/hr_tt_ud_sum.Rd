@@ -22,7 +22,9 @@ column named "ud", or a list of SpatRaster objects representing UDs.}
 \value{
 either a tibble of UDs with the number of rows equal to the number
 of groups in \code{x} (or just one row for an ungrouped tibble), or a single
-SpatRaster if \code{x} is a list of SpatRaster objects.
+SpatRaster if \code{x} is a list of SpatRaster objects. The UDs must be on the
+same grid; the parameters of the method (e.g. \code{h} for \code{\link[=hr_tt_kde]{hr_tt_kde()}}) are
+kept if they are the same for all the summed UDs, and are \code{NA} otherwise.
 }
 \description{
 This function takes a tibble of UDs and computes the normalised sum of the

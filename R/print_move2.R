@@ -170,22 +170,24 @@ print_move2_tt <- function(
   ...,
   n = getOption("sf_max_print", default = 10L)
 ) {
-  avg_dur <- mean(     # nolint: object_usage_linter.
-    do.call(
-      c,
-      lapply(
-        lapply(
-          split(
-            move2::mt_time(x),
-            move2::mt_track_id(x),
-            drop = TRUE
-          ),
-          range
-        ),
-        diff
-      )
-    )
+  durations <- lapply(
+    lapply(
+      split(
+        move2::mt_time(x),
+        move2::mt_track_id(x),
+        drop = TRUE
+      ),
+      range
+    ),
+    diff
   )
+  # an object without events (e.g. after filtering out all its tracks) has no
+  # durations to average, and mean() would warn
+  avg_dur <- if (length(durations) > 0) { # nolint: object_usage_linter.
+    mean(do.call(c, durations))
+  } else {
+    NA
+  }
   cat(
     cli::format_message(
       paste0(

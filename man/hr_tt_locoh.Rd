@@ -23,7 +23,9 @@ levels with \code{.drop = FALSE}) give an error.}
 number of nearest neighbours for \code{"k"} (a whole number of at least 2), the
 radius for \code{"r"}, or the maximum sum of the distances for \code{"a"} (both in
 the units of the projection of \code{x}). Either a single value, or a vector
-with one value per group, matched to the groups in the order of
+with one value per group, matched to the groups in the order in which
+they are returned: the order of the tracks in the metadata (see
+\code{\link[=show_meta]{show_meta()}}) if \code{x} is not grouped, or else the order of
 \code{\link[dplyr:group_keys]{dplyr::group_keys()}} (i.e. sorted by the grouping variables).}
 
 \item{type}{The type of LoCoH: \code{"k"} (the default), \code{"r"} or \code{"a"} (see
@@ -40,7 +42,9 @@ leaves them as they are; a small positive value (e.g. 1e-5, as in
 }
 \value{
 An \code{sf} tibble of subclass \code{hr_tt_poly_tbl} of results, with one
-row per group and level, and columns:
+row per group and level (with the tracks in the order of the metadata if
+\code{x} is not grouped, or else with the groups in the order of
+\code{\link[dplyr:group_keys]{dplyr::group_keys()}}, i.e. sorted by the grouping variables), and columns:
 \itemize{
 \item the grouping variable (as named in \code{x}; if \code{x} is grouped by
 multiple variables, this column is named \code{group_id}): the ids from the

@@ -1,6 +1,6 @@
 #' Clean data based on speed
 #'
-#' This function uses the algorithm by McConnell et al. (2012) to clean data
+#' This function uses the algorithm by McConnell et al. (1992) to clean data
 #' based on speed. This is a port of the `speedfilter` function from the `trip`
 #' package, with an optional endpoint check.
 #'
@@ -13,7 +13,9 @@
 #' If an endpoint is removed, the McConnell filter is rerun on the reduced
 #' track, and the endpoint check is repeated until the result is stable.
 #'
-#' Events with an empty geometry (i.e. no location) are ignored by the filter
+#' Speeds are computed between consecutive events of each track in time order,
+#' whatever the order in which the events are stored in `x`. Events with an
+#' empty geometry (i.e. no location) are ignored by the filter
 #' and returned as valid. Consecutive events at the same location are treated
 #' as having zero speed, even when they share the same timestamp (e.g.
 #' duplicated records).
@@ -95,8 +97,15 @@ event_flag_mcconnell <- function(
   # Extract coordinates as a matrix.
   coords <- sf::st_coordinates(x)
 
-  # Extract timestamps for all events.
+  # Extract timestamps for all events, in seconds (move2 also allows dates and
+  # units objects as timestamps).
   time <- event_time(x)
+  if (inherits(time, "Date")) {
+    time <- as.POSIXct(time)
+  } else if (inherits(time, "units")) {
+    time <- units::set_units(time, "s")
+  }
+  time <- as.numeric(time)
 
   # Extract track IDs and convert to a factor so that each track
   # can be processed independently.
@@ -326,7 +335,8 @@ event_flag_mcconnell <- function(
   # Endpoint speeds are the root mean squares of the adjacent and skip-one
   # segments.
   #
-  # If either RMS exceeds max_speed, the endpoint is flagged.
+  # If either RMS exceeds max_speed, the endpoint is flagged; this includes an
+  # infinite RMS (a displacement with no elapsed time).
   # ---------------------------------------------------------------------------
   endpoint_rms_flags <- function(
     xy,
@@ -353,7 +363,7 @@ event_flag_mcconnell <- function(
 
     rms_first <- sqrt((s12^2 + s13^2) / 2)
 
-    if (is.finite(rms_first) && rms_first > max_speed) {
+    if (!is.na(rms_first) && rms_first > max_speed) {
       flags[idx[1]] <- TRUE
     }
 
@@ -380,7 +390,7 @@ event_flag_mcconnell <- function(
 
     rms_last <- sqrt((s_n1n^2 + s_n2n^2) / 2)
 
-    if (is.finite(rms_last) && rms_last > max_speed) {
+    if (!is.na(rms_last) && rms_last > max_speed) {
       flags[idx[k]] <- TRUE
     }
 
@@ -492,9 +502,16 @@ event_flag_mcconnell <- function(
   # filter (and returned as valid).
   located <- !is.na(coords[, 1]) & !is.na(coords[, 2])
 
+  # The located events of each track (splitting the rows once is much faster,
+  # with many tracks, than finding the rows of each track among all the rows).
+  track_rows <- split(which(located), id[located])
+
   for (i_track in track_ids) {
-    # Select the located events belonging to the track.
-    this_track <- id == i_track & located
+    # Select the located events belonging to the track, in time order (speeds
+    # are computed between consecutive events, and the events of x are not
+    # necessarily stored in time order).
+    this_track <- track_rows[[i_track]]
+    this_track <- this_track[order(time[this_track])]
 
     # Track coordinates.
     xy <- coords[this_track, , drop = FALSE]

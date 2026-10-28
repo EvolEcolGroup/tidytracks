@@ -2,7 +2,8 @@
 #'
 #' This function measures the azimuth between two events. It returns a vector of
 #' azimuths of the same length as the number of events in `x`, with the azimuth
-#' for the last event of each track padded with an NA.
+#' for the last event of each track padded with an NA. The azimuth is also NA
+#' for the segments to and from events without a location (empty geometry).
 #' @param x A move2 object
 #' @param units Optional, the units to use for the azimuth (e.g., "degrees" or
 #'   "radians"). The default is "degrees".
@@ -11,4 +12,26 @@
 #' @export
 #' @examples
 #' event_azimuth(example_tt)
-event_azimuth <- move2::mt_azimuth
+event_azimuth <- function(x, units = "degrees") {
+  # move2::mt_azimuth() returns radians if no units are given, and gives an
+  # error for events without a location (empty geometry)
+  located <- !sf::st_is_empty(x)
+  if (all(located)) {
+    return(move2::mt_azimuth(x, units = units))
+  }
+  # without any location, there is no azimuth
+  if (!any(located)) {
+    return(units::set_units(
+      units::as_units(rep(NA_real_, nrow(x)), "rad"),
+      units,
+      mode = "standard"
+    ))
+  }
+  # otherwise, compute the azimuths between consecutive located events, and
+  # set to NA those of the segments to or from an event without a location
+  # (as for event_distance())
+  azimuth <- move2::mt_azimuth(x[located, ], units = units)
+  azimuth <- azimuth[match(seq_len(nrow(x)), which(located))]
+  azimuth[!c(located[-1], FALSE)] <- NA
+  azimuth
+}

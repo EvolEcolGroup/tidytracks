@@ -32,6 +32,24 @@ test_that("track_tot_distance correctly converts units", {
   )
 })
 
+test_that("track_tot_distance skips events without a location", {
+  # an event without a location does not break the track: the distance is
+  # taken between the located events on either side
+  x_empty <- example_tt
+  sf::st_geometry(x_empty)[3] <- sf::st_point()
+  expect_equal(
+    track_tot_distance(x_empty),
+    track_tot_distance(example_tt[-3, ])
+  )
+  # a track without any location has no distance
+  sf::st_geometry(x_empty)[1:5] <- list(sf::st_point())
+  expect_equal(
+    track_tot_distance(x_empty),
+    as_units(c(a = 0, b = 870617.4, c = 812657.4), "m"),
+    tolerance = 1e-6
+  )
+})
+
 test_that("track_tot_distance returns values in original order", {
   example_tt_2 <- readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
   # example_tt_2 has tracks that first appear in the order b, a, c, which

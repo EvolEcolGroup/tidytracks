@@ -63,6 +63,9 @@ details.
 Units (implemented via the package \code{units}) are produced by many
 operations, but are not fully compatible with \code{ggplot2}. This function
 internally drops units before creating a \code{ggplot2} layer.
+
+Events without a location (empty points) are skipped, so that each step
+joins consecutive events with a location.
 }
 \examples{
 library(ggplot2)

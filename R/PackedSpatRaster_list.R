@@ -154,6 +154,35 @@ new_PackedSpatRaster_list <- function(packed) {
   new_PackedSpatRaster_list(NextMethod())
 }
 
+#' Add `SpatRaster` objects by position or name to `PackedSpatRaster_list`
+#'
+#' `[<-` stores `SpatRaster` objects by position or name (wrapping them
+#' automatically)
+#' @param x A `PackedSpatRaster_list` to modify.
+#' @param i The indices or names of the elements to set.
+#' @param value A `SpatRaster` or `PackedSpatRaster`, or a list of them, to
+#'   store at the specified positions. The `SpatRaster` objects are
+#'   automatically wrapped as `PackedSpatRaster` objects before storage.
+#' @returns The modified `PackedSpatRaster_list` with the specified elements
+#'   replaced.
+#' @examples
+#' r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+#' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+#' pl <- PackedSpatRaster_list(a = r1, b = r2)
+#' pl[1:2] <- list(r2, r1) # swaps the two elements
+#' @export
+`[<-.PackedSpatRaster_list` <- function(x, i, value) {
+  if (inherits(value, "SpatRaster") || inherits(value, "PackedSpatRaster")) {
+    value <- list(value)
+  }
+  if (!is.null(value)) {
+    value <- lapply(unclass(value), function(v) {
+      if (inherits(v, "SpatRaster")) terra::wrap(v) else v
+    })
+  }
+  new_PackedSpatRaster_list(NextMethod())
+}
+
 
 #' Add `SpatRaster` by name to `PackedSpatRaster_list`
 #'
@@ -174,6 +203,32 @@ new_PackedSpatRaster_list <- function(packed) {
 `$<-.PackedSpatRaster_list` <- function(x, name, value) {
   x[[name]] <- value # delegate to [[<-
   x
+}
+
+#' Combine `PackedSpatRaster_list` objects
+#'
+#' `c()` combines `PackedSpatRaster_list` objects, and `SpatRaster` or
+#' `PackedSpatRaster` objects (wrapping them automatically), into a single
+#' `PackedSpatRaster_list`.
+#' @param ... `PackedSpatRaster_list`, `SpatRaster` or `PackedSpatRaster`
+#'   objects, or lists of them, optionally named.
+#' @returns A `PackedSpatRaster_list`.
+#' @export
+#' @examples
+#' r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+#' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+#' pl <- c(PackedSpatRaster_list(a = r1), PackedSpatRaster_list(b = r2))
+c.PackedSpatRaster_list <- function(...) {
+  # combine the elements as plain lists (a raster being a list of one
+  # element), then wrap them in a new PackedSpatRaster_list
+  elements <- lapply(list(...), function(x) {
+    if (inherits(x, "SpatRaster") || inherits(x, "PackedSpatRaster")) {
+      list(x)
+    } else {
+      unclass(x)
+    }
+  })
+  PackedSpatRaster_list(do.call(c, elements))
 }
 
 #' Print a summary of the `PackedSpatRaster_list`
@@ -202,15 +257,21 @@ print.PackedSpatRaster_list <- function(x, ...) {
 
   if (n > 0L) {
     for (i in seq_len(n)) {
-      r <- x[[i]]
-      dims <- paste0(nrow(r), "x", ncol(r), "x", terra::nlyr(r))
-      crs <- terra::crs(r, describe = TRUE)$name
-      label <- if (!is.na(crs) && nzchar(crs)) crs else "no CRS"
-      tag <- if (!is.null(nms) && nzchar(nms[i])) {
+      tag <- if (!is.null(nms) && !is.na(nms[i]) && nzchar(nms[i])) {
         paste0("$", nms[i])
       } else {
         paste0("[[", i, "]]")
       }
+      r <- x[[i]]
+      # a missing element (e.g. from subsetting with NA, or from a left join
+      # of a table with a wrapped ud column) has no raster to describe
+      if (is.null(r)) {
+        cat(sprintf("  %s <NULL>\n", tag))
+        next
+      }
+      dims <- paste0(nrow(r), "x", ncol(r), "x", terra::nlyr(r))
+      crs <- terra::crs(r, describe = TRUE)$name
+      label <- if (!is.na(crs) && nzchar(crs)) crs else "no CRS"
       cat(sprintf("  %s <SpatRaster [%s] %s>\n", tag, dims, label))
     }
   }

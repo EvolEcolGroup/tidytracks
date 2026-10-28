@@ -186,6 +186,21 @@ test_that("hr_tt_akde_pop optimises the weights of the individuals", {
   expect_equal(sum(pop$ud_ctmm[[1]]$weights), 1)
 })
 
+test_that("hr_tt_akde_pop only uses weights from a column with 'mean'", {
+  # ctmm::pkde() cannot use fixed weights: given weights from a column, it
+  # optimised the weights instead (or failed if one of them was zero)
+  akde_south$w <- c(10, 1, 1)
+  expect_error(
+    hr_tt_akde_pop(akde_south, tracks = x, models = fits, weights = "w"),
+    "only used with method = \"mean\""
+  )
+  akde_south$w <- c(1, 0, 1)
+  expect_error(
+    hr_tt_akde_pop(akde_south, tracks = x, models = fits, weights = "w"),
+    "only used with method = \"mean\""
+  )
+})
+
 test_that("hr_tt_akde_pop checks its inputs", {
   # pkde needs the tracks and the models
   expect_error(hr_tt_akde_pop(akde_south), "provide the tracks")
@@ -226,8 +241,10 @@ test_that("hr_tt_akde_pop checks its inputs", {
     hr_tt_akde_pop(akde_moved, method = "mean"),
     "must be on the same grid"
   )
-  # the UDs must be estimated with hr_tt_akde()
-  kde <- hr_tt_kde(x)
+  # the UDs must be estimated with hr_tt_akde() (a KDE of example_tt, as the
+  # default grid of a KDE of x is too coarse for the binned method, which
+  # warns about it)
+  kde <- hr_tt_kde(example_tt)
   expect_error(
     hr_tt_akde_pop(kde, method = "mean"),
     "estimated with hr_tt_akde"
@@ -246,16 +263,11 @@ test_that("hr_tt_akde_pop checks its inputs", {
     hr_tt_akde_pop(akde_south, method = "mean", levels = 0.95, ci_level = 95),
     "ci_level must be"
   )
-  # a group whose weights are all zero has no population UD, with either
-  # method
+  # a group whose weights are all zero has no population UD
   akde_zero <- akde_south
   akde_zero$w <- c(0, 0, 0)
   expect_error(
     hr_tt_akde_pop(akde_zero, method = "mean", weights = "w"),
-    "must not all be zero"
-  )
-  expect_error(
-    hr_tt_akde_pop(akde_zero, tracks = x, models = fits, weights = "w"),
     "must not all be zero"
   )
 })

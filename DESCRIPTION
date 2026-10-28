@@ -1,6 +1,6 @@
 Package: tidytracks
 Title: Functions to Analyse Tracking Data
-Version: 0.2.0.9003
+Version: 0.2.1.9004
 Authors@R: c(
     person("Lizzie", "Pearmain", role = c("aut")),
     person("Paul","Whitelaw", role = c("aut")),
@@ -62,12 +62,15 @@ Suggests:
     rmarkdown,
     reshape2,
     lwgeom,
+    move2utils,
     quadprog,
     rnaturalearth,
     testthat (>= 3.0.0),
     trip,
     track2KBA,
     spelling
+Remotes:
+    move2universe/move2utils
 LinkingTo:
     Rcpp
 VignetteBuilder: knitr

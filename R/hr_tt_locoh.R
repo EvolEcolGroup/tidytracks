@@ -55,7 +55,9 @@
 #'   number of nearest neighbours for `"k"` (a whole number of at least 2), the
 #'   radius for `"r"`, or the maximum sum of the distances for `"a"` (both in
 #'   the units of the projection of `x`). Either a single value, or a vector
-#'   with one value per group, matched to the groups in the order of
+#'   with one value per group, matched to the groups in the order in which
+#'   they are returned: the order of the tracks in the metadata (see
+#'   [show_meta()]) if `x` is not grouped, or else the order of
 #'   [dplyr::group_keys()] (i.e. sorted by the grouping variables).
 #' @param type The type of LoCoH: `"k"` (the default), `"r"` or `"a"` (see
 #'   Details).
@@ -67,7 +69,9 @@
 #'   leaves them as they are; a small positive value (e.g. 1e-5, as in
 #'   `amt::hr_locoh()`) also includes the hulls with no area (see Details).
 #' @returns An `sf` tibble of subclass `hr_tt_poly_tbl` of results, with one
-#' row per group and level, and columns:
+#' row per group and level (with the tracks in the order of the metadata if
+#' `x` is not grouped, or else with the groups in the order of
+#' [dplyr::group_keys()], i.e. sorted by the grouping variables), and columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
 #'   grouping of `x`
@@ -103,11 +107,13 @@ hr_tt_locoh <- function(
 ) {
   type <- match.arg(type)
   # if x is not grouped, use the track ID column as grouping variable
-  if (!inherits(x, "grouped_df")) {
+  by_track <- !inherits(x, "grouped_df")
+  if (by_track) {
     x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
   # as in hr_tt_kde(), per-group values of n are matched to the groups by
-  # their position in the group keys, which must therefore all be estimated
+  # their position in the order in which they are returned, so every group
+  # listed in the group keys must be estimated
   check_no_empty_groups(x) # nolint: object_usage_linter.
 
   # Check if levels are valid
@@ -131,11 +137,14 @@ hr_tt_locoh <- function(
     stop("buffer must be a single non-negative number")
   }
 
-  # get the group indices
-  group_index <- dplyr::group_indices(x)
-  group_unique <- unique(group_index)
+  # get the group indices, numbered in the order in which the groups are
+  # returned (the order of the tracks in the metadata if x was not grouped,
+  # or else the order of the group keys)
+  group_order <- hr_group_order(x, by_track) # nolint: object_usage_linter.
+  group_index <- match(dplyr::group_indices(x), group_order)
   group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
+  group_labels <- group_labels[group_order]
   # extract coordinates
   xy <- sf::st_coordinates(x)
   # events with an empty geometry have no location to contribute to the hulls
@@ -161,40 +170,43 @@ hr_tt_locoh <- function(
   crs <- sf::st_crs(x)
   longlat <- isTRUE(sf::st_is_longlat(crs))
 
+  # the rows of xy of each group (splitting them once is much faster, with
+  # many groups, than finding the rows of each group among all the rows)
+  group_rows <- split(
+    seq_along(group_index),
+    factor(group_index, levels = seq_along(group_labels))
+  )
+
   group_id <- NULL # hack to avoid it being flagged as global in checks
-  locoh_results <- foreach::foreach(group_id = group_unique) %do% {
-    # Filter the data for the current group
-    xy_sub <- xy[group_index == group_id, , drop = FALSE]
-    # take n for this group now: inside tibble() below, group_id refers to
-    # the column created there, not to the index of the group
-    n_val <- n[group_id]
+  # one result per group, in the order in which they are returned (rather
+  # than in the order in which the groups appear in x), as for the values of
+  # n; all groups have locations
+  geometry <- foreach::foreach(group_id = seq_along(group_labels)) %do% {
     # Create the home range for each level (without a CRS, which is set
     # for all groups at once below)
-    geometry <- locoh_one_group(
-      xy_sub,
-      n = n_val,
+    locoh_one_group(
+      xy[group_rows[[group_id]], , drop = FALSE],
+      n = n[group_id],
       type = type,
       levels = levels,
       buffer = buffer,
       longlat = longlat
     )
-
-    # Create a tibble with the results (areas are computed below)
-    tibble::tibble(
-      group_id = group_labels[group_id],
-      method = "locoh",
-      type = type,
-      n = n_val,
-      level = levels,
-      area = NA_real_,
-      geometry = geometry
-    )
   }
 
-  # combine the groups in one go (combining them one at a time, as foreach's
-  # .combine does, takes time quadratic in the number of groups), cast the
-  # results to an sf object, and compute all the areas in one call
-  locoh_results <- dplyr::bind_rows(locoh_results)
+  # create a tibble with the results of all groups in one go (creating a
+  # tibble for each group and combining them takes much longer when there
+  # are many groups), cast it to an sf object, and compute all the areas in
+  # one call
+  locoh_results <- tibble::tibble(
+    group_id = rep(group_labels, each = length(levels)),
+    method = "locoh",
+    type = type,
+    n = rep(n, each = length(levels)),
+    level = rep(levels, times = length(group_labels)),
+    area = NA_real_,
+    geometry = sf::st_sfc(unlist(geometry, recursive = FALSE))
+  )
   locoh_results <- sf::st_as_sf(locoh_results, crs = crs)
   locoh_results$area <- sf::st_area(locoh_results)
 

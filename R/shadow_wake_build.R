@@ -118,8 +118,11 @@ ShadowWakeBuild <- ggplot2::ggproto(   # nolint: object_name_linter.
     # `shadow` is a list-of-lists: one inner list per layer, each
     # element of which is the rendered data for one past frame.
     # Apply falloff aesthetics to every layer independently.
-    lapply(shadow, function(d) {
-      if (length(d) == 0) {
+    Map(function(d, e) {
+      # Excluded layers (including the static ones, e.g. a basemap, whose
+      # whole data is passed on every frame) get no shadow in
+      # prepare_frame_data, so skip styling their (possibly large) data.
+      if (e || length(d) == 0) {
         return(NULL)
       }
 
@@ -276,7 +279,10 @@ ShadowWakeBuild <- ggplot2::ggproto(   # nolint: object_name_linter.
       }
 
       d
-    })
+    },
+    d = shadow,
+    e = seq_along(shadow) %in% params$excluded_layers
+    )
   },
   prepare_frame_data = function(
     self,

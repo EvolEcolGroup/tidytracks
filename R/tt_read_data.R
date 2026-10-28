@@ -20,8 +20,9 @@
 #' @details This function makes a number of assumptions about the data. If your
 #'   data does not meet these assumptions, you may need to preprocess it before
 #'   using this function, or create a `move2` object manually using the
-#'   `move2::mt_as_move2()` function. See the `reading_data` vignette for more
-#'   details.
+#'   `move2::mt_as_move2()` function. See the article "Reading and cleaning
+#'   data" on the package website for more details, including how to read
+#'   date-times in different formats.
 #'
 #' @param events A path to a CSV file containing the event data, OR a dataframe
 #'   in R containing the event data.
@@ -99,8 +100,11 @@ tt_read_data <- function(
   if (!col_track_id %in% names(events)) {
     stop(paste("Column", col_track_id, "not found in the events data."))
   } else {
-    # Ensure col_track_id is a factor
-    events[[col_track_id]] <- as.factor(events[[col_track_id]])
+    # keep the original ids, to match them with those in the metadata
+    track_ids <- events[[col_track_id]]
+    # Ensure col_track_id is a factor, without levels that have no events
+    # (e.g. if events is a subset of a larger data frame), which are not tracks
+    events[[col_track_id]] <- droplevels(as.factor(track_ids))
   }
   if (!all(col_coords %in% names(events))) {
     stop(paste(
@@ -298,12 +302,14 @@ tt_read_data <- function(
     # join new meta to old meta
     old_meta <- show_meta(move2_obj)
     # the track ids are a factor in the events; convert the ids in the
-    # metadata to the same type, as they often differ (e.g. integer ids read
-    # from a csv file) and cannot be joined otherwise
-    meta[[col_track_id]] <- factor(
-      as.character(meta[[col_track_id]]),
-      levels = levels(old_meta[[col_track_id]])
-    )
+    # metadata to the same factor, as their types often differ (e.g. integer
+    # ids read from a csv file) and they cannot be joined otherwise. The ids
+    # are matched by value with the original ids of the events, rather than as
+    # strings, as as.character() can write the same number differently (e.g.
+    # "1e+05" for 100000 as a double, but "100000" as an integer)
+    meta[[col_track_id]] <- events[[col_track_id]][
+      match(meta[[col_track_id]], track_ids)
+    ]
     updated_meta <- dplyr::left_join(
       old_meta,
       meta,
@@ -315,8 +321,20 @@ tt_read_data <- function(
       if (grepl("\\.meta$", col)) {
         base_col <- sub("\\.meta$", "", col)
         if (base_col %in% names(updated_meta)) {
-          # compare the two columns (including NA patterns)
-          if (identical(updated_meta[[base_col]], updated_meta[[col]])) {
+          # compare the two columns (including NA patterns), after casting
+          # them to a common type, as the same values can be stored with
+          # different types (e.g. integer and double, or character and
+          # factor); columns with incompatible types (e.g. character and
+          # numeric) conflict
+          same_values <- tryCatch(
+            all(vctrs::vec_equal(
+              updated_meta[[base_col]],
+              updated_meta[[col]],
+              na_equal = TRUE
+            )),
+            vctrs_error_incompatible_type = function(e) FALSE
+          )
+          if (same_values) {
             # if identical, remove the .meta column
             updated_meta[[col]] <- NULL
           } else {
@@ -332,8 +350,9 @@ tt_read_data <- function(
         }
       }
     }
-    # update the move2 object with the new meta data
-    move2_obj <- move2::mt_set_track_data(move2_obj, updated_meta)
+    # update the move2 object with the new meta data (which checks that the
+    # metadata has a single row per track)
+    show_meta(move2_obj) <- updated_meta
   }
 
   return(move2_obj)
@@ -413,7 +432,10 @@ tt_date_time_formats <- data.frame(
 #'
 #' Returns the first of the common formats in `tt_date_time_formats` whose
 #' date pattern matches all the (non-missing) values in `x` and which parses
-#' all of them.
+#' all of them. As strptime() ignores trailing characters, a format without
+#' seconds would also parse times with seconds, dropping them (e.g. if only
+#' some of the values have seconds), so such formats are only used if none of
+#' the values has seconds.
 #'
 #' @param x A character vector of date-times.
 #' @returns The format as a string, or `NULL` if no format matches.
@@ -421,10 +443,12 @@ tt_date_time_formats <- data.frame(
 #' @noRd
 guess_date_time_format <- function(x) {
   x <- trimws(x[!is.na(x)])
+  has_seconds <- any(grepl("[0-9]:[0-9]{1,2}:[0-9]", x))
   for (i in seq_len(nrow(tt_date_time_formats))) {
     format <- tt_date_time_formats$format[i]
     if (
-      all(grepl(tt_date_time_formats$date_regex[i], x)) &&
+      (!has_seconds || grepl("%OS", format, fixed = TRUE)) &&
+        all(grepl(tt_date_time_formats$date_regex[i], x)) &&
         !anyNA(strptime(x, format, tz = "UTC"))
     ) {
       return(format)

@@ -13,7 +13,8 @@ mt_as_telemetry(x, error_cols = "auto", ...)
 error of the locations, to be passed to \code{ctmm}. If \code{"auto"} (the
 default), the columns with a name that \code{ctmm} recognises as error
 information (with Movebank naming, e.g. \code{gps_hdop},
-\code{eobs_horizontal_accuracy_estimate}, \code{argos_lc}) are passed. Otherwise, a
+\code{eobs_horizontal_accuracy_estimate}, \code{argos_lc}, or the time to fix
+\code{gps_time_to_fix}, used with \code{timeout}) are passed. Otherwise, a
 character vector of column names, or \code{NULL} to pass no error information.
 \code{ctmm} ignores columns with names that it does not recognise (see
 \code{\link[ctmm:as.telemetry]{ctmm::as.telemetry()}}); such columns can be renamed by naming the

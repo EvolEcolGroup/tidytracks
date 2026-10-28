@@ -19,3 +19,9 @@ test_that("event_distance requires units as a units object", {
     "units must be a units object"
   )
 })
+
+test_that("event_distance returns one value per event without events", {
+  expect_length(event_distance(example_tt[0, ]), 0)
+  # a single event has no segment
+  expect_equal(event_distance(example_tt[1, ]), as_units(NA_real_, "m"))
+})

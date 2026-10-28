@@ -41,6 +41,33 @@ test_that("hr_tt_mcp respects explicit grouping", {
   expect_equal(grouped_mcp, default_mcp)
 })
 
+test_that("hr_tt_mcp returns the groups in the order of the group keys", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  # the groups are sorted in the reverse order of the tracks in the data
+  boar_tt$group <- factor(boar_tt$name, levels = rev(levels(boar_tt$name)))
+  grouped_mcp <- hr_tt_mcp(dplyr::group_by(boar_tt, group))
+
+  expect_equal(unique(grouped_mcp$group), rev(levels(boar_tt$name)))
+  expect_equal(
+    grouped_mcp$area[grouped_mcp$group == "Jean"],
+    hr_tt_mcp(boar_tt[boar_tt$name == "Jean", ])$area
+  )
+})
+
+test_that("hr_tt_mcp returns the tracks of ungrouped data in metadata order", {
+  # the events are in the order a, b, c, whilst the metadata is in the order
+  # b, a, c
+  x <- tt_order_time(
+    readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
+  )
+  track_mcp <- hr_tt_mcp(x)
+  expect_equal(unique(track_mcp$track_id), c("b", "a", "c"))
+  expect_equal(
+    track_mcp$area[track_mcp$track_id == "b"],
+    hr_tt_mcp(x[move2::mt_track_id(x) == "b", ])$area
+  )
+})
+
 test_that("hr_tt_mcp rejects levels outside the unit interval", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
 
@@ -50,6 +77,23 @@ test_that("hr_tt_mcp rejects levels outside the unit interval", {
   )
   expect_error(
     hr_tt_mcp(boar_tt, levels = 1.1),
+    "levels must be between 0 and 1"
+  )
+})
+
+test_that("hr_tt_mcp rejects missing, empty or non-numeric levels", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+
+  expect_error(
+    hr_tt_mcp(boar_tt, levels = c(0.5, NA)),
+    "levels must be between 0 and 1"
+  )
+  expect_error(
+    hr_tt_mcp(boar_tt, levels = numeric(0)),
+    "levels must be between 0 and 1"
+  )
+  expect_error(
+    hr_tt_mcp(boar_tt, levels = "0.5"),
     "levels must be between 0 and 1"
   )
 })
@@ -82,6 +126,24 @@ test_that("hr_tt_mcp requires at least 3 locations per group", {
     "at least 3 events with a location.*: b$"
   )
   expect_s3_class(hr_tt_mcp(tracks[tracks$id == "a", ]), "hr_tt_poly_tbl")
+})
+
+test_that("hr_tt_mcp gives empty polygons for levels with no area", {
+  # with 4 locations, the 50% MCP is the hull of the 2 locations closest to
+  # the centroid: a segment, which has no area
+  coords <- data.frame(id = "a", x = c(0, 1, 3, 0), y = c(0, 0, 1, 4))
+  coords$time <- as.POSIXct("2024-01-01", tz = "UTC") + seq_len(4) * 60
+  for (crs in c(32630, 4326)) {
+    track <- move2::mt_as_move2(
+      sf::st_as_sf(coords, coords = c("x", "y"), crs = crs),
+      time_column = "time",
+      track_id_column = "id"
+    )
+    track_mcp <- hr_tt_mcp(track)
+    expect_equal(sf::st_is_empty(track_mcp), c(FALSE, TRUE))
+    expect_equal(as.numeric(track_mcp$area) > 0, c(TRUE, FALSE))
+    expect_true(all(sf::st_is_valid(track_mcp)))
+  }
 })
 
 test_that("hr_tt_mcp rejects groups without events", {

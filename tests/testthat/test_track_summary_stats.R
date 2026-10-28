@@ -201,16 +201,109 @@ test_that("track_summary_stats correctly computes track summaries", {
 
   pts <- test_tt_split %>% dplyr::filter(trip_id == "id_1_trip_1")
   first_pt <- pts[1, ]
+  # with s2 switched off, sf::st_distance() gives geodesic distances, as
+  # track_summary_stats() does
+  old_s2 <- suppressMessages(sf::sf_use_s2(FALSE))
   expected_max <- max(
     sf::st_distance(pts$geometry, first_pt$geometry),
     na.rm = TRUE
   )
+  suppressMessages(sf::sf_use_s2(old_s2))
 
   observed_max <- test_no_centre %>%
     dplyr::filter(trip_id == "id_1_trip_1") %>%
     dplyr::pull(max_dist_centre)
 
   expect_equal(expected_max, observed_max)
+})
+
+test_that("track_summary_stats gives the same distance as track_tot_distance", {
+  # regardless of the s2 setting
+  expect_equal(
+    track_summary_stats(example_tt)$tot_distance,
+    unname(track_tot_distance(example_tt))
+  )
+  # also with events without a location
+  x_empty <- example_tt
+  sf::st_geometry(x_empty)[3] <- sf::st_point()
+  expect_equal(
+    track_summary_stats(x_empty)$tot_distance,
+    unname(track_tot_distance(x_empty))
+  )
+  # and for a grouped tibble of tracks
+  expect_equal(
+    track_summary_stats(dplyr::group_by(example_tt, .data$track_id)),
+    track_summary_stats(example_tt)
+  )
+})
+
+test_that("track_summary_stats works with integer track ids", {
+  x_int <- move2::mt_set_track_id(
+    example_tt,
+    as.integer(event_track_id(example_tt))
+  )
+  sums_int <- track_summary_stats(x_int)
+  # the track ids keep their type, as in the metadata
+  expect_identical(sums_int$track_id, show_meta(x_int)$track_id)
+  expect_equal(
+    sums_int[, -1],
+    track_summary_stats(example_tt)[, -1],
+    ignore_attr = "names"
+  )
+})
+
+test_that("track_summary_stats uses the first location as default centre", {
+  # the first event of track a has no location, so the centre of track a is
+  # its second event, as if the first event had been removed
+  x_empty <- example_tt
+  sf::st_geometry(x_empty)[1] <- sf::st_point()
+  centre_cols <- c(
+    "max_dist_centre",
+    "lat_at_max_dist_centre",
+    "lon_at_max_dist_centre"
+  )
+  expect_equal(
+    track_summary_stats(x_empty)[, centre_cols],
+    track_summary_stats(example_tt[-1, ])[, centre_cols]
+  )
+})
+
+test_that("track_summary_stats gives geodesic distances from the centre", {
+  # as event_distance() and tt_split_trips(), whatever the s2 setting
+  sums <- track_summary_stats(example_tt)
+  old_s2 <- suppressMessages(sf::sf_use_s2(FALSE))
+  on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)
+  # with s2 switched off, sf::st_distance() gives geodesic distances
+  expect_equal(
+    sums$max_dist_centre[1],
+    max(sf::st_distance(
+      sf::st_geometry(example_tt)[1:5],
+      sf::st_geometry(example_tt)[1]
+    ))
+  )
+  expect_equal(track_summary_stats(example_tt), sums)
+})
+
+test_that("track_summary_stats gives NA from the centre without locations", {
+  # track a has no locations
+  x_empty <- example_tt
+  sf::st_geometry(x_empty)[1:5] <- list(sf::st_point())
+  centre_cols <- c(
+    "max_dist_centre",
+    "lat_at_max_dist_centre",
+    "lon_at_max_dist_centre"
+  )
+  expect_no_warning(sums <- track_summary_stats(x_empty))
+  expect_true(all(is.na(sums[1, centre_cols])))
+  expect_equal(sums[-1, ], track_summary_stats(example_tt)[-1, ])
+  # also with a centre from the metadata
+  show_meta(x_empty)$nest <- sf_point_col(
+    x = show_meta(x_empty)$nest_lon,
+    y = show_meta(x_empty)$nest_lat,
+    crs = 4326
+  )
+  expect_no_warning(sums <- track_summary_stats(x_empty, centre_col = "nest"))
+  expect_true(all(is.na(sums[1, centre_cols])))
 })
 
 # TODO add test for where there are >10 trips per individual (to make sure

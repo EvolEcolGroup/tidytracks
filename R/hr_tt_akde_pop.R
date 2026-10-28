@@ -70,10 +70,12 @@
 #' @param models The table of models used to estimate the UDs, as created
 #'   with [ctmm_tt_fit()] (only needed with `method = "pkde"`).
 #' @param weights The weights of the individuals in the population UD. Either
-#'   `NULL` (the default) for equal weights, the name of a numeric column of
-#'   `x` with the relative weight of each UD (non-negative, and not all zero
-#'   within a group), or, with `method = "pkde"`, `TRUE` to optimise the
-#'   weights (see [ctmm::pkde()]; this requires the package `quadprog`).
+#'   `NULL` (the default) for equal weights, or, with `method = "mean"`, the
+#'   name of a numeric column of `x` with the relative weight of each UD
+#'   (non-negative, and not all zero within a group), or, with
+#'   `method = "pkde"`, `TRUE` to optimise the weights (see [ctmm::pkde()];
+#'   this requires the package `quadprog`). [ctmm::pkde()] cannot use weights
+#'   given by the user.
 #' @param sample Logical; with `method = "mean"`, whether the tracks are a
 #'   sample of a larger population (`TRUE`, the default) or the whole
 #'   population (`FALSE`).
@@ -117,6 +119,8 @@
 #'   dplyr::group_by(track) %>%
 #'   dplyr::slice_head(n = 100) %>%
 #'   dplyr::ungroup()
+#' # fitting the models and estimating the UDs take several seconds
+#' \donttest{
 #' buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 #' buffalo_akde <- hr_tt_akde(buffalo_sub, buffalo_fit)
 #' # population UD with population kernel density estimation (setting the seed
@@ -131,6 +135,7 @@
 #' # or as the average of the individual UDs, with the 95% home range
 #' set.seed(1)
 #' hr_tt_akde_pop(buffalo_akde, method = "mean", levels = 0.95)
+#' }
 hr_tt_akde_pop <- function(
   x,
   method = c("pkde", "mean"),
@@ -393,7 +398,8 @@ stopifnot_akde_ud_table <- function(x) {
 #' @returns For equal weights, `FALSE` with `method = "pkde"` (as expected by
 #'   [ctmm::pkde()]) or `NULL` with `method = "mean"` (as expected by
 #'   `ctmm::mean.UD()`); `TRUE` for optimised weights (`method = "pkde"`
-#'   only); or a numeric vector with one weight per row of `x`.
+#'   only); or a numeric vector with one weight per row of `x`
+#'   (`method = "mean"` only).
 #' @keywords internal
 #' @noRd
 akde_pop_weights <- function(x, weights, method) {
@@ -413,7 +419,16 @@ akde_pop_weights <- function(x, weights, method) {
   ) {
     stop(
       "weights must be NULL, TRUE (with method = \"pkde\"), or the name of a ",
-      "numeric column of x"
+      "numeric column of x (with method = \"mean\")"
+    )
+  }
+  # ctmm::pkde() either uses equal weights or optimises them: given weights
+  # of its own, it optimises them instead (or fails if one of them is zero)
+  if (method == "pkde") {
+    stop(
+      "weights from a column of x are only used with method = \"mean\"; ",
+      "with method = \"pkde\", use weights = NULL (equal weights) or ",
+      "weights = TRUE (optimised weights)"
     )
   }
   ud_weights <- x[[weights]]
@@ -457,13 +472,9 @@ akde_pop_telemetry <- function(tracks, models, uds) {
     character(1),
     USE.NAMES = FALSE
   )
-  # convert the tracks with the same error columns used to fit the models
-  # (needed by the error model, if one was fitted); the messages of ctmm on
-  # the sampling intervals were already given when fitting the models
-  tel_list <- suppressMessages(mt_as_telemetry(
-    dplyr::ungroup(tracks),
-    error_cols = attr(models, "error_cols")
-  ))
+  # convert the tracks as when the models were fitted (with the same error
+  # columns and calibration of the error)
+  tel_list <- ctmm_models_telemetry(tracks, models)
   missing_tracks <- setdiff(ud_tracks, names(tel_list))
   if (length(missing_tracks) > 0) {
     stop(

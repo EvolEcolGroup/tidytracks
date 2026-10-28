@@ -13,6 +13,9 @@
 #'   operations, but are not fully compatible with `ggplot2`. This function
 #'   internally drops units before creating a `ggplot2` layer.
 #'
+#'   Events without a location (empty points) are skipped, so that each step
+#'   joins consecutive events with a location.
+#'
 #' @param mapping Set of aesthetic mappings created by [ggplot2::aes()].
 #'   Variables from the *events* table can be used for mapping. If none is
 #'   provided a basic aesthetics for the `sf` step segments (i.e. lines) will be
@@ -61,9 +64,11 @@ geom_event_path <- function(
   }
 
   # replace the points in the (active) geometry column, whatever its name, by
-  # the segments between each pair of points, using move2::mt_segments
-  data_steps <- data
-  sf::st_geometry(data_steps) <- move2::mt_segments(data)
+  # the segments between each pair of points, using move2::mt_segments.
+  # mt_segments() requires non-empty points, so events without a location are
+  # dropped first: each step then joins consecutive located events
+  data_steps <- data[!sf::st_is_empty(data), ]
+  sf::st_geometry(data_steps) <- move2::mt_segments(data_steps)
 
   # drop all units
   data_steps <- tt_drop_units(data_steps)

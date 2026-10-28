@@ -12,14 +12,20 @@
 #' @param levels A vector of levels for the contour lines. The default is
 #' `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
 #' @returns An `sf` tibble of subclass `hr_tt_poly_tbl` of results, with one
-#' row per group and level, and columns:
+#' row per group and level (with the tracks in the order of the metadata, see
+#' [show_meta()], if `x` is not grouped, or else with the groups in the order
+#' of [dplyr::group_keys()], i.e. sorted by the grouping variables), and
+#' columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
 #'   grouping of `x`
 #' - `method`: the method used to estimate the home range (`"mcp"`)
 #' - `level`: the level of the contour line
 #' - `area`: the area of the home range (as computed by `sf::st_area()`)
-#' - `geometry`: the geometry of the home range as sf polygons
+#' - `geometry`: the geometry of the home range as sf polygons; the polygon
+#'   is empty (and its area is 0) if the locations within the level are all
+#'   at the same place or on a line (e.g. for small levels or groups with few
+#'   locations)
 #' @export
 #' @examples
 #' example_mcp <- hr_tt_mcp(example_tt)
@@ -29,24 +35,33 @@
 #'   geom_sf(aes(fill = track_id), alpha = 0.7)
 hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   # if x is not grouped, use the track ID column as grouping variable
-  if (!inherits(x, "grouped_df")) {
+  by_track <- !inherits(x, "grouped_df")
+  if (by_track) {
     x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
   # as in hr_tt_kde(), every group listed in the group keys must have events
   check_no_empty_groups(x) # nolint: object_usage_linter.
 
   # Check if levels are valid
-  if (any(levels < 0 | levels > 1)) {
+  if (
+    !is.numeric(levels) ||
+      length(levels) == 0 ||
+      anyNA(levels) ||
+      any(levels < 0 | levels > 1)
+  ) {
     stop("levels must be between 0 and 1")
   }
   # reorder levels from big to small
   levels <- sort(levels, decreasing = TRUE)
 
-  # get the group indices
-  group_index <- dplyr::group_indices(x)
-  group_unique <- unique(group_index)
+  # get the group indices, numbered in the order in which the groups are
+  # returned (the order of the tracks in the metadata if x was not grouped,
+  # or else the order of the group keys)
+  group_order <- hr_group_order(x, by_track) # nolint: object_usage_linter.
+  group_index <- match(dplyr::group_indices(x), group_order)
   group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
+  group_labels <- group_labels[group_order]
   # Compute the minimum convex polygon for each group and level
   xy <- sf::st_coordinates(x)
   # events with an empty geometry have no location to contribute to the MCP
@@ -63,30 +78,35 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
     )
   }
 
+  # the rows of xy of each group (splitting them once is much faster, with
+  # many groups, than finding the rows of each group among all the rows)
+  group_rows <- split(
+    seq_along(group_index),
+    factor(group_index, levels = seq_along(group_labels))
+  )
+
   group_id <- NULL # hack to avoid it being flagged as global in checks
-  mcp_results <- foreach::foreach(group_id = group_unique) %do% {
-    # Filter the data for the current group
-    xy_sub <- xy[group_index == group_id, , drop = FALSE]
+  # one result per group, in the order in which they are returned (rather
+  # than in the order in which the groups appear in x); all groups have
+  # locations
+  geometry <- foreach::foreach(group_id = seq_along(group_labels)) %do% {
     # Create MCP for each level (without a CRS, which is set for all groups
     # at once below)
-    geometry <- mcp_one_group(xy_sub, levels)
-
-    # Create a tibble with the results (areas are computed below)
-    tibble::tibble(
-      group_id = group_labels[group_id],
-      method = "mcp",
-      level = levels,
-      area = NA_real_,
-      geometry = geometry
-    )
+    mcp_one_group(xy[group_rows[[group_id]], , drop = FALSE], levels)
   }
 
-  # Combine the groups in one go (combining them one at a time, as foreach's
-  # .combine does, takes time quadratic in the number of groups), cast the
-  # results to an sf object, and compute all the areas in one call: sf looks
-  # up the parameters of the CRS (with PROJ) every time it computes areas,
-  # which takes longer than the MCP of a short track
-  mcp_results <- dplyr::bind_rows(mcp_results)
+  # Create a tibble with the results of all groups in one go (creating a
+  # tibble for each group and combining them takes much longer when there
+  # are many groups), cast it to an sf object, and compute all the areas in
+  # one call: sf looks up the parameters of the CRS (with PROJ) every time it
+  # computes areas, which takes longer than the MCP of a short track
+  mcp_results <- tibble::tibble(
+    group_id = rep(group_labels, each = length(levels)),
+    method = "mcp",
+    level = rep(levels, times = length(group_labels)),
+    area = NA_real_,
+    geometry = sf::st_sfc(unlist(geometry, recursive = FALSE))
+  )
   mcp_results <- sf::st_as_sf(mcp_results, crs = sf::st_crs(x))
   mcp_results$area <- sf::st_area(mcp_results)
 
@@ -115,22 +135,28 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
 #'
 #' @param xy a matrix of coordinates
 #' @param levels A vector of levels for the contour lines
-#' @returns An `sfc` of polygons (without a CRS) representing the MCP at each
-#'   level
+#' @returns An unnamed list of polygons (`sfg` objects) representing the MCP
+#'   at each level
 #' @keywords internal
 #' @noRd
 mcp_one_group <- function(xy, levels) {
   mxy <- colMeans(xy)
   sqd <- (xy[, 1] - mxy[1])^2 + (xy[, 2] - mxy[2])^2
-  qts <- stats::quantile(sqd, levels)
-  geometry <- lapply(qts, function(i) chull_mcp(xy[sqd <= i, , drop = FALSE]))
-  sf::st_sfc(geometry)
+  qts <- stats::quantile(sqd, levels, names = FALSE)
+  lapply(qts, function(i) chull_mcp(xy[sqd <= i, , drop = FALSE]))
 }
 
 # chull function from amt package (or shall we use sf::st_convex_hull?)
 chull_mcp <- function(x) {
   x <- as.matrix(x)
   ch <- grDevices::chull(x)
+  # if the locations are all at the same place or on a line, the hull has
+  # fewer than 3 vertices: it has no area, and a polygon made from it would
+  # be invalid (and rejected by s2 for unprojected data), so return an empty
+  # polygon instead
+  if (length(ch) < 3) {
+    return(sf::st_polygon())
+  }
   ch <- c(ch, ch[1])
   sf::st_polygon(list(x[ch, 1:2]))
 }
