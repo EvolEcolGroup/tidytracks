@@ -24,6 +24,10 @@ table, the speed of the last event is set to NA. The speed is calculated as
 the distance between events divided by the time between events.
 }
 \details{
+The speeds are computed between consecutive events, so the events of each
+track must be stored together and ordered by time; otherwise, an error is
+given (use \code{\link[=tt_order_time]{tt_order_time()}} to order them).
+
 For unprojected longitudes and latitudes, the distance is computed as the
 geodesic distance (via the \code{geodist} package); for projected coordinates, the
 Euclidean distance is used.

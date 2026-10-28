@@ -5,6 +5,10 @@
 #' table, the speed of the last event is set to NA. The speed is calculated as
 #' the distance between events divided by the time between events.
 #'
+#' The speeds are computed between consecutive events, so the events of each
+#' track must be stored together and ordered by time; otherwise, an error is
+#' given (use [tt_order_time()] to order them).
+#'
 #' For unprojected longitudes and latitudes, the distance is computed as the
 #' geodesic distance (via the `geodist` package); for projected coordinates, the
 #' Euclidean distance is used.
@@ -34,6 +38,13 @@ event_speed <- function(x, units = as_units("m/min")) {
   # give error if we don't have a crs
   if (is.na(sf::st_crs(x))) {
     stop("x must have a coordinate reference system (CRS) defined")
+  }
+
+  # the speeds are those between consecutive events, which must therefore be
+  # ordered by time within each track (an object without events is ordered,
+  # but move2::mt_is_time_ordered() gives an error for it)
+  if (nrow(x) > 0) {
+    check_time_ordered(x) # nolint: object_usage_linter.
   }
 
   track_id <- move2::mt_track_id(x)
