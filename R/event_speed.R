@@ -56,11 +56,15 @@ event_speed <- function(x, units = as_units("m/min")) {
 
   # convert the speed into the requested units
   speed <- units::set_units(
-    units::ud_convert(
-      x = unclass(speed),
-      from = units(speed),
-      to = units::deparse_unit(units)
-    ),
+    # units::ud_convert() converts the values one at a time, which is slow
+    # for many events; speed units only differ by a scale factor, so the
+    # values are multiplied by the conversion factor instead
+    as.numeric(speed) *
+      units::ud_convert(
+        x = 1,
+        from = units(speed),
+        to = units::deparse_unit(units)
+      ),
     units,
     mode = "standard"
   )

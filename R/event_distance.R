@@ -69,11 +69,15 @@ event_distance <- function(x, units = as_units("m")) {
 
   # convert to requested units
   dist <- units::set_units(
-    units::ud_convert(
-      x = unclass(dist),
-      from = units(dist),
-      to = units::deparse_unit(units)
-    ),
+    # units::ud_convert() converts the values one at a time, which is slow
+    # for many events; distance units only differ by a scale factor, so the
+    # values are multiplied by the conversion factor instead
+    as.numeric(dist) *
+      units::ud_convert(
+        x = 1,
+        from = units(dist),
+        to = units::deparse_unit(units)
+      ),
     units,
     mode = "standard"
   )
