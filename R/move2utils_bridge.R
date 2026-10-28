@@ -269,6 +269,13 @@ call_move2utils <- function(x, fn, ..., cols, time_ordered = TRUE) {
   if (time_ordered) {
     check_time_ordered(x)
   }
+  # move2utils turns times into seconds with as.numeric(), which gives days
+  # for dates, so these are passed as date-times (at midnight UTC); the
+  # results are returned without the times, so the change does not leak out
+  time <- move2::mt_time(x)
+  if (inherits(time, "Date")) {
+    x <- move2::mt_set_time(x, as.POSIXct(time))
+  }
   # dropping events keeps the order of the others, so the subset is still
   # ordered by time within each track
   located <- !sf::st_is_empty(x)

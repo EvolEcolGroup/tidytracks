@@ -119,6 +119,16 @@ test_that("event_flag_thin_time never keeps events without a location", {
   )
 })
 
+test_that("event_flag_thin_time works with dates", {
+  skip_if_not_installed("move2utils")
+  # one event per day in each of the three tracks
+  x <- move2::mt_set_time(example_tt, as.Date("2024-01-01") + rep(0:4, 3))
+  expect_identical(
+    event_flag_thin_time(x, interval = as_units(2, "days")),
+    rep(c(TRUE, FALSE, TRUE, FALSE, TRUE), 3)
+  )
+})
+
 test_that("tt_thin_time keeps the flagged events", {
   skip_if_not_installed("move2utils")
   x <- create_irregular_tracks()
