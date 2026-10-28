@@ -152,8 +152,8 @@ order of the metadata, and columns:
 - `candidates` (only if `candidates = TRUE`): a list-column of the
   candidate models
 
-The coordinate reference system of `x` and the error columns used are
-stored as attributes of the table.
+The coordinate reference system of `x`, the error columns and the `uere`
+used are stored as attributes of the table.
 
 ## Details
 
@@ -211,14 +211,17 @@ buffalo_sub <- buffalo_tt %>%
   dplyr::group_by(track) %>%
   dplyr::slice_head(n = 100) %>%
   dplyr::ungroup()
+# fitting the models takes a few seconds
+# \donttest{
 buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 #> Minimum sampling interval of 59 minutes in Cilla
 #> Minimum sampling interval of 57 minutes in Gabs
 buffalo_fit
 #> # A tibble: 2 × 9
-#>   track model      model_name  aicc dof_area n_events t_start                   
-#>   <fct> <named li> <chr>      <dbl>    <dbl>    <int> <dttm>                    
-#> 1 Cilla <ctmm>     OU anisot… 3114.     3.29      100 2005-07-14 05:35:00.000000
-#> 2 Gabs  <ctmm>     OU anisot… 2875.     1.68      100 2005-04-05 05:56:00.000000
+#>   track model        model_name      aicc dof_area n_events t_start            
+#>   <fct> <named list> <chr>          <dbl>    <dbl>    <int> <dttm>             
+#> 1 Cilla <ctmm>       OU anisotropic 3114.     3.29      100 2005-07-14 05:35:00
+#> 2 Gabs  <ctmm>       OU anisotropic 2875.     1.68      100 2005-04-05 05:56:00
 #> # ℹ 2 more variables: t_end <dttm>, fit_message <chr>
+# }
 ```

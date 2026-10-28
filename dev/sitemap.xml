@@ -1,9 +1,11 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/LICENSE.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/animations.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/benchmark.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/ctmm_models.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/hr_benchmark.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/index.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/reading_cleaning.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/articles/tidytracks.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/authors.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/copilot-instructions.html</loc></url>
@@ -17,6 +19,7 @@
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/as_event_column.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/as_meta_column.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/autoplot.hr_tt_ud_tbl.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/c.PackedSpatRaster_list.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/cash-.PackedSpatRaster_list.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/cash-set-.PackedSpatRaster_list.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/ctmm_tt_fit.html</loc></url>
@@ -29,11 +32,16 @@
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/dot-tt_printing_config_file.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_azimuth.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_distance.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_corridor.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_mcconnell.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_outliers.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_thin_distance.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_thin_time.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_interval.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_speed.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_time.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_track_id.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/event_ud_level.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/example_tt.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/filter_by_meta.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/geom_event_path.html</loc></url>
@@ -41,6 +49,7 @@
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/geom_track_path.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_akde.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_akde_pop.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_dbbmm.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_locoh.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_mcp.html</loc></url>
@@ -63,20 +72,25 @@
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/sub-.PackedSpatRaster_list.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/sub-sub-.PackedSpatRaster_list.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/sub-subset-.PackedSpatRaster_list.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/subset-.PackedSpatRaster_list.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tidytracks-deprecated.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tidytracks-package.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tidytracks_printing.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/track_duration.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/track_lines.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/track_suggest_max_speed.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/track_summary_health.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/track_summary_stats.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/track_tot_distance.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_clean_mcconnell.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_clean_outliers.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_drop_units.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_order_time.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_read_data.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_regular_time.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_split_trips.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_thin_distance.html</loc></url>
+<url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_thin_time.html</loc></url>
 <url><loc>https://evolecolgroup.github.io/tidytracks/dev/reference/tt_write_data.html</loc></url>
 </urlset>
 

@@ -93,6 +93,9 @@ Units (implemented via the package `units`) are produced by many
 operations, but are not fully compatible with `ggplot2`. This function
 internally drops units before creating a `ggplot2` layer.
 
+Events without a location (empty points) are skipped, so that each step
+joins consecutive events with a location.
+
 ## Examples
 
 ``` r

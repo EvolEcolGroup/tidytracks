@@ -57,7 +57,10 @@ hr_tt_akde(
   `bbox` (one per group), each group has its own default resolution.
 
   Per-group values of `bbox` and `res` are matched to the groups in the
-  order of
+  order in which they are returned: the order of the tracks in the
+  metadata (see
+  [`show_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md))
+  if `x` is not grouped, or else the order of
   [`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html)
   (i.e. sorted by the grouping variables).
 
@@ -104,7 +107,9 @@ with columns:
 
 - the grouping variable (as named in `x`; if `x` is grouped by multiple
   variables, this column is named `group_id`): the ids from the grouping
-  of `x`
+  of `x`, in the order of the tracks in the metadata if `x` is not
+  grouped, or else in the order of
+  [`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html)
 
 - `method`: the method used to estimate the home range (`"akde"`)
 
@@ -204,6 +209,8 @@ buffalo_sub <- buffalo_tt %>%
   dplyr::group_by(track) %>%
   dplyr::slice_head(n = 100) %>%
   dplyr::ungroup()
+# fitting the models and estimating the UDs take a few seconds
+# \donttest{
 buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 #> Minimum sampling interval of 59 minutes in Cilla
 #> Minimum sampling interval of 57 minutes in Gabs
@@ -271,4 +278,5 @@ hr_tt_akde(buffalo_sub, buffalo_fit, levels = c(0.5, 0.95))
 #> 4 Gabs  akde   OU anisotropic     1.68 22253. -12568. 55239. 14083.  218.  0.95
 #> # ℹ 4 more variables: area [m^2], area_low [m^2], area_high [m^2],
 #> #   geometry <MULTIPOLYGON [m]>
+# }
 ```

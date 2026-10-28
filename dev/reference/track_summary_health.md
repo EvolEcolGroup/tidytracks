@@ -26,9 +26,11 @@ and the following columns:
 
 - `<track id column>`: The track ID from `x`
 
-- median_sampling_interval: The median sampling interval in seconds
+- median_sampling_interval: The median sampling interval, in seconds (as
+  a `units` object)
 
-- track_duration: The duration of the track in seconds
+- track_duration: The duration of the track, in seconds (as a `units`
+  object)
 
 - expected_points: The expected number of points based on the median
   sampling interval
@@ -37,13 +39,24 @@ and the following columns:
 
 - proportion_missing: The proportion of expected points that are missing
 
+## Details
+
+Events without a location (i.e. with an empty geometry, e.g. failed
+fixes) are not counted: the sampling interval, the duration and the
+number of points are those of the events with a location, so that failed
+fixes count as missing points. The duration can thus be shorter than
+that given by
+[`track_duration()`](https://evolecolgroup.github.io/tidytracks/dev/reference/track_duration.md),
+which uses all the events. Tracks without any event with a location have
+0 actual points, and `NA` for the other columns.
+
 ## Examples
 
 ``` r
 track_summary_health(example_tt)
 #> # A tibble: 3 × 6
 #>   track_id median_sampling_interval track_duration expected_points actual_points
-#>   <fct>                       <dbl>          <dbl>           <int>         <int>
+#>   <fct>                         [s]            [s]           <int>         <int>
 #> 1 a                            1200           4800               5             5
 #> 2 b                            1200           4800               5             5
 #> 3 c                            1200           4800               5             5

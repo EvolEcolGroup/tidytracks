@@ -35,6 +35,13 @@ as_event_column(x, ..., .keep = FALSE)
 A `move2` object with the specified metadata columns added to the event
 data.
 
+## Details
+
+An `sf` table of metadata is turned into a plain table first, with its
+geometry kept as an `sfc` column, which is renamed if it has the name of
+the geometry column of the events (see
+[`show_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md)).
+
 ## Examples
 
 ``` r

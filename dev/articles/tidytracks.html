@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,8 +36,10 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/benchmark.html">Performance of common track operations</a></li>
     <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
     <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
+    <li><a class="dropdown-item" href="../articles/reading_cleaning.html">Reading and cleaning data</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -496,6 +498,10 @@ subsequent point is not too far away.</p>
 with unrealistically high speeds, the algorithm may miss one, this can
 be remedied by recalculating speeds and then running the filter
 again.</p>
+<p><code>tidytracks</code> can also use the methods of the suggested
+package <code>move2utils</code> to choose a maximum speed, detect
+outliers with data-driven thresholds, and thin tracks (see the article
+“Using move2utils with tidytracks” on the package website).</p>
 </div>
 <div class="section level2">
 <h2 id="splitting-trips">Splitting trips<a class="anchor" aria-label="anchor" href="#splitting-trips"></a>
@@ -513,9 +519,13 @@ the file:</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">shags_tt</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">shags_tt</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>colony_coord <span class="op">=</span> <span class="fu"><a href="../reference/sf_point_col.html">sf_point_col</a></span><span class="op">(</span><span class="va">colony_lon</span>, <span class="va">colony_lat</span>, crs <span class="op">=</span> <span class="fl">4326</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>Note that we use <code><a href="../reference/sf_point_col.html">sf_point_col()</a></code> to create a column. Do
-not replace the metadata with a full <code>sf</code> tibble, as that
-creates problems with certain functions.</p>
+<p>Note that we use <code><a href="../reference/sf_point_col.html">sf_point_col()</a></code> to create a column of
+locations in the metadata. If you replace the metadata with a full
+<code>sf</code> tibble instead, it is stored as a plain table, with its
+geometry kept as a column; as that column is named <code>geometry</code>
+by default, like the locations of the events, it is renamed
+<code>geometry.meta</code> (with a message), so that the two are not
+confused.</p>
 <p>When defining the outbound and inbound buffers for trip splitting, it
 is important to consider the resolution and accuracy of your locations,
 and the likely movements of your birds.</p>
@@ -627,27 +637,28 @@ the centre.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 12 × 10</span></span></span>
 <span><span class="co">#&gt;    trip_id     tot_duration tot_distance max_latitude min_latitude max_longitude</span></span>
 <span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                <span style="color: #949494;">[d]</span>          <span style="color: #949494;">[m]</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> kb_17_trip…       0.277        <span style="text-decoration: underline;">64</span>154.        -<span style="color: #BB0000;">67.3</span>        -<span style="color: #BB0000;">67.5</span>         -<span style="color: #BB0000;">67.8</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> kb_19_trip…       0.280        <span style="text-decoration: underline;">13</span>062.        -<span style="color: #BB0000;">67.4</span>        -<span style="color: #BB0000;">67.5</span>         -<span style="color: #BB0000;">67.9</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> kb_19_trip…       0.280        <span style="text-decoration: underline;">14</span>646.        -<span style="color: #BB0000;">67.4</span>        -<span style="color: #BB0000;">67.5</span>         -<span style="color: #BB0000;">67.9</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> kb_27_trip…       0.170         <span style="text-decoration: underline;">7</span>075.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.8</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> kb_27_trip…       0.121        <span style="text-decoration: underline;">15</span>544.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.8</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> kb_27_trip…       0.273        <span style="text-decoration: underline;">16</span>880.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.7</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> kb_29_trip…       0.278        <span style="text-decoration: underline;">36</span>207.        -<span style="color: #BB0000;">67.4</span>        -<span style="color: #BB0000;">67.5</span>         -<span style="color: #BB0000;">67.6</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> kb_42_trip…       0.032<span style="text-decoration: underline;">3</span>        <span style="text-decoration: underline;">7</span>633.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">68.2</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> kb_43_trip…       0.165        <span style="text-decoration: underline;">13</span>981.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.8</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> kb_43_trip…       0.086<span style="text-decoration: underline;">9</span>       <span style="text-decoration: underline;">10</span>385.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.8</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> kb_43_trip…       0.074<span style="text-decoration: underline;">3</span>       <span style="text-decoration: underline;">10</span>789.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.8</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> kb_45_trip…       0.104        <span style="text-decoration: underline;">34</span>343.        -<span style="color: #BB0000;">67.3</span>        -<span style="color: #BB0000;">67.5</span>         -<span style="color: #BB0000;">67.7</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> kb_17_trip…       0.277        <span style="text-decoration: underline;">64</span>358.        -<span style="color: #BB0000;">67.3</span>        -<span style="color: #BB0000;">67.5</span>         -<span style="color: #BB0000;">67.8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> kb_19_trip…       0.280        <span style="text-decoration: underline;">13</span>105.        -<span style="color: #BB0000;">67.4</span>        -<span style="color: #BB0000;">67.5</span>         -<span style="color: #BB0000;">67.9</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> kb_19_trip…       0.280        <span style="text-decoration: underline;">14</span>695.        -<span style="color: #BB0000;">67.4</span>        -<span style="color: #BB0000;">67.5</span>         -<span style="color: #BB0000;">67.9</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> kb_27_trip…       0.170         <span style="text-decoration: underline;">7</span>103.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> kb_27_trip…       0.121        <span style="text-decoration: underline;">15</span>604.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> kb_27_trip…       0.273        <span style="text-decoration: underline;">16</span>946.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.7</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> kb_29_trip…       0.278        <span style="text-decoration: underline;">36</span>339.        -<span style="color: #BB0000;">67.4</span>        -<span style="color: #BB0000;">67.5</span>         -<span style="color: #BB0000;">67.6</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> kb_42_trip…       0.032<span style="text-decoration: underline;">3</span>        <span style="text-decoration: underline;">7</span>660.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">68.2</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> kb_43_trip…       0.165        <span style="text-decoration: underline;">14</span>034.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> kb_43_trip…       0.086<span style="text-decoration: underline;">9</span>       <span style="text-decoration: underline;">10</span>425.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span> kb_43_trip…       0.074<span style="text-decoration: underline;">3</span>       <span style="text-decoration: underline;">10</span>829.        -<span style="color: #BB0000;">67.5</span>        -<span style="color: #BB0000;">67.6</span>         -<span style="color: #BB0000;">67.8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span> kb_45_trip…       0.104        <span style="text-decoration: underline;">34</span>458.        -<span style="color: #BB0000;">67.3</span>        -<span style="color: #BB0000;">67.5</span>         -<span style="color: #BB0000;">67.7</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># ℹ 4 more variables: min_longitude &lt;dbl&gt;, max_dist_centre [m],</span></span></span>
 <span><span class="co">#&gt; <span style="color: #949494;">#   lat_at_max_dist_centre &lt;dbl&gt;, lon_at_max_dist_centre &lt;dbl&gt;</span></span></span></code></pre></div>
 <p>Note that <code><a href="../reference/track_summary_stats.html">track_summary_stats()</a></code> will return a tibble
 with one row per track, rather than the vector with one element per
 track that is produced by <code><a href="../reference/track_duration.html">track_duration()</a></code> above.</p>
-<p>Note that these distance calculations are being done on unprojected
-data in Euclidean distance. Reprojection within the <code>ggplot</code>
-map only applies within the map itself and doesn’t change the
-<code>tidytracks</code> object.</p>
+<p>Note that these data are unprojected (longitudes and latitudes), so
+the distances are geodesic distances, in metres (for projected data,
+they would be Euclidean distances in the units of the projection).
+Reprojection within the <code>ggplot</code> map only applies within the
+map itself and doesn’t change the <code>tidytracks</code> object.</p>
 <div class="section level3">
 <h3 id="filter-trips">Filter trips<a class="anchor" aria-label="anchor" href="#filter-trips"></a>
 </h3>
@@ -728,31 +739,31 @@ threshold.</p>
 <span><span class="co">#&gt; 11 POINT (-68.06893 -67.57072) kb_43_trip_3  complete 0.07430556 [d]</span></span>
 <span><span class="co">#&gt; 12 POINT (-68.06893 -67.57072) kb_45_trip_1  complete 0.10421296 [d]</span></span>
 <span><span class="co">#&gt;    tot_distance.y max_latitude min_latitude max_longitude min_longitude</span></span>
-<span><span class="co">#&gt; 1   64153.775 [m]    -67.28459    -67.54373     -67.76814     -68.05746</span></span>
-<span><span class="co">#&gt; 2   13062.336 [m]    -67.44403    -67.48943     -67.93273     -68.00242</span></span>
-<span><span class="co">#&gt; 3   14646.337 [m]    -67.44572    -67.48667     -67.93512     -68.00620</span></span>
-<span><span class="co">#&gt; 4    7075.436 [m]    -67.54630    -67.55208     -67.78400     -67.93001</span></span>
-<span><span class="co">#&gt; 5   15544.376 [m]    -67.54576    -67.56658     -67.78343     -67.99485</span></span>
-<span><span class="co">#&gt; 6   16880.422 [m]    -67.54584    -67.56340     -67.69097     -67.92603</span></span>
-<span><span class="co">#&gt; 7   36207.127 [m]    -67.41631    -67.52197     -67.60288     -67.96283</span></span>
-<span><span class="co">#&gt; 8    7633.125 [m]    -67.54379    -67.56457     -68.16519     -68.23206</span></span>
-<span><span class="co">#&gt; 9   13981.456 [m]    -67.54466    -67.56682     -67.79789     -67.98416</span></span>
-<span><span class="co">#&gt; 10  10385.042 [m]    -67.54457    -67.56003     -67.79424     -67.97876</span></span>
-<span><span class="co">#&gt; 11  10788.633 [m]    -67.54638    -67.56438     -67.79609     -67.95639</span></span>
-<span><span class="co">#&gt; 12  34343.099 [m]    -67.32233    -67.53412     -67.70416     -68.05644</span></span>
+<span><span class="co">#&gt; 1   64357.581 [m]    -67.28459    -67.54373     -67.76814     -68.05746</span></span>
+<span><span class="co">#&gt; 2   13105.187 [m]    -67.44403    -67.48943     -67.93273     -68.00242</span></span>
+<span><span class="co">#&gt; 3   14695.334 [m]    -67.44572    -67.48667     -67.93512     -68.00620</span></span>
+<span><span class="co">#&gt; 4    7102.929 [m]    -67.54630    -67.55208     -67.78400     -67.93001</span></span>
+<span><span class="co">#&gt; 5   15604.233 [m]    -67.54576    -67.56658     -67.78343     -67.99485</span></span>
+<span><span class="co">#&gt; 6   16945.570 [m]    -67.54584    -67.56340     -67.69097     -67.92603</span></span>
+<span><span class="co">#&gt; 7   36338.659 [m]    -67.41631    -67.52197     -67.60288     -67.96283</span></span>
+<span><span class="co">#&gt; 8    7660.259 [m]    -67.54379    -67.56457     -68.16519     -68.23206</span></span>
+<span><span class="co">#&gt; 9   14034.207 [m]    -67.54466    -67.56682     -67.79789     -67.98416</span></span>
+<span><span class="co">#&gt; 10  10424.587 [m]    -67.54457    -67.56003     -67.79424     -67.97876</span></span>
+<span><span class="co">#&gt; 11  10829.130 [m]    -67.54638    -67.56438     -67.79609     -67.95639</span></span>
+<span><span class="co">#&gt; 12  34457.529 [m]    -67.32233    -67.53412     -67.70416     -68.05644</span></span>
 <span><span class="co">#&gt;    max_dist_centre lat_at_max_dist_centre lon_at_max_dist_centre</span></span>
-<span><span class="co">#&gt; 1    33889.752 [m]              -67.28865              -67.76814</span></span>
-<span><span class="co">#&gt; 2    15227.878 [m]              -67.44403              -67.93295</span></span>
-<span><span class="co">#&gt; 3    15019.282 [m]              -67.44572              -67.93512</span></span>
-<span><span class="co">#&gt; 4    12379.712 [m]              -67.54697              -67.78400</span></span>
-<span><span class="co">#&gt; 5    12432.770 [m]              -67.54576              -67.78343</span></span>
-<span><span class="co">#&gt; 6    16259.348 [m]              -67.54697              -67.69097</span></span>
-<span><span class="co">#&gt; 7    26222.073 [m]              -67.41649              -67.60288</span></span>
-<span><span class="co">#&gt; 8     7535.107 [m]              -67.54399              -68.23206</span></span>
-<span><span class="co">#&gt; 9    11817.800 [m]              -67.54644              -67.79789</span></span>
-<span><span class="co">#&gt; 10   11879.825 [m]              -67.55022              -67.79424</span></span>
-<span><span class="co">#&gt; 11   11880.917 [m]              -67.54642              -67.79637</span></span>
-<span><span class="co">#&gt; 12   31698.399 [m]              -67.32233              -67.70420</span></span></code></pre></div>
+<span><span class="co">#&gt; 1    33996.009 [m]              -67.28865              -67.76814</span></span>
+<span><span class="co">#&gt; 2    15275.769 [m]              -67.44403              -67.93295</span></span>
+<span><span class="co">#&gt; 3    15066.509 [m]              -67.44572              -67.93512</span></span>
+<span><span class="co">#&gt; 4    12428.597 [m]              -67.54697              -67.78400</span></span>
+<span><span class="co">#&gt; 5    12481.812 [m]              -67.54576              -67.78343</span></span>
+<span><span class="co">#&gt; 6    16323.859 [m]              -67.54697              -67.69097</span></span>
+<span><span class="co">#&gt; 7    26315.618 [m]              -67.41649              -67.60288</span></span>
+<span><span class="co">#&gt; 8     7564.045 [m]              -67.54399              -68.23206</span></span>
+<span><span class="co">#&gt; 9    11864.388 [m]              -67.54644              -67.79789</span></span>
+<span><span class="co">#&gt; 10   11926.839 [m]              -67.55022              -67.79424</span></span>
+<span><span class="co">#&gt; 11   11927.759 [m]              -67.54642              -67.79637</span></span>
+<span><span class="co">#&gt; 12   31800.914 [m]              -67.32233              -67.70420</span></span></code></pre></div>
 <p>We may wish to move metadata to the events table (using
 <code><a href="../reference/as_event_column.html">as_event_column()</a></code>) or vice versa (using
 <code><a href="../reference/as_meta_column.html">as_meta_column()</a></code>).</p>
@@ -1007,6 +1018,10 @@ faster if you unwrap it explicitly before running further analyses:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> kb_42   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> kb_43   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> kb_45   kde    <span style="text-decoration: underline;">1</span>117. -<span style="color: #BB0000; text-decoration: underline;">32</span><span style="color: #BB0000;">968.</span> -<span style="color: #BB0000; text-decoration: underline;">90</span><span style="color: #BB0000;">453.</span> <span style="text-decoration: underline;">38</span>378. -<span style="color: #BB0000; text-decoration: underline;">7</span><span style="color: #BB0000;">215.</span> <span style="text-decoration: underline;">2</span>378. <span style="color: #949494;">&lt;SpatRstr[,30,1]&gt;</span></span></span></code></pre></div>
+<p>Home ranges can also be estimated with dynamic Brownian bridges,
+using <code><a href="../reference/hr_tt_dbbmm.html">hr_tt_dbbmm()</a></code> or <code><a href="../reference/hr_tt_dbbmm.html">hr_tt_dbgb()</a></code>, which
+require the suggested package <code>move2utils</code> (see the article
+“Using move2utils with tidytracks” on the package website).</p>
 </div>
 <div class="section level3">
 <h3 id="minimum-convex-polygons">Minimum Convex Polygons<a class="anchor" aria-label="anchor" href="#minimum-convex-polygons"></a>

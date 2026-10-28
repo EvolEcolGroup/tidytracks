@@ -1,6 +1,6 @@
 # Clean data based on speed
 
-This function uses the algorithm by McConnell et al. (2012) to clean
+This function uses the algorithm by McConnell et al. (1992) to clean
 data based on speed. This is a port of the `speedfilter` function from
 the `trip` package, with an optional endpoint check.
 
@@ -46,10 +46,12 @@ Square (RMS):
 If an endpoint is removed, the McConnell filter is rerun on the reduced
 track, and the endpoint check is repeated until the result is stable.
 
-Events with an empty geometry (i.e. no location) are ignored by the
-filter and returned as valid. Consecutive events at the same location
-are treated as having zero speed, even when they share the same
-timestamp (e.g. duplicated records).
+Speeds are computed between consecutive events of each track in time
+order, whatever the order in which the events are stored in `x`. Events
+with an empty geometry (i.e. no location) are ignored by the filter and
+returned as valid. Consecutive events at the same location are treated
+as having zero speed, even when they share the same timestamp (e.g.
+duplicated records).
 
 ## Examples
 

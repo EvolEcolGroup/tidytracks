@@ -518,6 +518,11 @@ Note: because of this, sometimes if there are two consecutive points
 with unrealistically high speeds, the algorithm may miss one, this can
 be remedied by recalculating speeds and then running the filter again.
 
+`tidytracks` can also use the methods of the suggested package
+`move2utils` to choose a maximum speed, detect outliers with data-driven
+thresholds, and thin tracks (see the article “Using move2utils with
+tidytracks” on the package website).
+
 ## Splitting trips
 
 Shags are central place foragers, and so we now want to split each
@@ -539,8 +544,11 @@ show_meta(shags_tt) <- show_meta(shags_tt) %>%
 
 Note that we use
 [`sf_point_col()`](https://evolecolgroup.github.io/tidytracks/dev/reference/sf_point_col.md)
-to create a column. Do not replace the metadata with a full `sf` tibble,
-as that creates problems with certain functions.
+to create a column of locations in the metadata. If you replace the
+metadata with a full `sf` tibble instead, it is stored as a plain table,
+with its geometry kept as a column; as that column is named `geometry`
+by default, like the locations of the events, it is renamed
+`geometry.meta` (with a message), so that the two are not confused.
 
 When defining the outbound and inbound buffers for trip splitting, it is
 important to consider the resolution and accuracy of your locations, and
@@ -673,18 +681,18 @@ shags_tt_split %>%
 #> # A tibble: 12 × 10
 #>    trip_id     tot_duration tot_distance max_latitude min_latitude max_longitude
 #>    <chr>                [d]          [m]        <dbl>        <dbl>         <dbl>
-#>  1 kb_17_trip…       0.277        64154.        -67.3        -67.5         -67.8
-#>  2 kb_19_trip…       0.280        13062.        -67.4        -67.5         -67.9
-#>  3 kb_19_trip…       0.280        14646.        -67.4        -67.5         -67.9
-#>  4 kb_27_trip…       0.170         7075.        -67.5        -67.6         -67.8
-#>  5 kb_27_trip…       0.121        15544.        -67.5        -67.6         -67.8
-#>  6 kb_27_trip…       0.273        16880.        -67.5        -67.6         -67.7
-#>  7 kb_29_trip…       0.278        36207.        -67.4        -67.5         -67.6
-#>  8 kb_42_trip…       0.0323        7633.        -67.5        -67.6         -68.2
-#>  9 kb_43_trip…       0.165        13981.        -67.5        -67.6         -67.8
-#> 10 kb_43_trip…       0.0869       10385.        -67.5        -67.6         -67.8
-#> 11 kb_43_trip…       0.0743       10789.        -67.5        -67.6         -67.8
-#> 12 kb_45_trip…       0.104        34343.        -67.3        -67.5         -67.7
+#>  1 kb_17_trip…       0.277        64358.        -67.3        -67.5         -67.8
+#>  2 kb_19_trip…       0.280        13105.        -67.4        -67.5         -67.9
+#>  3 kb_19_trip…       0.280        14695.        -67.4        -67.5         -67.9
+#>  4 kb_27_trip…       0.170         7103.        -67.5        -67.6         -67.8
+#>  5 kb_27_trip…       0.121        15604.        -67.5        -67.6         -67.8
+#>  6 kb_27_trip…       0.273        16946.        -67.5        -67.6         -67.7
+#>  7 kb_29_trip…       0.278        36339.        -67.4        -67.5         -67.6
+#>  8 kb_42_trip…       0.0323        7660.        -67.5        -67.6         -68.2
+#>  9 kb_43_trip…       0.165        14034.        -67.5        -67.6         -67.8
+#> 10 kb_43_trip…       0.0869       10425.        -67.5        -67.6         -67.8
+#> 11 kb_43_trip…       0.0743       10829.        -67.5        -67.6         -67.8
+#> 12 kb_45_trip…       0.104        34458.        -67.3        -67.5         -67.7
 #> # ℹ 4 more variables: min_longitude <dbl>, max_dist_centre [m],
 #> #   lat_at_max_dist_centre <dbl>, lon_at_max_dist_centre <dbl>
 ```
@@ -696,9 +704,11 @@ one element per track that is produced by
 [`track_duration()`](https://evolecolgroup.github.io/tidytracks/dev/reference/track_duration.md)
 above.
 
-Note that these distance calculations are being done on unprojected data
-in Euclidean distance. Reprojection within the `ggplot` map only applies
-within the map itself and doesn’t change the `tidytracks` object.
+Note that these data are unprojected (longitudes and latitudes), so the
+distances are geodesic distances, in metres (for projected data, they
+would be Euclidean distances in the units of the projection).
+Reprojection within the `ggplot` map only applies within the map itself
+and doesn’t change the `tidytracks` object.
 
 ### Filter trips
 
@@ -792,31 +802,31 @@ show_meta(shags_tt_split)
 #> 11 POINT (-68.06893 -67.57072) kb_43_trip_3  complete 0.07430556 [d]
 #> 12 POINT (-68.06893 -67.57072) kb_45_trip_1  complete 0.10421296 [d]
 #>    tot_distance.y max_latitude min_latitude max_longitude min_longitude
-#> 1   64153.775 [m]    -67.28459    -67.54373     -67.76814     -68.05746
-#> 2   13062.336 [m]    -67.44403    -67.48943     -67.93273     -68.00242
-#> 3   14646.337 [m]    -67.44572    -67.48667     -67.93512     -68.00620
-#> 4    7075.436 [m]    -67.54630    -67.55208     -67.78400     -67.93001
-#> 5   15544.376 [m]    -67.54576    -67.56658     -67.78343     -67.99485
-#> 6   16880.422 [m]    -67.54584    -67.56340     -67.69097     -67.92603
-#> 7   36207.127 [m]    -67.41631    -67.52197     -67.60288     -67.96283
-#> 8    7633.125 [m]    -67.54379    -67.56457     -68.16519     -68.23206
-#> 9   13981.456 [m]    -67.54466    -67.56682     -67.79789     -67.98416
-#> 10  10385.042 [m]    -67.54457    -67.56003     -67.79424     -67.97876
-#> 11  10788.633 [m]    -67.54638    -67.56438     -67.79609     -67.95639
-#> 12  34343.099 [m]    -67.32233    -67.53412     -67.70416     -68.05644
+#> 1   64357.581 [m]    -67.28459    -67.54373     -67.76814     -68.05746
+#> 2   13105.187 [m]    -67.44403    -67.48943     -67.93273     -68.00242
+#> 3   14695.334 [m]    -67.44572    -67.48667     -67.93512     -68.00620
+#> 4    7102.929 [m]    -67.54630    -67.55208     -67.78400     -67.93001
+#> 5   15604.233 [m]    -67.54576    -67.56658     -67.78343     -67.99485
+#> 6   16945.570 [m]    -67.54584    -67.56340     -67.69097     -67.92603
+#> 7   36338.659 [m]    -67.41631    -67.52197     -67.60288     -67.96283
+#> 8    7660.259 [m]    -67.54379    -67.56457     -68.16519     -68.23206
+#> 9   14034.207 [m]    -67.54466    -67.56682     -67.79789     -67.98416
+#> 10  10424.587 [m]    -67.54457    -67.56003     -67.79424     -67.97876
+#> 11  10829.130 [m]    -67.54638    -67.56438     -67.79609     -67.95639
+#> 12  34457.529 [m]    -67.32233    -67.53412     -67.70416     -68.05644
 #>    max_dist_centre lat_at_max_dist_centre lon_at_max_dist_centre
-#> 1    33889.752 [m]              -67.28865              -67.76814
-#> 2    15227.878 [m]              -67.44403              -67.93295
-#> 3    15019.282 [m]              -67.44572              -67.93512
-#> 4    12379.712 [m]              -67.54697              -67.78400
-#> 5    12432.770 [m]              -67.54576              -67.78343
-#> 6    16259.348 [m]              -67.54697              -67.69097
-#> 7    26222.073 [m]              -67.41649              -67.60288
-#> 8     7535.107 [m]              -67.54399              -68.23206
-#> 9    11817.800 [m]              -67.54644              -67.79789
-#> 10   11879.825 [m]              -67.55022              -67.79424
-#> 11   11880.917 [m]              -67.54642              -67.79637
-#> 12   31698.399 [m]              -67.32233              -67.70420
+#> 1    33996.009 [m]              -67.28865              -67.76814
+#> 2    15275.769 [m]              -67.44403              -67.93295
+#> 3    15066.509 [m]              -67.44572              -67.93512
+#> 4    12428.597 [m]              -67.54697              -67.78400
+#> 5    12481.812 [m]              -67.54576              -67.78343
+#> 6    16323.859 [m]              -67.54697              -67.69097
+#> 7    26315.618 [m]              -67.41649              -67.60288
+#> 8     7564.045 [m]              -67.54399              -68.23206
+#> 9    11864.388 [m]              -67.54644              -67.79789
+#> 10   11926.839 [m]              -67.55022              -67.79424
+#> 11   11927.759 [m]              -67.54642              -67.79637
+#> 12   31800.914 [m]              -67.32233              -67.70420
 ```
 
 We may wish to move metadata to the events table (using
@@ -1128,6 +1138,13 @@ shags_females_ud
 #> 3 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
 #> 4 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
 ```
+
+Home ranges can also be estimated with dynamic Brownian bridges, using
+[`hr_tt_dbbmm()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_dbbmm.md)
+or
+[`hr_tt_dbgb()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_dbbmm.md),
+which require the suggested package `move2utils` (see the article “Using
+move2utils with tidytracks” on the package website).
 
 ### Minimum Convex Polygons
 

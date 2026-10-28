@@ -26,14 +26,20 @@ track_lines(x, ...)
 ## Value
 
 A [sf::sf](https://r-spatial.github.io/sf/reference/sf.html) object with
-a `LINESTRING` representing the track as geometry for each track. The
-metadata for each track is included as well as the products from
+a `LINESTRING` representing the track as geometry for each track, in the
+same order as the tracks in the metadata (see
+[`show_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md)).
+The metadata for each track is included as well as the products from
 summarize
 
 ## Details
 
 Note that all empty points are removed before summarizing. Arguments
-passed with `...` thus only summarize for the non empty locations.
+passed with `...` thus only summarize for the non empty locations. An
+`sf` table of metadata is turned into a plain table first, with its
+geometry kept as an `sfc` column, which is renamed if it has the name of
+the geometry column of the events (see
+[`show_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md)).
 
 ## Examples
 

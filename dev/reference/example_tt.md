@@ -26,7 +26,7 @@ have 3 columns in the main events table
 
   longitudes and latitudes, as an `sf` geometry for each event
 
-And a metadata table with 3 rows (one per track) and 2 columns:
+And a metadata table with 3 rows (one per track) and 4 columns:
 
 - track_id:
 
@@ -35,3 +35,11 @@ And a metadata table with 3 rows (one per track) and 2 columns:
 - sex:
 
   sex of each individual
+
+- nest_lon:
+
+  longitude of the nest of each individual
+
+- nest_lat:
+
+  latitude of the nest of each individual

@@ -31,6 +31,12 @@ with the last value set to NA for each track.
 
 ## Details
 
+The speeds are computed between consecutive events, so the events of
+each track must be stored together and ordered by time; otherwise, an
+error is given (use
+[`tt_order_time()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_order_time.md)
+to order them).
+
 For unprojected longitudes and latitudes, the distance is computed as
 the geodesic distance (via the `geodist` package); for projected
 coordinates, the Euclidean distance is used.

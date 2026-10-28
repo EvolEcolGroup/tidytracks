@@ -21,8 +21,10 @@ filter_by_meta(.data, ..., .track_id = NULL)
 
 - ...:
 
-  The identifiers of one or more tracks to select or selection criteria
-  based on track metadata
+  Selection criteria based on the variables of the track metadata
+  (logical conditions, as in
+  [`dplyr::filter()`](https://dplyr.tidyverse.org/reference/filter.html));
+  to select tracks by their ids, use `.track_id`
 
 - .track_id:
 

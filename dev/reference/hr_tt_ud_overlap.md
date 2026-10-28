@@ -12,14 +12,18 @@ can be useful for comparing the core areas of the UDs.
 ## Usage
 
 ``` r
-hr_tt_ud_overlap(x, ..., method = c("ba", "vi", "udoi", "earth_mover"))
+hr_tt_ud_overlap(
+  x,
+  ...,
+  method = c("ba", "vi", "udoi", "earth_mover", "earth_mover_sinkhorn")
+)
 
 # S3 method for class 'SpatRaster'
 hr_tt_ud_overlap(
   x,
   y,
   ...,
-  method = c("ba", "vi", "udoi", "earth_mover"),
+  method = c("ba", "vi", "udoi", "earth_mover", "earth_mover_sinkhorn"),
   cond_level = NULL
 )
 
@@ -27,7 +31,7 @@ hr_tt_ud_overlap(
 hr_tt_ud_overlap(
   x,
   ...,
-  method = c("ba", "vi", "udoi", "earth_mover"),
+  method = c("ba", "vi", "udoi", "earth_mover", "earth_mover_sinkhorn"),
   cond_level = NULL
 )
 ```
@@ -49,9 +53,19 @@ hr_tt_ud_overlap(
   A character string specifying the method to use for overlap
   calculation. Options are `"ba"` (Bhattacharyya's Affinity), `"vi"`
   (Volume of Intersection), `"udoi"` (Utilisation Distribution Overlap
-  Index, see details), and `"earth_mover"` (Earth Mover's Distance).
-  `"earth_mover"` returns a distance, where zero indicates identical
-  UDs, and requires the suggested package `emdist`. Default is `"ba"`.
+  Index, see details), `"earth_mover"` (Earth Mover's Distance) and
+  `"earth_mover_sinkhorn"` (a fast approximation of the Earth Mover's
+  Distance). The Earth Mover's Distances are distances, in the units of
+  the projection of the UDs, where zero indicates identical UDs.
+  `"earth_mover"` computes the exact distance with the suggested package
+  `emdist`. `"earth_mover_sinkhorn"` uses the entropy-regularised
+  Sinkhorn algorithm of
+  [`move2utils::emd()`](https://move2universe.github.io/move2utils/reference/emd.html),
+  which is much faster for large grids, with values typically within a
+  few percent of the exact distance; it requires the suggested package
+  `move2utils` (install it with
+  `remotes::install_github("move2universe/move2utils")`). Default is
+  `"ba"`.
 
 - y:
 

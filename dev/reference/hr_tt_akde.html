@@ -19,7 +19,7 @@ fitted with ctmm_tt_fit()."><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,8 +32,10 @@ fitted with ctmm_tt_fit()."><meta name="robots" content="noindex"></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/benchmark.html">Performance of common track operations</a></li>
     <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
     <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
+    <li><a class="dropdown-item" href="../articles/reading_cleaning.html">Reading and cleaning data</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -106,7 +108,9 @@ shared resolution or one value per group. If <code>NULL</code> (the default), th
 resolution follows the default of <code>ctmm</code> (see Details); with a list of
 <code>bbox</code> (one per group), each group has its own default resolution.</p>
 <p>Per-group values of <code>bbox</code> and <code>res</code> are matched to the groups in the
-order of <code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">dplyr::group_keys()</a></code> (i.e. sorted by the grouping variables).</p></dd>
+order in which they are returned: the order of the tracks in the metadata
+(see <code><a href="show_meta.html">show_meta()</a></code>) if <code>x</code> is not grouped, or else the order of
+<code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">dplyr::group_keys()</a></code> (i.e. sorted by the grouping variables).</p></dd>
 
 
 <dt id="arg-levels">levels<a class="anchor" aria-label="anchor" href="#arg-levels"></a></dt>
@@ -146,7 +150,8 @@ home range areas, returned when <code>levels</code> is set. Default is 0.95.</p>
 NULL, an <code>sf</code> tibble of class <code>hr_tt_poly_tbl</code> (as returned by
 <code><a href="hr_tt_ud_iso.html">hr_tt_ud_iso()</a></code>), with columns:</p><ul><li><p>the grouping variable (as named in <code>x</code>; if <code>x</code> is grouped by
 multiple variables, this column is named <code>group_id</code>): the ids from the
-grouping of <code>x</code></p></li>
+grouping of <code>x</code>, in the order of the tracks in the metadata if <code>x</code> is not
+grouped, or else in the order of <code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">dplyr::group_keys()</a></code></p></li>
 <li><p><code>method</code>: the method used to estimate the home range (<code>"akde"</code>)</p></li>
 <li><p><code>model_name</code>: the name of the movement model used</p></li>
 <li><p><code>dof_area</code>: the effective number of degrees of freedom of the home range
@@ -220,6 +225,8 @@ kernel density estimation.</p></div>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">track</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice_head</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">ungroup</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># fitting the models and estimating the UDs take a few seconds</span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">buffalo_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="ctmm_tt_fit.html">ctmm_tt_fit</a></span><span class="op">(</span><span class="va">buffalo_sub</span>, model <span class="op">=</span> <span class="st">"ou"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Minimum sampling interval of 59 minutes in Cilla</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Minimum sampling interval of 57 minutes in Gabs</span>
@@ -287,6 +294,7 @@ kernel density estimation.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> Gabs  akde   OU anisotropic     1.68 <span style="text-decoration: underline;">22</span>253. -<span style="color: #BB0000; text-decoration: underline;">12</span><span style="color: #BB0000;">568.</span> <span style="text-decoration: underline;">55</span>239. <span style="text-decoration: underline;">14</span>083.  218.  0.95</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># ℹ 4 more variables: area [m^2], area_low [m^2], area_high [m^2],</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;">#   geometry &lt;MULTIPOLYGON [m]&gt;</span></span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

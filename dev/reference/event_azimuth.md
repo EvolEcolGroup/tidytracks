@@ -2,12 +2,14 @@
 
 This function measures the azimuth between two events. It returns a
 vector of azimuths of the same length as the number of events in `x`,
-with the azimuth for the last event of each track padded with an NA.
+with the azimuth for the last event of each track padded with an NA. The
+azimuth is also NA for the segments to and from events without a
+location (empty geometry).
 
 ## Usage
 
 ``` r
-event_azimuth(x, units)
+event_azimuth(x, units = "degrees")
 ```
 
 ## Arguments
@@ -31,8 +33,8 @@ with the last value set to NA for each track.
 ``` r
 event_azimuth(example_tt)
 #> Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.4.0; sf_use_s2() is TRUE
-#> Units: [rad]
-#>  [1] -0.05638049  2.58225137  1.22882037  2.55889282          NA  1.74569018
-#>  [7] -1.03803727  1.43579575 -2.62268056          NA -1.38030523  0.82696528
-#> [13]  2.42806003 -0.75928493          NA
+#> Units: [°]
+#>  [1]   -3.230364  147.952105   70.406221  146.613759          NA  100.020680
+#>  [7]  -59.475154   82.265037 -150.268527          NA  -79.085664   47.381620
+#> [13]  139.117592  -43.503822          NA
 ```

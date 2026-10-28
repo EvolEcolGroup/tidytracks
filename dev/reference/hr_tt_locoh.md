@@ -40,7 +40,10 @@ hr_tt_locoh(
   the radius for `"r"`, or the maximum sum of the distances for `"a"`
   (both in the units of the projection of `x`). Either a single value,
   or a vector with one value per group, matched to the groups in the
-  order of
+  order in which they are returned: the order of the tracks in the
+  metadata (see
+  [`show_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md))
+  if `x` is not grouped, or else the order of
   [`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html)
   (i.e. sorted by the grouping variables).
 
@@ -65,7 +68,10 @@ hr_tt_locoh(
 ## Value
 
 An `sf` tibble of subclass `hr_tt_poly_tbl` of results, with one row per
-group and level, and columns:
+group and level (with the tracks in the order of the metadata if `x` is
+not grouped, or else with the groups in the order of
+[`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html),
+i.e. sorted by the grouping variables), and columns:
 
 - the grouping variable (as named in `x`; if `x` is grouped by multiple
   variables, this column is named `group_id`): the ids from the grouping

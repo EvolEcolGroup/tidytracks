@@ -32,7 +32,11 @@ hr_tt_ud_sum(x)
 
 either a tibble of UDs with the number of rows equal to the number of
 groups in `x` (or just one row for an ungrouped tibble), or a single
-SpatRaster if `x` is a list of SpatRaster objects.
+SpatRaster if `x` is a list of SpatRaster objects. The UDs must be on
+the same grid; the parameters of the method (e.g. `h` for
+[`hr_tt_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md))
+are kept if they are the same for all the summed UDs, and are `NA`
+otherwise.
 
 ## See also
 

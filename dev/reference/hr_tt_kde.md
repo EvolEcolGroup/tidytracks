@@ -54,9 +54,12 @@ hr_tt_kde(
   resolution that produces approximately 1000 cells.
 
   Per-group values of `h`, `bbox` and `res` are matched to the groups in
-  the order of
+  the order in which they are returned: the order of the tracks in the
+  metadata (see
+  [`show_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md))
+  if `x` is not grouped, or else the order of
   [`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html)
-  (i.e. sorted by the grouping variables), not in the order in which the
+  (i.e. sorted by the grouping variables), not the order in which the
   groups appear in `x`.
 
 - levels:
@@ -83,7 +86,9 @@ with columns:
 
 - the grouping variable (as named in `x`; if `x` is grouped by multiple
   variables, this column is named `group_id`): the ids from the grouping
-  of `x`
+  of `x`, in the order of the tracks in the metadata if `x` is not
+  grouped, or else in the order of
+  [`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html)
 
 - `method`: the method used to estimate the home range (`"kde"`)
 

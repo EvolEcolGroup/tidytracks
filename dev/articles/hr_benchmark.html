@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,8 +36,10 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/benchmark.html">Performance of common track operations</a></li>
     <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
     <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
+    <li><a class="dropdown-item" href="../articles/reading_cleaning.html">Reading and cleaning data</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -75,6 +77,330 @@ with minimum convex polygons (MCP), kernel density estimation (KDE) and
 local convex hulls (LoCoH). This article compares how long they take, on
 tracks simulated with <code>amt</code>, and checks that, given the same
 settings, they give the same home ranges.</p>
+<p>The <a href="#results">results</a> come first. The second part, <a href="#how-the-benchmark-was-run">How the benchmark was run</a>,
+describes the simulated tracks and the benchmark, with their code, and
+how to run it again.</p>
+<div class="section level2">
+<h2 id="results">Results<a class="anchor" aria-label="anchor" href="#results"></a>
+</h2>
+<div class="section level3">
+<h3 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
+</h3>
+<ul>
+<li>Given the same settings, the three packages give the same MCP and
+LoCoH home ranges. The KDE isopleths of <code>adehabitatHR</code>, and
+those of the binned method of <code>tidytracks</code>, are within about
+0.1% of the exact ones of <code>tidytracks</code>, and those of
+<code>amt</code> within about 1%, as its grid points are not at the
+centres of the cells.</li>
+<li>
+<code>tidytracks</code> is the fastest for MCP and LoCoH (more than
+10 times faster than <code>amt</code>, and more than 100 times faster
+than <code>adehabitatHR</code>, for LoCoH), and, with its default binned
+method, for the KDE isopleths (2 to 3 times faster than
+<code>amt</code>).</li>
+<li>For the UDs of long tracks, the binned methods of
+<code>tidytracks</code> and <code>amt</code> are the fastest
+(<code>tidytracks</code> slightly faster), more than 20 times faster
+than the exact methods.</li>
+<li>LoCoH in <code>adehabitatHR</code> becomes impractical beyond a few
+thousand locations per track.</li>
+</ul>
+<p>The packages are compared on two data sets of tracks simulated with
+<code>amt</code>: many tracks of medium length (100 tracks of 500
+locations), and a few long tracks (10 tracks of 10,000 locations), with
+the same settings in all the packages (see <a href="#the-data-sets">The
+data sets</a> and <a href="#running-the-estimators">Running the
+estimators</a>).</p>
+</div>
+<div class="section level3">
+<h3 id="do-the-packages-give-the-same-home-ranges">Do the packages give the same home ranges?<a class="anchor" aria-label="anchor" href="#do-the-packages-give-the-same-home-ranges"></a>
+</h3>
+<p>For each method, data set and level, we compare the area of the home
+range of each track from each estimator with the area from
+<code>tidytracks</code> (with its exact method, for the KDE):</p>
+<table class="table">
+<colgroup>
+<col width="8%">
+<col width="25%">
+<col width="7%">
+<col width="28%">
+<col width="29%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Method</th>
+<th align="left">Estimator</th>
+<th align="left">Level</th>
+<th align="right">Median difference (%)</th>
+<th align="right">Largest difference (%)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">MCP</td>
+<td align="left">amt</td>
+<td align="left">50%</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">MCP</td>
+<td align="left">amt</td>
+<td align="left">95%</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">MCP</td>
+<td align="left">adehabitatHR</td>
+<td align="left">50%</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">MCP</td>
+<td align="left">adehabitatHR</td>
+<td align="left">95%</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">KDE</td>
+<td align="left">tidytracks (binned)</td>
+<td align="left">50%</td>
+<td align="right">0.044</td>
+<td align="right">0.11</td>
+</tr>
+<tr class="even">
+<td align="left">KDE</td>
+<td align="left">tidytracks (binned)</td>
+<td align="left">95%</td>
+<td align="right">0.039</td>
+<td align="right">0.14</td>
+</tr>
+<tr class="odd">
+<td align="left">KDE</td>
+<td align="left">amt</td>
+<td align="left">50%</td>
+<td align="right">0.97</td>
+<td align="right">1.1</td>
+</tr>
+<tr class="even">
+<td align="left">KDE</td>
+<td align="left">amt</td>
+<td align="left">95%</td>
+<td align="right">0.98</td>
+<td align="right">1.1</td>
+</tr>
+<tr class="odd">
+<td align="left">KDE</td>
+<td align="left">adehabitatHR</td>
+<td align="left">50%</td>
+<td align="right">0.0085</td>
+<td align="right">0.015</td>
+</tr>
+<tr class="even">
+<td align="left">KDE</td>
+<td align="left">adehabitatHR</td>
+<td align="left">95%</td>
+<td align="right">0.048</td>
+<td align="right">0.079</td>
+</tr>
+<tr class="odd">
+<td align="left">LoCoH</td>
+<td align="left">amt</td>
+<td align="left">50%</td>
+<td align="right">&lt; 0.001</td>
+<td align="right">&lt; 0.001</td>
+</tr>
+<tr class="even">
+<td align="left">LoCoH</td>
+<td align="left">amt</td>
+<td align="left">95%</td>
+<td align="right">&lt; 0.001</td>
+<td align="right">&lt; 0.001</td>
+</tr>
+<tr class="odd">
+<td align="left">LoCoH</td>
+<td align="left">adehabitatHR</td>
+<td align="left">50%</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">LoCoH</td>
+<td align="left">adehabitatHR</td>
+<td align="left">95%</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p>MCP and LoCoH give the same home ranges in all three packages (the
+tiny differences for LoCoH in <code>amt</code> come from its buffering
+of each hull by 0.00001 m). For the KDE, the isopleths of
+<code>adehabitatHR</code> are within 0.079% of the exact ones of
+<code>tidytracks</code>: both evaluate the same kernels at the same
+points, and differ only in how they draw the isopleths from the UDs. The
+binned estimators approximate the KDE, as binning moves each location by
+less than a cell: the binned isopleths of <code>tidytracks</code> are
+within 0.14% of the exact ones, and those of <code>amt</code> within
+1.1%. Both bin the locations in the same way, and smooth them with the
+same kernel, but <code>amt</code> (with
+<code><a href="https://rdrr.io/pkg/KernSmooth/man/bkde2D.html" class="external-link">KernSmooth::bkde2D()</a></code>) estimates the density at grid points
+that go from edge to edge of its raster, rather than at the centres of
+its cells: they are slightly more than a cell apart, so its UD is
+stretched by up to half a cell towards the edges of the grid.</p>
+</div>
+<div class="section level3">
+<h3 id="how-long-do-they-take">How long do they take?<a class="anchor" aria-label="anchor" href="#how-long-do-they-take"></a>
+</h3>
+<p><img src="hr_benchmark_files/figure-html/plot_timings-1.png" class="r-plt" alt="" width="672"></p>
+<table class="table">
+<caption>Time (s) to estimate the home ranges of all the tracks. For the
+KDE, the column tidytracks is for its default, binned, method.</caption>
+<colgroup>
+<col width="30%">
+<col width="15%">
+<col width="11%">
+<col width="23%">
+<col width="5%">
+<col width="13%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Data set</th>
+<th align="left">Method</th>
+<th align="right">tidytracks</th>
+<th align="right">tidytracks (exact KDE)</th>
+<th align="right">amt</th>
+<th align="right">adehabitatHR</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">100 tracks of 500 locations</td>
+<td align="left">MCP</td>
+<td align="right">0.1</td>
+<td align="right"></td>
+<td align="right">0.74</td>
+<td align="right">1.1</td>
+</tr>
+<tr class="even">
+<td align="left">100 tracks of 500 locations</td>
+<td align="left">KDE: UD</td>
+<td align="right">2</td>
+<td align="right">3.6</td>
+<td align="right">1.7</td>
+<td align="right">6.3</td>
+</tr>
+<tr class="odd">
+<td align="left">100 tracks of 500 locations</td>
+<td align="left">KDE: isopleths</td>
+<td align="right">2.3</td>
+<td align="right">3.7</td>
+<td align="right">6.6</td>
+<td align="right">23</td>
+</tr>
+<tr class="even">
+<td align="left">100 tracks of 500 locations</td>
+<td align="left">LoCoH</td>
+<td align="right">2.6</td>
+<td align="right"></td>
+<td align="right">49</td>
+<td align="right">700</td>
+</tr>
+<tr class="odd">
+<td align="left">10 tracks of 10,000 locations</td>
+<td align="left">MCP</td>
+<td align="right">0.055</td>
+<td align="right"></td>
+<td align="right">0.14</td>
+<td align="right">1.5</td>
+</tr>
+<tr class="even">
+<td align="left">10 tracks of 10,000 locations</td>
+<td align="left">KDE: UD</td>
+<td align="right">0.16</td>
+<td align="right">4.1</td>
+<td align="right">0.22</td>
+<td align="right">5.2</td>
+</tr>
+<tr class="odd">
+<td align="left">10 tracks of 10,000 locations</td>
+<td align="left">KDE: isopleths</td>
+<td align="right">0.33</td>
+<td align="right">4.2</td>
+<td align="right">0.69</td>
+<td align="right">7.1</td>
+</tr>
+<tr class="even">
+<td align="left">10 tracks of 10,000 locations</td>
+<td align="left">LoCoH</td>
+<td align="right">4.8</td>
+<td align="right"></td>
+<td align="right">89</td>
+<td align="right">not run</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<strong>MCP</strong> takes at most about a second in all three
+packages. <code>tidytracks</code> is the fastest: <code>amt</code> takes
+7.2 times as long on the medium tracks, and <code>adehabitatHR</code> 11
+times (26 times on the long tracks).</li>
+<li>
+<strong>KDE</strong>: the exact estimators (<code>tidytracks</code>
+with <code>method = "exact"</code>, and <code>adehabitatHR</code>)
+evaluate the kernel of every location in every cell of the grid, which
+takes a time proportional to the number of locations times the number of
+cells, whilst the binned estimators (<code>tidytracks</code> with its
+default, <code>method = "binned"</code>, and <code>amt</code>) first bin
+the locations onto the grid, so that their time hardly depends on the
+number of locations. On the long tracks, the binned estimators are thus
+much faster: the UDs take 0.16 s with <code>tidytracks</code> and 0.22 s
+with <code>amt</code>, against 4.1 s with the exact method of
+<code>tidytracks</code> (25 times as long) and 5.2 s with
+<code>adehabitatHR</code>. On the medium tracks, which have fewer
+locations, the kernels take less time than building the UD of each
+track: <code>tidytracks</code> (with either method) and <code>amt</code>
+take 1.7 to 3.6 s, and <code>adehabitatHR</code> 6.3 s. Drawing the
+isopleths of the medium tracks adds little to the time of
+<code>tidytracks</code>, which draws them straight from the UDs, without
+building rasters (0.3 s with the binned method), but 4.9 s to that of
+<code>amt</code>, and 17 s to that of <code>adehabitatHR</code>. From
+the locations to the isopleths, the binned method of
+<code>tidytracks</code> is thus the fastest on both data sets:
+<code>amt</code> takes 2.1 to 2.9 times as long, and
+<code>adehabitatHR</code> 10 to 22 times. Most of the time of the exact
+method of <code>tidytracks</code> on long tracks is spent in a matrix
+product (in <code><a href="https://rdrr.io/pkg/MASS/man/kde2d.html" class="external-link">MASS::kde2d()</a></code>), which an optimised BLAS (such
+as OpenBLAS) can make several times faster, as it can the matrix
+products of the binned method; this benchmark used the reference BLAS of
+R.</li>
+<li>
+<strong>LoCoH</strong>: <code>tidytracks</code> is the fastest, by
+far: <code>amt</code> takes 18 to 19 times as long, and
+<code>adehabitatHR</code> 270 times as long on the medium tracks (12
+minutes, against 2.6 s). <code>LoCoH.k()</code> from
+<code>adehabitatHR</code> was not run on the long tracks, as it would
+take hours (see below).</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="locoh-on-a-single-track">LoCoH on a single track<a class="anchor" aria-label="anchor" href="#locoh-on-a-single-track"></a>
+</h3>
+<p><img src="hr_benchmark_files/figure-html/plot_scaling-1.png" class="r-plt" alt="" width="576"></p>
+<p>The time taken by <code>tidytracks</code> and <code>amt</code> grows
+about linearly with the number of locations, whilst that of
+<code>adehabitatHR</code>, which computes the distances between all
+pairs of locations (in R), roughly quadruples each time the number of
+locations doubles. A track of 10,000 locations would thus take it about
+50 minutes, and the 10 long tracks about 8 hours, against 0.5 s per
+track for <code>tidytracks</code>.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="how-the-benchmark-was-run">How the benchmark was run<a class="anchor" aria-label="anchor" href="#how-the-benchmark-was-run"></a>
+</h2>
 <p>The benchmark takes about 35 minutes to run, so it was run once with
 the script <code>vignettes/articles/code/hr_packages_benchmark.R</code>
 (in the source code of the package), and its results are read here from
@@ -86,25 +412,21 @@ without simulating them. The code shown below is taken from these two
 scripts. Timings depend on the machine (see <a href="#machine-and-software">Machine and software</a>), but the
 differences between the packages should be similar on other
 machines.</p>
+<p>The benchmark uses these packages:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/EvolEcolGroup/tidytracks" class="external-link">tidytracks</a></span><span class="op">)</span></span>
 <span><span class="co"># amt and adehabitatHR are not attached: their functions are called with ::,</span></span>
 <span><span class="co"># to make clear which package each of them comes from</span></span></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># to summarise and plot the results</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org" class="external-link">tidyr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span></code></pre></div>
-<div class="section level2">
-<h2 id="simulating-tracks-with-amt">Simulating tracks with amt<a class="anchor" aria-label="anchor" href="#simulating-tracks-with-amt"></a>
-</h2>
+<div class="section level3">
+<h3 id="simulating-tracks-with-amt">Simulating tracks with amt<a class="anchor" aria-label="anchor" href="#simulating-tracks-with-amt"></a>
+</h3>
 <p><code>amt</code> can simulate movement from an integrated step
 selection function (iSSF; Avgar et al. 2016), which combines a movement
 kernel (the distributions of step lengths and turning angles) with the
 selection of the places where steps end. To get tracks that stay within
 a home range, the selection decreases with the squared distance from a
 centre:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># amt simulates movement from a redistribution kernel, which needs a map of</span></span>
 <span><span class="co"># the landscape; this one is uniform, as the model below only depends on the</span></span>
 <span><span class="co"># position of the animal</span></span>
@@ -151,7 +473,7 @@ centre:</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>For example, the first three tracks of the first data set below:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">example_tracks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="kw">function</span><span class="op">(</span><span class="va">i</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu">simulate_track</span><span class="op">(</span></span>
 <span>    id <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"medium_%03d"</span>, <span class="va">i</span><span class="op">)</span>,</span>
@@ -160,7 +482,7 @@ centre:</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span><span class="va">example_tracks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">example_tracks</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">example_tracks</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_path</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="st">"grey40"</span>, linewidth <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">id</span><span class="op">)</span> <span class="op">+</span></span>
@@ -173,13 +495,13 @@ centre:</p>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p><img src="hr_benchmark_files/figure-html/plot_example_tracks-1.png" class="r-plt" alt="" width="672"></p>
 </div>
-<div class="section level2">
-<h2 id="the-data-sets">The data sets<a class="anchor" aria-label="anchor" href="#the-data-sets"></a>
-</h2>
+<div class="section level3">
+<h3 id="the-data-sets">The data sets<a class="anchor" aria-label="anchor" href="#the-data-sets"></a>
+</h3>
 <p>We simulate two data sets, with the same model: many tracks of medium
 length, and a few long tracks (with one location per hour, about three
 weeks and fourteen months of tracking respectively):</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the number of tracks and of locations per track of each data set</span></span>
 <span><span class="va">sizes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  medium <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tracks <span class="op">=</span> <span class="fl">100</span>, locations <span class="op">=</span> <span class="fl">500</span><span class="op">)</span>,</span>
@@ -211,21 +533,21 @@ than in the simulation itself. So the tracks were simulated once (with
 <code>code/hr_benchmark_tracks.R</code>) and stored in
 <code>data/hr_benchmark_tracks.rds</code>, from which the benchmark
 reads them:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the tracks simulated by hr_benchmark_tracks.R: a list of two data frames</span></span>
 <span><span class="co"># (medium and long) with the id, coordinates (x and y, in EPSG:32630) and time</span></span>
 <span><span class="co"># of each location</span></span>
 <span><span class="va">datasets</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/serialize.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_tracks.rds"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="running-the-estimators">Running the estimators<a class="anchor" aria-label="anchor" href="#running-the-estimators"></a>
-</h2>
+<div class="section level3">
+<h3 id="running-the-estimators">Running the estimators<a class="anchor" aria-label="anchor" href="#running-the-estimators"></a>
+</h3>
 <p>Each package works on its own class of objects: a <code>move2</code>
 object for <code>tidytracks</code>, a <code>track_xy</code> for
 <code>amt</code> and a <code>SpatialPointsDataFrame</code> (from
 <code>sp</code>) for <code>adehabitatHR</code>. These are built from the
 data frame of each data set (outside of the timings):</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the input of each package, built from a data frame of locations</span></span>
 <span><span class="va">make_inputs</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -244,7 +566,7 @@ data frame of each data set (outside of the timings):</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>The KDEs are estimated on the same grid for all the packages:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the grid on which the KDEs of all the tracks are estimated: the extent of</span></span>
 <span><span class="co"># all the locations, extended on each side by half its longest side, with 200</span></span>
 <span><span class="co"># cells along its longest side. It is given to each package in its own way:</span></span>
@@ -283,7 +605,7 @@ in one call; <code>amt</code> estimates the home range of a single
 track, so its estimators are applied to each track in turn, after
 nesting the tracks as shown in the documentation of
 <code>amt</code>:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">iso_levels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.95</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># The home range of each track, with each method and estimator, from the</span></span>
@@ -434,7 +756,7 @@ in the hulls) is closest to the level.</li>
 </ul>
 <p>Each estimator is run once, and, if that took less than a minute,
 five more times, of which the median time is reported:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Time an estimator: a first run, which also gives its results, then, if it</span></span>
 <span><span class="co"># took less than a minute, 5 more runs, whose median time is reported.</span></span>
 <span><span class="va">time_estimator</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">estimator</span>, <span class="va">input</span>, <span class="va">grid</span><span class="op">)</span> <span class="op">{</span></span>
@@ -455,7 +777,7 @@ five more times, of which the median time is reported:</p>
 <span>  <span class="op">}</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>result <span class="op">=</span> <span class="va">result</span>, seconds <span class="op">=</span> <span class="va">seconds</span>, runs <span class="op">=</span> <span class="va">runs</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">timings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">area_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">dataset</span> <span class="kw">in</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">datasets</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
@@ -509,14 +831,18 @@ each package (with the functions in <code>areas</code>, in the script).
 <code>LoCoH.k()</code> from <code>adehabitatHR</code> is not run on the
 long tracks: it would take hours (see <a href="#locoh-on-a-single-track">LoCoH on a single track</a>).</p>
 </div>
-<div class="section level2">
-<h2 id="do-the-packages-give-the-same-home-ranges">Do the packages give the same home ranges?<a class="anchor" aria-label="anchor" href="#do-the-packages-give-the-same-home-ranges"></a>
-</h2>
-<p>For each method, data set and level, we compare the area of the home
-range of each track from each estimator with the area from
-<code>tidytracks</code> (with its exact method, for the KDE):</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">area_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_areas.csv"</span><span class="op">)</span></span>
+<div class="section level3">
+<h3 id="from-the-results-to-the-tables-and-plots">From the results to the tables and plots<a class="anchor" aria-label="anchor" href="#from-the-results-to-the-tables-and-plots"></a>
+</h3>
+<p>The benchmark saves its results in
+<code>data/hr_benchmark_*.csv</code>, which are read and summarised for
+the <a href="#results">results</a> above with this code:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># to summarise and plot the results</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org" class="external-link">tidyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="va">area_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_areas.csv"</span><span class="op">)</span></span>
 <span><span class="co"># the estimators, in the order of the tables and plots</span></span>
 <span><span class="va">estimator_levels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"tidytracks"</span>, <span class="st">"tidytracks (binned)"</span>, <span class="st">"tidytracks (exact)"</span>,</span>
@@ -539,144 +865,8 @@ range of each track from each estimator with the area from
 <span>    median_diff <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">diff</span><span class="op">)</span>,</span>
 <span>    max_diff <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">diff</span><span class="op">)</span>,</span>
 <span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<table class="table">
-<colgroup>
-<col width="8%">
-<col width="25%">
-<col width="7%">
-<col width="28%">
-<col width="29%">
-</colgroup>
-<thead><tr class="header">
-<th align="left">Method</th>
-<th align="left">Estimator</th>
-<th align="left">Level</th>
-<th align="right">Median difference (%)</th>
-<th align="right">Largest difference (%)</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left">MCP</td>
-<td align="left">amt</td>
-<td align="left">50%</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="left">MCP</td>
-<td align="left">amt</td>
-<td align="left">95%</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="odd">
-<td align="left">MCP</td>
-<td align="left">adehabitatHR</td>
-<td align="left">50%</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="left">MCP</td>
-<td align="left">adehabitatHR</td>
-<td align="left">95%</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="odd">
-<td align="left">KDE</td>
-<td align="left">tidytracks (binned)</td>
-<td align="left">50%</td>
-<td align="right">0.044</td>
-<td align="right">0.11</td>
-</tr>
-<tr class="even">
-<td align="left">KDE</td>
-<td align="left">tidytracks (binned)</td>
-<td align="left">95%</td>
-<td align="right">0.039</td>
-<td align="right">0.14</td>
-</tr>
-<tr class="odd">
-<td align="left">KDE</td>
-<td align="left">amt</td>
-<td align="left">50%</td>
-<td align="right">0.97</td>
-<td align="right">1.1</td>
-</tr>
-<tr class="even">
-<td align="left">KDE</td>
-<td align="left">amt</td>
-<td align="left">95%</td>
-<td align="right">0.98</td>
-<td align="right">1.1</td>
-</tr>
-<tr class="odd">
-<td align="left">KDE</td>
-<td align="left">adehabitatHR</td>
-<td align="left">50%</td>
-<td align="right">0.0085</td>
-<td align="right">0.015</td>
-</tr>
-<tr class="even">
-<td align="left">KDE</td>
-<td align="left">adehabitatHR</td>
-<td align="left">95%</td>
-<td align="right">0.048</td>
-<td align="right">0.079</td>
-</tr>
-<tr class="odd">
-<td align="left">LoCoH</td>
-<td align="left">amt</td>
-<td align="left">50%</td>
-<td align="right">&lt; 0.001</td>
-<td align="right">&lt; 0.001</td>
-</tr>
-<tr class="even">
-<td align="left">LoCoH</td>
-<td align="left">amt</td>
-<td align="left">95%</td>
-<td align="right">&lt; 0.001</td>
-<td align="right">&lt; 0.001</td>
-</tr>
-<tr class="odd">
-<td align="left">LoCoH</td>
-<td align="left">adehabitatHR</td>
-<td align="left">50%</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="left">LoCoH</td>
-<td align="left">adehabitatHR</td>
-<td align="left">95%</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-</tbody>
-</table>
-<p>MCP and LoCoH give the same home ranges in all three packages (the
-tiny differences for LoCoH in <code>amt</code> come from its buffering
-of each hull by 0.00001 m). For the KDE, the isopleths of
-<code>adehabitatHR</code> are within 0.079% of the exact ones of
-<code>tidytracks</code>: both evaluate the same kernels at the same
-points, and differ only in how they draw the isopleths from the UDs. The
-binned estimators approximate the KDE, as binning moves each location by
-less than a cell: the binned isopleths of <code>tidytracks</code> are
-within 0.14% of the exact ones, and those of <code>amt</code> within
-1.1%. Both bin the locations in the same way, and smooth them with the
-same kernel, but <code>amt</code> (with
-<code><a href="https://rdrr.io/pkg/KernSmooth/man/bkde2D.html" class="external-link">KernSmooth::bkde2D()</a></code>) estimates the density at grid points
-that go from edge to edge of its raster, rather than at the centres of
-its cells: they are slightly more than a cell apart, so its UD is
-stretched by up to half a cell towards the edges of the grid.</p>
-</div>
-<div class="section level2">
-<h2 id="how-long-do-they-take">How long do they take?<a class="anchor" aria-label="anchor" href="#how-long-do-they-take"></a>
-</h2>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">timings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_timings.csv"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="va">timings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_timings.csv"</span><span class="op">)</span></span>
 <span><span class="co"># labels for the plots and tables</span></span>
 <span><span class="va">method_labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  mcp <span class="op">=</span> <span class="st">"MCP"</span>,</span>
@@ -695,8 +885,11 @@ stretched by up to half a cell towards the edges of the grid.</p>
 <span>    method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">method_labels</span><span class="op">[</span><span class="va">method</span><span class="op">]</span>, <span class="va">method_labels</span><span class="op">)</span>,</span>
 <span>    package <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">package</span>, <span class="va">package_levels</span><span class="op">)</span>,</span>
 <span>    estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">estimator</span>, <span class="va">estimator_levels</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<span>  <span class="op">)</span></span>
+<span><span class="va">locoh_scaling</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_locoh_scaling.csv"</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>package <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">package</span>, <span class="va">package_levels</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>and the plots of the timings are drawn with:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># one colour per package (and the name of each estimator on the y axis)</span></span>
 <span><span class="va">package_colours</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  tidytracks <span class="op">=</span> <span class="st">"#2a78d6"</span>,</span>
@@ -728,147 +921,14 @@ stretched by up to half a cell towards the edges of the grid.</p>
 <span>    panel.grid.minor <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_blank</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>    panel.grid.major.y <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_blank</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>    panel.spacing.x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grid/unit.html" class="external-link">unit</a></span><span class="op">(</span><span class="fl">2</span>, <span class="st">"lines"</span><span class="op">)</span>,</span>
-<span>    strip.text.y <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">0</span>, hjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<p><img src="hr_benchmark_files/figure-html/plot_timings-1.png" class="r-plt" alt="" width="672"></p>
-<table class="table">
-<caption>Time (s) to estimate the home ranges of all the tracks. For the
-KDE, the column tidytracks is for its default, binned, method.</caption>
-<colgroup>
-<col width="30%">
-<col width="15%">
-<col width="11%">
-<col width="23%">
-<col width="5%">
-<col width="13%">
-</colgroup>
-<thead><tr class="header">
-<th align="left">Data set</th>
-<th align="left">Method</th>
-<th align="right">tidytracks</th>
-<th align="right">tidytracks (exact KDE)</th>
-<th align="right">amt</th>
-<th align="right">adehabitatHR</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="left">100 tracks of 500 locations</td>
-<td align="left">MCP</td>
-<td align="right">0.36</td>
-<td align="right"></td>
-<td align="right">0.74</td>
-<td align="right">0.98</td>
-</tr>
-<tr class="even">
-<td align="left">100 tracks of 500 locations</td>
-<td align="left">KDE: UD</td>
-<td align="right">1.8</td>
-<td align="right">3.3</td>
-<td align="right">1.8</td>
-<td align="right">6.2</td>
-</tr>
-<tr class="odd">
-<td align="left">100 tracks of 500 locations</td>
-<td align="left">KDE: isopleths</td>
-<td align="right">2.3</td>
-<td align="right">3.3</td>
-<td align="right">6.8</td>
-<td align="right">23</td>
-</tr>
-<tr class="even">
-<td align="left">100 tracks of 500 locations</td>
-<td align="left">LoCoH</td>
-<td align="right">3.2</td>
-<td align="right"></td>
-<td align="right">47</td>
-<td align="right">690</td>
-</tr>
-<tr class="odd">
-<td align="left">10 tracks of 10,000 locations</td>
-<td align="left">MCP</td>
-<td align="right">0.089</td>
-<td align="right"></td>
-<td align="right">0.16</td>
-<td align="right">1.4</td>
-</tr>
-<tr class="even">
-<td align="left">10 tracks of 10,000 locations</td>
-<td align="left">KDE: UD</td>
-<td align="right">0.16</td>
-<td align="right">3.9</td>
-<td align="right">0.21</td>
-<td align="right">5.2</td>
-</tr>
-<tr class="odd">
-<td align="left">10 tracks of 10,000 locations</td>
-<td align="left">KDE: isopleths</td>
-<td align="right">0.34</td>
-<td align="right">4.3</td>
-<td align="right">0.68</td>
-<td align="right">6.9</td>
-</tr>
-<tr class="even">
-<td align="left">10 tracks of 10,000 locations</td>
-<td align="left">LoCoH</td>
-<td align="right">6.4</td>
-<td align="right"></td>
-<td align="right">89</td>
-<td align="right">not run</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li>
-<strong>MCP</strong> takes at most about a second in all three
-packages. <code>tidytracks</code> is the fastest: <code>amt</code> takes
-2.1 times as long on the medium tracks, and <code>adehabitatHR</code>
-2.7 times (15 times on the long tracks).</li>
-<li>
-<strong>KDE</strong>: the exact estimators (<code>tidytracks</code>
-with <code>method = "exact"</code>, and <code>adehabitatHR</code>)
-evaluate the kernel of every location in every cell of the grid, which
-takes a time proportional to the number of locations times the number of
-cells, whilst the binned estimators (<code>tidytracks</code> with its
-default, <code>method = "binned"</code>, and <code>amt</code>) first bin
-the locations onto the grid, so that their time hardly depends on the
-number of locations. On the long tracks, the binned estimators are thus
-much faster: the UDs take 0.16 s with <code>tidytracks</code> and 0.21 s
-with <code>amt</code>, against 3.9 s with the exact method of
-<code>tidytracks</code> (24 times as long) and 5.2 s with
-<code>adehabitatHR</code>. On the medium tracks, which have fewer
-locations, the kernels take less time than building the UD of each
-track: <code>tidytracks</code> (with either method) and <code>amt</code>
-take 1.8 to 3.3 s, and <code>adehabitatHR</code> 6.2 s. Drawing the
-isopleths of the medium tracks adds little to the time of
-<code>tidytracks</code>, which draws them straight from the UDs, without
-building rasters (0.5 s with the binned method), but 5.1 s to that of
-<code>amt</code>, and 16 s to that of <code>adehabitatHR</code>. From
-the locations to the isopleths, the binned method of
-<code>tidytracks</code> is thus the fastest on both data sets:
-<code>amt</code> takes 2 to 3 times as long, and
-<code>adehabitatHR</code> 10 to 20 times. Most of the time of the exact
-method of <code>tidytracks</code> on long tracks is spent in a matrix
-product (in <code><a href="https://rdrr.io/pkg/MASS/man/kde2d.html" class="external-link">MASS::kde2d()</a></code>), which an optimised BLAS (such
-as OpenBLAS) can make several times faster, as it can the matrix
-products of the binned method; this benchmark used the reference BLAS of
-<ol start="18" style="list-style-type: upper-alpha"><li>
-</li></ol>
-</li>
-<li>
-<strong>LoCoH</strong>: <code>tidytracks</code> is the fastest, by
-far: <code>amt</code> takes 14 to 15 times as long, and
-<code>adehabitatHR</code> 220 times as long on the medium tracks (12
-minutes, against 3.2 s).</li>
-</ul>
-</div>
-<div class="section level2">
-<h2 id="locoh-on-a-single-track">LoCoH on a single track<a class="anchor" aria-label="anchor" href="#locoh-on-a-single-track"></a>
-</h2>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">locoh_scaling</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_locoh_scaling.csv"</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>package <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">package</span>, <span class="va">package_levels</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">locoh_scaling</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">locations</span>, y <span class="op">=</span> <span class="va">seconds</span>, colour <span class="op">=</span> <span class="va">package</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    strip.text.y <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">0</span>, hjust <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>,</span>
+<span>    panel.border <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_rect</a></span><span class="op">(</span></span>
+<span>      colour <span class="op">=</span> <span class="st">"grey70"</span>,</span>
+<span>      fill <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>      linewidth <span class="op">=</span> <span class="fl">0.5</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">locoh_scaling</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">locations</span>, y <span class="op">=</span> <span class="va">seconds</span>, colour <span class="op">=</span> <span class="va">package</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>linewidth <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">2.5</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="co"># each line labelled at its last point</span></span>
@@ -900,46 +960,35 @@ minutes, against 3.2 s).</li>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>panel.grid.minor <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_blank</a></span><span class="op">(</span><span class="op">)</span>, legend.position <span class="op">=</span> <span class="st">"top"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="hr_benchmark_files/figure-html/plot_scaling-1.png" class="r-plt" alt="" width="576"></p>
-<p>The time taken by <code>tidytracks</code> and <code>amt</code> grows
-about linearly with the number of locations, whilst that of
-<code>adehabitatHR</code>, which computes the distances between all
-pairs of locations (in R), roughly quadruples each time the number of
-locations doubles. A track of 10,000 locations would thus take it about
-50 minutes, and the 10 long tracks about 8 hours, against 0.7 s per
-track for <code>tidytracks</code>.</p>
 </div>
-<div class="section level2">
-<h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
-</h2>
-<ul>
-<li>Given the same settings, the three packages give the same MCP and
-LoCoH home ranges. The KDE isopleths of <code>adehabitatHR</code>, and
-those of the binned method of <code>tidytracks</code>, are within about
-0.1% of the exact ones of <code>tidytracks</code>, and those of
-<code>amt</code> within about 1%, as its grid points are not at the
-centres of the cells.</li>
-<li>
-<code>tidytracks</code> is the fastest for MCP and LoCoH (more than
-10 times faster than <code>amt</code>, and more than 100 times faster
-than <code>adehabitatHR</code>, for LoCoH), and, with its default binned
-method, for the KDE isopleths (2 to 3 times faster than
-<code>amt</code>).</li>
-<li>For the UDs of long tracks, the binned methods of
-<code>tidytracks</code> and <code>amt</code> are the fastest
-(<code>tidytracks</code> slightly faster), more than 20 times faster
-than the exact methods.</li>
-<li>LoCoH in <code>adehabitatHR</code> becomes impractical beyond a few
-thousand locations per track.</li>
-</ul>
+<div class="section level3">
+<h3 id="running-the-benchmark-again">Running the benchmark again<a class="anchor" aria-label="anchor" href="#running-the-benchmark-again"></a>
+</h3>
+<p>To run the benchmark again (e.g. after changing
+<code>tidytracks</code>, or on another machine), install
+<code>tidytracks</code> (with <code>R CMD INSTALL</code>, rather than
+loading it with <code>devtools::load_all()</code>, which compiles its
+C++ code without optimisation), <code>amt</code>,
+<code>adehabitatHR</code>, <code>sp</code> and <code>bench</code>, and
+run, on an otherwise idle machine:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="bu">cd</span> vignettes/articles</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="ex">Rscript</span> code/hr_packages_benchmark.R</span></code></pre></div>
+<p>which overwrites <code>data/hr_benchmark_*.csv</code>; then render
+this article again.
+<code>Rscript code/hr_packages_benchmark.R quick</code> runs everything
+on the first locations of a few tracks, to check the script, and saves
+its results in a temporary directory instead. The simulated tracks are
+only needed again for a different simulation:
+<code>Rscript code/hr_benchmark_tracks.R</code> simulates them and
+overwrites <code>data/hr_benchmark_tracks.rds</code>.</p>
 </div>
-<div class="section level2">
-<h2 id="machine-and-software">Machine and software<a class="anchor" aria-label="anchor" href="#machine-and-software"></a>
-</h2>
+<div class="section level3">
+<h3 id="machine-and-software">Machine and software<a class="anchor" aria-label="anchor" href="#machine-and-software"></a>
+</h3>
 <table class="table"><tbody>
 <tr class="odd">
 <td align="left">date</td>
-<td align="left">2026-10-27</td>
+<td align="left">2026-10-28</td>
 </tr>
 <tr class="even">
 <td align="left">R</td>
@@ -963,7 +1012,7 @@ thousand locations per track.</li>
 </tr>
 <tr class="odd">
 <td align="left">tidytracks</td>
-<td align="left">0.2.1.9002</td>
+<td align="left">0.2.1.9004</td>
 </tr>
 <tr class="even">
 <td align="left">amt</td>
@@ -994,6 +1043,7 @@ thousand locations per track.</li>
 <td align="left">2.23.27</td>
 </tr>
 </tbody></table>
+</div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

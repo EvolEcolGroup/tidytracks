@@ -33,6 +33,20 @@ show_meta(x) <- value
 The metadata table from the input `move2` object (nothing is returned if
 using the setter function).
 
+## Details
+
+Locations in the metadata (e.g. of a colony) are best stored as `sfc`
+columns of a plain table (see
+[`sf_point_col()`](https://evolecolgroup.github.io/tidytracks/dev/reference/sf_point_col.md)).
+An `sf` table of metadata is stored as a plain table, with its geometry
+kept as an `sfc` column, as move2 cannot join an `sf` table to the
+events (e.g. in
+[`as_event_column()`](https://evolecolgroup.github.io/tidytracks/dev/reference/as_event_column.md)).
+A metadata column with the same name as the geometry column of the
+events (e.g. `geometry`, the default name of the geometry of an `sf`
+table) would replace it when joined to the events, so it is renamed with
+a `.meta` suffix (e.g. `geometry.meta`), with a message.
+
 ## Examples
 
 ``` r

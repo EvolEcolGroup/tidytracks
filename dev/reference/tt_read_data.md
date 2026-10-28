@@ -110,7 +110,9 @@ This function makes a number of assumptions about the data. If your data
 does not meet these assumptions, you may need to preprocess it before
 using this function, or create a `move2` object manually using the
 [`move2::mt_as_move2()`](https://bartk.gitlab.io/move2/reference/mt_as_move2.html)
-function. See the `reading_data` vignette for more details.
+function. See the article "Reading and cleaning data" on the package
+website for more details, including how to read date-times in different
+formats.
 
 ## Examples
 

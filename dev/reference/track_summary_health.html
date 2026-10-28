@@ -13,7 +13,7 @@ points that are missing (due to gaps in track)."><meta name="robots" content="no
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,8 +26,10 @@ points that are missing (due to gaps in track)."><meta name="robots" content="no
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/benchmark.html">Performance of common track operations</a></li>
     <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
     <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
+    <li><a class="dropdown-item" href="../articles/reading_cleaning.html">Reading and cleaning data</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -70,20 +72,31 @@ points that are missing (due to gaps in track).</p>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A tibble with one row per track (in the same order as the tracks in
 the metadata, see <code><a href="show_meta.html">show_meta()</a></code>) and the following columns:</p><ul><li><p><code>&lt;track id column&gt;</code>: The track ID from <code>x</code></p></li>
-<li><p>median_sampling_interval: The median sampling interval in seconds</p></li>
-<li><p>track_duration: The duration of the track in seconds</p></li>
+<li><p>median_sampling_interval: The median sampling interval, in seconds
+(as a <code>units</code> object)</p></li>
+<li><p>track_duration: The duration of the track, in seconds (as a <code>units</code>
+object)</p></li>
 <li><p>expected_points: The expected number of points based on the
 median sampling interval</p></li>
 <li><p>actual_points: The actual number of points in the track</p></li>
 <li><p>proportion_missing: The proportion of expected points that are missing</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Events without a location (i.e. with an empty geometry, e.g. failed fixes)
+are not counted: the sampling interval, the duration and the number of
+points are those of the events with a location, so that failed fixes count
+as missing points. The duration can thus be shorter than that given by
+<code><a href="track_duration.html">track_duration()</a></code>, which uses all the events. Tracks without any event
+with a location have 0 actual points, and <code>NA</code> for the other columns.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">track_summary_health</span><span class="op">(</span><span class="va">example_tt</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 6</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   track_id median_sampling_interval track_duration expected_points actual_points</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                         <span style="color: #949494;">[s]</span>            <span style="color: #949494;">[s]</span>           <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>         <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> a                            <span style="text-decoration: underline;">1</span>200           <span style="text-decoration: underline;">4</span>800               5             5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> b                            <span style="text-decoration: underline;">1</span>200           <span style="text-decoration: underline;">4</span>800               5             5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> c                            <span style="text-decoration: underline;">1</span>200           <span style="text-decoration: underline;">4</span>800               5             5</span>

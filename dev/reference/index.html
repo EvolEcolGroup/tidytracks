@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,8 +20,10 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/benchmark.html">Performance of common track operations</a></li>
     <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
     <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
+    <li><a class="dropdown-item" href="../articles/reading_cleaning.html">Reading and cleaning data</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -150,10 +152,38 @@
 
         <dt>
 
+          <code><a href="event_flag_corridor.html">event_flag_corridor()</a></code>
+
+        </dt>
+        <dd>Flag the steps that are part of movement corridors</dd>
+
+        <dt>
+
           <code><a href="event_flag_mcconnell.html">event_flag_mcconnell()</a></code>
 
         </dt>
         <dd>Clean data based on speed</dd>
+
+        <dt>
+
+          <code><a href="event_flag_outliers.html">event_flag_outliers()</a></code>
+
+        </dt>
+        <dd>Flag outliers using the methods of move2utils</dd>
+
+        <dt>
+
+          <code><a href="event_flag_thin_distance.html">event_flag_thin_distance()</a></code>
+
+        </dt>
+        <dd>Flag events to keep when thinning tracks by distance travelled</dd>
+
+        <dt>
+
+          <code><a href="event_flag_thin_time.html">event_flag_thin_time()</a></code>
+
+        </dt>
+        <dd>Flag events to keep when thinning tracks to a time interval</dd>
 
         <dt>
 
@@ -182,6 +212,13 @@
 
         </dt>
         <dd>Return the track id of each event</dd>
+
+        <dt>
+
+          <code><a href="event_ud_level.html">event_ud_level()</a></code>
+
+        </dt>
+        <dd>Find the isopleth level of each event in a utilisation distribution</dd>
       </dl></div><div class="section level2">
       <h2 id="track-functions">Track functions<a class="anchor" aria-label="anchor" href="#track-functions"></a></h2>
 
@@ -205,6 +242,13 @@
 
         </dt>
         <dd>Return a trajectory line for each track</dd>
+
+        <dt>
+
+          <code><a href="track_suggest_max_speed.html">track_suggest_max_speed()</a></code>
+
+        </dt>
+        <dd>Suggest a maximum speed for each track from the data</dd>
 
         <dt>
 
@@ -263,6 +307,27 @@
 
         </dt>
         <dd>Clean a <code>move2</code> object using McConnell's algorithm</dd>
+
+        <dt>
+
+          <code><a href="tt_clean_outliers.html">tt_clean_outliers()</a></code>
+
+        </dt>
+        <dd>Clean a <code>move2</code> object using the outlier methods of move2utils</dd>
+
+        <dt>
+
+          <code><a href="tt_thin_time.html">tt_thin_time()</a></code>
+
+        </dt>
+        <dd>Thin tracks to a time interval</dd>
+
+        <dt>
+
+          <code><a href="tt_thin_distance.html">tt_thin_distance()</a></code>
+
+        </dt>
+        <dd>Thin tracks by distance travelled</dd>
 
         <dt>
 
@@ -337,6 +402,13 @@
 
         </dt>
         <dd>Combine AKDE home ranges into population home ranges</dd>
+
+        <dt>
+
+          <code><a href="hr_tt_dbbmm.html">hr_tt_dbbmm()</a></code> <code><a href="hr_tt_dbbmm.html">hr_tt_dbgb()</a></code>
+
+        </dt>
+        <dd>Quantify the home range using dynamic Brownian bridges</dd>
 
         <dt>
 
@@ -456,6 +528,13 @@
 
         <dt>
 
+          <code><a href="c.PackedSpatRaster_list.html">c(<i>&lt;PackedSpatRaster_list&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Combine <code>PackedSpatRaster_list</code> objects</dd>
+
+        <dt>
+
           <code><a href="cash-.PackedSpatRaster_list.html">`$`(<i>&lt;PackedSpatRaster_list&gt;</i>)</a></code>
 
         </dt>
@@ -495,6 +574,13 @@
 
         </dt>
         <dd>Add <code>SpatRaster</code> by position or name to <code>PackedSpatRaster_list</code></dd>
+
+        <dt>
+
+          <code><a href="subset-.PackedSpatRaster_list.html">`[&lt;-`(<i>&lt;PackedSpatRaster_list&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Add <code>SpatRaster</code> objects by position or name to <code>PackedSpatRaster_list</code></dd>
       </dl></div><div class="section level2">
       <h2 id="helper-functions">Helper functions<a class="anchor" aria-label="anchor" href="#helper-functions"></a></h2>
 

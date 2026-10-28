@@ -69,6 +69,10 @@ geom_event_point(
 
 A `ggplot2` layer object.
 
+## Details
+
+Events without a location (empty points) are not plotted.
+
 ## Examples
 
 ``` r

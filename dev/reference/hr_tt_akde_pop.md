@@ -59,11 +59,14 @@ hr_tt_akde_pop(
 - weights:
 
   The weights of the individuals in the population UD. Either `NULL`
-  (the default) for equal weights, the name of a numeric column of `x`
-  with the relative weight of each UD (non-negative, and not all zero
-  within a group), or, with `method = "pkde"`, `TRUE` to optimise the
-  weights (see [`ctmm::pkde()`](https://rdrr.io/pkg/ctmm/man/akde.html);
-  this requires the package `quadprog`).
+  (the default) for equal weights, or, with `method = "mean"`, the name
+  of a numeric column of `x` with the relative weight of each UD
+  (non-negative, and not all zero within a group), or, with
+  `method = "pkde"`, `TRUE` to optimise the weights (see
+  [`ctmm::pkde()`](https://rdrr.io/pkg/ctmm/man/akde.html); this
+  requires the package `quadprog`).
+  [`ctmm::pkde()`](https://rdrr.io/pkg/ctmm/man/akde.html) cannot use
+  weights given by the user.
 
 - sample:
 
@@ -208,6 +211,8 @@ buffalo_sub <- buffalo_tt %>%
   dplyr::group_by(track) %>%
   dplyr::slice_head(n = 100) %>%
   dplyr::ungroup()
+# fitting the models and estimating the UDs take several seconds
+# \donttest{
 buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 #> Minimum sampling interval of 59 minutes in Cilla
 #> Minimum sampling interval of 57 minutes in Gabs
@@ -277,4 +282,5 @@ hr_tt_akde_pop(buffalo_akde, method = "mean", levels = 0.95)
 #> * <chr>  <int>    <dbl>  <dbl>   <dbl>  <dbl>  <dbl> <dbl> <dbl>  [m^2]    [m^2]
 #> 1 akde_…     3     7.48 22353. -12467. 55201. 14023.  118.  0.95 1.54e8   6.45e7
 #> # ℹ 2 more variables: area_high [m^2], geometry <MULTIPOLYGON [m]>
+# }
 ```

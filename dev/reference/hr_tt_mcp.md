@@ -28,7 +28,11 @@ hr_tt_mcp(x, levels = c(0.5, 0.95))
 ## Value
 
 An `sf` tibble of subclass `hr_tt_poly_tbl` of results, with one row per
-group and level, and columns:
+group and level (with the tracks in the order of the metadata, see
+[`show_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md),
+if `x` is not grouped, or else with the groups in the order of
+[`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html),
+i.e. sorted by the grouping variables), and columns:
 
 - the grouping variable (as named in `x`; if `x` is grouped by multiple
   variables, this column is named `group_id`): the ids from the grouping
@@ -41,7 +45,10 @@ group and level, and columns:
 - `area`: the area of the home range (as computed by
   [`sf::st_area()`](https://r-spatial.github.io/sf/reference/geos_measures.html))
 
-- `geometry`: the geometry of the home range as sf polygons
+- `geometry`: the geometry of the home range as sf polygons; the polygon
+  is empty (and its area is 0) if the locations within the level are all
+  at the same place or on a line (e.g. for small levels or groups with
+  few locations)
 
 ## Examples
 

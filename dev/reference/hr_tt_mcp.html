@@ -11,7 +11,7 @@ ignored."><meta name="robots" content="noindex"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">tidytracks</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.9003</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.1.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,8 +24,10 @@ ignored."><meta name="robots" content="noindex"></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
+    <li><a class="dropdown-item" href="../articles/benchmark.html">Performance of common track operations</a></li>
     <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
     <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
+    <li><a class="dropdown-item" href="../articles/reading_cleaning.html">Reading and cleaning data</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -75,13 +77,19 @@ levels with <code>.drop = FALSE</code>) give an error.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An <code>sf</code> tibble of subclass <code>hr_tt_poly_tbl</code> of results, with one
-row per group and level, and columns:</p><ul><li><p>the grouping variable (as named in <code>x</code>; if <code>x</code> is grouped by
+row per group and level (with the tracks in the order of the metadata, see
+<code><a href="show_meta.html">show_meta()</a></code>, if <code>x</code> is not grouped, or else with the groups in the order
+of <code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">dplyr::group_keys()</a></code>, i.e. sorted by the grouping variables), and
+columns:</p><ul><li><p>the grouping variable (as named in <code>x</code>; if <code>x</code> is grouped by
 multiple variables, this column is named <code>group_id</code>): the ids from the
 grouping of <code>x</code></p></li>
 <li><p><code>method</code>: the method used to estimate the home range (<code>"mcp"</code>)</p></li>
 <li><p><code>level</code>: the level of the contour line</p></li>
 <li><p><code>area</code>: the area of the home range (as computed by <code><a href="https://r-spatial.github.io/sf/reference/geos_measures.html" class="external-link">sf::st_area()</a></code>)</p></li>
-<li><p><code>geometry</code>: the geometry of the home range as sf polygons</p></li>
+<li><p><code>geometry</code>: the geometry of the home range as sf polygons; the polygon
+is empty (and its area is 0) if the locations within the level are all
+at the same place or on a line (e.g. for small levels or groups with few
+locations)</p></li>
 </ul></div>
 
     <div class="section level2">

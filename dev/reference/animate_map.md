@@ -41,8 +41,8 @@ animate_map(
 
   A character string specifying the
   [`format.POSIXct`](https://rdrr.io/r/base/strptime.html) format for
-  the date-time label shown on each frame. Default is
-  `"\%Y-\%m-\%d \%H:\%M:\%S"`.
+  the date-time label shown on each frame, in the time zone of the track
+  times. Default is `"%Y-%m-%d %H:%M:%S"`.
 
 ## Value
 

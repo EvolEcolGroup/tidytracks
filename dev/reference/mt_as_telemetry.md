@@ -27,9 +27,10 @@ mt_as_telemetry(x, error_cols = "auto", ...)
   locations, to be passed to `ctmm`. If `"auto"` (the default), the
   columns with a name that `ctmm` recognises as error information (with
   Movebank naming, e.g. `gps_hdop`, `eobs_horizontal_accuracy_estimate`,
-  `argos_lc`) are passed. Otherwise, a character vector of column names,
-  or `NULL` to pass no error information. `ctmm` ignores columns with
-  names that it does not recognise (see
+  `argos_lc`, or the time to fix `gps_time_to_fix`, used with `timeout`)
+  are passed. Otherwise, a character vector of column names, or `NULL`
+  to pass no error information. `ctmm` ignores columns with names that
+  it does not recognise (see
   [`ctmm::as.telemetry()`](https://rdrr.io/pkg/ctmm/man/as.telemetry.html));
   such columns can be renamed by naming the vector with the names used
   by `ctmm`, e.g. `error_cols = c(HDOP = "my_hdop_column")`.

@@ -2,9 +2,11 @@
 
 This function cleans a `move2` object using McConnell's algorithm. It
 removes outliers based on the distance between consecutive points and
-the time interval between them (more explanation; give reference TODO).
-This function returns a clean `move2` object; to generate a column that
-flags events to remove but does not remove them, use
+the time interval between them (see
+[`event_flag_mcconnell()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_mcconnell.md)
+for details of the algorithm, by McConnell et al. 1992). This function
+returns a clean `move2` object; to generate a column that flags events
+to remove but does not remove them, use
 [`event_flag_mcconnell()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_mcconnell.md).
 
 ## Usage
@@ -38,13 +40,15 @@ tt_clean_mcconnell(
 - check_first_last:
 
   Logical. If `TRUE`, also evaluate the first and last currently valid
-  point of each track using the endpoint RMS described above. If either
-  endpoint is removed, the McConnell filter is rerun on the reduced
-  track until the result is stable.
+  point of each track using the endpoint RMS described in
+  [`event_flag_mcconnell()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_mcconnell.md).
+  If either endpoint is removed, the McConnell filter is rerun on the
+  reduced track until the result is stable.
 
 ## Value
 
-A clean `move2` object with events removed
+The `move2` object `x`, with the flagged events removed, or with their
+location set to empty or interpolated (see `flag_action`).
 
 ## Examples
 

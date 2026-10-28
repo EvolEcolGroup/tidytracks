@@ -26,7 +26,11 @@ as.data.frame(x, ..., include_meta = FALSE, drop_geometry = FALSE)
 - include_meta:
 
   Logical, whether to include the metadata attributes in the resulting
-  data frame. Default is FALSE.
+  data frame. Default is FALSE. An `sf` table of metadata is turned into
+  a plain table first, with its geometry kept as an `sfc` column, which
+  is renamed if it has the name of the geometry column of the events
+  (see
+  [`show_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md)).
 
 - drop_geometry:
 

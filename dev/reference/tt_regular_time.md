@@ -5,7 +5,8 @@ time grid. A new grid point is placed every `interval` time units from
 the start of the track. Tracks are processed independently, so different
 tracks may have different temporal extents and the points from different
 tracks will not have matching time stamps (as the starting points are
-different).
+different). Events with an empty geometry (i.e. no location) are
+ignored.
 
 ## Usage
 
@@ -63,9 +64,8 @@ Positions are linearly interpolated along the observed path, with a
 strategy dependent on the map projection (using a strategy similar to
 [`move2::mt_interpolate()`](https://bartk.gitlab.io/move2/reference/mt_interpolate.html)):
 
-- **No CRS** –
-  [`sf::st_line_sample()`](https://r-spatial.github.io/sf/reference/st_line_sample.html)
-  is called on the Euclidean linestring connecting the observations.
+- **No CRS** – positions are linearly interpolated along the Euclidean
+  segments connecting consecutive observations.
 
 - **Geographic CRS (lon/lat)** – the path is treated as a spherical
   polyline and
@@ -94,7 +94,8 @@ correctly treated as slow movement, not as a spatial shortcut.
 ## Attribute interpolation
 
 Numeric event-level columns are linearly interpolated at the new time
-steps using [`stats::approx()`](https://rdrr.io/r/stats/approxfun.html).
+steps using [`stats::approx()`](https://rdrr.io/r/stats/approxfun.html)
+(they are `NA` for tracks with fewer than two non-missing values).
 Non-numeric columns receive the value of the nearest preceding (or
 simultaneous) observation via
 [`findInterval`](https://rdrr.io/r/base/findInterval.html). Track-level
@@ -109,8 +110,6 @@ for the move2 implementation of the same spatial strategy with flexible
 time targets (including interpolating to specific missing timestamps);
 [`units::as_units()`](https://r-quantities.github.io/units/reference/units.html)
 for constructing the required `units` objects;
-[`sf::st_line_sample()`](https://r-spatial.github.io/sf/reference/st_line_sample.html)
-for Euclidean path sampling;
 [`s2::s2_interpolate_normalized()`](https://r-spatial.github.io/s2/reference/s2_interpolate.html)
 for spherical arc sampling.
 
