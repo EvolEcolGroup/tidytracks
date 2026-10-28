@@ -38,19 +38,22 @@ track_summary_health <- function(x) {
     proportion_missing = NA_real_
   )
 
-  # Ensure the move2 object is ordered by time within each track
-  x <- tt_order_time(x)
+  # Split the times of the events by track once (rather than subsetting x for
+  # each track), in the order of the metadata
+  track_times <- split(
+    event_time(x),
+    factor(as.character(event_track_id(x)), levels = as.character(track_ids))
+  )
 
   # Loop through each track and calculate the summary statistics
   for (i in seq_along(track_ids)) {
-    track_id <- track_ids[i]
-    track_data <- x[
-      as.character(event_track_id(x)) == as.character(track_id),
-    ]
+    # Ensure the times are ordered within the track (as tt_order_time())
+    track_time <- track_times[[i]]
+    track_time <- track_time[order(track_time)]
 
     # Calculate the median sampling interval
     sampling_intervals <- as.numeric(diff(
-      event_time(track_data),
+      track_time,
       units = "secs"
     ))
     sampling_intervals <- sampling_intervals[
@@ -65,14 +68,14 @@ track_summary_health <- function(x) {
 
     # Calculate the track duration
     track_duration <- as.numeric(difftime(
-      max(event_time(track_data)),
-      min(event_time(track_data)),
+      max(track_time),
+      min(track_time),
       units = "secs"
     ))
 
     # Calculate the expected number of points
     # Calculate the actual number of points
-    actual_points <- nrow(track_data)
+    actual_points <- length(track_time)
 
     # Calculate the expected number of points
     if (is.finite(median_sampling_interval) && median_sampling_interval > 0) {
