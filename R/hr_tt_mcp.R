@@ -71,32 +71,34 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
     )
   }
 
+  # the rows of xy of each group (splitting them once is much faster, with
+  # many groups, than finding the rows of each group among all the rows)
+  group_rows <- split(
+    seq_along(group_index),
+    factor(group_index, levels = seq_along(group_labels))
+  )
+
   group_id <- NULL # hack to avoid it being flagged as global in checks
   # one result per group, in the order of the group keys (rather than in the
   # order in which the groups appear in x); all groups have locations
-  mcp_results <- foreach::foreach(group_id = seq_along(group_labels)) %do% {
-    # Filter the data for the current group
-    xy_sub <- xy[group_index == group_id, , drop = FALSE]
+  geometry <- foreach::foreach(group_id = seq_along(group_labels)) %do% {
     # Create MCP for each level (without a CRS, which is set for all groups
     # at once below)
-    geometry <- mcp_one_group(xy_sub, levels)
-
-    # Create a tibble with the results (areas are computed below)
-    tibble::tibble(
-      group_id = group_labels[group_id],
-      method = "mcp",
-      level = levels,
-      area = NA_real_,
-      geometry = geometry
-    )
+    mcp_one_group(xy[group_rows[[group_id]], , drop = FALSE], levels)
   }
 
-  # Combine the groups in one go (combining them one at a time, as foreach's
-  # .combine does, takes time quadratic in the number of groups), cast the
-  # results to an sf object, and compute all the areas in one call: sf looks
-  # up the parameters of the CRS (with PROJ) every time it computes areas,
-  # which takes longer than the MCP of a short track
-  mcp_results <- dplyr::bind_rows(mcp_results)
+  # Create a tibble with the results of all groups in one go (creating a
+  # tibble for each group and combining them takes much longer when there
+  # are many groups), cast it to an sf object, and compute all the areas in
+  # one call: sf looks up the parameters of the CRS (with PROJ) every time it
+  # computes areas, which takes longer than the MCP of a short track
+  mcp_results <- tibble::tibble(
+    group_id = rep(group_labels, each = length(levels)),
+    method = "mcp",
+    level = rep(levels, times = length(group_labels)),
+    area = NA_real_,
+    geometry = sf::st_sfc(unlist(geometry, recursive = FALSE))
+  )
   mcp_results <- sf::st_as_sf(mcp_results, crs = sf::st_crs(x))
   mcp_results$area <- sf::st_area(mcp_results)
 
@@ -125,16 +127,15 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
 #'
 #' @param xy a matrix of coordinates
 #' @param levels A vector of levels for the contour lines
-#' @returns An `sfc` of polygons (without a CRS) representing the MCP at each
-#'   level
+#' @returns An unnamed list of polygons (`sfg` objects) representing the MCP
+#'   at each level
 #' @keywords internal
 #' @noRd
 mcp_one_group <- function(xy, levels) {
   mxy <- colMeans(xy)
   sqd <- (xy[, 1] - mxy[1])^2 + (xy[, 2] - mxy[2])^2
-  qts <- stats::quantile(sqd, levels)
-  geometry <- lapply(qts, function(i) chull_mcp(xy[sqd <= i, , drop = FALSE]))
-  sf::st_sfc(geometry)
+  qts <- stats::quantile(sqd, levels, names = FALSE)
+  lapply(qts, function(i) chull_mcp(xy[sqd <= i, , drop = FALSE]))
 }
 
 # chull function from amt package (or shall we use sf::st_convex_hull?)
