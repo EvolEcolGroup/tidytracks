@@ -112,6 +112,27 @@ test_that("hr_tt_kde validates a collection of group-specific grids", {
   )
 })
 
+test_that("hr_tt_kde returns the groups in the order of the group keys", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  # a grouping factor whose levels are in the reverse order of the
+  # appearance of the groups in the data
+  animals <- c("Jean", "Chou", "Calou", "Brock")
+  boar_tt$animal <- factor(as.character(boar_tt$name), levels = animals)
+  boar_grouped <- dplyr::group_by(boar_tt, animal)
+  kde <- hr_tt_kde(boar_grouped, res = 50)
+  expect_equal(kde$animal, animals)
+  expect_equal(names(kde$ud), animals)
+  # each with its own UD
+  kde_by_name <- hr_tt_kde(boar_tt, res = 50)
+  expect_equal(
+    lapply(kde$ud, terra::values),
+    lapply(kde_by_name$ud, terra::values)[animals]
+  )
+  # and so are the isopleths
+  iso <- hr_tt_kde(boar_grouped, res = 50, levels = 0.5)
+  expect_equal(iso$animal, animals)
+})
+
 test_that("hr_tt_kde rejects grids beyond the reach of a group's kernels", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds")) %>%
     dplyr::group_by(name)

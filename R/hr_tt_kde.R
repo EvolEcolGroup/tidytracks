@@ -77,7 +77,7 @@
 #' [hr_tt_ud_iso()]), with columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
-#'   grouping of `x`
+#'   grouping of `x`, in the order of [dplyr::group_keys()]
 #' - `method`: the method used to estimate the home range (`"kde"`)
 #' - `h`: the bandwidth used for the KDE
 #' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
@@ -135,9 +135,11 @@ hr_tt_kde <- function(
   # reorder levels from big to small
   levels <- sort(levels, decreasing = TRUE)
 
-  # get the group indices
+  # get the group indices; the groups are estimated (and returned) in the
+  # order of their keys, as for the other hr_tt_* functions, rather than in
+  # the order in which they appear in x
   group_index <- dplyr::group_indices(x)
-  group_unique <- unique(group_index)
+  group_unique <- sort(unique(group_index))
   group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
   # extract coordinates
