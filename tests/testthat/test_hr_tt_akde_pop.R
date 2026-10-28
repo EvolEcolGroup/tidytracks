@@ -241,8 +241,10 @@ test_that("hr_tt_akde_pop checks its inputs", {
     hr_tt_akde_pop(akde_moved, method = "mean"),
     "must be on the same grid"
   )
-  # the UDs must be estimated with hr_tt_akde()
-  kde <- hr_tt_kde(x)
+  # the UDs must be estimated with hr_tt_akde() (a KDE of example_tt, as the
+  # default grid of a KDE of x is too coarse for the binned method, which
+  # warns about it)
+  kde <- hr_tt_kde(example_tt)
   expect_error(
     hr_tt_akde_pop(kde, method = "mean"),
     "estimated with hr_tt_akde"
