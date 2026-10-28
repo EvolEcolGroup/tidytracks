@@ -232,10 +232,14 @@ split_one_track <- function(
       "at_centre"
     )
   )
-  # check if last trip is incomplete (data ends outside colony)
+  # check if last trip is incomplete (data ends outside colony); the last trip
+  # is not necessarily the last row of trip_meta (e.g. if the track starts
+  # with a trip), and a track might have no trip at all
+  n_trips <- sum(runs$values)
   last_dist <- utils::tail(dist_to_centre[!is.na(dist_to_centre)], 1)
-  if (length(last_dist) == 1 && last_dist > buffer_inbound) {
-    trip_meta$trip_type[nrow(trip_meta)] <- "incomplete"
+  if (n_trips > 0 && length(last_dist) == 1 && last_dist > buffer_inbound) {
+    last_trip <- trip_meta$trip_id == paste0(label, "_trip_", n_trips)
+    trip_meta$trip_type[last_trip] <- "incomplete"
   }
   # check if first trip is incomplete (data starts outside colony)
   if (runs$values[1] == TRUE) {
