@@ -153,6 +153,8 @@ buffalo_sub <- buffalo_tt \%>\%
   dplyr::group_by(track) \%>\%
   dplyr::slice_head(n = 100) \%>\%
   dplyr::ungroup()
+# fitting the models and estimating the UDs take several seconds
+\donttest{
 buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 buffalo_akde <- hr_tt_akde(buffalo_sub, buffalo_fit)
 # population UD with population kernel density estimation (setting the seed
@@ -167,6 +169,7 @@ buffalo_pop
 # or as the average of the individual UDs, with the 95\% home range
 set.seed(1)
 hr_tt_akde_pop(buffalo_akde, method = "mean", levels = 0.95)
+}
 \dontshow{\}) # examplesIf}
 }
 \seealso{

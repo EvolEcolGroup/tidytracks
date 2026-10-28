@@ -136,6 +136,8 @@ buffalo_sub <- buffalo_tt \%>\%
   dplyr::group_by(track) \%>\%
   dplyr::slice_head(n = 100) \%>\%
   dplyr::ungroup()
+# fitting the models and estimating the UDs take a few seconds
+\donttest{
 buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 buffalo_akde <- hr_tt_akde(buffalo_sub, buffalo_fit)
 buffalo_akde
@@ -143,6 +145,7 @@ library(ggplot2)
 autoplot(buffalo_akde)
 # the 50\% and 95\% isopleths, with confidence intervals on their area
 hr_tt_akde(buffalo_sub, buffalo_fit, levels = c(0.5, 0.95))
+}
 \dontshow{\}) # examplesIf}
 }
 \references{

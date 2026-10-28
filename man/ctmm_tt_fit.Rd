@@ -144,8 +144,11 @@ buffalo_sub <- buffalo_tt \%>\%
   dplyr::group_by(track) \%>\%
   dplyr::slice_head(n = 100) \%>\%
   dplyr::ungroup()
+# fitting the models takes a few seconds
+\donttest{
 buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 buffalo_fit
+}
 \dontshow{\}) # examplesIf}
 }
 \seealso{
