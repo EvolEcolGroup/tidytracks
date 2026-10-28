@@ -119,21 +119,18 @@ track_summary_stats <- function(
   ) # has its units still
 
   # 2 - total distance travelled
-  # TODO write a cum_distance function that works on coords
-  tot_distance_df <- x %>%
-    dplyr::mutate(distance = move2::mt_distance(x)) %>%
-    # Add distance to the next point (end-of-track is NA).
-    sf::st_drop_geometry() %>%
-    # Drop geometry to avoid retaining a geometry field in the output.
-    dplyr::group_by(.data[[.group_var]]) %>%
-    # Group by the track ID field, whatever its name.
-    dplyr::summarise(tot_distance = sum(.data[["distance"]], na.rm = TRUE)) %>%
-    # instead of extracting just tot_distance, extract as df including track_id
-    dplyr::select(
-      track_id = dplyr::all_of(.group_var),
-      dplyr::all_of("tot_distance")
-    )
-  # tot_distance has units too
+  # this is a named vector of distances, in the units of the projection
+  # (metres for geographic coordinates), as returned by sf::st_distance()
+  dist_units <- units(sf::st_distance(sf::st_geometry(x)[1]))
+  tot_distance <- track_tot_distance( # nolint: object_usage_linter.
+    x,
+    units = as_units(1, dist_units)
+  )
+  # get tot_distance as a tibble with track_id field
+  tot_distance_df <- tibble::tibble(
+    track_id = names(tot_distance),
+    tot_distance = unname(tot_distance)
+  ) # has its units still
 
   # 3 - min and max lon and lat
   bboxes <- x %>%

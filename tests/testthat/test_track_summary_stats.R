@@ -213,5 +213,25 @@ test_that("track_summary_stats correctly computes track summaries", {
   expect_equal(expected_max, observed_max)
 })
 
+test_that("track_summary_stats gives the same distance as track_tot_distance", {
+  # regardless of the s2 setting
+  expect_equal(
+    track_summary_stats(example_tt)$tot_distance,
+    unname(track_tot_distance(example_tt))
+  )
+  # also with events without a location
+  x_empty <- example_tt
+  sf::st_geometry(x_empty)[3] <- sf::st_point()
+  expect_equal(
+    track_summary_stats(x_empty)$tot_distance,
+    unname(track_tot_distance(x_empty))
+  )
+  # and for a grouped tibble of tracks
+  expect_equal(
+    track_summary_stats(dplyr::group_by(example_tt, .data$track_id)),
+    track_summary_stats(example_tt)
+  )
+})
+
 # TODO add test for where there are >10 trips per individual (to make sure
 # the trip_id field is carrying through the function correctly)
