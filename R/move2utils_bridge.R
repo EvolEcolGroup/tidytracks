@@ -149,8 +149,12 @@ units_to_move2utils <- function(args) {
         expected, ", e.g. as_units(1, '", expected, "')"
       )
     }
-    # mode = "standard" because the target units are in a variable
-    args[[i]] <- as.numeric(units::set_units(arg, expected, mode = "standard"))
+    # mode = "standard" because the target units are in a variable;
+    # drop_units() rather than as.numeric() keeps the names of values given
+    # per track (e.g. mass for mt_clean_track(), matched by track id)
+    args[[i]] <- units::drop_units(
+      units::set_units(arg, expected, mode = "standard")
+    )
   }
   args
 }

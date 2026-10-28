@@ -103,6 +103,28 @@ test_that("event_flag_outliers passes further arguments, converting units", {
   )
 })
 
+test_that("event_flag_outliers passes values per track with their names", {
+  skip_if_not_installed("move2utils")
+  x <- create_spiky_tracks()
+  # mt_clean_track() matches a mass per track to the tracks by name
+  direct <- move2utils::mt_clean_track(
+    x,
+    mass = c(a = 0.5, b = 800),
+    mode = "flying",
+    plot = FALSE,
+    silent = TRUE,
+    remove = FALSE
+  )
+  expect_identical(
+    event_flag_outliers(
+      x,
+      mass = as_units(c(a = 500, b = 800000), "g"),
+      mode = "flying"
+    ),
+    !direct$is_outlier
+  )
+})
+
 test_that("event_flag_outliers requires location errors with units", {
   skip_if_not_installed("move2utils")
   x <- create_spiky_tracks()
