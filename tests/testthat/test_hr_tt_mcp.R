@@ -67,6 +67,23 @@ test_that("hr_tt_mcp rejects levels outside the unit interval", {
   )
 })
 
+test_that("hr_tt_mcp rejects missing, empty or non-numeric levels", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+
+  expect_error(
+    hr_tt_mcp(boar_tt, levels = c(0.5, NA)),
+    "levels must be between 0 and 1"
+  )
+  expect_error(
+    hr_tt_mcp(boar_tt, levels = numeric(0)),
+    "levels must be between 0 and 1"
+  )
+  expect_error(
+    hr_tt_mcp(boar_tt, levels = "0.5"),
+    "levels must be between 0 and 1"
+  )
+})
+
 test_that("hr_tt_mcp ignores events without a location", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   boar_tt_empty <- boar_tt

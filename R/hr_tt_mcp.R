@@ -40,7 +40,12 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   check_no_empty_groups(x) # nolint: object_usage_linter.
 
   # Check if levels are valid
-  if (any(levels < 0 | levels > 1)) {
+  if (
+    !is.numeric(levels) ||
+      length(levels) == 0 ||
+      anyNA(levels) ||
+      any(levels < 0 | levels > 1)
+  ) {
     stop("levels must be between 0 and 1")
   }
   # reorder levels from big to small
