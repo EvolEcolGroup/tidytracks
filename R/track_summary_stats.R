@@ -69,27 +69,31 @@ track_summary_stats <- function(
     x <- x[!event_track_id(x) %in% trip_na_ids, ]
   }
   .group_var <- move2::mt_track_id_column(x)
-  geom_col <- attr(x, "sf_column")
+  # the track ids in the order of the metadata, and the index of the track of
+  # each event among them; all the statistics are computed for all the
+  # tracks at once, in the order of the metadata
+  track_ids <- show_meta(x)[[.group_var]]
+  track_index <- match(
+    as.character(event_track_id(x)),
+    as.character(track_ids)
+  )
+  # the coordinates of the events (NA for events without a location)
+  coords <- sf::st_coordinates(sf::st_geometry(x))
 
   # check centre_col input
   if (is.null(centre_col)) {
     # the first location is the first event with a location (events without
-    # a location have an empty geometry)
-    centre_df <- x[!sf::st_is_empty(x), ] %>%
-      dplyr::group_by(.data[[.group_var]]) %>%
-      dplyr::slice_min(
-        .data[[move2::mt_time_column(x)]],
-        n = 1,
-        with_ties = FALSE
-      ) %>%
-      dplyr::ungroup()
-
-    # Reorder to match metadata row order used later in the function; tracks
-    # without any location are not in centre_df, and get an empty centre
-    centre_col <- sf::st_geometry(centre_df)[match(
-      as.character(show_meta(x)[[.group_var]]),
-      as.character(centre_df[[.group_var]])
-    )]
+    # a location have an empty geometry): sort the located events by track
+    # and time (order() is stable, so ties keep the order of the events),
+    # and take the first event of each track
+    located <- which(!sf::st_is_empty(x))
+    located <- located[order(track_index[located], event_time(x)[located])]
+    first_located <- located[!duplicated(track_index[located])]
+    # in the order of the metadata; tracks without any location get an
+    # empty centre
+    centre_col <- sf::st_geometry(x)[
+      first_located[match(seq_along(track_ids), track_index[first_located])]
+    ]
   } else if (inherits(centre_col, "character")) {
     # check if it exists in the metadata
     if (!centre_col %in% names(show_meta(x))) {
@@ -115,13 +119,6 @@ track_summary_stats <- function(
   # 1 - total duration
   # this is a named vector of difftimes, in the order of the metadata
   tot_duration <- track_duration(x, units = units_duration)
-  # get tot_duration as a tibble with track_id field (taken from the
-  # metadata rather than the names, to keep the type of the track ids, e.g.
-  # integer, for the joins below)
-  tot_duration_df <- tibble::tibble(
-    track_id = show_meta(x)[[.group_var]],
-    tot_duration = tot_duration
-  ) # has its units still
 
   # 2 - total distance travelled
   # this is a named vector of distances, in the order of the metadata and in
@@ -132,88 +129,62 @@ track_summary_stats <- function(
     x,
     units = as_units(1, dist_units)
   )
-  # get tot_distance as a tibble with track_id field (also in the order of
-  # the metadata)
-  tot_distance_df <- tibble::tibble(
-    track_id = show_meta(x)[[.group_var]],
-    tot_distance = unname(tot_distance)
-  ) # has its units still
 
   # 3 - min and max lon and lat
-  bboxes <- x %>%
-    dplyr::group_by(.data[[.group_var]]) # break here to extract the group keys
-  groups <- dplyr::group_keys(bboxes)
-  bboxes <- bboxes %>%
-    dplyr::group_map(function(events, key) sf::st_bbox(events[[geom_col]]))
-  bboxes_df <- tibble::as_tibble(do.call(rbind, bboxes)) %>%
-    dplyr::mutate(
-      max_latitude = .data$ymax,
-      min_latitude = .data$ymin,
-      max_longitude = .data$xmax,
-      min_longitude = .data$xmin
-    ) %>%
-    dplyr::select(-dplyr::all_of(c("xmax", "xmin", "ymax", "ymin"))) %>%
-    dplyr::mutate(track_id = groups[[.group_var]])
+  # the coordinates of each track, in the order of the metadata
+  track_factor <- factor(track_index, levels = seq_along(track_ids))
+  # summarise the coordinates on one axis of each track with `fun`, ignoring
+  # the events without a location (NA for tracks without any location)
+  summarise_coords <- function(axis, fun) {
+    unname(vapply(
+      split(coords[, axis], track_factor),
+      function(track_coords) {
+        track_coords <- track_coords[!is.na(track_coords)]
+        if (length(track_coords) > 0) fun(track_coords) else NA_real_
+      },
+      numeric(1)
+    ))
+  }
 
-  # 1-3 join into sum_stats table
-  sum_stats <- dplyr::full_join(
-    tot_duration_df,
-    tot_distance_df,
-    by = "track_id"
+  # 4 - max distance from the centre and latitude and longitude at that point
+  # calculate the distance between the centre and the events with
+  # dist_fast(), as for the distances along the track (i.e. geodesic for
+  # geographic coordinates, whatever the s2 setting), in the units of the
+  # projection
+  centre_coords <- sf::st_coordinates(centre_col)
+  dists <- dist_fast(
+    coords[, "X"],
+    coords[, "Y"],
+    centre_coords[track_index, "X"],
+    centre_coords[track_index, "Y"],
+    longlat = sf::st_is_longlat(x)
   )
-  sum_stats <- dplyr::full_join(sum_stats, bboxes_df, by = "track_id")
+  # the first event at the maximum distance of each track: sort the events by
+  # track and decreasing distance (NA last; order() is stable, so ties keep
+  # the order of the events), and take the first event of each track
+  by_dist <- order(track_index, -dists)
+  i_max <- by_dist[!duplicated(track_index[by_dist])]
+  # in the order of the metadata
+  i_max <- i_max[match(seq_along(track_ids), track_index[i_max])]
+  # NA if no distance is known, i.e. if the track or its centre has no
+  # location
+  i_max[is.na(dists[i_max])] <- NA
 
-  # 4 - if centre_col is given, calculate max distance from centre and
-  #     latitude at that point
-  # appease R CMD check - could have used a globalVariable for this instead
-  i_foreach <- NULL
-  # get maximum distance between the centre and the events for each track
-  centre_sums <-
-    foreach::foreach(
-      i_foreach = seq_len(nrow(show_meta(x))),
-      .combine = rbind
-    ) %do% {
-      # get the track id
-      track_id <- show_meta(x)[[move2::mt_track_id_column(x)]][i_foreach]
-      # get the events for this track
-      events <- x[event_track_id(x) == track_id, ]
-      # get the centre
-      centre <- centre_col[i_foreach, ]
-      # calculate the distance between the centre and the events with
-      # dist_fast(), as for the distances along the track (i.e. geodesic for
-      # geographic coordinates, whatever the s2 setting), in the units of
-      # the projection
-      events_coords <- sf::st_coordinates(sf::st_geometry(events))
-      centre_coords <- sf::st_coordinates(centre)
-      dists <- units::as_units(
-        dist_fast(
-          events_coords[, "X"],
-          events_coords[, "Y"],
-          rep(centre_coords[, "X"], nrow(events_coords)),
-          rep(centre_coords[, "Y"], nrow(events_coords)),
-          longlat = sf::st_is_longlat(x)
-        ),
-        dist_units
-      )
-      # the first event at the maximum distance (NA if no distance is known,
-      # i.e. if the track or its centre has no location)
-      i_max <- which.max(dists)[1]
-      max_dist <- dists[i_max]
-      # get lat and lon at max dist
-      lat_at_max_dist <- events_coords[i_max, "Y"]
-      lon_at_max_dist <- events_coords[i_max, "X"]
-
-      # return a dataframe of track id, maximum distance, and lat/lon at it.
-      return(data.frame(
-        track_id = track_id,
-        max_dist_centre = max_dist,
-        lat_at_max_dist_centre = lat_at_max_dist,
-        lon_at_max_dist_centre = lon_at_max_dist
-      ))
-    }
-
-  # join into sum_stats by track_id
-  sum_stats <- dplyr::full_join(sum_stats, centre_sums, by = "track_id")
+  # 1-4 combine into sum_stats table, in the order of the metadata (taking
+  # the track ids from the metadata keeps their type, e.g. integer)
+  sum_stats <- tibble::tibble(
+    track_id = track_ids,
+    tot_duration = tot_duration, # has its units still
+    tot_distance = unname(tot_distance), # has its units still
+    max_latitude = summarise_coords("Y", max),
+    min_latitude = summarise_coords("Y", min),
+    max_longitude = summarise_coords("X", max),
+    min_longitude = summarise_coords("X", min),
+    max_dist_centre = units::as_units(dists[i_max], dist_units),
+    # unname() as a 1x1 matrix is subset to a vector named by its column
+    lat_at_max_dist_centre = unname(coords[i_max, "Y"]),
+    lon_at_max_dist_centre = unname(coords[i_max, "X"])
+  )
 
   # check that sum_stats has the right number of rows (number of unique track
   # IDs) This is a sanity check, it should never happen.
@@ -224,10 +195,6 @@ track_summary_stats <- function(
       "the number of unique track IDs in x."
     )
   }
-
-  # re-order sum_stats according to the order of track_id in the metadata
-  order_track_id <- show_meta(x)[[move2::mt_track_id_column(x)]]
-  sum_stats <- sum_stats[match(order_track_id, sum_stats$track_id), ]
 
   # rename track_id field to be the "track_id_column" in the original move2
   # object
