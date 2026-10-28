@@ -97,6 +97,24 @@ test_that("hr_tt_mcp requires at least 3 locations per group", {
   expect_s3_class(hr_tt_mcp(tracks[tracks$id == "a", ]), "hr_tt_poly_tbl")
 })
 
+test_that("hr_tt_mcp gives empty polygons for levels with no area", {
+  # with 4 locations, the 50% MCP is the hull of the 2 locations closest to
+  # the centroid: a segment, which has no area
+  coords <- data.frame(id = "a", x = c(0, 1, 3, 0), y = c(0, 0, 1, 4))
+  coords$time <- as.POSIXct("2024-01-01", tz = "UTC") + seq_len(4) * 60
+  for (crs in c(32630, 4326)) {
+    track <- move2::mt_as_move2(
+      sf::st_as_sf(coords, coords = c("x", "y"), crs = crs),
+      time_column = "time",
+      track_id_column = "id"
+    )
+    track_mcp <- hr_tt_mcp(track)
+    expect_equal(sf::st_is_empty(track_mcp), c(FALSE, TRUE))
+    expect_equal(as.numeric(track_mcp$area) > 0, c(TRUE, FALSE))
+    expect_true(all(sf::st_is_valid(track_mcp)))
+  }
+})
+
 test_that("hr_tt_mcp rejects groups without events", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   # a grouping factor with an unused level, kept as a group with .drop = FALSE

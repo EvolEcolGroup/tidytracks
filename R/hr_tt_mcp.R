@@ -20,7 +20,10 @@
 #' - `method`: the method used to estimate the home range (`"mcp"`)
 #' - `level`: the level of the contour line
 #' - `area`: the area of the home range (as computed by `sf::st_area()`)
-#' - `geometry`: the geometry of the home range as sf polygons
+#' - `geometry`: the geometry of the home range as sf polygons; the polygon
+#'   is empty (and its area is 0) if the locations within the level are all
+#'   at the same place or on a line (e.g. for small levels or groups with few
+#'   locations)
 #' @export
 #' @examples
 #' example_mcp <- hr_tt_mcp(example_tt)
@@ -133,6 +136,13 @@ mcp_one_group <- function(xy, levels) {
 chull_mcp <- function(x) {
   x <- as.matrix(x)
   ch <- grDevices::chull(x)
+  # if the locations are all at the same place or on a line, the hull has
+  # fewer than 3 vertices: it has no area, and a polygon made from it would
+  # be invalid (and rejected by s2 for unprojected data), so return an empty
+  # polygon instead
+  if (length(ch) < 3) {
+    return(sf::st_polygon())
+  }
   ch <- c(ch, ch[1])
   sf::st_polygon(list(x[ch, 1:2]))
 }
