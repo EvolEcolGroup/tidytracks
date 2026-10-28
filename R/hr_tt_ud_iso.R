@@ -152,6 +152,7 @@ raster_isopleths <- function(x, levels, crs_cache = NULL) {
     cud,
     x = terra::xFromCol(x, seq_len(ncol(x))),
     y = terra::yFromRow(x, rev(seq_len(nrow(x)))),
+    res = terra::res(x),
     levels = levels,
     ops_crs = if (crs_cache$longlat) crs_cache$crs else sf::NA_crs_,
     cud_raster = function() hr_tt_cud(x) # nolint: object_usage_linter.
@@ -218,6 +219,7 @@ isopleth_table <- function(x, iso) {
 #'   from north to south).
 #' @param x,y the coordinates of the centres of the columns, and of the rows
 #'   from south to north.
+#' @param res the size of the cells, along x and along y.
 #' @param levels the levels of the isopleths, sorted.
 #' @param ops_crs the CRS for the geometric operations: `sf::NA_crs_` for
 #'   data, so that GEOS carries them out without sf looking up the parameters
@@ -231,51 +233,57 @@ isopleth_table <- function(x, iso) {
 #'   there are no isopleths.
 #' @keywords internal
 #' @noRd
-cud_isopleths <- function(cud, x, y, levels, ops_crs, cud_raster) {
+cud_isopleths <- function(cud, x, y, res, levels, ops_crs, cud_raster) {
   # 1) The contour lines, each with its level. These are the lines that
   # terra::as.contour() would give, without building the SpatVector (which
   # takes much longer than the contours of a small raster): it calls
   # grDevices::contourLines() on the values of the raster, after sampling a
-  # raster of more than 100,000 cells down to that size, in which case it is
-  # used as it is.
-  if (length(cud) <= 1e5) {
-    lines <- tryCatch(
-      grDevices::contourLines(
-        x = x,
-        y = y,
-        z = t(cud[rev(seq_len(nrow(cud))), ]),
-        levels = levels
-      ),
-      error = function(e) {
-        warning("No isopleths could be computed: ", conditionMessage(e))
-        NULL
-      }
+  # raster of more than 100,000 cells down to that size.
+  if (length(cud) > 1e5) {
+    sampled <- terra::spatSample(
+      cud_raster(),
+      size = 1e5,
+      method = "regular",
+      as.raster = TRUE,
+      warn = FALSE
     )
-    if (is.null(lines)) {
-      return(NULL)
-    }
-    line_level <- vapply(lines, function(l) l$level, numeric(1))
-    line_coords <- lapply(lines, function(l) cbind(l$x, l$y))
-  } else {
-    contours <- tryCatch(
-      terra::as.contour(cud_raster(), levels = levels),
-      error = function(e) {
-        warning("No isopleths could be computed: ", conditionMessage(e))
-        NULL
-      }
-    )
-    if (is.null(contours)) {
-      return(NULL)
-    }
-    # one geometry per level, with one part per contour line
-    g <- terra::geom(contours)
-    part_id <- paste(g[, "geom"], g[, "part"])
-    parts <- split(seq_len(nrow(g)), factor(part_id, unique(part_id)))
-    line_level <- vapply(parts, function(i) {
-      contours$level[g[i[1], "geom"]]
-    }, numeric(1), USE.NAMES = FALSE)
-    line_coords <- lapply(parts, function(i) unname(g[i, c("x", "y")]))
+    cud <- as.matrix(sampled, wide = TRUE)
+    x <- terra::xFromCol(sampled, seq_len(ncol(sampled)))
+    y <- terra::yFromRow(sampled, rev(seq_len(nrow(sampled))))
+    res <- terra::res(sampled)
   }
+  # The contour lines of an isopleth that reaches the edges of the grid would
+  # end there, and could not be closed into the rings of the isopleth. So the
+  # cumulative UD is padded with the values of the cells on the edges, out to
+  # the edges of the grid, and just beyond them with a value above all the
+  # levels: the contour lines then follow the edges of the grid, as do the
+  # cells within the isopleth.
+  z <- t(cud[rev(seq_len(nrow(cud))), , drop = FALSE])
+  z <- rbind(z[1, ], z, z[nrow(z), ])
+  z <- cbind(z[, 1], z, z[, ncol(z)])
+  outside <- max(levels) + 1
+  z <- cbind(outside, rbind(outside, z, outside), outside)
+  pad <- function(centres, res) {
+    edges <- c(centres[1] - res / 2, centres[length(centres)] + res / 2)
+    c(edges[1] - res * 1e-6, edges[1], centres, edges[2], edges[2] + res * 1e-6)
+  }
+  lines <- tryCatch(
+    grDevices::contourLines(
+      x = pad(x, res[1]),
+      y = pad(y, res[2]),
+      z = z,
+      levels = levels
+    ),
+    error = function(e) {
+      warning("No isopleths could be computed: ", conditionMessage(e))
+      NULL
+    }
+  )
+  if (is.null(lines)) {
+    return(NULL)
+  }
+  line_level <- vapply(lines, function(l) l$level, numeric(1))
+  line_coords <- lapply(lines, function(l) cbind(l$x, l$y))
   if (length(line_level) == 0) {
     warning("No isopleths could be computed")
     return(NULL)

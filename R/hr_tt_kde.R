@@ -284,6 +284,7 @@ hr_tt_kde <- function(
         cud,
         x = grid$x,
         y = grid$y,
+        res = grid$res,
         levels = iso_levels,
         ops_crs = if (grid$longlat) grid$iso_crs else sf::NA_crs_,
         cud_raster = function() {
@@ -397,8 +398,9 @@ align_kde_bbox <- function(bbox, res) {
 #' @returns A list with `template` (an empty `terra::SpatRaster`) and, if
 #'   `isopleths` is `TRUE`, `iso_crs` (the CRS of the isopleths, as obtained
 #'   from the raster), `longlat` (whether that CRS is in longitude/latitude),
-#'   and `x` and `y` (the coordinates of the centres of the columns, and of the
-#'   rows from south to north).
+#'   `x` and `y` (the coordinates of the centres of the columns, and of the
+#'   rows from south to north), and `res` (the size of the cells along x and
+#'   along y).
 #' @keywords internal
 #' @noRd
 kde_grid <- function(bbox, res, crs, isopleths) {
@@ -424,7 +426,8 @@ kde_grid <- function(bbox, res, crs, isopleths) {
     iso_crs = iso_crs,
     longlat = isTRUE(sf::st_is_longlat(iso_crs)),
     x = terra::xFromCol(template, seq_len(n[1])),
-    y = terra::yFromRow(template, rev(seq_len(n[2])))
+    y = terra::yFromRow(template, rev(seq_len(n[2]))),
+    res = terra::res(template)
   )
 }
 
