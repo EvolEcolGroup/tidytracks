@@ -122,6 +122,15 @@ test_that("hr_tt_ud_overlap works", {
   expect_true(boar_overlap_cond < boar_overlap[1, 2])
 })
 
+test_that("hr_tt_ud_overlap rejects unused arguments for two UDs", {
+  ud <- hr_tt_kde(example_tt)
+  # method comes after ..., so a method given by position would be ignored
+  expect_error(
+    hr_tt_ud_overlap(ud$ud[[1]], ud$ud[[2]], "vi"),
+    "additional arguments ... are not used"
+  )
+})
+
 test_that("hr_tt_ud_overlap computes the UDOI independently of resolution", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   boar_kde_100 <- hr_tt_kde(boar_tt, res = 100)

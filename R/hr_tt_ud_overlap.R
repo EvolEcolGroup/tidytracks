@@ -78,6 +78,11 @@ hr_tt_ud_overlap.SpatRaster <- function(
   method = c("ba", "vi", "udoi", "earth_mover", "earth_mover_sinkhorn"),
   cond_level = NULL
 ) {
+  # as for a table of UDs: method and cond_level come after ..., so that
+  # e.g. a method given by position would otherwise be silently ignored
+  if (length(list(...)) > 0) {
+    stop("additional arguments ... are not used")
+  }
   method <- match.arg(method)
   check_earth_mover_available(method)
   check_ud_raster(x, "x")
