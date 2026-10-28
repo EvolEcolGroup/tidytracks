@@ -59,7 +59,8 @@
 #'   the position). Either a `units` object (e.g. `as_units(20, "m")`) with one
 #'   value for all events or one value per event, the name of a column of `x`
 #'   with the errors (as a `units` object), or `NULL` (the default) to treat
-#'   locations as exact. Missing values are replaced by the median error.
+#'   locations as exact. Missing values are replaced by the median error of
+#'   their track, as in `move2utils`.
 #' @param window_size The number of events in the sliding window used to
 #'   estimate the motion variance (an odd number). It is a number of events
 #'   rather than a duration: with an event every 2 minutes, a window of 15
@@ -433,7 +434,8 @@ hr_tt_bridge <- function(
 #' @param x A `move2` object.
 #' @param location_error `NULL`, a `units` object with one value or one value
 #'   per event, or the name of a column of `x` (with a `units` object).
-#' @returns A numeric vector of errors in metres, one per event of `x`.
+#' @returns A numeric vector of errors in metres, one per event of `x` (with
+#'   the missing values left for `move2utils` to replace).
 #' @keywords internal
 #' @noRd
 bridge_location_error <- function(x, location_error) {
@@ -468,14 +470,11 @@ bridge_location_error <- function(x, location_error) {
   if (all(is.na(location_error))) {
     stop("location_error must have at least one non-missing value")
   }
-  # the same replacement as the default of move2utils (location_error_na =
-  # "median"), done here so that the errors used to size the grid are those
-  # used by move2utils
-  location_error[is.na(location_error)] <- stats::median(
-    location_error,
-    na.rm = TRUE
-  )
-  if (any(location_error < 0)) {
+  # missing values are left to move2utils, which replaces them within each
+  # track, from its located events (by their median, its default
+  # location_error_na); the errors it uses are stored in the variance
+  # objects, from which the grid is sized
+  if (any(location_error < 0, na.rm = TRUE)) {
     stop("location_error must not be negative")
   }
   location_error

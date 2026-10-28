@@ -37,7 +37,8 @@ metres, either ungrouped or grouped by its track id column.}
 the position). Either a \code{units} object (e.g. \code{as_units(20, "m")}) with one
 value for all events or one value per event, the name of a column of \code{x}
 with the errors (as a \code{units} object), or \code{NULL} (the default) to treat
-locations as exact. Missing values are replaced by the median error.}
+locations as exact. Missing values are replaced by the median error of
+their track, as in \code{move2utils}.}
 
 \item{window_size}{The number of events in the sliding window used to
 estimate the motion variance (an odd number). It is a number of events

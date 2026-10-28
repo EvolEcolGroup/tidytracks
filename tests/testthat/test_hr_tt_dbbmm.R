@@ -280,6 +280,33 @@ test_that("hr_tt_dbbmm accepts location errors in several forms", {
   )
 })
 
+test_that("hr_tt_dbbmm replaces missing location errors within each track", {
+  skip_if_not_installed("move2utils")
+  x <- create_irregular_tracks()
+  ids <- as.character(event_track_id(x))
+  # the median error of track a (20 m) differs from that of all events (50 m)
+  error <- ifelse(ids == "a", 20, 50)
+  error[which(ids == "a")[100]] <- NA
+  x$error_units <- as_units(error, "m")
+  ud <- hr_tt_dbbmm(
+    x,
+    location_error = "error_units",
+    bbox = test_bbox,
+    res = as_units(100, "m")
+  )
+  # as in move2utils, which replaces them by the median of their track
+  direct <- move2utils::mt_dbbmm_ud(
+    x,
+    raster = terra::rast(ud$ud[[1]]),
+    location_error = error,
+    verbose = FALSE
+  )
+  expect_equal(
+    terra::values(ud$ud[[1]], mat = FALSE),
+    terra::values(direct[["a"]], mat = FALSE)
+  )
+})
+
 test_that("hr_tt_dbbmm passes the sliding window and time step", {
   skip_if_not_installed("move2utils")
   x <- create_irregular_tracks()
