@@ -13,3 +13,26 @@ test_that("track_lines returns the tracks in the order of the metadata", {
     ))
   )
 })
+
+test_that("track_lines works with sf metadata", {
+  # an sf table of metadata, set without show_meta<- (which would turn it
+  # into a plain table)
+  meta_sf <- sf::st_as_sf(
+    show_meta(example_tt),
+    coords = c("nest_lon", "nest_lat"),
+    crs = 4326,
+    remove = FALSE
+  )
+  test_tt <- move2::mt_set_track_data(example_tt, meta_sf)
+  # its geometry has the name of the geometry of the events, so it is renamed
+  expect_message(
+    lines <- track_lines(test_tt),
+    "so it has been renamed 'geometry.meta'"
+  )
+  # the lines are those of the tracks, with their metadata
+  expect_equal(
+    sf::st_geometry(lines),
+    sf::st_geometry(track_lines(example_tt))
+  )
+  expect_true(inherits(lines$geometry.meta, "sfc"))
+})

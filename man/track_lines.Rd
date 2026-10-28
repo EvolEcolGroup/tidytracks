@@ -25,7 +25,10 @@ metadata table.
 }
 \details{
 Note that all empty points are removed before summarizing. Arguments
-passed with \code{...} thus only summarize for the non empty locations.
+passed with \code{...} thus only summarize for the non empty locations. An \code{sf}
+table of metadata is turned into a plain table first, with its geometry kept
+as an \code{sfc} column, which is renamed if it has the name of the geometry
+column of the events (see \code{\link[=show_meta]{show_meta()}}).
 }
 \examples{
 track_lines(example_tt)

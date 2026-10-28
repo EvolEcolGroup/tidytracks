@@ -84,3 +84,22 @@ plain_meta <- function(meta, event_geometry) {
   }
   meta
 }
+
+#' Make the metadata of a move2 object a plain table
+#'
+#' For the functions that join the metadata to the events with move2, as the
+#' metadata may have been set without `show_meta<-` (e.g. with
+#' `move2::mt_set_track_data()` or `move2::mt_as_move2()`); see `plain_meta()`.
+#'
+#' @param x A `move2` object.
+#' @returns `x`, with its metadata as a plain table.
+#' @keywords internal
+#' @noRd
+with_plain_meta <- function(x) {
+  meta <- move2::mt_track_data(x)
+  plain <- plain_meta(meta, attr(x, "sf_column"))
+  if (identical(plain, meta)) {
+    return(x)
+  }
+  move2::mt_set_track_data(x, plain)
+}

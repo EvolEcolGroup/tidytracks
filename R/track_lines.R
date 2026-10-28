@@ -15,11 +15,16 @@
 #'   the products from summarize
 #'
 #' @details Note that all empty points are removed before summarizing. Arguments
-#' passed with `...` thus only summarize for the non empty locations.
+#' passed with `...` thus only summarize for the non empty locations. An `sf`
+#' table of metadata is turned into a plain table first, with its geometry kept
+#' as an `sfc` column, which is renamed if it has the name of the geometry
+#' column of the events (see [show_meta()]).
 #' @export
 #' @examples
 #' track_lines(example_tt)
 track_lines <- function(x, ...) {
+  # move2 cannot join an sf table of metadata to the lines
+  x <- with_plain_meta(x) # nolint: object_usage_linter.
   lines <- move2::mt_track_lines(x, ...)
   # move2::mt_track_lines() returns the tracks in the order of the groups
   # (e.g. the levels of factor ids), which can differ from the order of the

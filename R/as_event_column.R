@@ -4,6 +4,10 @@
 #' This function moves one or more columns from the metadata of a `move2` object
 #' to the event data, adding them as new columns. This is useful when you want
 #' to include metadata information in the event-level analysis.
+#'
+#' An `sf` table of metadata is turned into a plain table first, with its
+#' geometry kept as an `sfc` column, which is renamed if it has the name of
+#' the geometry column of the events (see [show_meta()]).
 #' @param x A `move2` object
 #' @param ... One or more unquoted column names from the metadata to move to the
 #'   event data; it is possible to use tidyselect helpers to select multiple
@@ -18,5 +22,7 @@
 #' example_tt2 <- as_event_column(example_tt, sex)
 #' example_tt2 # now showing sex in the events table
 as_event_column <- function(x, ..., .keep = FALSE) {
+  # move2 cannot join an sf table of metadata to the events
+  x <- with_plain_meta(x) # nolint: object_usage_linter.
   move2::mt_as_event_attribute(x, ..., .keep = .keep)
 }

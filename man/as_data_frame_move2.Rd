@@ -12,7 +12,10 @@
 \item{...}{additional arguments to be passed to or from methods.}
 
 \item{include_meta}{Logical, whether to include the metadata attributes in
-the resulting data frame. Default is FALSE.}
+the resulting data frame. Default is FALSE. An \code{sf} table of metadata is
+turned into a plain table first, with its geometry kept as an \code{sfc}
+column, which is renamed if it has the name of the geometry column of the
+events (see \code{\link[=show_meta]{show_meta()}}).}
 
 \item{drop_geometry}{Logical, whether to drop the geometry column from the
 resulting data frame. Default is FALSE. If TRUE, the coordinates are stored
