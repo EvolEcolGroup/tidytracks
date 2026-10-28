@@ -61,8 +61,10 @@
 #'   resolution that produces approximately 1000 cells.
 #'
 #'   Per-group values of `h`, `bbox` and `res` are matched to the groups in the
-#'   order of [dplyr::group_keys()] (i.e. sorted by the grouping variables),
-#'   not in the order in which the groups appear in `x`.
+#'   order in which they are returned: the order of the tracks in the metadata
+#'   (see [show_meta()]) if `x` is not grouped, or else the order of
+#'   [dplyr::group_keys()] (i.e. sorted by the grouping variables), not the
+#'   order in which the groups appear in `x`.
 #' @param levels A vector of levels for the isopleths (i.e. contour lines), as
 #'   numbers between 0 and 1. If set to NULL (the default), the full utilisation
 #'   distribution is returned; otherwise just the isopleths are returned. It is
@@ -77,7 +79,8 @@
 #' [hr_tt_ud_iso()]), with columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
-#'   grouping of `x`, in the order of [dplyr::group_keys()]
+#'   grouping of `x`, in the order of the tracks in the metadata if `x` is not
+#'   grouped, or else in the order of [dplyr::group_keys()]
 #' - `method`: the method used to estimate the home range (`"kde"`)
 #' - `h`: the bandwidth used for the KDE
 #' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
@@ -121,11 +124,13 @@ hr_tt_kde <- function(
 ) {
   method <- match.arg(method)
   # if x is not grouped, use the track ID column as grouping variable
-  if (!inherits(x, "grouped_df")) {
+  by_track <- !inherits(x, "grouped_df")
+  if (by_track) {
     x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
   # per-group values (h, bbox and res) are matched to the groups by their
-  # position in the group keys, which must therefore all be estimated
+  # position in the order in which they are returned, so every group listed
+  # in the group keys must be estimated
   check_no_empty_groups(x) # nolint: object_usage_linter.
 
   # Check if levels are valid
@@ -136,12 +141,15 @@ hr_tt_kde <- function(
   levels <- sort(levels, decreasing = TRUE)
 
   # get the group indices; the groups are estimated (and returned) in the
+  # order of the tracks in the metadata if x was not grouped, or else in the
   # order of their keys, as for the other hr_tt_* functions, rather than in
-  # the order in which they appear in x
-  group_index <- dplyr::group_indices(x)
-  group_unique <- sort(unique(group_index))
+  # the order in which they appear in x: they are numbered in that order
+  group_order <- hr_group_order(x, by_track) # nolint: object_usage_linter.
+  group_index <- match(dplyr::group_indices(x), group_order)
+  group_unique <- seq_along(group_order)
   group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
+  group_labels <- group_labels[group_order]
   # extract coordinates
   xy <- sf::st_coordinates(x)
   # events with an empty geometry have no location to contribute to the KDE

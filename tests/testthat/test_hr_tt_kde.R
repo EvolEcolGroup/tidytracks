@@ -187,13 +187,40 @@ test_that("hr_tt_kde matches individual bandwidths to the right group", {
     c(expected_h_ref("a"), expected_h_ref("b"))
   )
 
-  # a vector of bandwidths is matched to the groups in group key order
+  # a vector of bandwidths is matched to the tracks in the order of the
+  # metadata (b, then a), in which they are returned
   expect_warning(
     kde_h <- hr_tt_kde(tracks, h = c(10, 20)),
     "the bandwidth \\(h\\) of 2 group\\(s\\) is too small"
   )
-  expect_equal(kde_h$h[kde_h$id == "a"], 10)
-  expect_equal(kde_h$h[kde_h$id == "b"], 20)
+  expect_equal(kde_h$h[kde_h$id == "b"], 10)
+  expect_equal(kde_h$h[kde_h$id == "a"], 20)
+})
+
+test_that("hr_tt_kde returns the tracks of ungrouped data in metadata order", {
+  # the events are in the order a, b, c, whilst the metadata is in the order
+  # b, a, c
+  x <- tt_order_time(
+    readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
+  )
+  kde <- hr_tt_kde(x, h = c(1, 2, 3))
+  expect_equal(kde$track_id, c("b", "a", "c"))
+  expect_equal(names(kde$ud), c("b", "a", "c"))
+  # per-track values are matched in the same order
+  expect_equal(kde$h, c(1, 2, 3))
+  # each track with its own UD
+  kde_by_key <- hr_tt_kde(
+    dplyr::group_by(x, track_id),
+    h = c(2, 1, 3)
+  )
+  expect_equal(kde_by_key$track_id, c("a", "b", "c"))
+  expect_equal(
+    lapply(kde$ud, terra::values),
+    lapply(kde_by_key$ud, terra::values)[c("b", "a", "c")]
+  )
+  # and so are the isopleths
+  iso <- hr_tt_kde(x, h = c(1, 2, 3), levels = 0.5)
+  expect_equal(iso$track_id, c("b", "a", "c"))
 })
 
 test_that("hr_tt_kde ignores events without a location", {
