@@ -34,7 +34,8 @@
 #'   correctly treated as slow movement, not as a spatial shortcut.
 #'
 #' @section Attribute interpolation: Numeric event-level columns are linearly
-#'   interpolated at the new time steps using [stats::approx()]. Non-numeric
+#'   interpolated at the new time steps using [stats::approx()] (they are `NA`
+#'   for tracks with fewer than two non-missing values). Non-numeric
 #'   columns receive the value of the nearest preceding (or simultaneous)
 #'   observation via \code{\link[base]{findInterval}}. Track-level attributes
 #'   stored in \code{\link[move2]{mt_track_data}} are preserved unchanged.
@@ -383,29 +384,30 @@ tt_regular_time <- function(
   )
 
   if (length(attr_cols) > 0L) {
+    # approx() needs at least two values (e.g. a column can be all NA for a
+    # track); with fewer, the interpolated values are NA
+    interpolate_values <- function(vals) {
+      if (sum(!is.na(vals)) < 2L) {
+        return(rep(NA_real_, n_new))
+      }
+      stats::approx(
+        x = t_sec,
+        y = vals,
+        xout = t_new,
+        method = "linear",
+        rule = 1L
+      )$y
+    }
     attr_df <- lapply(stats::setNames(attr_cols, attr_cols), function(col) {
       vals <- track[[col]]
       if (inherits(vals, "units")) {
-        interpolated <- stats::approx(
-          x = t_sec,
-          y = as.numeric(vals),
-          xout = t_new,
-          method = "linear",
-          rule = 1L
-        )$y
         units::set_units(
-          interpolated,
+          interpolate_values(as.numeric(vals)),
           units::deparse_unit(vals),
           mode = "standard"
         )
       } else if (is.numeric(vals)) {
-        stats::approx(
-          x = t_sec,
-          y = vals,
-          xout = t_new,
-          method = "linear",
-          rule = 1L
-        )$y
+        interpolate_values(vals)
       } else {
         # value of the last observation at or before each new time (a time
         # equal to the last observation takes the value of that observation)

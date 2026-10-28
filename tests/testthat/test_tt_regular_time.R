@@ -310,6 +310,18 @@ test_that("units attributes keep units class after interpolation", {
   )
 })
 
+test_that("numeric attributes with fewer than two values give NA", {
+  track <- make_track(crs = NA)
+  track$heading <- NA_real_
+  track$speed <- units::set_units(c(NA, 2, NA), "m/s")
+
+  out <- tt_regular_time(track, interval = s(100))
+
+  expect_equal(out$heading, rep(NA_real_, 3))
+  expect_true(inherits(out$speed, "units"))
+  expect_equal(as.numeric(out$speed), rep(NA_real_, 3))
+})
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 7. IRREGULAR INPUT SPACING

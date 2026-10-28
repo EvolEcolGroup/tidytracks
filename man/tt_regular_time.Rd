@@ -77,7 +77,8 @@ correctly treated as slow movement, not as a spatial shortcut.
 
 \section{Attribute interpolation}{
  Numeric event-level columns are linearly
-interpolated at the new time steps using \code{\link[stats:approx]{stats::approx()}}. Non-numeric
+interpolated at the new time steps using \code{\link[stats:approx]{stats::approx()}} (they are \code{NA}
+for tracks with fewer than two non-missing values). Non-numeric
 columns receive the value of the nearest preceding (or simultaneous)
 observation via \code{\link[base]{findInterval}}. Track-level attributes
 stored in \code{\link[move2]{mt_track_data}} are preserved unchanged.
