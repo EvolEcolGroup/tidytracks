@@ -201,10 +201,14 @@ test_that("track_summary_stats correctly computes track summaries", {
 
   pts <- test_tt_split %>% dplyr::filter(trip_id == "id_1_trip_1")
   first_pt <- pts[1, ]
+  # with s2 switched off, sf::st_distance() gives geodesic distances, as
+  # track_summary_stats() does
+  old_s2 <- suppressMessages(sf::sf_use_s2(FALSE))
   expected_max <- max(
     sf::st_distance(pts$geometry, first_pt$geometry),
     na.rm = TRUE
   )
+  suppressMessages(sf::sf_use_s2(old_s2))
 
   observed_max <- test_no_centre %>%
     dplyr::filter(trip_id == "id_1_trip_1") %>%
@@ -262,6 +266,22 @@ test_that("track_summary_stats uses the first location as default centre", {
     track_summary_stats(x_empty)[, centre_cols],
     track_summary_stats(example_tt[-1, ])[, centre_cols]
   )
+})
+
+test_that("track_summary_stats gives geodesic distances from the centre", {
+  # as event_distance() and tt_split_trips(), whatever the s2 setting
+  sums <- track_summary_stats(example_tt)
+  old_s2 <- suppressMessages(sf::sf_use_s2(FALSE))
+  on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)
+  # with s2 switched off, sf::st_distance() gives geodesic distances
+  expect_equal(
+    sums$max_dist_centre[1],
+    max(sf::st_distance(
+      sf::st_geometry(example_tt)[1:5],
+      sf::st_geometry(example_tt)[1]
+    ))
+  )
+  expect_equal(track_summary_stats(example_tt), sums)
 })
 
 # TODO add test for where there are >10 trips per individual (to make sure

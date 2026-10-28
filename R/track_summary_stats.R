@@ -178,9 +178,22 @@ track_summary_stats <- function(
       events <- x[event_track_id(x) == track_id, ]
       # get the centre
       centre <- centre_col[i_foreach, ]
-      # calculate the distance between the centre and the events
-      # TODO re-write with our distance function instead of sf::st_distance()
-      dists <- sf::st_distance(sf::st_geometry(events), centre)
+      # calculate the distance between the centre and the events with
+      # dist_fast(), as for the distances along the track (i.e. geodesic for
+      # geographic coordinates, whatever the s2 setting), in the units of
+      # the projection
+      events_coords <- sf::st_coordinates(sf::st_geometry(events))
+      centre_coords <- sf::st_coordinates(centre)
+      dists <- units::as_units(
+        dist_fast(
+          events_coords[, "X"],
+          events_coords[, "Y"],
+          rep(centre_coords[, "X"], nrow(events_coords)),
+          rep(centre_coords[, "Y"], nrow(events_coords)),
+          longlat = sf::st_is_longlat(x)
+        ),
+        dist_units
+      )
       max_dist <- max(dists, na.rm = TRUE)
       # get lat and lon at max dist
       lat_at_max_dist <- sf::st_coordinates(
