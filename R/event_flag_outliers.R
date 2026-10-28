@@ -39,7 +39,10 @@
 #' `x` must be ordered by time within each track (see [tt_order_time()]).
 #' Some methods also require events with duplicated times to be removed first
 #' (e.g. with [move2::mt_filter_unique()]). Events without a location are
-#' ignored, and returned as valid.
+#' ignored, and returned as valid. Tracks with too few events with a location
+#' for the method (10 for "clean_track", 5 for "probability", and 2 for the
+#' other methods) are not checked, with a warning, and their events are
+#' returned as valid.
 #'
 #' @param x A `move2` object.
 #' @param method The method used to detect outliers, one of "clean_track"
@@ -107,22 +110,51 @@ event_flag_outliers <- function(
   # move2utils takes physical quantities as plain numbers in fixed units
   # (e.g. v_max in m/s), so the units objects given through ... are converted
   # first; arguments that move2utils validates itself (thresholds, iterations,
-  # etc.) are passed on unchanged. do.call() is needed to splice the converted
-  # list into the call; x and fn are named so that an argument in ... cannot
-  # be partially matched to them (e.g. f = 1 would otherwise replace fn)
-  res <- do.call(
-    call_move2utils, # nolint: object_usage_linter.
-    c(
-      list(x = x, fn = fn),
-      units_to_move2utils(args), # nolint: object_usage_linter.
-      list(cols = "is_outlier")
+  # etc.) are passed on unchanged
+  args <- units_to_move2utils(args) # nolint: object_usage_linter.
+  # checked on all of x (call_move2utils() only sees the tracks checked
+  # below, and none if all are short); subsetting events keeps the order
+  check_time_ordered(x) # nolint: object_usage_linter.
+
+  # move2utils processes each track separately, but fails when it combines
+  # the results of a track too short for the method with those of other
+  # tracks (and some methods fail on a short track on its own):
+  # mt_clean_track() needs 10 locations (it returns shorter tracks without
+  # flags), the probability method three steps with a turning angle (5
+  # locations), and the other methods a step. shorter tracks are therefore
+  # not passed to move2utils, and their events are returned as valid
+  min_located <- switch(method, clean_track = 10, probability = 5, 2)
+  located <- !sf::st_is_empty(x)
+  ids <- as.character(event_track_id(x))
+  # the number of events with a location in the track of each event
+  n_located <- stats::ave(as.numeric(located), ids, FUN = sum)
+  checked <- n_located >= min_located
+  # tracks without any location have nothing to check, so no warning
+  n_short <- length(unique(ids[located & !checked]))
+  if (n_short > 0) {
+    warning(
+      n_short, " track(s) with fewer than ", min_located, " events with a ",
+      "location were not checked for outliers; their events are returned ",
+      "as valid"
     )
-  )
-  # events without a location are not passed to move2utils and come back as
-  # NA: they are returned as valid (as in event_flag_mcconnell()), as there
-  # is no location to judge; %in% also treats any NA from move2utils itself
-  # as not flagged
-  !(res$is_outlier %in% TRUE)
+  }
+
+  valid <- rep(TRUE, nrow(x))
+  if (any(checked)) {
+    # do.call() is needed to splice the arguments into the call; x and fn
+    # are named so that an argument in ... cannot be partially matched to
+    # them (e.g. f = 1 would otherwise replace fn)
+    res <- do.call(
+      call_move2utils, # nolint: object_usage_linter.
+      c(list(x = x[checked, ], fn = fn), args, list(cols = "is_outlier"))
+    )
+    # events without a location are not passed to move2utils and come back
+    # as NA: they are returned as valid (as in event_flag_mcconnell()), as
+    # there is no location to judge; %in% also treats any NA from move2utils
+    # itself as not flagged
+    valid[checked] <- !(res$is_outlier %in% TRUE)
+  }
+  valid
 }
 
 #' Prepare a location error given by column or per event for move2utils

@@ -68,7 +68,10 @@ diagnostics, call them directly on \code{x}.
 \code{x} must be ordered by time within each track (see \code{\link[=tt_order_time]{tt_order_time()}}).
 Some methods also require events with duplicated times to be removed first
 (e.g. with \code{\link[move2:mt_filter_unique]{move2::mt_filter_unique()}}). Events without a location are
-ignored, and returned as valid.
+ignored, and returned as valid. Tracks with too few events with a location
+for the method (10 for "clean_track", 5 for "probability", and 2 for the
+other methods) are not checked, with a warning, and their events are
+returned as valid.
 }
 \examples{
 \dontshow{if (requireNamespace("move2utils", quietly = TRUE)) withAutoprint(\{ # examplesIf}

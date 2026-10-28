@@ -223,6 +223,42 @@ test_that("event_flag_outliers returns events without a location as valid", {
   )
 })
 
+test_that("event_flag_outliers returns the events of short tracks as valid", {
+  skip_if_not_installed("move2utils")
+  x <- create_spiky_tracks()
+  # the last event of track b becomes a track with a single location, which
+  # move2utils cannot combine with the results of the other tracks
+  ids <- as.character(event_track_id(x))
+  ids[nrow(x)] <- "c"
+  x_single <- move2::mt_set_track_id(x, ids)
+  for (method in names(outlier_methods)) {
+    expect_warning(
+      valid <- event_flag_outliers(x_single, method = method),
+      "1 track\\(s\\) with fewer than .* were not checked for outliers",
+      info = method
+    )
+    expect_true(valid[nrow(x)], info = method)
+    expect_identical(
+      valid[-nrow(x)],
+      event_flag_outliers(x_single[-nrow(x), ], method = method),
+      info = method
+    )
+  }
+  # mt_clean_track() returns tracks with fewer than 10 locations without
+  # flags, but cannot combine them with longer tracks
+  ids[(nrow(x) - 4):nrow(x)] <- "c"
+  x_short <- move2::mt_set_track_id(x, ids)
+  expect_warning(
+    valid <- event_flag_outliers(x_short),
+    "1 track\\(s\\) with fewer than 10 events with a location"
+  )
+  expect_true(all(valid[ids == "c"]))
+  expect_identical(
+    valid[ids != "c"],
+    event_flag_outliers(x_short[ids != "c", ])
+  )
+})
+
 test_that("tt_clean_outliers acts on the outliers", {
   skip_if_not_installed("move2utils")
   x <- create_spiky_tracks()
