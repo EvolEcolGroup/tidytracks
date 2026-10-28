@@ -55,7 +55,9 @@
 #'   number of nearest neighbours for `"k"` (a whole number of at least 2), the
 #'   radius for `"r"`, or the maximum sum of the distances for `"a"` (both in
 #'   the units of the projection of `x`). Either a single value, or a vector
-#'   with one value per group, matched to the groups in the order of
+#'   with one value per group, matched to the groups in the order in which
+#'   they are returned: the order of the tracks in the metadata (see
+#'   [show_meta()]) if `x` is not grouped, or else the order of
 #'   [dplyr::group_keys()] (i.e. sorted by the grouping variables).
 #' @param type The type of LoCoH: `"k"` (the default), `"r"` or `"a"` (see
 #'   Details).
@@ -67,7 +69,8 @@
 #'   leaves them as they are; a small positive value (e.g. 1e-5, as in
 #'   `amt::hr_locoh()`) also includes the hulls with no area (see Details).
 #' @returns An `sf` tibble of subclass `hr_tt_poly_tbl` of results, with one
-#' row per group and level (with the groups in the order of
+#' row per group and level (with the tracks in the order of the metadata if
+#' `x` is not grouped, or else with the groups in the order of
 #' [dplyr::group_keys()], i.e. sorted by the grouping variables), and columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
@@ -104,11 +107,13 @@ hr_tt_locoh <- function(
 ) {
   type <- match.arg(type)
   # if x is not grouped, use the track ID column as grouping variable
-  if (!inherits(x, "grouped_df")) {
+  by_track <- !inherits(x, "grouped_df")
+  if (by_track) {
     x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
   # as in hr_tt_kde(), per-group values of n are matched to the groups by
-  # their position in the group keys, which must therefore all be estimated
+  # their position in the order in which they are returned, so every group
+  # listed in the group keys must be estimated
   check_no_empty_groups(x) # nolint: object_usage_linter.
 
   # Check if levels are valid
@@ -132,10 +137,14 @@ hr_tt_locoh <- function(
     stop("buffer must be a single non-negative number")
   }
 
-  # get the group indices
-  group_index <- dplyr::group_indices(x)
+  # get the group indices, numbered in the order in which the groups are
+  # returned (the order of the tracks in the metadata if x was not grouped,
+  # or else the order of the group keys)
+  group_order <- hr_group_order(x, by_track) # nolint: object_usage_linter.
+  group_index <- match(dplyr::group_indices(x), group_order)
   group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
+  group_labels <- group_labels[group_order]
   # extract coordinates
   xy <- sf::st_coordinates(x)
   # events with an empty geometry have no location to contribute to the hulls
@@ -169,9 +178,9 @@ hr_tt_locoh <- function(
   )
 
   group_id <- NULL # hack to avoid it being flagged as global in checks
-  # one result per group, in the order of the group keys (rather than in the
-  # order in which the groups appear in x), as for the values of n; all
-  # groups have locations
+  # one result per group, in the order in which they are returned (rather
+  # than in the order in which the groups appear in x), as for the values of
+  # n; all groups have locations
   geometry <- foreach::foreach(group_id = seq_along(group_labels)) %do% {
     # Create the home range for each level (without a CRS, which is set
     # for all groups at once below)

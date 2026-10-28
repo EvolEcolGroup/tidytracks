@@ -142,6 +142,24 @@ test_that("hr_tt_locoh returns the groups in the order of the group keys", {
   )
 })
 
+test_that("hr_tt_locoh returns ungrouped tracks in metadata order", {
+  # the events are in the order a, b, c, whilst the metadata is in the order
+  # b, a, c
+  x <- tt_order_time(
+    readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
+  )
+  n <- c(3, 4, 2)
+  track_locoh <- hr_tt_locoh(x, n = n, levels = 0.9)
+
+  expect_equal(track_locoh$track_id, c("b", "a", "c"))
+  # per-track values of n are matched in the same order
+  expect_equal(track_locoh$n, n)
+  expect_equal(
+    track_locoh$area[track_locoh$track_id == "b"],
+    hr_tt_locoh(x[move2::mt_track_id(x) == "b", ], n = 3, levels = 0.9)$area
+  )
+})
+
 test_that("hr_tt_locoh validates its arguments", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
 
