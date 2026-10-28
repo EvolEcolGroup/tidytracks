@@ -76,19 +76,20 @@ test_that("hr_tt_kde accepts a separate grid for each group", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds")) %>%
     dplyr::group_by(name)
   group_names <- dplyr::group_keys(boar_tt)$name
+  # grids within reach of the kernels of the locations of every group
   bbox <- lapply(seq_along(group_names), function(i) {
     c(
-      xmin = i * 1000,
-      ymin = i * 2000,
-      xmax = i * 1000 + 500,
-      ymax = i * 2000 + 1000
+      xmin = 699000 + i * 200,
+      ymin = 3159800,
+      xmax = 699000 + i * 200 + 500,
+      ymax = 3160800
     )
   })
 
   boar_kde <- hr_tt_kde(boar_tt, bbox = bbox, res = c(25, 50, 100, 125))
 
-  expect_equal(boar_kde$xmin, c(1000, 2000, 3000, 4000))
-  expect_equal(boar_kde$xmax, c(1500, 2500, 3500, 4500))
+  expect_equal(boar_kde$xmin, c(699200, 699400, 699600, 699800))
+  expect_equal(boar_kde$xmax, c(699700, 699900, 700100, 700300))
   expect_equal(boar_kde$res, c(25, 50, 100, 125))
   expect_equal(
     unname(vapply(boar_kde$ud, terra::ncell, numeric(1))),
@@ -109,6 +110,22 @@ test_that("hr_tt_kde validates a collection of group-specific grids", {
     hr_tt_kde(boar_tt, bbox = rep(bbox, 4), res = c(10, 10)),
     "one value per group"
   )
+})
+
+test_that("hr_tt_kde rejects grids beyond the reach of a group's kernels", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds")) %>%
+    dplyr::group_by(name)
+  # the grid of the second group (Calou) is far from its locations, so the
+  # UD is 0 on all its cells, and cannot be standardised to sum to 1
+  ext <- sf::st_bbox(boar_tt)
+  bbox <- rep(list(ext), 4)
+  bbox[[2]] <- c(xmin = 0, ymin = 0, xmax = 1000, ymax = 1000)
+  for (method in c("binned", "exact")) {
+    expect_error(
+      hr_tt_kde(boar_tt, bbox = bbox, res = 50, method = method),
+      "the UD of group Calou is 0 on the whole grid"
+    )
+  }
 })
 
 test_that("hr_tt_kde matches individual bandwidths to the right group", {

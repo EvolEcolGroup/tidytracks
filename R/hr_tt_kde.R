@@ -273,6 +273,16 @@ hr_tt_kde <- function(
       res = res[group_id],
       h = h[group_id]
     )
+    # if the kernels of the locations do not reach the grid, the density is 0
+    # on all its cells, and cannot be standardised (it would be NaN)
+    if (!isTRUE(density$density_sum > 0)) {
+      stop(
+        "the UD of group ", group_labels[group_id], " is 0 on the whole ",
+        "grid, as its locations are too far from it; use a bbox that ",
+        "covers them",
+        call. = FALSE
+      )
+    }
     if (is.null(levels)) {
       # return the full UD, as a raster
       kde_raster(density, grid, h = h[group_id], id = group_id)
