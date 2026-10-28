@@ -23,7 +23,7 @@ A logical vector of the same length as the number of events in \code{x},
 indicating which points are valid.
 }
 \description{
-This function uses the algorithm by McConnell et al. (2012) to clean data
+This function uses the algorithm by McConnell et al. (1992) to clean data
 based on speed. This is a port of the \code{speedfilter} function from the \code{trip}
 package, with an optional endpoint check.
 }

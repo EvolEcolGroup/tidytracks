@@ -1,6 +1,6 @@
 #' Clean data based on speed
 #'
-#' This function uses the algorithm by McConnell et al. (2012) to clean data
+#' This function uses the algorithm by McConnell et al. (1992) to clean data
 #' based on speed. This is a port of the `speedfilter` function from the `trip`
 #' package, with an optional endpoint check.
 #'
