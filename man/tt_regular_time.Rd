@@ -51,8 +51,8 @@ observed path, with a strategy dependent on the map projection (using a
 strategy similar to \code{\link[move2:mt_interpolate]{move2::mt_interpolate()}}):
 
 \itemize{
-\item \strong{No CRS} – \code{\link[sf:st_line_sample]{sf::st_line_sample()}} is called on the
-Euclidean linestring connecting the observations.
+\item \strong{No CRS} – positions are linearly interpolated along the
+Euclidean segments connecting consecutive observations.
 \item \strong{Geographic CRS (lon/lat)} – the path is treated as a
 spherical polyline and \code{\link[s2:s2_interpolate_normalized]{s2::s2_interpolate_normalized()}} is
 used, which follows great-circle arcs between consecutive points.
@@ -131,6 +131,5 @@ resampled_snap
 the same spatial strategy with flexible time targets (including
 interpolating to specific missing timestamps);
 \code{\link[units:as_units]{units::as_units()}} for constructing the required \code{units}
-objects; \code{\link[sf:st_line_sample]{sf::st_line_sample()}} for Euclidean path sampling;
-\code{\link[s2:s2_interpolate_normalized]{s2::s2_interpolate_normalized()}} for spherical arc sampling.
+objects; \code{\link[s2:s2_interpolate_normalized]{s2::s2_interpolate_normalized()}} for spherical arc sampling.
 }
