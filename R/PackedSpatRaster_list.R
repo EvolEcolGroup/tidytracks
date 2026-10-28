@@ -205,6 +205,32 @@ new_PackedSpatRaster_list <- function(packed) {
   x
 }
 
+#' Combine `PackedSpatRaster_list` objects
+#'
+#' `c()` combines `PackedSpatRaster_list` objects, and `SpatRaster` or
+#' `PackedSpatRaster` objects (wrapping them automatically), into a single
+#' `PackedSpatRaster_list`.
+#' @param ... `PackedSpatRaster_list`, `SpatRaster` or `PackedSpatRaster`
+#'   objects, or lists of them, optionally named.
+#' @returns A `PackedSpatRaster_list`.
+#' @export
+#' @examples
+#' r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+#' r2 <- terra::rast(nrows = 4, ncols = 4, vals = rnorm(16))
+#' pl <- c(PackedSpatRaster_list(a = r1), PackedSpatRaster_list(b = r2))
+c.PackedSpatRaster_list <- function(...) {
+  # combine the elements as plain lists (a raster being a list of one
+  # element), then wrap them in a new PackedSpatRaster_list
+  elements <- lapply(list(...), function(x) {
+    if (inherits(x, "SpatRaster") || inherits(x, "PackedSpatRaster")) {
+      list(x)
+    } else {
+      unclass(x)
+    }
+  })
+  PackedSpatRaster_list(do.call(c, elements))
+}
+
 #' Print a summary of the `PackedSpatRaster_list`
 #'
 #' Print a summary of the `PackedSpatRaster_list`, showing dimensions and CRS of

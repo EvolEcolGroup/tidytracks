@@ -94,3 +94,19 @@ test_that("PackedSpatRaster_list wraps rasters assigned with [<-", {
   expect_equal(terra::values(loaded[[2]]), terra::values(r2))
   expect_equal(terra::values(loaded$c), terra::values(r2))
 })
+
+test_that("c() combines PackedSpatRaster_list objects", {
+  r1 <- terra::rast(nrows = 4, ncols = 4, vals = 1:16, crs = "EPSG:4326")
+  r2 <- terra::rast(nrows = 4, ncols = 4, vals = 16:1, crs = "EPSG:4326")
+  pl <- c(PackedSpatRaster_list(a = r1), PackedSpatRaster_list(b = r2))
+  expect_s3_class(pl, "PackedSpatRaster_list")
+  expect_equal(names(pl), c("a", "b"))
+  expect_equal(terra::values(pl$b), terra::values(r2))
+  # with rasters, which are wrapped
+  pl <- c(pl, c = r1)
+  expect_s3_class(pl, "PackedSpatRaster_list")
+  expect_equal(names(pl), c("a", "b", "c"))
+  expect_true(
+    all(vapply(unclass(pl), inherits, logical(1), "PackedSpatRaster"))
+  )
+})
