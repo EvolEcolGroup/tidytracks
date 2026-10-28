@@ -350,8 +350,9 @@ tt_read_data <- function(
         }
       }
     }
-    # update the move2 object with the new meta data
-    move2_obj <- move2::mt_set_track_data(move2_obj, updated_meta)
+    # update the move2 object with the new meta data (which checks that the
+    # metadata has a single row per track)
+    show_meta(move2_obj) <- updated_meta
   }
 
   return(move2_obj)

@@ -783,6 +783,28 @@ test_that("tt_read_data joins metadata with large numeric track ids", {
   expect_equal(show_meta(test_tt)$sex, c("f", "m"))
 })
 
+test_that("tt_read_data rejects metadata with duplicated track ids", {
+  events <- data.frame(
+    bird_id = c("a", "a", "b", "b"),
+    lon = c(0, 1, 0, 1),
+    lat = 0,
+    date_time = rep(c("2024-01-01 00:00:00", "2024-01-01 01:00:00"), 2)
+  )
+  meta <- data.frame(bird_id = c("a", "a", "b"), sex = c("f", "m", "m"))
+
+  expect_error(
+    tt_read_data(
+      events = events,
+      meta = meta,
+      col_track_id = "bird_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    ),
+    "The metadata has more than one row for track(s) a",
+    fixed = TRUE
+  )
+})
+
 test_that("tt_read_data compares duplicated columns of different types", {
   # age is moved from the events (as an integer, as read from a csv file) to
   # the metadata, and is also in the metadata (as a double)
