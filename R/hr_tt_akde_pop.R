@@ -70,10 +70,12 @@
 #' @param models The table of models used to estimate the UDs, as created
 #'   with [ctmm_tt_fit()] (only needed with `method = "pkde"`).
 #' @param weights The weights of the individuals in the population UD. Either
-#'   `NULL` (the default) for equal weights, the name of a numeric column of
-#'   `x` with the relative weight of each UD (non-negative, and not all zero
-#'   within a group), or, with `method = "pkde"`, `TRUE` to optimise the
-#'   weights (see [ctmm::pkde()]; this requires the package `quadprog`).
+#'   `NULL` (the default) for equal weights, or, with `method = "mean"`, the
+#'   name of a numeric column of `x` with the relative weight of each UD
+#'   (non-negative, and not all zero within a group), or, with
+#'   `method = "pkde"`, `TRUE` to optimise the weights (see [ctmm::pkde()];
+#'   this requires the package `quadprog`). [ctmm::pkde()] cannot use weights
+#'   given by the user.
 #' @param sample Logical; with `method = "mean"`, whether the tracks are a
 #'   sample of a larger population (`TRUE`, the default) or the whole
 #'   population (`FALSE`).
@@ -393,7 +395,8 @@ stopifnot_akde_ud_table <- function(x) {
 #' @returns For equal weights, `FALSE` with `method = "pkde"` (as expected by
 #'   [ctmm::pkde()]) or `NULL` with `method = "mean"` (as expected by
 #'   `ctmm::mean.UD()`); `TRUE` for optimised weights (`method = "pkde"`
-#'   only); or a numeric vector with one weight per row of `x`.
+#'   only); or a numeric vector with one weight per row of `x`
+#'   (`method = "mean"` only).
 #' @keywords internal
 #' @noRd
 akde_pop_weights <- function(x, weights, method) {
@@ -413,7 +416,16 @@ akde_pop_weights <- function(x, weights, method) {
   ) {
     stop(
       "weights must be NULL, TRUE (with method = \"pkde\"), or the name of a ",
-      "numeric column of x"
+      "numeric column of x (with method = \"mean\")"
+    )
+  }
+  # ctmm::pkde() either uses equal weights or optimises them: given weights
+  # of its own, it optimises them instead (or fails if one of them is zero)
+  if (method == "pkde") {
+    stop(
+      "weights from a column of x are only used with method = \"mean\"; ",
+      "with method = \"pkde\", use weights = NULL (equal weights) or ",
+      "weights = TRUE (optimised weights)"
     )
   }
   ud_weights <- x[[weights]]

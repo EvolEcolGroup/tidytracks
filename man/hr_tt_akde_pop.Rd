@@ -34,10 +34,12 @@ default) or \code{"mean"} (see Details).}
 with \code{\link[=ctmm_tt_fit]{ctmm_tt_fit()}} (only needed with \code{method = "pkde"}).}
 
 \item{weights}{The weights of the individuals in the population UD. Either
-\code{NULL} (the default) for equal weights, the name of a numeric column of
-\code{x} with the relative weight of each UD (non-negative, and not all zero
-within a group), or, with \code{method = "pkde"}, \code{TRUE} to optimise the
-weights (see \code{\link[ctmm:pkde]{ctmm::pkde()}}; this requires the package \code{quadprog}).}
+\code{NULL} (the default) for equal weights, or, with \code{method = "mean"}, the
+name of a numeric column of \code{x} with the relative weight of each UD
+(non-negative, and not all zero within a group), or, with
+\code{method = "pkde"}, \code{TRUE} to optimise the weights (see \code{\link[ctmm:pkde]{ctmm::pkde()}};
+this requires the package \code{quadprog}). \code{\link[ctmm:pkde]{ctmm::pkde()}} cannot use weights
+given by the user.}
 
 \item{sample}{Logical; with \code{method = "mean"}, whether the tracks are a
 sample of a larger population (\code{TRUE}, the default) or the whole
