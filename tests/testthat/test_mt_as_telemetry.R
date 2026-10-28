@@ -137,6 +137,16 @@ test_that("mt_as_telemetry requires a projected CRS in metres", {
   expect_error(mt_as_telemetry(as.data.frame(x)), "must be a move2 object")
 })
 
+test_that("mt_as_telemetry does not change the digits.secs option", {
+  # ctmm::as.telemetry() sets options(digits.secs = 6), which would change
+  # how date-times are printed for the rest of the session
+  x <- ctmm_example_tt(n = 10)
+  old_options <- options(digits.secs = NULL)
+  on.exit(options(old_options))
+  tel <- suppressMessages(mt_as_telemetry(x))
+  expect_null(getOption("digits.secs"))
+})
+
 test_that("canonical_ctmm_name ignores separators, brackets and case", {
   # as ctmm's canonical.name(), used to recognise the error columns
   x <- c(

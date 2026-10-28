@@ -125,6 +125,11 @@ mt_as_telemetry <- function(x, error_cols = "auto", ...) {
   }
 
   ## create the telemetry objects
+  # ctmm::as.telemetry() sets options(digits.secs = 6), which would change how
+  # date-times are printed for the rest of the session, so we restore the
+  # option when we are done
+  old_options <- options(digits.secs = getOption("digits.secs"))
+  on.exit(options(old_options), add = TRUE)
   # one object per track, in the CRS of x (drop = FALSE always returns a
   # list, even for a single track); we keep the index column to match the
   # rows of each object to the events of x
