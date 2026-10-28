@@ -394,9 +394,11 @@ show_meta(shags_tt) <- show_meta(shags_tt) %>%
   mutate(colony_coord = sf_point_col(colony_lon, colony_lat, crs = 4326))
 ```
 
-Note that we use `sf_point_col()` to create a column. Do not replace the
-metadata with a full `sf` tibble, as that creates problems with certain
-functions.
+Note that we use `sf_point_col()` to create a column of locations in the
+metadata. If you replace the metadata with a full `sf` tibble instead, it is
+stored as a plain table, with its geometry kept as a column; as that column is
+named `geometry` by default, like the locations of the events, it is renamed
+`geometry.meta` (with a message), so that the two are not confused.
 
 When defining the outbound and inbound buffers for trip splitting, it is
 important to consider the resolution and accuracy of your locations, and the
