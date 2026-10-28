@@ -410,8 +410,10 @@ compared %>%
   `r ratio_range("distance", "trip")` times. `tidytracks` computes the
   distances of all the tracks at once (with `geodist`), whereas `amt` and
   `trip` measure each track in turn.
-- **Speed filter**: `tidytracks` and `trip` run the same algorithm, in R, and
-  `tidytracks` is a little faster: `trip` takes
+- **Speed filter**: `tidytracks` and `trip` run the same algorithm, in R, but
+  `trip` computes the distances between all the remaining locations again in
+  each pass of the filter, whereas `tidytracks` only computes those between
+  locations that have become neighbours: `trip` takes
   `r ratio_range("speed_filter", "trip")` times as long.
 - **Trips**: `track2KBA` takes `r ratio_range("trip_split", "track2KBA")`
   times as long as `tidytracks`, as it goes through the locations of each
@@ -437,9 +439,10 @@ locations of the largest data set, `tidytracks` takes about
 `r per_location("distance", "tidytracks")` µs per location for the step
 distances, `r per_location("speed_filter", "tidytracks")` µs for the speed
 filter (which computes the speeds of the whole track again after removing
-each batch of outliers), and `r per_location("trip_split", "tidytracks")` µs
-for the trips. The time of `track2KBA` grows faster than the length of the
-tracks, as it updates the whole track at many of its steps: with tracks ten
+each batch of outliers, but only the distances that have changed), and
+`r per_location("trip_split", "tidytracks")` µs for the trips. The time of
+`track2KBA` grows faster than the length of the tracks, as it updates the
+whole track at many of its steps: with tracks ten
 times as long (from `r fmt(track_lengths[1])` to `r fmt(track_lengths[2])`
 locations), it takes `r growth("trip_split", "track2KBA", track_lengths[1])`
 times as long. It was thus not run on the largest data set, on which it would
