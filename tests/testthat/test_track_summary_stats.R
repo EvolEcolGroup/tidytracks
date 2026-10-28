@@ -284,5 +284,27 @@ test_that("track_summary_stats gives geodesic distances from the centre", {
   expect_equal(track_summary_stats(example_tt), sums)
 })
 
+test_that("track_summary_stats gives NA from the centre without locations", {
+  # track a has no locations
+  x_empty <- example_tt
+  sf::st_geometry(x_empty)[1:5] <- list(sf::st_point())
+  centre_cols <- c(
+    "max_dist_centre",
+    "lat_at_max_dist_centre",
+    "lon_at_max_dist_centre"
+  )
+  expect_no_warning(sums <- track_summary_stats(x_empty))
+  expect_true(all(is.na(sums[1, centre_cols])))
+  expect_equal(sums[-1, ], track_summary_stats(example_tt)[-1, ])
+  # also with a centre from the metadata
+  show_meta(x_empty)$nest <- sf_point_col(
+    x = show_meta(x_empty)$nest_lon,
+    y = show_meta(x_empty)$nest_lat,
+    crs = 4326
+  )
+  expect_no_warning(sums <- track_summary_stats(x_empty, centre_col = "nest"))
+  expect_true(all(is.na(sums[1, centre_cols])))
+})
+
 # TODO add test for where there are >10 trips per individual (to make sure
 # the trip_id field is carrying through the function correctly)

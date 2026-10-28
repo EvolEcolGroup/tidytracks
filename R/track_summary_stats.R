@@ -84,11 +84,12 @@ track_summary_stats <- function(
       ) %>%
       dplyr::ungroup()
 
-    centre_col <- sf::st_geometry(centre_df)
-    names(centre_col) <- centre_df[[.group_var]]
-
-    # Reorder to match metadata row order used later in the function
-    centre_col <- centre_col[as.character(show_meta(x)[[.group_var]])]
+    # Reorder to match metadata row order used later in the function; tracks
+    # without any location are not in centre_df, and get an empty centre
+    centre_col <- sf::st_geometry(centre_df)[match(
+      as.character(show_meta(x)[[.group_var]]),
+      as.character(centre_df[[.group_var]])
+    )]
   } else if (inherits(centre_col, "character")) {
     # check if it exists in the metadata
     if (!centre_col %in% names(show_meta(x))) {
@@ -194,14 +195,13 @@ track_summary_stats <- function(
         ),
         dist_units
       )
-      max_dist <- max(dists, na.rm = TRUE)
+      # the first event at the maximum distance (NA if no distance is known,
+      # i.e. if the track or its centre has no location)
+      i_max <- which.max(dists)[1]
+      max_dist <- dists[i_max]
       # get lat and lon at max dist
-      lat_at_max_dist <- sf::st_coordinates(
-        sf::st_geometry(events)[which(dists == max_dist)[1]]
-      )[, "Y"]
-      lon_at_max_dist <- sf::st_coordinates(
-        sf::st_geometry(events)[which(dists == max_dist)[1]]
-      )[, "X"]
+      lat_at_max_dist <- events_coords[i_max, "Y"]
+      lon_at_max_dist <- events_coords[i_max, "X"]
 
       # return a dataframe of track id, maximum distance, and lat/lon at it.
       return(data.frame(
