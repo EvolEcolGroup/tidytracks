@@ -42,7 +42,8 @@ Resamples one or more tracks stored in a \code{move2} object onto a regular time
 grid.  A new grid point is placed every \code{interval} time units from the start
 of the track. Tracks are processed independently, so different tracks may
 have different temporal extents and the points from different tracks will not
-have matching time stamps (as the starting points are different).
+have matching time stamps (as the starting points are different). Events
+with an empty geometry (i.e. no location) are ignored.
 }
 \section{Spatial interpolation}{
  Positions are linearly interpolated along the

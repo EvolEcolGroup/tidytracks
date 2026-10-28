@@ -562,6 +562,20 @@ test_that("unsorted input timestamps are handled correctly", {
   )
 })
 
+test_that("events without a location are ignored", {
+  tracks <- list(
+    make_track(crs = NA),
+    make_track(crs = 4326),
+    sf::st_transform(make_track(crs = 4326), 32631)
+  )
+  for (track in tracks) {
+    expected <- sorted_coords(tt_regular_time(track, interval = s(100)))
+    sf::st_geometry(track)[2] <- sf::st_point()
+    out <- tt_regular_time(track, interval = s(100))
+    expect_equal(sorted_coords(out), expected, tolerance = tol_coord)
+  }
+})
+
 test_that("tracks fully removed by gap filtering return valid empty output", {
   mv <- move2::mt_stack(
     make_mv("drop", x_off = 0, t_offsets = c(40, 70), value = c(0, 10)),

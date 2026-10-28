@@ -4,7 +4,8 @@
 #' grid.  A new grid point is placed every `interval` time units from the start
 #' of the track. Tracks are processed independently, so different tracks may
 #' have different temporal extents and the points from different tracks will not
-#' have matching time stamps (as the starting points are different).
+#' have matching time stamps (as the starting points are different). Events
+#' with an empty geometry (i.e. no location) are ignored.
 #'
 #' @section Spatial interpolation: Positions are linearly interpolated along the
 #'   observed path, with a strategy dependent on the map projection (using a
@@ -267,16 +268,19 @@ tt_regular_time <- function(
   track_col,
   geom_col
 ) {
+  track_label <- as.character(move2::mt_track_id(track)[1L])
+  # events without a location (empty geometry) are ignored
+  track <- track[!sf::st_is_empty(track), ]
   track <- track[order(move2::mt_time(track)), ]
 
   if (nrow(track) < 2L) {
     stop(
-      "Each track must have at least 2 observations to interpolate. ",
-      "Track '",
-      unique(as.character(move2::mt_track_id(track))),
+      "Each track must have at least 2 observations with a location to ",
+      "interpolate. Track '",
+      track_label,
       "' has only ",
       nrow(track),
-      " row(s).",
+      " row(s) with a location.",
       call. = FALSE
     )
   }
