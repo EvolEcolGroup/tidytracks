@@ -32,8 +32,11 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
     stop("The directory ", base_path, " does not exist.")
   }
 
-  # drop any sfc geometry columns (such as colony/nest location) from meta
+  # drop any sfc geometry columns (such as colony/nest location) from meta,
+  # including the active geometry column if meta is an sf object (which
+  # dplyr::select() would keep)
   show_meta(x) <- show_meta(x) %>%
+    sf::st_drop_geometry() %>%
     dplyr::select(-dplyr::where(~ inherits(.x, "sfc")))
 
   if (!combined) {

@@ -100,3 +100,29 @@ test_that("tt_write_data writes times that tt_read_data reads back", {
   written <- read.csv(paste0(output_path, "_events.csv"))
   expect_equal(written$date_time[1], "2024-01-01 12:00:00 UTC")
 })
+
+test_that("tt_write_data drops the geometry of sf metadata", {
+  test_tt <- example_tt
+  show_meta(test_tt) <- sf::st_as_sf(
+    show_meta(test_tt),
+    coords = c("nest_lon", "nest_lat"),
+    crs = 4326,
+    remove = FALSE
+  )
+  output_path <- file.path(tempdir(), "test_sf_meta")
+  on.exit(unlink(paste0(
+    output_path,
+    c("_events.csv", "_metadata.csv", "_combined.csv")
+  )))
+
+  tt_write_data(test_tt, file_prefix = output_path)
+  expect_named(
+    read.csv(paste0(output_path, "_metadata.csv")),
+    c("track_id", "sex", "nest_lon", "nest_lat")
+  )
+  tt_write_data(test_tt, file_prefix = output_path, combined = TRUE)
+  expect_named(
+    read.csv(paste0(output_path, "_combined.csv")),
+    c("track_id", "sex", "nest_lon", "nest_lat", "date_time", "X", "Y")
+  )
+})
