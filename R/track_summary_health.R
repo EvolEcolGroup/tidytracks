@@ -9,8 +9,10 @@
 #'   the metadata, see [show_meta()]) and the following columns:
 #' \itemize{
 #'  \item \code{<track id column>}: The track ID from \code{x}
-#'  \item median_sampling_interval: The median sampling interval in seconds
-#'  \item track_duration: The duration of the track in seconds
+#'  \item median_sampling_interval: The median sampling interval, in seconds
+#'  (as a `units` object)
+#'  \item track_duration: The duration of the track, in seconds (as a `units`
+#'  object)
 #'  \item expected_points: The expected number of points based on the
 #'  median sampling interval
 #'  \item actual_points: The actual number of points in the track
@@ -101,6 +103,12 @@ track_summary_health <- function(x) {
     results$actual_points[i] <- actual_points
     results$proportion_missing[i] <- proportion_missing
   }
+  # the times are in seconds
+  results$median_sampling_interval <- units::as_units(
+    results$median_sampling_interval,
+    "s"
+  )
+  results$track_duration <- units::as_units(results$track_duration, "s")
 
   # rename track_id field to the "track_id_column" in the original move2 object
   colnames(results)[which(

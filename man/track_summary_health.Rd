@@ -14,8 +14,10 @@ A tibble with one row per track (in the same order as the tracks in
 the metadata, see \code{\link[=show_meta]{show_meta()}}) and the following columns:
 \itemize{
 \item \code{<track id column>}: The track ID from \code{x}
-\item median_sampling_interval: The median sampling interval in seconds
-\item track_duration: The duration of the track in seconds
+\item median_sampling_interval: The median sampling interval, in seconds
+(as a \code{units} object)
+\item track_duration: The duration of the track, in seconds (as a \code{units}
+object)
 \item expected_points: The expected number of points based on the
 median sampling interval
 \item actual_points: The actual number of points in the track

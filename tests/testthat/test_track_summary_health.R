@@ -54,5 +54,16 @@ test_that("track_summary_health returns tracks in the order of the metadata", {
 
   result <- track_summary_health(example_tt_2)
   expect_equal(as.character(result$track_id), c("b", "a", "c"))
-  expect_equal(result$track_duration, c(5, 4, 3) * 20 * 60)
+  expect_equal(result$track_duration, as_units(c(5, 4, 3) * 20 * 60, "s"))
+})
+
+test_that("track_summary_health gives the times in seconds as units", {
+  result <- track_summary_health(example_tt)
+  expect_equal(units(result$median_sampling_interval)$numerator, "s")
+  expect_equal(units(result$track_duration)$numerator, "s")
+  # the duration is that of track_duration(), in seconds
+  expect_equal(
+    result$track_duration,
+    unname(track_duration(example_tt, units = "s"))
+  )
 })
