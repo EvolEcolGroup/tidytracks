@@ -12,8 +12,10 @@
 #' @param levels A vector of levels for the contour lines. The default is
 #' `c(0.5, 0.95)`, which corresponds to the 50% and 95% home ranges.
 #' @returns An `sf` tibble of subclass `hr_tt_poly_tbl` of results, with one
-#' row per group and level (with the groups in the order of
-#' [dplyr::group_keys()], i.e. sorted by the grouping variables), and columns:
+#' row per group and level (with the tracks in the order of the metadata, see
+#' [show_meta()], if `x` is not grouped, or else with the groups in the order
+#' of [dplyr::group_keys()], i.e. sorted by the grouping variables), and
+#' columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
 #'   grouping of `x`
@@ -33,7 +35,8 @@
 #'   geom_sf(aes(fill = track_id), alpha = 0.7)
 hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   # if x is not grouped, use the track ID column as grouping variable
-  if (!inherits(x, "grouped_df")) {
+  by_track <- !inherits(x, "grouped_df")
+  if (by_track) {
     x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
   }
   # as in hr_tt_kde(), every group listed in the group keys must have events
@@ -51,10 +54,14 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   # reorder levels from big to small
   levels <- sort(levels, decreasing = TRUE)
 
-  # get the group indices
-  group_index <- dplyr::group_indices(x)
+  # get the group indices, numbered in the order in which the groups are
+  # returned (the order of the tracks in the metadata if x was not grouped,
+  # or else the order of the group keys)
+  group_order <- hr_group_order(x, by_track) # nolint: object_usage_linter.
+  group_index <- match(dplyr::group_indices(x), group_order)
   group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
+  group_labels <- group_labels[group_order]
   # Compute the minimum convex polygon for each group and level
   xy <- sf::st_coordinates(x)
   # events with an empty geometry have no location to contribute to the MCP
@@ -79,8 +86,9 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   )
 
   group_id <- NULL # hack to avoid it being flagged as global in checks
-  # one result per group, in the order of the group keys (rather than in the
-  # order in which the groups appear in x); all groups have locations
+  # one result per group, in the order in which they are returned (rather
+  # than in the order in which the groups appear in x); all groups have
+  # locations
   geometry <- foreach::foreach(group_id = seq_along(group_labels)) %do% {
     # Create MCP for each level (without a CRS, which is set for all groups
     # at once below)

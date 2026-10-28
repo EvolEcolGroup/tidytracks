@@ -54,6 +54,20 @@ test_that("hr_tt_mcp returns the groups in the order of the group keys", {
   )
 })
 
+test_that("hr_tt_mcp returns the tracks of ungrouped data in metadata order", {
+  # the events are in the order a, b, c, whilst the metadata is in the order
+  # b, a, c
+  x <- tt_order_time(
+    readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
+  )
+  track_mcp <- hr_tt_mcp(x)
+  expect_equal(unique(track_mcp$track_id), c("b", "a", "c"))
+  expect_equal(
+    track_mcp$area[track_mcp$track_id == "b"],
+    hr_tt_mcp(x[move2::mt_track_id(x) == "b", ])$area
+  )
+})
+
 test_that("hr_tt_mcp rejects levels outside the unit interval", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
 
