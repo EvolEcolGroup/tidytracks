@@ -502,11 +502,15 @@ event_flag_mcconnell <- function(
   # filter (and returned as valid).
   located <- !is.na(coords[, 1]) & !is.na(coords[, 2])
 
+  # The located events of each track (splitting the rows once is much faster,
+  # with many tracks, than finding the rows of each track among all the rows).
+  track_rows <- split(which(located), id[located])
+
   for (i_track in track_ids) {
     # Select the located events belonging to the track, in time order (speeds
     # are computed between consecutive events, and the events of x are not
     # necessarily stored in time order).
-    this_track <- which(id == i_track & located)
+    this_track <- track_rows[[i_track]]
     this_track <- this_track[order(time[this_track])]
 
     # Track coordinates.
