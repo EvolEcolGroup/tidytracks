@@ -103,11 +103,14 @@ test_that("tt_write_data writes times that tt_read_data reads back", {
 
 test_that("tt_write_data drops the geometry of sf metadata", {
   test_tt <- example_tt
-  show_meta(test_tt) <- sf::st_as_sf(
-    show_meta(test_tt),
-    coords = c("nest_lon", "nest_lat"),
-    crs = 4326,
-    remove = FALSE
+  # (with a message, as the geometry is renamed geometry.meta)
+  suppressMessages(
+    show_meta(test_tt) <- sf::st_as_sf(
+      show_meta(test_tt),
+      coords = c("nest_lon", "nest_lat"),
+      crs = 4326,
+      remove = FALSE
+    )
   )
   output_path <- file.path(tempdir(), "test_sf_meta")
   on.exit(unlink(paste0(

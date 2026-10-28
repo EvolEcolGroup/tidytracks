@@ -11,6 +11,31 @@ test_that("show_meta works correctly", {
   expect_equal(updated_meta$test_column[1], "test_info")
 })
 
+test_that("show_meta<- stores sf metadata as a plain table", {
+  test_tt <- example_tt
+  meta_sf <- sf::st_as_sf(
+    show_meta(test_tt),
+    coords = c("nest_lon", "nest_lat"),
+    crs = 4326,
+    remove = FALSE
+  )
+  # the geometry column of an sf table is called geometry by default, as is
+  # the geometry column of the events
+  expect_message(
+    show_meta(test_tt) <- meta_sf,
+    "so it has been renamed 'geometry.meta'"
+  )
+  expect_false(inherits(show_meta(test_tt), "sf"))
+  expect_equal(show_meta(test_tt)$geometry.meta, sf::st_geometry(meta_sf))
+  # so it can be joined to the events, which keep their own geometry
+  joined <- as_event_column(test_tt, "geometry.meta")
+  expect_equal(sf::st_geometry(joined), sf::st_geometry(example_tt))
+  # a geometry column with another name is kept as it is
+  sf::st_geometry(meta_sf) <- "nest"
+  expect_no_message(show_meta(test_tt) <- meta_sf)
+  expect_equal(show_meta(test_tt)$nest, sf::st_geometry(meta_sf))
+})
+
 test_that("show_meta<- rejects more than one row per track", {
   test_tt <- example_tt
   # e.g. from joining a table with more than one row for a track
