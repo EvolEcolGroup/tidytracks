@@ -178,3 +178,17 @@ test_that("hr_tt_ud_iso closes isopleths along the edges of the grid", {
     }
   }
 })
+
+test_that("hr_tt_ud_iso ignores duplicated levels", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  expect_equal(
+    hr_tt_ud_iso(boar_kde, levels = c(0.5, 0.95, 0.5)),
+    hr_tt_ud_iso(boar_kde, levels = c(0.5, 0.95))
+  )
+  # including when computed directly by hr_tt_kde()
+  expect_equal(
+    hr_tt_kde(boar_tt, res = 50, levels = c(0.5, 0.95, 0.5)),
+    hr_tt_kde(boar_tt, res = 50, levels = c(0.5, 0.95))
+  )
+})

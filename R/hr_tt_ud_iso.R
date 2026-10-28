@@ -220,7 +220,8 @@ isopleth_table <- function(x, iso) {
 #' @param x,y the coordinates of the centres of the columns, and of the rows
 #'   from south to north.
 #' @param res the size of the cells, along x and along y.
-#' @param levels the levels of the isopleths, sorted.
+#' @param levels the levels of the isopleths, sorted (a level that is
+#'   repeated gives a single isopleth).
 #' @param ops_crs the CRS for the geometric operations: `sf::NA_crs_` for
 #'   data, so that GEOS carries them out without sf looking up the parameters
 #'   of the CRS for each of them, or the CRS for longitudes and latitudes, so
@@ -234,6 +235,9 @@ isopleth_table <- function(x, iso) {
 #' @keywords internal
 #' @noRd
 cud_isopleths <- function(cud, x, y, res, levels, ops_crs, cud_raster) {
+  # a repeated level would give each of its contour lines twice, which would
+  # cancel each other out in the isopleth
+  levels <- unique(levels)
   # 1) The contour lines, each with its level. These are the lines that
   # terra::as.contour() would give, without building the SpatVector (which
   # takes much longer than the contours of a small raster): it calls
