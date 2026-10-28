@@ -161,43 +161,43 @@ hr_tt_locoh <- function(
   crs <- sf::st_crs(x)
   longlat <- isTRUE(sf::st_is_longlat(crs))
 
+  # the rows of xy of each group (splitting them once is much faster, with
+  # many groups, than finding the rows of each group among all the rows)
+  group_rows <- split(
+    seq_along(group_index),
+    factor(group_index, levels = seq_along(group_labels))
+  )
+
   group_id <- NULL # hack to avoid it being flagged as global in checks
   # one result per group, in the order of the group keys (rather than in the
   # order in which the groups appear in x), as for the values of n; all
   # groups have locations
-  locoh_results <- foreach::foreach(group_id = seq_along(group_labels)) %do% {
-    # Filter the data for the current group
-    xy_sub <- xy[group_index == group_id, , drop = FALSE]
-    # take n for this group now: inside tibble() below, group_id refers to
-    # the column created there, not to the index of the group
-    n_val <- n[group_id]
+  geometry <- foreach::foreach(group_id = seq_along(group_labels)) %do% {
     # Create the home range for each level (without a CRS, which is set
     # for all groups at once below)
-    geometry <- locoh_one_group(
-      xy_sub,
-      n = n_val,
+    locoh_one_group(
+      xy[group_rows[[group_id]], , drop = FALSE],
+      n = n[group_id],
       type = type,
       levels = levels,
       buffer = buffer,
       longlat = longlat
     )
-
-    # Create a tibble with the results (areas are computed below)
-    tibble::tibble(
-      group_id = group_labels[group_id],
-      method = "locoh",
-      type = type,
-      n = n_val,
-      level = levels,
-      area = NA_real_,
-      geometry = geometry
-    )
   }
 
-  # combine the groups in one go (combining them one at a time, as foreach's
-  # .combine does, takes time quadratic in the number of groups), cast the
-  # results to an sf object, and compute all the areas in one call
-  locoh_results <- dplyr::bind_rows(locoh_results)
+  # create a tibble with the results of all groups in one go (creating a
+  # tibble for each group and combining them takes much longer when there
+  # are many groups), cast it to an sf object, and compute all the areas in
+  # one call
+  locoh_results <- tibble::tibble(
+    group_id = rep(group_labels, each = length(levels)),
+    method = "locoh",
+    type = type,
+    n = rep(n, each = length(levels)),
+    level = rep(levels, times = length(group_labels)),
+    area = NA_real_,
+    geometry = sf::st_sfc(unlist(geometry, recursive = FALSE))
+  )
   locoh_results <- sf::st_as_sf(locoh_results, crs = crs)
   locoh_results$area <- sf::st_area(locoh_results)
 
