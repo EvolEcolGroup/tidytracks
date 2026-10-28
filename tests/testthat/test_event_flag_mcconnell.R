@@ -216,6 +216,26 @@ test_that("check_first_last = TRUE reruns the algorithm deterministically", {
 })
 
 
+test_that("endpoint checks flag endpoints with an infinite speed", {
+  # the first location is 1 km away from the second one, at the same time
+  x <- make_test_move2(
+    x = c(1000, 0, 100, 200, 300, 400),
+    y = rep(0, 6),
+    time = as.POSIXct("2020-01-01 00:00:00", tz = "UTC") +
+      c(0, 0, 600, 1200, 1800, 2400),
+    track_id = rep("a", 6)
+  )
+
+  out <- event_flag_mcconnell(
+    x,
+    max_speed = units::as_units(10, "km/h"),
+    check_first_last = TRUE
+  )
+
+  expect_identical(out, c(FALSE, TRUE, TRUE, TRUE, TRUE, TRUE))
+})
+
+
 test_that("multiple track IDs are handled independently", {
   x <- make_test_move2(
     x = c(0, 20, 10, 0, 0, 5, 10, 15),

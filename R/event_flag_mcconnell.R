@@ -335,7 +335,8 @@ event_flag_mcconnell <- function(
   # Endpoint speeds are the root mean squares of the adjacent and skip-one
   # segments.
   #
-  # If either RMS exceeds max_speed, the endpoint is flagged.
+  # If either RMS exceeds max_speed, the endpoint is flagged; this includes an
+  # infinite RMS (a displacement with no elapsed time).
   # ---------------------------------------------------------------------------
   endpoint_rms_flags <- function(
     xy,
@@ -362,7 +363,7 @@ event_flag_mcconnell <- function(
 
     rms_first <- sqrt((s12^2 + s13^2) / 2)
 
-    if (is.finite(rms_first) && rms_first > max_speed) {
+    if (!is.na(rms_first) && rms_first > max_speed) {
       flags[idx[1]] <- TRUE
     }
 
@@ -389,7 +390,7 @@ event_flag_mcconnell <- function(
 
     rms_last <- sqrt((s_n1n^2 + s_n2n^2) / 2)
 
-    if (is.finite(rms_last) && rms_last > max_speed) {
+    if (!is.na(rms_last) && rms_last > max_speed) {
       flags[idx[k]] <- TRUE
     }
 
