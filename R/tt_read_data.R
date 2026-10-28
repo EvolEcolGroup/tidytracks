@@ -431,7 +431,10 @@ tt_date_time_formats <- data.frame(
 #'
 #' Returns the first of the common formats in `tt_date_time_formats` whose
 #' date pattern matches all the (non-missing) values in `x` and which parses
-#' all of them.
+#' all of them. As strptime() ignores trailing characters, a format without
+#' seconds would also parse times with seconds, dropping them (e.g. if only
+#' some of the values have seconds), so such formats are only used if none of
+#' the values has seconds.
 #'
 #' @param x A character vector of date-times.
 #' @returns The format as a string, or `NULL` if no format matches.
@@ -439,10 +442,12 @@ tt_date_time_formats <- data.frame(
 #' @noRd
 guess_date_time_format <- function(x) {
   x <- trimws(x[!is.na(x)])
+  has_seconds <- any(grepl("[0-9]:[0-9]{1,2}:[0-9]", x))
   for (i in seq_len(nrow(tt_date_time_formats))) {
     format <- tt_date_time_formats$format[i]
     if (
-      all(grepl(tt_date_time_formats$date_regex[i], x)) &&
+      (!has_seconds || grepl("%OS", format, fixed = TRUE)) &&
+        all(grepl(tt_date_time_formats$date_regex[i], x)) &&
         !anyNA(strptime(x, format, tz = "UTC"))
     ) {
       return(format)

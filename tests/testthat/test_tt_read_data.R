@@ -442,6 +442,31 @@ test_that("tt_read_data reads 2-digit years in auto-detected formats", {
   )
 })
 
+test_that("tt_read_data does not drop seconds of auto-detected times", {
+  # only some of the times have seconds: no format matches all of them (a
+  # format without seconds would parse them, but drop the seconds)
+  events <- data.frame(
+    track_id = "a",
+    lon = 1:3,
+    lat = 0,
+    date_time = c(
+      "2024-01-15 13:45:30",
+      "2024-01-15 13:46",
+      "2024-01-15 13:47:59"
+    )
+  )
+  expect_error(
+    tt_read_data(
+      events,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    ),
+    regexp = "Failed to parse date-time field(s) 'date_time'",
+    fixed = TRUE
+  )
+})
+
 test_that("tt_read_data auto-detects MDY (American) date_time formats", {
   read_date_times <- function(date_times) {
     events <- data.frame(
