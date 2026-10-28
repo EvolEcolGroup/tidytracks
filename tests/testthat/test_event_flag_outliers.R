@@ -223,6 +223,22 @@ test_that("event_flag_outliers returns events without a location as valid", {
   )
 })
 
+test_that("event_flag_outliers matches a state per event to the events", {
+  skip_if_not_installed("move2utils")
+  x <- create_spiky_tracks()
+  state <- rep(rep(c("rest", "move"), each = 150), 2)
+  x_empty <- x
+  sf::st_geometry(x_empty)[10] <- sf::st_point()
+  # the event without a location is not passed to move2utils, nor is its
+  # state
+  valid <- event_flag_outliers(x_empty, state = state)
+  expect_true(valid[10])
+  expect_identical(
+    valid[-10],
+    event_flag_outliers(x[-10, ], state = state[-10])
+  )
+})
+
 test_that("event_flag_outliers returns the events of short tracks as valid", {
   skip_if_not_installed("move2utils")
   x <- create_spiky_tracks()

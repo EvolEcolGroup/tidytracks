@@ -61,9 +61,10 @@ to the units expected by \code{move2utils}: speeds (\code{v_max},
 single value, one value per event, the name of a column of \code{x} with the
 errors (as a \code{units} object), or \code{"auto"}, with which \code{move2utils} uses the
 column \code{eobs_horizontal_accuracy_estimate} (which must then be a \code{units}
-object) or, failing that, the Argos location classes. The \code{move2utils}
-functions are run without plots and messages; to inspect their
-diagnostics, call them directly on \code{x}.
+object) or, failing that, the Argos location classes. \code{state} (for the
+"clean_track" method) can be the name of a column of \code{x}, or one value per
+event. The \code{move2utils} functions are run without plots and messages; to
+inspect their diagnostics, call them directly on \code{x}.
 
 \code{x} must be ordered by time within each track (see \code{\link[=tt_order_time]{tt_order_time()}}).
 Some methods also require events with duplicated times to be removed first

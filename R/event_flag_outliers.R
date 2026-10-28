@@ -32,9 +32,10 @@
 #' single value, one value per event, the name of a column of `x` with the
 #' errors (as a `units` object), or `"auto"`, with which `move2utils` uses the
 #' column `eobs_horizontal_accuracy_estimate` (which must then be a `units`
-#' object) or, failing that, the Argos location classes. The `move2utils`
-#' functions are run without plots and messages; to inspect their
-#' diagnostics, call them directly on `x`.
+#' object) or, failing that, the Argos location classes. `state` (for the
+#' "clean_track" method) can be the name of a column of `x`, or one value per
+#' event. The `move2utils` functions are run without plots and messages; to
+#' inspect their diagnostics, call them directly on `x`.
 #'
 #' `x` must be ordered by time within each track (see [tt_order_time()]).
 #' Some methods also require events with duplicated times to be removed first
@@ -106,6 +107,18 @@ event_flag_outliers <- function(
     prepared <- outlier_location_error(x, location_error)
     x <- prepared$x
     args$location_error <- prepared$location_error
+  }
+  # likewise for a state given per event (for mt_clean_track(), which also
+  # takes the name of a column)
+  state <- args[["state"]]
+  if (length(state) > 1) {
+    if (length(state) != nrow(x)) {
+      stop(
+        "state must be the name of a column of x, or have one value per event"
+      )
+    }
+    x[[".tidytracks_state"]] <- state
+    args$state <- ".tidytracks_state"
   }
   # move2utils takes physical quantities as plain numbers in fixed units
   # (e.g. v_max in m/s), so the units objects given through ... are converted
