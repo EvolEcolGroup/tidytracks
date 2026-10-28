@@ -94,8 +94,8 @@ fitted
 candidate models
 }
 
-The coordinate reference system of \code{x} and the error columns used are
-stored as attributes of the table.
+The coordinate reference system of \code{x}, the error columns and the \code{uere}
+used are stored as attributes of the table.
 }
 \description{
 This function fits a continuous-time movement model, using the package

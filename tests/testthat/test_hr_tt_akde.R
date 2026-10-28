@@ -200,6 +200,27 @@ test_that("hr_tt_akde matches the models to the tracks", {
   expect_error(hr_tt_akde(x, fits_null), "could not be fitted")
 })
 
+test_that("hr_tt_akde calibrates the location error as when fitting", {
+  # ctmm stores the calibration of the location error given by a UERE in the
+  # data rather than in the model, so the tracks must be calibrated again
+  x_cilla <- ctmm_example_tt(n = 60, tracks = "Cilla")
+  fits_uere <- suppressMessages(
+    ctmm_tt_fit(x_cilla, model = ctmm::ctmm(isotropic = TRUE), uere = 1000)
+  )
+  akde <- hr_tt_akde(x_cilla, fits_uere)
+  tel <- suppressMessages(mt_as_telemetry(x_cilla))$Cilla
+  suppressMessages(ctmm::uere(tel) <- 1000)
+  ud_ctmm <- ctmm::akde(tel, fits_uere$model[[1]], grid = akde$ud_ctmm[[1]])
+  expect_equal(akde$ud_ctmm[[1]]$PDF, ud_ctmm$PDF)
+  expect_equal(
+    summary(akde$ud_ctmm[[1]], units = FALSE)$CI,
+    summary(ud_ctmm, units = FALSE)$CI
+  )
+  # and so are the tracks used by hr_tt_akde_pop()
+  pop_tel <- akde_pop_telemetry(x_cilla, fits_uere, akde$ud_ctmm)
+  expect_equal(ctmm::uere(pop_tel[[1]]), ctmm::uere(tel))
+})
+
 test_that("hr_tt_akde checks its inputs", {
   expect_error(hr_tt_akde(as.data.frame(x), fits), "must be a move2 object")
   expect_error(hr_tt_akde(x, tibble::tibble()), "created with ctmm_tt_fit")

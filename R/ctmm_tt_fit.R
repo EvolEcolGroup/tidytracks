@@ -97,8 +97,8 @@
 #' - `candidates` (only if `candidates = TRUE`): a list-column of the
 #'   candidate models
 #'
-#' The coordinate reference system of `x` and the error columns used are
-#' stored as attributes of the table.
+#' The coordinate reference system of `x`, the error columns and the `uere`
+#' used are stored as attributes of the table.
 #' @seealso [ctmm_tt_summary()] to summarise the parameters of the models,
 #'   [hr_tt_akde()] to estimate home ranges from the models.
 #' @export
@@ -230,9 +230,11 @@ ctmm_tt_fit <- function(
 
   # store the information needed to use the models with the original data:
   # the CRS of the coordinates the models were fitted to, the error columns
-  # used, and the column that identifies the tracks
+  # and the UERE used (ctmm stores the calibration of the error in the data,
+  # not in the models), and the column that identifies the tracks
   attr(fit_tbl, "crs") <- sf::st_crs(x)
   attr(fit_tbl, "error_cols") <- error_cols
+  attr(fit_tbl, "uere") <- uere
   attr(fit_tbl, "track_id_column") <- id_col
   class(fit_tbl) <- c("ctmm_tt_fit_tbl", class(fit_tbl))
   fit_tbl
@@ -501,6 +503,36 @@ ctmm_track_fingerprint <- function(tel_list, meta_labels) {
     t_start = as.POSIXct(t_range[1, ], origin = "1970-01-01", tz = "UTC"),
     t_end = as.POSIXct(t_range[2, ], origin = "1970-01-01", tz = "UTC")
   )
+}
+
+#' Convert the tracks to telemetry objects as when their models were fitted
+#'
+#' The functions that use the models need the tracks as they were when the
+#' models were fitted: with the same error columns (needed by the error
+#' model, if one was fitted), and with the location error calibrated by the
+#' same UERE (if any), which `ctmm` stores in the data rather than in the
+#' models.
+#'
+#' @param x A `move2` object.
+#' @param models A table of models created with [ctmm_tt_fit()].
+#' @returns A list of `telemetry` objects, named by track id.
+#' @keywords internal
+#' @noRd
+ctmm_models_telemetry <- function(x, models) {
+  # the messages of ctmm on the sampling intervals and on the calibration
+  # were already given when fitting the models
+  tel_list <- suppressMessages(mt_as_telemetry(
+    dplyr::ungroup(x),
+    error_cols = attr(models, "error_cols")
+  ))
+  uere <- attr(models, "uere")
+  if (!is.null(uere)) {
+    tel_list <- lapply(tel_list, function(tel) {
+      suppressMessages(ctmm::uere(tel) <- uere)
+      tel
+    })
+  }
+  tel_list
 }
 
 #' Check that an object is a table of ctmm models

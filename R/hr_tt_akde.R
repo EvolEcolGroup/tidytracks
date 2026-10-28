@@ -179,14 +179,9 @@ hr_tt_akde <- function(
 
   ## the model and the locations of each group
   fits <- akde_group_models(models, group_tracks)
-  # convert the tracks to telemetry objects, with the same error columns used
-  # to fit the models (needed by the error model, if one was fitted); the
-  # messages of ctmm on the sampling intervals were already given when
-  # fitting the models
-  tel_list <- suppressMessages(mt_as_telemetry(
-    dplyr::ungroup(x),
-    error_cols = attr(models, "error_cols")
-  ))
+  # convert the tracks to telemetry objects as when the models were fitted
+  # (with the same error columns and calibration of the error)
+  tel_list <- ctmm_models_telemetry(x, models)
   # tracks without any location have no telemetry object
   if (!all(group_tracks %in% names(tel_list))) {
     stop("each group must contain at least one event with a location")

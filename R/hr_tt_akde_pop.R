@@ -469,13 +469,9 @@ akde_pop_telemetry <- function(tracks, models, uds) {
     character(1),
     USE.NAMES = FALSE
   )
-  # convert the tracks with the same error columns used to fit the models
-  # (needed by the error model, if one was fitted); the messages of ctmm on
-  # the sampling intervals were already given when fitting the models
-  tel_list <- suppressMessages(mt_as_telemetry(
-    dplyr::ungroup(tracks),
-    error_cols = attr(models, "error_cols")
-  ))
+  # convert the tracks as when the models were fitted (with the same error
+  # columns and calibration of the error)
+  tel_list <- ctmm_models_telemetry(tracks, models)
   missing_tracks <- setdiff(ud_tracks, names(tel_list))
   if (length(missing_tracks) > 0) {
     stop(
