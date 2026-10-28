@@ -146,10 +146,12 @@ ctmm_param_names <- function(x) {
 #' @keywords internal
 #' @noRd
 ctmm_param_units <- function(x, param) {
-  # SI units, as returned by summary(fit, units = FALSE)
+  # SI units, as returned by summary(fit, units = FALSE); the time scales
+  # include tau (for OUf models, whose two time scales are equal) and the
+  # period of circulation (circle)
   param_units <- if (param == "area") {
     "m^2"
-  } else if (startsWith(param, "tau_")) {
+  } else if (startsWith(param, "tau_") || param %in% c("tau", "circle")) {
     "s"
   } else if (param == "speed") {
     "m/s"

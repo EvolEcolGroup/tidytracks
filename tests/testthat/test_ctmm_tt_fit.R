@@ -184,6 +184,20 @@ test_that("ctmm_tt_summary returns the parameters of each model", {
   expect_error(ctmm_tt_summary(tibble::tibble()), "created with ctmm_tt_fit")
 })
 
+test_that("ctmm_tt_summary gives units to all the time scales", {
+  x <- ctmm_example_tt(n = 60, tracks = "Cilla")
+  # an OUf model has a single time scale (tau, as tau_position equals
+  # tau_velocity)
+  fits <- suppressMessages(
+    ctmm_tt_fit(x, model = ctmm::ctmm(tau = c(1, 1) * 3600))
+  )
+  expect_match(fits$model_name, "^OUf")
+  summ <- ctmm_tt_summary(fits)
+  expect_equal(units::deparse_unit(summ$tau_est), "s")
+  # so does the period of circulation
+  expect_equal(units::deparse_unit(ctmm_param_units(1, "circle")), "s")
+})
+
 test_that("ctmm_param_names converts the names of the ctmm parameters", {
   expect_equal(
     ctmm_param_names(c(
