@@ -311,6 +311,30 @@ test_that("empty locations are ignored by the filter", {
   expect_true(sf::st_is_empty(sf::st_geometry(cleaned)[3]))
 })
 
+test_that("outliers late in a long track are removed in later passes", {
+  # each pass removes one location of each run of outliers, and reuses the
+  # distances between the locations of the previous pass, found by a key for
+  # each pair of locations that must not overflow in tracks of more than
+  # 46,340 locations. The two locations of an excursion of 50 km near the end
+  # of the track are removed in two passes
+  n <- 50000
+  excursion <- c(49000, 49001)
+  x_coord <- (seq_len(n) - 1) * 100
+  x_coord[excursion] <- x_coord[excursion] + 50000
+  x <- make_test_move2(
+    x = x_coord,
+    y = rep(0, n),
+    time = as.POSIXct("2020-01-01 00:00:00", tz = "UTC") +
+      (seq_len(n) - 1) * 600,
+    track_id = rep("a", n)
+  )
+
+  out <- with_time_limit(
+    event_flag_mcconnell(x, max_speed = units::as_units(10, "km/h"))
+  )
+  expect_identical(out, !seq_len(n) %in% excursion)
+})
+
 test_that("events not stored in time order are filtered in time order", {
   x <- make_test_move2(
     x = c(0, 100, 200, 300, 400, 50000, 600, 700, 800, 900),

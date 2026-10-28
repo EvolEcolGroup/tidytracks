@@ -213,11 +213,16 @@ event_flag_mcconnell <- function(
     # (and some consecutive pairs were two apart before), so only the new
     # pairs are computed, rather than all of them again: computing distances
     # (geodesic ones, for longitudes and latitudes) takes most of the time of
-    # a pass.
+    # a pass. The keys are doubles, as i * npts overflows integers (giving NA,
+    # which would match the key of another pair) in tracks of more than
+    # 46,340 points.
+    pair_key <- function(i, j) {
+      as.numeric(i) * npts + j
+    }
     pair_keys <- numeric(0)
     pair_dists <- numeric(0)
     pair_dist <- function(i, j) {
-      keys <- i * npts + j
+      keys <- pair_key(i, j)
       known <- match(keys, pair_keys)
       d <- pair_dists[known]
       new <- is.na(known)
@@ -268,7 +273,7 @@ event_flag_mcconnell <- function(
       speed2 <- segment_speed(dist2, elapsed_time2)
 
       # Keep the distances of this pass for the next one.
-      pair_keys <- c(from1 * npts + to1, from2 * npts + to2)
+      pair_keys <- c(pair_key(from1, to1), pair_key(from2, to2))
       pair_dists <- c(dist1, dist2)
 
       # Number of adjacent segments.
