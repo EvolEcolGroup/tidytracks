@@ -33,6 +33,24 @@ test_that("hr_tt_akde returns a table of UDs on a shared grid", {
   expect_true(sf::st_crs(akde$ud[[1]]) == sf::st_crs(x))
 })
 
+test_that("hr_tt_akde returns the tracks of ungrouped data in metadata order", {
+  # the metadata is in the order Gabs, Cilla, whilst the events of Cilla come
+  # first (as do its id in the group keys)
+  x_meta <- x
+  show_meta(x_meta) <- show_meta(x)[2:1, , drop = FALSE]
+  akde <- hr_tt_akde(x_meta, fits, res = c(500, 1000))
+  expect_equal(akde$track, c("Gabs", "Cilla"))
+  expect_equal(names(akde$ud), c("Gabs", "Cilla"))
+  # per-track values are matched in the same order
+  expect_equal(akde$res, c(500, 1000))
+  # each track with its own UD
+  akde_by_key <- hr_tt_akde(x, fits, res = c(1000, 500))
+  expect_equal(
+    lapply(akde$ud, terra::values),
+    lapply(akde_by_key$ud, terra::values)[c("Gabs", "Cilla")]
+  )
+})
+
 test_that("hr_tt_akde UDs are those estimated by ctmm", {
   akde <- hr_tt_akde(x, fits)
   # the raster of the ctmm UD (built by ctmm) has the same values

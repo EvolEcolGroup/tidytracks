@@ -36,7 +36,9 @@ resolution follows the default of \code{ctmm} (see Details); with a list of
 \code{bbox} (one per group), each group has its own default resolution.
 
 Per-group values of \code{bbox} and \code{res} are matched to the groups in the
-order of \code{\link[dplyr:group_keys]{dplyr::group_keys()}} (i.e. sorted by the grouping variables).}
+order in which they are returned: the order of the tracks in the metadata
+(see \code{\link[=show_meta]{show_meta()}}) if \code{x} is not grouped, or else the order of
+\code{\link[dplyr:group_keys]{dplyr::group_keys()}} (i.e. sorted by the grouping variables).}
 
 \item{levels}{A vector of levels for the isopleths (i.e. contour lines), as
 numbers between 0 and 1. If \code{NULL} (the default), the full UD is
@@ -66,7 +68,8 @@ NULL, an \code{sf} tibble of class \code{hr_tt_poly_tbl} (as returned by
 \itemize{
 \item the grouping variable (as named in \code{x}; if \code{x} is grouped by
 multiple variables, this column is named \code{group_id}): the ids from the
-grouping of \code{x}
+grouping of \code{x}, in the order of the tracks in the metadata if \code{x} is not
+grouped, or else in the order of \code{\link[dplyr:group_keys]{dplyr::group_keys()}}
 \item \code{method}: the method used to estimate the home range (\code{"akde"})
 \item \code{model_name}: the name of the movement model used
 \item \code{dof_area}: the effective number of degrees of freedom of the home range

@@ -59,7 +59,9 @@
 #'   `bbox` (one per group), each group has its own default resolution.
 #'
 #'   Per-group values of `bbox` and `res` are matched to the groups in the
-#'   order of [dplyr::group_keys()] (i.e. sorted by the grouping variables).
+#'   order in which they are returned: the order of the tracks in the metadata
+#'   (see [show_meta()]) if `x` is not grouped, or else the order of
+#'   [dplyr::group_keys()] (i.e. sorted by the grouping variables).
 #' @param levels A vector of levels for the isopleths (i.e. contour lines), as
 #'   numbers between 0 and 1. If `NULL` (the default), the full UD is
 #'   returned; otherwise just the isopleths are returned (see [hr_tt_kde()]).
@@ -81,7 +83,8 @@
 #' [hr_tt_ud_iso()]), with columns:
 #' - the grouping variable (as named in `x`; if `x` is grouped by
 #'   multiple variables, this column is named `group_id`): the ids from the
-#'   grouping of `x`
+#'   grouping of `x`, in the order of the tracks in the metadata if `x` is not
+#'   grouped, or else in the order of [dplyr::group_keys()]
 #' - `method`: the method used to estimate the home range (`"akde"`)
 #' - `model_name`: the name of the movement model used
 #' - `dof_area`: the effective number of degrees of freedom of the home range
@@ -165,17 +168,23 @@ hr_tt_akde <- function(
 
   ## the groups, and the track of each group
   # if x is not grouped, use the track id column as grouping variable
-  if (!inherits(x, "grouped_df")) {
+  by_track <- !inherits(x, "grouped_df")
+  if (by_track) {
     x <- dplyr::group_by(x, .data[[id_col]])
   }
   # per-group values (bbox and res) are matched to the groups by their
-  # position in the group keys, so no group can be empty
+  # position in the order in which they are returned, so no group can be
+  # empty
   check_no_empty_groups(x) # nolint: object_usage_linter.
   n_groups <- dplyr::n_groups(x)
+  # the groups are estimated (and returned) in the order of the tracks in the
+  # metadata if x was not grouped, or else in the order of their keys
+  group_order <- hr_group_order(x, by_track) # nolint: object_usage_linter.
   group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
     dplyr::pull(1)
+  group_labels <- group_labels[group_order]
   # the models are fitted to each track, so each group must be a single track
-  group_tracks <- akde_group_tracks(x)
+  group_tracks <- akde_group_tracks(x)[group_order]
 
   ## the model and the locations of each group
   fits <- akde_group_models(models, group_tracks)
