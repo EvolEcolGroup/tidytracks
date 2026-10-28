@@ -309,6 +309,30 @@ test_that("events not stored in time order are filtered in time order", {
   expect_identical(out, shuffled != 6)
 })
 
+test_that("timestamps that are dates or units are converted to seconds", {
+  # one location a day, with a spike of 500 km on the fifth day
+  events <- data.frame(
+    x = c(0, 1, 2, 3, 500, 5, 6, 7, 8, 9) * 1000,
+    y = 0,
+    track = "a"
+  )
+  for (time in list(
+    as.Date("2020-01-01") + 0:9,
+    units::set_units((0:9) * 24, "h")
+  )) {
+    events$time <- time
+    x <- move2::mt_as_move2(
+      sf::st_as_sf(events, coords = c("x", "y"), crs = 27700),
+      time_column = "time",
+      track_id_column = "track"
+    )
+    expect_identical(
+      event_flag_mcconnell(x, max_speed = units::as_units(100, "km/d")),
+      seq_len(10) != 5
+    )
+  }
+})
+
 # Check equivalency to trip::speedfilter
 skip_if_not_installed("trip")
 

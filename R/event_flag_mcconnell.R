@@ -97,8 +97,15 @@ event_flag_mcconnell <- function(
   # Extract coordinates as a matrix.
   coords <- sf::st_coordinates(x)
 
-  # Extract timestamps for all events.
+  # Extract timestamps for all events, in seconds (move2 also allows dates and
+  # units objects as timestamps).
   time <- event_time(x)
+  if (inherits(time, "Date")) {
+    time <- as.POSIXct(time)
+  } else if (inherits(time, "units")) {
+    time <- units::set_units(time, "s")
+  }
+  time <- as.numeric(time)
 
   # Extract track IDs and convert to a factor so that each track
   # can be processed independently.
