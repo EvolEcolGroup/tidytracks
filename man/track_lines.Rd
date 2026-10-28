@@ -13,7 +13,8 @@ track_lines(x, ...)
 }
 \value{
 A \link[sf:sf]{sf::sf} object with a \code{LINESTRING} representing the track as
-geometry for each track. The metadata for each track is included as well as
+geometry for each track, in the same order as the tracks in the metadata
+(see \code{\link[=show_meta]{show_meta()}}). The metadata for each track is included as well as
 the products from summarize
 }
 \description{
