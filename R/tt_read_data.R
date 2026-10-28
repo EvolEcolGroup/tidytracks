@@ -321,8 +321,20 @@ tt_read_data <- function(
       if (grepl("\\.meta$", col)) {
         base_col <- sub("\\.meta$", "", col)
         if (base_col %in% names(updated_meta)) {
-          # compare the two columns (including NA patterns)
-          if (identical(updated_meta[[base_col]], updated_meta[[col]])) {
+          # compare the two columns (including NA patterns), after casting
+          # them to a common type, as the same values can be stored with
+          # different types (e.g. integer and double, or character and
+          # factor); columns with incompatible types (e.g. character and
+          # numeric) conflict
+          same_values <- tryCatch(
+            all(vctrs::vec_equal(
+              updated_meta[[base_col]],
+              updated_meta[[col]],
+              na_equal = TRUE
+            )),
+            vctrs_error_incompatible_type = function(e) FALSE
+          )
+          if (same_values) {
             # if identical, remove the .meta column
             updated_meta[[col]] <- NULL
           } else {

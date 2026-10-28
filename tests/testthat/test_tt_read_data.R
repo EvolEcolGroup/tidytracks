@@ -758,6 +758,31 @@ test_that("tt_read_data joins metadata with large numeric track ids", {
   expect_equal(show_meta(test_tt)$sex, c("f", "m"))
 })
 
+test_that("tt_read_data compares duplicated columns of different types", {
+  # age is moved from the events (as an integer, as read from a csv file) to
+  # the metadata, and is also in the metadata (as a double)
+  events <- data.frame(
+    bird_id = c("a", "a", "b", "b"),
+    lon = c(0, 1, 0, 1),
+    lat = 0,
+    age = c(1L, 1L, 3L, 3L),
+    date_time = rep(c("2024-01-01 00:00:00", "2024-01-01 01:00:00"), 2)
+  )
+  meta <- data.frame(bird_id = c("a", "b"), age = c(1, 3))
+
+  expect_no_warning(
+    test_tt <- tt_read_data(
+      events = events,
+      meta = meta,
+      col_track_id = "bird_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    )
+  )
+  expect_named(show_meta(test_tt), c("bird_id", "age"))
+  expect_equal(show_meta(test_tt)$age, c(1, 3))
+})
+
 test_that("tt_read_data drops unused levels of factor track ids", {
   # e.g. a subset of a data frame with the track ids stored as a factor
   events <- data.frame(
