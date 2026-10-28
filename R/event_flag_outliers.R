@@ -154,12 +154,17 @@ event_flag_outliers <- function(
 
   valid <- rep(TRUE, nrow(x))
   if (any(checked)) {
+    # subsetting a move2 object is slow, so it is skipped when all tracks
+    # are checked
+    if (!all(checked)) {
+      x <- x[checked, ]
+    }
     # do.call() is needed to splice the arguments into the call; x and fn
     # are named so that an argument in ... cannot be partially matched to
     # them (e.g. f = 1 would otherwise replace fn)
     res <- do.call(
       call_move2utils, # nolint: object_usage_linter.
-      c(list(x = x[checked, ], fn = fn), args, list(cols = "is_outlier"))
+      c(list(x = x, fn = fn), args, list(cols = "is_outlier"))
     )
     # events without a location are not passed to move2utils and come back
     # as NA: they are returned as valid (as in event_flag_mcconnell()), as

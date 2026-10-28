@@ -277,9 +277,12 @@ call_move2utils <- function(x, fn, ..., cols, time_ordered = TRUE) {
     x <- move2::mt_set_time(x, as.POSIXct(time))
   }
   # dropping events keeps the order of the others, so the subset is still
-  # ordered by time within each track
+  # ordered by time within each track; subsetting a move2 object is slow
+  # (about a second for 10^5 events), so it is skipped when no event is
+  # dropped
   located <- !sf::st_is_empty(x)
-  args <- move2utils_args(fn, c(list(x[located, ]), list(...)))
+  x_located <- if (all(located)) x else x[located, ]
+  args <- move2utils_args(fn, c(list(x_located), list(...)))
   res <- do.call(fn, args)
   # the results are matched to the events by position, so check that
   # move2utils kept every event, in order; comparing the times catches
@@ -297,8 +300,10 @@ call_move2utils <- function(x, fn, ..., cols, time_ordered = TRUE) {
   # position in res of each event of x, NA for the events that were not
   # passed to move2utils; indexing each column with it keeps its class (e.g.
   # units or POSIXct), and the columns are taken one by one with [[ ]] as
-  # res[cols] would keep the geometry of the sf object
-  idx <- match(seq_len(nrow(x)), which(located))
+  # res[cols] would keep the geometry of the sf object; cumsum() gives the
+  # same positions as match(seq_len(nrow(x)), which(located)), much faster
+  idx <- cumsum(located)
+  idx[!located] <- NA
   out <- lapply(cols, function(col) res[[col]][idx])
   names(out) <- cols
   tibble::as_tibble(out)
