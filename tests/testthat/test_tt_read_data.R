@@ -737,6 +737,27 @@ test_that("tt_read_data joins metadata with numeric track ids", {
   expect_equal(test_meta$sex, c("f", "m"))
 })
 
+test_that("tt_read_data joins metadata with large numeric track ids", {
+  # as.character() gives "1e+05" for 100000 as a double, but "100000" as an
+  # integer (as read from a csv file)
+  events <- data.frame(
+    bird_id = c(100000, 100000, 200000, 200000),
+    lon = c(0, 1, 0, 1),
+    lat = 0,
+    date_time = rep(c("2024-01-01 00:00:00", "2024-01-01 01:00:00"), 2)
+  )
+  meta <- data.frame(bird_id = c(200000L, 100000L), sex = c("m", "f"))
+
+  test_tt <- tt_read_data(
+    events = events,
+    meta = meta,
+    col_track_id = "bird_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "date_time"
+  )
+  expect_equal(show_meta(test_tt)$sex, c("f", "m"))
+})
+
 test_that("tt_read_data drops unused levels of factor track ids", {
   # e.g. a subset of a data frame with the track ids stored as a factor
   events <- data.frame(

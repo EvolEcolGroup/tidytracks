@@ -100,9 +100,11 @@ tt_read_data <- function(
   if (!col_track_id %in% names(events)) {
     stop(paste("Column", col_track_id, "not found in the events data."))
   } else {
+    # keep the original ids, to match them with those in the metadata
+    track_ids <- events[[col_track_id]]
     # Ensure col_track_id is a factor, without levels that have no events
     # (e.g. if events is a subset of a larger data frame), which are not tracks
-    events[[col_track_id]] <- droplevels(as.factor(events[[col_track_id]]))
+    events[[col_track_id]] <- droplevels(as.factor(track_ids))
   }
   if (!all(col_coords %in% names(events))) {
     stop(paste(
@@ -300,12 +302,14 @@ tt_read_data <- function(
     # join new meta to old meta
     old_meta <- show_meta(move2_obj)
     # the track ids are a factor in the events; convert the ids in the
-    # metadata to the same type, as they often differ (e.g. integer ids read
-    # from a csv file) and cannot be joined otherwise
-    meta[[col_track_id]] <- factor(
-      as.character(meta[[col_track_id]]),
-      levels = levels(old_meta[[col_track_id]])
-    )
+    # metadata to the same factor, as their types often differ (e.g. integer
+    # ids read from a csv file) and they cannot be joined otherwise. The ids
+    # are matched by value with the original ids of the events, rather than as
+    # strings, as as.character() can write the same number differently (e.g.
+    # "1e+05" for 100000 as a double, but "100000" as an integer)
+    meta[[col_track_id]] <- events[[col_track_id]][
+      match(meta[[col_track_id]], track_ids)
+    ]
     updated_meta <- dplyr::left_join(
       old_meta,
       meta,
