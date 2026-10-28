@@ -11,4 +11,7 @@
 #' @export
 #' @examples
 #' event_azimuth(example_tt)
-event_azimuth <- move2::mt_azimuth
+event_azimuth <- function(x, units = "degrees") {
+  # move2::mt_azimuth() returns radians if no units are given
+  move2::mt_azimuth(x, units = units)
+}

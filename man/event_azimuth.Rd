@@ -4,7 +4,7 @@
 \alias{event_azimuth}
 \title{Measure the azimuth between two events}
 \usage{
-event_azimuth(x, units)
+event_azimuth(x, units = "degrees")
 }
 \arguments{
 \item{x}{A move2 object}
