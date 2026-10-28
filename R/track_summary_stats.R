@@ -73,7 +73,9 @@ track_summary_stats <- function(
 
   # check centre_col input
   if (is.null(centre_col)) {
-    centre_df <- x %>%
+    # the first location is the first event with a location (events without
+    # a location have an empty geometry)
+    centre_df <- x[!sf::st_is_empty(x), ] %>%
       dplyr::group_by(.data[[.group_var]]) %>%
       dplyr::slice_min(
         .data[[move2::mt_time_column(x)]],

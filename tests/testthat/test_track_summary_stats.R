@@ -248,5 +248,21 @@ test_that("track_summary_stats works with integer track ids", {
   )
 })
 
+test_that("track_summary_stats uses the first location as default centre", {
+  # the first event of track a has no location, so the centre of track a is
+  # its second event, as if the first event had been removed
+  x_empty <- example_tt
+  sf::st_geometry(x_empty)[1] <- sf::st_point()
+  centre_cols <- c(
+    "max_dist_centre",
+    "lat_at_max_dist_centre",
+    "lon_at_max_dist_centre"
+  )
+  expect_equal(
+    track_summary_stats(x_empty)[, centre_cols],
+    track_summary_stats(example_tt[-1, ])[, centre_cols]
+  )
+})
+
 # TODO add test for where there are >10 trips per individual (to make sure
 # the trip_id field is carrying through the function correctly)
