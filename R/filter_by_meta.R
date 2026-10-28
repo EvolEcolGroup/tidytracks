@@ -7,8 +7,9 @@
 #' column name, or the shorthand `.track_id`).
 #'
 #' @param .data A move2 object
-#' @param ... The identifiers of one or more tracks to select or selection
-#' criteria based on track metadata
+#' @param ... Selection criteria based on the variables of the track metadata
+#'   (logical conditions, as in [dplyr::filter()]); to select tracks by their
+#'   ids, use `.track_id`
 #' @param .track_id A vector of the ids of the tracks to select
 #' @returns A move2 object with only the selected tracks
 #' @export

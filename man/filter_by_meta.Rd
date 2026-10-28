@@ -9,8 +9,9 @@ filter_by_meta(.data, ..., .track_id = NULL)
 \arguments{
 \item{.data}{A move2 object}
 
-\item{...}{The identifiers of one or more tracks to select or selection
-criteria based on track metadata}
+\item{...}{Selection criteria based on the variables of the track metadata
+(logical conditions, as in \code{\link[dplyr:filter]{dplyr::filter()}}); to select tracks by their
+ids, use \code{.track_id}}
 
 \item{.track_id}{A vector of the ids of the tracks to select}
 }
