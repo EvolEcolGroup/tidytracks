@@ -29,16 +29,17 @@ the benchmark, with their code, and how to run it again.
   the ends of some tracks and trips, and up to the differences between
   geodesic distances and distances on a sphere.
 - `tidytracks` is the fastest for the three operations: for the step
-  distances, the other packages take 11 to 23 times as long, and
-  `track2KBA` takes 81 to 83 times as long to split the tracks into
+  distances, the other packages take 9.9 to 24 times as long, and
+  `track2KBA` takes 80 to 81 times as long to split the tracks into
   trips. Its speed filter runs the same algorithm as that of `trip`,
-  which takes 1.3 to 1.5 times as long.
+  which takes 9.3 to 12 times as long.
 - The time of `tidytracks` grows in proportion to the number of
-  locations. It computes the step distances of all the tracks at once,
-  and its speed filter and trip splitting add less than a millisecond
-  per track (0.089 ms and 0.54 ms), whereas `amt` adds 8.9 ms per track
-  to the step distances. This overhead matters only for data sets with
-  many short tracks.
+  locations. It computes the step distances and runs the speed filter on
+  all the tracks at once, so their times hardly depend on the number of
+  tracks, and its trip splitting adds less than a millisecond per track
+  (0.53 ms), whereas `amt` adds 8.9 ms per track to the step distances,
+  and `trip` 0.97 ms to the speed filter. This overhead matters only for
+  data sets with many short tracks.
 
 The packages are compared on two data sets of simulated tracks, as in
 the [home range
@@ -87,24 +88,29 @@ Differences between the results, over all the data sets. {.table}
 
 | Data set | Operation | tidytracks | move2 | amt | trip | track2KBA |
 |:---|:---|---:|---:|---:|---:|---:|
-| 100 tracks of 1e+03 locations | Step distances | 0.095 | 2.2 | 1.9 | 1.4 |  |
-| 100 tracks of 1e+03 locations | Speed filter | 0.48 |  |  | 0.7 |  |
-| 100 tracks of 1e+03 locations | Trips | 0.16 |  |  |  | 13 |
-| 10 tracks of 1e+04 locations | Step distances | 0.096 | 2.2 | 1.1 | 1 |  |
-| 10 tracks of 1e+04 locations | Speed filter | 0.5 |  |  | 0.63 |  |
-| 10 tracks of 1e+04 locations | Trips | 0.12 |  |  |  | 9.7 |
+| 100 tracks of 1e+03 locations | Step distances | 0.093 | 2.2 | 2 | 1.3 |  |
+| 100 tracks of 1e+03 locations | Speed filter | 0.058 |  |  | 0.72 |  |
+| 100 tracks of 1e+03 locations | Trips | 0.17 |  |  |  | 13 |
+| 10 tracks of 1e+04 locations | Step distances | 0.099 | 2.2 | 1.1 | 0.98 |  |
+| 10 tracks of 1e+04 locations | Speed filter | 0.069 |  |  | 0.65 |  |
+| 10 tracks of 1e+04 locations | Trips | 0.12 |  |  |  | 9.6 |
 
 Time (s) of each operation on all the tracks of each data set (median of
 three to ten runs). {.table style="width:100%;"}
 
-- **Step distances**: `tidytracks` is the fastest: `move2` takes 23
-  times as long, `amt` 11 to 20 times and `trip` 11 to 15 times.
+- **Step distances**: `tidytracks` is the fastest: `move2` takes 23 to
+  24 times as long, `amt` 11 to 22 times and `trip` 9.9 to 14 times.
   `tidytracks` computes the distances of all the tracks at once (with
   `geodist`), whereas `amt` and `trip` measure each track in turn.
 - **Speed filter**: `tidytracks` and `trip` run the same algorithm, in
-  R, and `tidytracks` is a little faster: `trip` takes 1.3 to 1.5 times
-  as long.
-- **Trips**: `track2KBA` takes 81 to 83 times as long as `tidytracks`,
+  R, but `trip` filters each track in turn, and computes the speeds
+  between all the remaining locations again in each pass of the filter,
+  whereas `tidytracks` filters all the tracks at once, only computes
+  again the speeds around the locations removed in the previous pass,
+  and only computes geodesic distances where the speeds could exceed the
+  maximum (which it finds with a fast upper bound of the distances):
+  `trip` takes 9.3 to 12 times as long.
+- **Trips**: `track2KBA` takes 80 to 81 times as long as `tidytracks`,
   as it goes through the locations of each track one at a time, in R.
 
 ### How the times grow
@@ -115,14 +121,13 @@ three to ten runs). {.table style="width:100%;"}
 
 With 10 tracks, the time of the operations grows about in proportion to
 the number of locations: on the 1,000,000 locations of the largest data
-set, `tidytracks` takes about 0.86 µs per location for the step
-distances, 7.4 µs for the speed filter (which computes the speeds of the
-whole track again after removing each batch of outliers), and 1.2 µs for
-the trips. The time of `track2KBA` grows faster than the length of the
-tracks, as it updates the whole track at many of its steps: with tracks
-ten times as long (from 1,000 to 10,000 locations), it takes 13 times as
-long. It was thus not run on the largest data set, on which it would
-take more than 5 minutes.
+set, `tidytracks` takes about 0.84 µs per location for the step
+distances, 1 µs for the speed filter, and 1.1 µs for the trips. The time
+of `track2KBA` grows faster than the length of the tracks, as it updates
+the whole track at many of its steps: with tracks ten times as long
+(from 1,000 to 10,000 locations), it takes 12 times as long. It was thus
+not run on the largest data set, on which it would take more than 5
+minutes.
 
 #### More tracks
 
@@ -132,13 +137,15 @@ With the same 100,000 locations in more and more tracks, the time of the
 operations that handle each track in turn grows with the number of
 tracks. `tidytracks` and `move2` compute the step distances of all the
 tracks at once, so their time hardly depends on the number of tracks
-(0.11 s with `tidytracks` for 1,000 tracks, against 0.094 s for a single
-track), whereas `amt` and `trip` add about 8.9 ms and 3.5 ms per track.
-The speed filter adds about 0.089 ms per track with `tidytracks` (0.98
-ms with `trip`), and trip splitting about 0.54 ms with `tidytracks`.
-`track2KBA` adds the trips of each track to those of the previous tracks
-with [`rbind()`](https://rdrr.io/r/base/cbind.html), which copies them
-all each time, so it takes 73 s on the 1,000 tracks.
+(0.089 s with `tidytracks` for 1,000 tracks, against 0.097 s for a
+single track), whereas `amt` and `trip` add about 8.9 ms and 3.7 ms per
+track. Likewise, the speed filter of `tidytracks` runs on all the tracks
+at once (0.064 s for 1,000 tracks, against 0.057 s for a single track),
+whereas `trip` adds about 0.97 ms per track. Trip splitting adds about
+0.53 ms per track with `tidytracks`. `track2KBA` adds the trips of each
+track to those of the previous tracks with
+[`rbind()`](https://rdrr.io/r/base/cbind.html), which copies them all
+each time, so it takes 78 s on the 1,000 tracks.
 
 ## How the benchmark was run
 
@@ -798,7 +805,7 @@ saves its results in a temporary directory instead.
 
 |            |                                           |
 |:-----------|:------------------------------------------|
-| date       | 2026-10-28                                |
+| date       | 2026-10-29                                |
 | R          | R version 4.6.1 (2026-06-24)              |
 | platform   | x86_64-pc-linux-gnu                       |
 | CPU        | Intel(R) Core(TM) i7-10510U CPU @ 1.80GHz |

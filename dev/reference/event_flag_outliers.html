@@ -120,8 +120,10 @@ errors (as a <code>units</code> object), or <code>"auto"</code>, with which <cod
 column <code>eobs_horizontal_accuracy_estimate</code> (which must then be a <code>units</code>
 object) or, failing that, the Argos location classes. <code>state</code> (for the
 "clean_track" method) can be the name of a column of <code>x</code>, or one value per
-event. The <code>move2utils</code> functions are run without plots and messages; to
-inspect their diagnostics, call them directly on <code>x</code>.</p>
+event. Each track is checked on its own, with all the arguments (unless
+<code>pool_by</code> pools thresholds across tracks). The <code>move2utils</code> functions are
+run without plots and messages; to inspect their diagnostics, call them
+directly on <code>x</code>.</p>
 <p><code>x</code> must be ordered by time within each track (see <code><a href="tt_order_time.html">tt_order_time()</a></code>).
 Some methods also require events with duplicated times to be removed first
 (e.g. with <code><a href="https://bartk.gitlab.io/move2/reference/mt_filter_unique.html" class="external-link">move2::mt_filter_unique()</a></code>). Events without a location are

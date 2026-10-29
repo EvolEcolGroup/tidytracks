@@ -83,8 +83,10 @@ errors (as a `units` object), or `"auto"`, with which `move2utils` uses
 the column `eobs_horizontal_accuracy_estimate` (which must then be a
 `units` object) or, failing that, the Argos location classes. `state`
 (for the "clean_track" method) can be the name of a column of `x`, or
-one value per event. The `move2utils` functions are run without plots
-and messages; to inspect their diagnostics, call them directly on `x`.
+one value per event. Each track is checked on its own, with all the
+arguments (unless `pool_by` pools thresholds across tracks). The
+`move2utils` functions are run without plots and messages; to inspect
+their diagnostics, call them directly on `x`.
 
 `x` must be ordered by time within each track (see
 [`tt_order_time()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_order_time.md)).
