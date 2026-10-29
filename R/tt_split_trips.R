@@ -4,7 +4,9 @@
 #'   foragers by identifying the trips based on a distance from the colony/nest.
 #'   Events with an empty geometry (i.e. no location) are assigned to the same
 #'   trip as the preceding event with a location (or the following one, at the
-#'   start of a track).
+#'   start of a track), unless that event is the first location back at the
+#'   centre included in a trip (see `include_first_inbound`), in which case they
+#'   are at the centre.
 #'
 #' @param x A move2 object
 #' @param centre_col character string, the name of the column in the metadata
@@ -25,6 +27,11 @@
 #'   started in the outbound buffer and ended within the inbound buffer) are
 #'   kept. If FALSE, all trips are kept, and events at the colony (i.e.
 #'   in-between trips) are collected into a dummy trip labelled "trip_na".
+#' @param include_first_inbound boolean, if TRUE, each trip that ends back at
+#'   the centre also includes the location that ends it, i.e. the first
+#'   location back within `buffer_outbound`, which is otherwise the first event
+#'   at the centre. Trips then include the return to the centre, as the trips
+#'   of `tripSplit()` in the `track2KBA` package do.
 #' @returns a move2 object with the trips split.
 #' @export
 #' @importFrom foreach %do%
@@ -52,11 +59,20 @@ tt_split_trips <- function(
   centre_col = NULL,
   buffer_outbound = as_units(1000, "m"),
   buffer_inbound = as_units(1000, "m"),
-  complete = TRUE
+  complete = TRUE,
+  include_first_inbound = FALSE
 ) {
   # Check if x is a move2 object
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")
+  }
+
+  if (
+    !is.logical(include_first_inbound) ||
+      length(include_first_inbound) != 1 ||
+      is.na(include_first_inbound)
+  ) {
+    stop("include_first_inbound must be TRUE or FALSE")
   }
 
   # Check if centre_col is provided
@@ -135,7 +151,8 @@ tt_split_trips <- function(
       centre_x = centre_col[i, 1],
       centre_y = centre_col[i, 2],
       buffer_inbound = buffer_in_uless,
-      buffer_outbound = buffer_out_uless
+      buffer_outbound = buffer_out_uless,
+      include_first_inbound = include_first_inbound
     )
     trips$track_rows <- track_rows
     trips
@@ -184,6 +201,8 @@ tt_split_trips <- function(
 #' @param centre_y the y coordinate for the central place (e.g. colony, nest)
 #' @param buffer_outbound the buffer for outbound trips
 #' @param buffer_inbound the buffer for inbound trips
+#' @param include_first_inbound a logical indicating if the first location back
+#'   within the outbound buffer is included in the trip it ends
 #' @returns a vector with trip IDs for each event (events to remove are marked
 #' as NA)
 #' @keywords internal
@@ -196,7 +215,8 @@ split_one_track <- function(
   centre_x,
   centre_y,
   buffer_outbound,
-  buffer_inbound
+  buffer_inbound,
+  include_first_inbound
 ) {
   centre_x_vec <- rep(centre_x, length(x))
   centre_y_vec <- rep(centre_y, length(y))
@@ -227,11 +247,22 @@ split_one_track <- function(
   trip_labels[(runs$values) == TRUE] <-
     paste0(paste0(label, "_trip_"), seq_len(sum((runs$values) == TRUE)))
   trip_labels_vec <- rep(trip_labels, times = runs$lengths)
+  # add to each trip that ends before the track does the event after its last
+  # one, which is the first location back within the outbound buffer (events
+  # without a location take the state of the preceding location, so the event
+  # after a trip always has a location)
+  if (include_first_inbound) {
+    trip_ends <- cumsum(runs$lengths)[runs$values]
+    trip_ends <- trip_ends[trip_ends < length(out_events)]
+    trip_labels_vec[trip_ends + 1] <- trip_labels_vec[trip_ends]
+  }
 
   # create the metadata for the labels
   # (tibble::new_tibble() rather than tibble::tibble(), whose checks take
-  # about a millisecond, i.e. most of the time taken by a short track)
-  trip_ids <- unique(trip_labels)
+  # about a millisecond, i.e. most of the time taken by a short track); the
+  # labels are taken from the events, as the first location back at the
+  # centre might have been the only event at the centre
+  trip_ids <- unique(trip_labels_vec)
   trip_meta <- tibble::new_tibble(
     list(
       track_id = rep(label, length(trip_ids)),

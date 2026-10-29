@@ -19,6 +19,10 @@
   adehabitatHR").
 * New `track_tot_distance()` to compute the total distance travelled along each
   track, with a `units` argument to choose the output units.
+* `tt_split_trips()` gains an `include_first_inbound` argument: if `TRUE`,
+  each trip that ends back at the centre also includes its first location
+  back within `buffer_outbound`, as the trips of `tripSplit()` in the
+  `track2KBA` package do.
 * tidytracks can now use the methods of `move2utils`, a suggested package
   installed from GitHub with
   `remotes::install_github("move2universe/move2utils")`, through wrappers

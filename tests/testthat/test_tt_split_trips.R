@@ -416,3 +416,80 @@ test_that("tt_split_trips marks the last trip, not the centre, incomplete", {
   expect_identical(meta$trip_id, c("a_trip_na", "b_trip_1", "b_trip_na"))
   expect_identical(meta$trip_type, c("at_centre", "incomplete", "at_centre"))
 })
+
+test_that("tt_split_trips can include the first location back in each trip", {
+  # "a" makes two trips from the nest, the second one ending at the end of
+  # the track, with its fourth and sixth locations missing (before and after
+  # its first location back at the nest); "b" starts on a trip, and comes back
+  # to the nest for a single location before its second trip
+  coords_df <- data.frame(
+    bird_id = rep(c("a", "b"), c(8, 4)),
+    longitude = c(0, 0.5, 1, 0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0),
+    latitude = 0,
+    date_time = as.POSIXct("2020-01-01", tz = "UTC") + c(0:7, 0:3) * 3600
+  )
+  test_mt <- move2::mt_as_move2(
+    sf::st_as_sf(coords_df, coords = c("longitude", "latitude"), crs = 4326),
+    time_column = "date_time",
+    track_id_column = "bird_id"
+  )
+  show_meta(test_mt)$centre_sf <- sf_point_col(
+    x = c(0, 0),
+    y = c(0, 0),
+    crs = 4326
+  )
+  sf::st_geometry(test_mt)[c(4, 6)] <- sf::st_point()
+
+  # by default, the first location back at the nest is at the nest
+  result <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(10, "km"),
+    complete = FALSE
+  )
+  expect_identical(
+    result$trip_id,
+    c(
+      paste0("a", c("_trip_na", rep("_trip_1", 3), rep("_trip_na", 2))),
+      paste0("a", c("_trip_2", "_trip_na")),
+      paste0("b", c("_trip_1", "_trip_na", "_trip_2", "_trip_na"))
+    )
+  )
+
+  result <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(10, "km"),
+    complete = FALSE,
+    include_first_inbound = TRUE
+  )
+  expect_identical(
+    result$trip_id,
+    c(
+      paste0("a", c("_trip_na", rep("_trip_1", 4), "_trip_na")),
+      paste0("a", c("_trip_2", "_trip_2")),
+      paste0("b", c("_trip_1", "_trip_1", "_trip_2", "_trip_2"))
+    )
+  )
+  # "b" is never at the nest outside its trips
+  meta <- show_meta(result)
+  expect_identical(
+    meta$trip_id,
+    c("a_trip_na", "a_trip_1", "a_trip_2", "b_trip_1", "b_trip_2")
+  )
+  expect_identical(
+    meta$trip_type,
+    c("at_centre", "complete", "complete", "incomplete", "complete")
+  )
+
+  expect_error(
+    tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      include_first_inbound = NA
+    ),
+    "include_first_inbound must be TRUE or FALSE"
+  )
+})

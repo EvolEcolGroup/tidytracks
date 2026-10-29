@@ -9,7 +9,8 @@ tt_split_trips(
   centre_col = NULL,
   buffer_outbound = as_units(1000, "m"),
   buffer_inbound = as_units(1000, "m"),
-  complete = TRUE
+  complete = TRUE,
+  include_first_inbound = FALSE
 )
 }
 \arguments{
@@ -36,6 +37,12 @@ returned to the centre). Specified as a unit object, e.g
 started in the outbound buffer and ended within the inbound buffer) are
 kept. If FALSE, all trips are kept, and events at the colony (i.e.
 in-between trips) are collected into a dummy trip labelled "trip_na".}
+
+\item{include_first_inbound}{boolean, if TRUE, each trip that ends back at
+the centre also includes the location that ends it, i.e. the first
+location back within \code{buffer_outbound}, which is otherwise the first event
+at the centre. Trips then include the return to the centre, as the trips
+of \code{tripSplit()} in the \code{track2KBA} package do.}
 }
 \value{
 a move2 object with the trips split.
@@ -45,7 +52,9 @@ This function splits tracks into trips for central place
 foragers by identifying the trips based on a distance from the colony/nest.
 Events with an empty geometry (i.e. no location) are assigned to the same
 trip as the preceding event with a location (or the following one, at the
-start of a track).
+start of a track), unless that event is the first location back at the
+centre included in a trip (see \code{include_first_inbound}), in which case they
+are at the centre.
 }
 \examples{
 # First, add a sf point column to metadata giving nest location
