@@ -277,10 +277,10 @@ test_that("event_flag_outliers returns the events of short tracks as valid", {
 
 test_that("event_flag_outliers checks each track with all the arguments", {
   skip_if_not_installed("move2utils")
-  # mt_clean_track() does not pass its gap threshold (nor state, and its
-  # entropy and persistence filter thresholds) on to the tracks of an object
-  # with several tracks, so the threshold must give the same flags for a
-  # track as on its own
+  # mt_clean_track() does not pass its gap threshold (nor its entropy and
+  # persistence filter thresholds) on to the tracks of an object with several
+  # tracks, so the threshold must give the same flags for a track as on its
+  # own
   x <- create_spiky_tracks(n = 1000, n_spikes = 20)
   in_a <- event_track_id(x) == "a"
   expect_identical(

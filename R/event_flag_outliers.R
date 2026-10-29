@@ -165,10 +165,10 @@ event_flag_outliers <- function(
     # thresholds across tracks), but finds the events of each track by
     # comparing the ids of all the events, and binds the results of all the
     # tracks as sf objects, which takes much longer than the methods
-    # themselves with many tracks; mt_clean_track() also does not pass state
-    # and its entropy, gap and persistence filter thresholds on to the tracks
-    # of an object with several tracks. Without pool_by, each track is
-    # therefore passed to move2utils on its own, and only its flags are kept
+    # themselves with many tracks; mt_clean_track() also does not pass its
+    # entropy, gap and persistence filter thresholds on to the tracks of an
+    # object with several tracks. Without pool_by, each track is therefore
+    # passed to move2utils on its own, and only its flags are kept
     track_ids <- ids[checked]
     track_rows <- if (is.null(args$pool_by)) {
       split(seq_len(nrow(x)), factor(track_ids, levels = unique(track_ids)))
