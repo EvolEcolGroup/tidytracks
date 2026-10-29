@@ -311,6 +311,87 @@ test_that("empty locations are ignored by the filter", {
   expect_true(sf::st_is_empty(sf::st_geometry(cleaned)[3]))
 })
 
+test_that("outliers late in a long track are removed in later passes", {
+  # each pass removes one location of each run of outliers, and the next pass
+  # only computes the windows that included a removed location. The two
+  # locations of an excursion of 50 km near the end of a long track are
+  # removed in two passes
+  n <- 50000
+  excursion <- c(49000, 49001)
+  x_coord <- (seq_len(n) - 1) * 100
+  x_coord[excursion] <- x_coord[excursion] + 50000
+  x <- make_test_move2(
+    x = x_coord,
+    y = rep(0, n),
+    time = as.POSIXct("2020-01-01 00:00:00", tz = "UTC") +
+      (seq_len(n) - 1) * 600,
+    track_id = rep("a", n)
+  )
+
+  out <- with_time_limit(
+    event_flag_mcconnell(x, max_speed = units::as_units(10, "km/h"))
+  )
+  expect_identical(out, !seq_len(n) %in% excursion)
+})
+
+test_that("the distance bound is above geodesic distances, also at the poles", {
+  # geodesic distances are only computed for the windows that could exceed
+  # the maximum speed with an upper bound of the distances, which must never
+  # be below the geodesic distance, including over short steps near the
+  # poles (where the bound is closest to it)
+  lat <- c(-90, -89.9999999, -89.99, -85, -60, 0, 45, 89.99, 90)
+  step <- c(0, 0.001, 1, 100, 1e4, 3e5)
+  pairs <- expand.grid(lat = lat, step = step, bearing = c(0, 45, 90, 180))
+  # the destinations, on a sphere (only to have pairs of nearby locations)
+  r <- pairs$step / 6371000
+  lat1 <- pairs$lat * pi / 180
+  bearing <- pairs$bearing * pi / 180
+  lat2 <- asin(pmin(1, pmax(
+    -1,
+    sin(lat1) * cos(r) + cos(lat1) * sin(r) * cos(bearing)
+  )))
+  lon2 <- 170 + atan2(
+    sin(bearing) * sin(r) * cos(lat1),
+    cos(r) - sin(lat1) * sin(lat2)
+  ) * 180 / pi
+  xy <- cbind(c(rep(170, nrow(pairs)), lon2), c(pairs$lat, lat2 * 180 / pi))
+  from <- seq_len(nrow(pairs))
+  to <- nrow(pairs) + from
+  geodesic <- dist_fast(xy[from, 1], xy[from, 2], xy[to, 1], xy[to, 2])
+  bound <- mcconnell_dist_bound(xy, from, to)
+  expect_true(all(bound >= geodesic))
+  # and it is close enough to save most geodesic distances
+  expect_true(all(bound <= geodesic * 1.011 + 1e-5))
+})
+
+test_that("a track over the South Pole is filtered", {
+  # a track along the meridian 0 to the pole, and on along the meridian 180,
+  # at 2 km/h, with a spike 50 km away
+  n <- 40
+  dist_to_pole <- (seq_len(n) - 20.5) * 2000
+  lat <- -90 + abs(dist_to_pole) / 111000
+  lon <- ifelse(dist_to_pole < 0, 0, 180)
+  lat[30] <- lat[30] + 0.45
+  events <- data.frame(
+    lon = lon,
+    lat = lat,
+    date_time = as.POSIXct("2020-01-01 00:00:00", tz = "UTC") +
+      (seq_len(n) - 1) * 3600,
+    bird_id = "a"
+  )
+  x <- move2::mt_as_move2(
+    events,
+    coords = c("lon", "lat"),
+    crs = 4326,
+    time_column = "date_time",
+    track_id_column = "bird_id"
+  )
+  out <- with_time_limit(
+    event_flag_mcconnell(x, max_speed = units::as_units(10, "km/h"))
+  )
+  expect_identical(out, seq_len(n) != 30)
+})
+
 test_that("events not stored in time order are filtered in time order", {
   x <- make_test_move2(
     x = c(0, 100, 200, 300, 400, 50000, 600, 700, 800, 900),

@@ -34,8 +34,10 @@
 #' column `eobs_horizontal_accuracy_estimate` (which must then be a `units`
 #' object) or, failing that, the Argos location classes. `state` (for the
 #' "clean_track" method) can be the name of a column of `x`, or one value per
-#' event. The `move2utils` functions are run without plots and messages; to
-#' inspect their diagnostics, call them directly on `x`.
+#' event. Each track is checked on its own, with all the arguments (unless
+#' `pool_by` pools thresholds across tracks). The `move2utils` functions are
+#' run without plots and messages; to inspect their diagnostics, call them
+#' directly on `x`.
 #'
 #' `x` must be ordered by time within each track (see [tt_order_time()]).
 #' Some methods also require events with duplicated times to be removed first
@@ -159,18 +161,42 @@ event_flag_outliers <- function(
     if (!all(checked)) {
       x <- x[checked, ]
     }
-    # do.call() is needed to splice the arguments into the call; x and fn
-    # are named so that an argument in ... cannot be partially matched to
-    # them (e.g. f = 1 would otherwise replace fn)
-    res <- do.call(
-      call_move2utils, # nolint: object_usage_linter.
-      c(list(x = x, fn = fn), args, list(cols = "is_outlier"))
-    )
-    # events without a location are not passed to move2utils and come back
-    # as NA: they are returned as valid (as in event_flag_mcconnell()), as
-    # there is no location to judge; %in% also treats any NA from move2utils
-    # itself as not flagged
-    valid[checked] <- !(res$is_outlier %in% TRUE)
+    # move2utils checks each track on its own (unless pool_by pools
+    # thresholds across tracks), but finds the events of each track by
+    # comparing the ids of all the events, and binds the results of all the
+    # tracks as sf objects, which takes much longer than the methods
+    # themselves with many tracks; mt_clean_track() also does not pass its
+    # entropy, gap and persistence filter thresholds on to the tracks of an
+    # object with several tracks. Without pool_by, each track is therefore
+    # passed to move2utils on its own, and only its flags are kept
+    track_ids <- ids[checked]
+    track_rows <- if (is.null(args$pool_by)) {
+      split(seq_len(nrow(x)), factor(track_ids, levels = unique(track_ids)))
+    } else {
+      list(seq_len(nrow(x)))
+    }
+    flagged <- rep(FALSE, nrow(x))
+    for (rows in track_rows) {
+      x_track <- if (length(track_rows) == 1) x else x[rows, ]
+      # do.call() is needed to splice the arguments into the call; x and fn
+      # are named so that an argument in ... cannot be partially matched to
+      # them (e.g. f = 1 would otherwise replace fn). The order of the events
+      # was checked above, for all the tracks
+      res <- do.call(
+        call_move2utils, # nolint: object_usage_linter.
+        c(
+          list(x = x_track, fn = fn),
+          args,
+          list(cols = "is_outlier", time_ordered = FALSE)
+        )
+      )
+      # events without a location are not passed to move2utils and come back
+      # as NA: they are returned as valid (as in event_flag_mcconnell()), as
+      # there is no location to judge; %in% also treats any NA from
+      # move2utils itself as not flagged
+      flagged[rows] <- res$is_outlier %in% TRUE
+    }
+    valid[checked] <- !flagged
   }
   valid
 }

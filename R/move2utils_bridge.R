@@ -256,16 +256,19 @@ check_metric_crs <- function(x) {
 #'   and which returns that object with added columns.
 #' @param ... Further arguments passed to `fn`.
 #' @param cols Character vector of the columns of the output of `fn` to return.
-#' @param time_ordered Logical, whether `fn` requires the events to be ordered
-#'   by time within each track (see `check_time_ordered()`).
+#' @param time_ordered Logical, whether to check that the events are ordered
+#'   by time within each track (see `check_time_ordered()`), as most `fn`
+#'   require; `FALSE` for an `fn` that sorts the events itself, or when the
+#'   caller has already checked the order.
 #' @returns A tibble with one row per event of `x` (in the same order) and the
 #'   columns `cols`.
 #' @keywords internal
 #' @noRd
 call_move2utils <- function(x, fn, ..., cols, time_ordered = TRUE) {
-  # time_ordered = FALSE is only for move2utils functions that sort the
-  # events themselves; the output check below still requires them to return
-  # the events in the order they were given
+  # time_ordered = FALSE is for move2utils functions that sort the events
+  # themselves, or for callers that have already checked the order (e.g. of
+  # all the tracks, before passing them on one at a time); the output check
+  # below still requires the events in the order they were given
   if (time_ordered) {
     check_time_ordered(x)
   }
