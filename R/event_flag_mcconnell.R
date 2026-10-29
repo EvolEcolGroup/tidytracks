@@ -112,442 +112,390 @@ event_flag_mcconnell <- function(
   id <- factor(event_track_id(x))
 
   # ---------------------------------------------------------------------------
-  # Filtering parameters
+  # Order the located events by track and time
   # ---------------------------------------------------------------------------
-  # pprm originates from the original McConnell implementation and
-  # determines the number of points involved in each moving RMS calculation.
-  pprm <- 3
-
-  # List of unique track IDs.
-  track_ids <- levels(id)
-
-  # ---------------------------------------------------------------------------
-  # Helper: speed between two points i and j
-  # ---------------------------------------------------------------------------
-  # Computes speed as distance divided by elapsed time.
-  #
-  # Elapsed time is expressed in hours, ensuring consistency with the
-  # original McConnell implementation.
-  speed_between <- function(xy, tt, i, j, projected) {
-    segment_speed(
-      dist_fast(
-        xy[i, 1],
-        xy[i, 2],
-        xy[j, 1],
-        xy[j, 2],
-        longlat = !projected
-      ),
-      (unclass(tt[j]) - unclass(tt[i])) / 3600
-    )
-  }
-
-  # Speed for vectors of distances and elapsed times. A segment with no
-  # displacement has zero speed even if no time elapsed (e.g. duplicated
-  # records), rather than NaN, which would stop bad segments being detected.
-  segment_speed <- function(dist, elapsed_time) {
-    speed <- dist / elapsed_time
-    speed[!is.na(dist) & dist == 0] <- 0
-    speed
-  }
-
-  # ---------------------------------------------------------------------------
-  # Helper: original McConnell core algorithm
-  # ---------------------------------------------------------------------------
-  # This function reproduces the original McConnell speed filter logic
-  # for a single track.
-  #
-  # The algorithm repeatedly identifies suspicious sections based on
-  # RMS speed values and removes the most extreme point within each
-  # contiguous region exceeding the speed threshold.
-  #
-  # Logic is intentionally maintained exactly as in the original
-  # implementation.
-  # ---------------------------------------------------------------------------
-  mcconnell_core_track <- function(
-    xy,
-    track_time,
-    max_speed,
-    projected,
-    pprm = 3,
-    warn_short = TRUE,
-    track_label = NULL
-  ) {
-    # Number of points in this track.
-    npts <- nrow(xy)
-
-    # Track validity vector; starts with all points considered valid.
-    valid_track <- rep(TRUE, npts)
-
-    # Initialise RMS values larger than max_speed so the loop runs at least
-    # once.
-    rms <- rep(max_speed + 1, npts)
-
-    # Offset used in the original algorithm.
-    offset <- pprm - 1
-
-    # Original point indices.
-    index <- seq_len(npts)
-
-    # McConnell requires at least pprm + 1 points.
-    if (npts < (pprm + 1)) {
-      if (warn_short) {
-        if (is.null(track_label)) {
-          warning("Not enough points to filter this track, continuing . . . ")
-        } else {
-          warning(
-            "Not enough points to filter ID: ",
-            track_label,
-            " continuing . . . "
-          )
-        }
-      }
-
-      # If too short, return all points as valid.
-      return(valid_track)
-    }
-
-    # Distances between pairs of points (i, j) computed in the previous pass,
-    # with the key i * npts + j of each pair. Each pass needs the distances
-    # between consecutive valid points and between valid points two apart;
-    # after some points have been removed, most of these pairs are unchanged
-    # (and some consecutive pairs were two apart before), so only the new
-    # pairs are computed, rather than all of them again: computing distances
-    # (geodesic ones, for longitudes and latitudes) takes most of the time of
-    # a pass. The keys are doubles, as i * npts overflows integers (giving NA,
-    # which would match the key of another pair) in tracks of more than
-    # 46,340 points.
-    pair_key <- function(i, j) {
-      as.numeric(i) * npts + j
-    }
-    pair_keys <- numeric(0)
-    pair_dists <- numeric(0)
-    pair_dist <- function(i, j) {
-      keys <- pair_key(i, j)
-      known <- match(keys, pair_keys)
-      d <- pair_dists[known]
-      new <- is.na(known)
-      if (any(new)) {
-        d[new] <- dist_fast(
-          xy[i[new], 1],
-          xy[i[new], 2],
-          xy[j[new], 1],
-          xy[j[new], 2],
-          longlat = !projected
-        )
-      }
-      d
-    }
-
-    # Continue until all RMS values are below the threshold.
-    while (any(rms > max_speed, na.rm = TRUE)) {
-      # Indices of the currently valid points, and their number.
-      this_index <- index[valid_track]
-      n <- length(this_index)
-      valid_time <- unclass(track_time[valid_track])
-
-      # ---------------------------------------------------------------------
-      # Consecutive-point speed estimates
-      # ---------------------------------------------------------------------
-      # Speed between:
-      #   point 1 -> point 2
-      #   point 2 -> point 3
-      #   ...
-      from1 <- this_index[-n]
-      to1 <- this_index[-1]
-      dist1 <- pair_dist(from1, to1)
-      speed1 <- segment_speed(dist1, diff(valid_time) / 3600)
-
-      # ---------------------------------------------------------------------
-      # Skip-one speed estimates
-      # ---------------------------------------------------------------------
-      # Speed between:
-      #   point 1 -> point 3
-      #   point 2 -> point 4
-      #   ...
-      #
-      # These help identify isolated spikes.
-      from2 <- this_index[-c(n - 1, n)]
-      to2 <- this_index[-c(1, 2)]
-      dist2 <- pair_dist(from2, to2)
-      elapsed_time2 <- (valid_time[-c(1, 2)] - valid_time[-c(n - 1, n)]) / 3600
-      speed2 <- segment_speed(dist2, elapsed_time2)
-
-      # Keep the distances of this pass for the next one.
-      pair_keys <- c(pair_key(from1, to1), pair_key(from2, to2))
-      pair_dists <- c(dist1, dist2)
-
-      # Number of adjacent segments.
-      nseg <- length(speed1)
-
-      # Too few segments to compute RMS windows. The original implementation
-      # used `next` here, which never terminates as the RMS values are not
-      # updated; nothing more can be filtered, so stop instead.
-      if (nseg < pprm) {
-        break
-      }
-
-      # ---------------------------------------------------------------------
-      # Window construction
-      # ---------------------------------------------------------------------
-      # Create rolling windows of adjacent-segment speeds.
-      sub1 <- rep(1:2, nseg - offset) +
-        rep(1:(nseg - offset), each = 2)
-
-      # Create rolling windows of skip-one speeds.
-      sub2 <- rep(c(0, 2), nseg - offset) +
-        rep(1:(nseg - offset), each = 2)
-
-      # Combine consecutive and skip-one speeds into RMS windows.
-      rms_rows <- cbind(
-        matrix(speed1[sub1], ncol = offset, byrow = TRUE),
-        matrix(speed2[sub2], ncol = offset, byrow = TRUE)
-      )
-
-      # Calculate RMS value for each window.
-      rms <- c(
-        rep(0, offset),
-        sqrt(rowSums(rms_rows^2) / ncol(rms_rows))
-      )
-
-      # Original implementation forces final position to zero.
-      rms[length(rms)] <- 0
-
-      # Identify windows exceeding maximum speed. Windows with an undefined
-      # RMS are not flagged; leaving NAs in `bad` would break the grouping of
-      # contiguous bad windows below and stop the loop from terminating.
-      bad <- !is.na(rms) & rms > max_speed
-
-      # Group contiguous bad windows.
-      segs <- cumsum(c(0, abs(diff(bad))))
-
-      # ---------------------------------------------------------------------
-      # Candidate point selection
-      # ---------------------------------------------------------------------
-      # Within each contiguous bad region, select only the point with
-      # the highest RMS value (the first one, if several share it, as
-      # which.max() does): the bad windows are ordered by region and by
-      # decreasing RMS (order() is stable, so ties keep their order), and the
-      # first one of each region is selected.
-      bad_windows <- which(bad)
-      bad_region <- segs[bad_windows]
-      by_rms <- order(bad_region, -rms[bad_windows])
-      rms_flag <- rep(FALSE, length(rms))
-      rms_flag[bad_windows[by_rms[!duplicated(bad_region[by_rms])]]] <- TRUE
-
-      # Mark candidate RMS values.
-      rms[rms_flag] <- -10
-
-      # Remove selected points from the valid set.
-      valid_track[this_index][rms_flag > 0] <- FALSE
-    }
-
-    valid_track
-  }
-
-  # ---------------------------------------------------------------------------
-  # Helper: endpoint RMS filter
-  # ---------------------------------------------------------------------------
-  # Evaluates current first and last valid points.
-  #
-  # Endpoint speeds are the root mean squares of the adjacent and skip-one
-  # segments.
-  #
-  # If either RMS exceeds max_speed, the endpoint is flagged; this includes an
-  # infinite RMS (a displacement with no elapsed time).
-  # ---------------------------------------------------------------------------
-  endpoint_rms_flags <- function(
-    xy,
-    track_time,
-    valid_track,
-    max_speed,
-    projected
-  ) {
-    flags <- rep(FALSE, length(valid_track))
-
-    # Indices of currently valid points.
-    idx <- which(valid_track)
-
-    # Need at least three valid points to evaluate endpoints.
-    if (length(idx) < 3) {
-      return(flags)
-    }
-
-    # -----------------------------------------------------------------------
-    # First endpoint
-    # -----------------------------------------------------------------------
-    s12 <- speed_between(xy, track_time, idx[1], idx[2], projected)
-    s13 <- speed_between(xy, track_time, idx[1], idx[3], projected)
-
-    rms_first <- sqrt((s12^2 + s13^2) / 2)
-
-    if (!is.na(rms_first) && rms_first > max_speed) {
-      flags[idx[1]] <- TRUE
-    }
-
-    # -----------------------------------------------------------------------
-    # Last endpoint
-    # -----------------------------------------------------------------------
-    k <- length(idx)
-
-    s_n1n <- speed_between(
-      xy,
-      track_time,
-      idx[k - 1],
-      idx[k],
-      projected
-    )
-
-    s_n2n <- speed_between(
-      xy,
-      track_time,
-      idx[k - 2],
-      idx[k],
-      projected
-    )
-
-    rms_last <- sqrt((s_n1n^2 + s_n2n^2) / 2)
-
-    if (!is.na(rms_last) && rms_last > max_speed) {
-      flags[idx[k]] <- TRUE
-    }
-
-    flags
-  }
-
-  # ---------------------------------------------------------------------------
-  # Helper: combined filtering procedure for one track
-  # ---------------------------------------------------------------------------
-  #
-  # When check_first_last = FALSE:
-  #   Run standard McConnell filter only.
-  #
-  # When check_first_last = TRUE:
-  #   1. Check endpoints.
-  #   2. Remove flagged endpoints.
-  #   3. Rerun McConnell filter.
-  #   4. Repeat until no changes occur.
-  # ---------------------------------------------------------------------------
-  filter_one_track <- function(
-    xy,
-    track_time,
-    max_speed,
-    projected,
-    check_first_last,
-    pprm,
-    track_label = NULL
-  ) {
-    # Preserve original behaviour exactly.
-    if (!isTRUE(check_first_last)) {
-      return(
-        mcconnell_core_track(
-          xy = xy,
-          track_time = track_time,
-          max_speed = max_speed,
-          projected = projected,
-          pprm = pprm,
-          warn_short = TRUE,
-          track_label = track_label
-        )
-      )
-    }
-
-    # Start with all points valid.
-    valid_track <- rep(TRUE, nrow(xy))
-
-    repeat {
-      # Store previous state for convergence testing.
-      prev_valid <- valid_track
-
-      # Step 1: evaluate endpoints.
-      end_flags <- endpoint_rms_flags(
-        xy = xy,
-        track_time = track_time,
-        valid_track = valid_track,
-        max_speed = max_speed,
-        projected = projected
-      )
-
-      # Remove flagged endpoints.
-      if (any(end_flags)) {
-        valid_track[end_flags] <- FALSE
-      }
-
-      # Remaining points.
-      keep <- which(valid_track)
-
-      # If nothing remains, stop.
-      if (length(keep) == 0) {
-        break
-      }
-
-      # Step 2: run McConnell filter on reduced track.
-      reduced_valid <- mcconnell_core_track(
-        xy = xy[keep, , drop = FALSE],
-        track_time = track_time[keep],
-        max_speed = max_speed,
-        projected = projected,
-        pprm = pprm,
-        warn_short = FALSE,
-        track_label = track_label
-      )
-
-      # Rebuild validity vector in original coordinates.
-      new_valid <- rep(FALSE, length(valid_track))
-      new_valid[keep[reduced_valid]] <- TRUE
-
-      valid_track <- new_valid
-
-      # Step 3: stop when no further changes occur.
-      if (identical(valid_track, prev_valid)) {
-        break
-      }
-    }
-
-    valid_track
-  }
-
-  # ---------------------------------------------------------------------------
-  # Apply filtering track-by-track
-  # ---------------------------------------------------------------------------
-  # The McConnell algorithm operates independently on each track.
-  # Results are assembled back into a validity vector matching the
-  # original event order.
-  # ---------------------------------------------------------------------------
-  valid_all <- rep(TRUE, nrow(coords))
-
   # Events with an empty geometry have no location; they are left out of the
-  # filter (and returned as valid).
-  located <- !is.na(coords[, 1]) & !is.na(coords[, 2])
+  # filter (and returned as valid). Speeds are computed between consecutive
+  # events of each track in time order, whatever the order in which the events
+  # are stored in x (order() keeps events with the same time in the order in
+  # which they are stored). All the tracks are then filtered together.
+  located <- which(!is.na(coords[, 1]) & !is.na(coords[, 2]))
+  track <- as.integer(id)
+  rows <- located[order(track[located], time[located])]
+  track <- track[rows]
 
-  # The located events of each track (splitting the rows once is much faster,
-  # with many tracks, than finding the rows of each track among all the rows).
-  track_rows <- split(which(located), id[located])
+  # As in the original implementation, tracks with fewer than four located
+  # events (including tracks without any) are not filtered, with a warning
+  # (unless check_first_last = TRUE, whose endpoint check can still flag their
+  # first and last events).
+  if (!isTRUE(check_first_last)) {
+    too_short <- tabulate(track, nbins = nlevels(id)) < 4
+    for (i_track in levels(id)[too_short]) {
+      warning("Not enough points to filter ID: ", i_track, " continuing . . . ")
+    }
+  }
 
-  for (i_track in track_ids) {
-    # Select the located events belonging to the track, in time order (speeds
-    # are computed between consecutive events, and the events of x are not
-    # necessarily stored in time order).
-    this_track <- track_rows[[i_track]]
-    this_track <- this_track[order(time[this_track])]
+  filter <- if (isTRUE(check_first_last)) {
+    mcconnell_check_first_last
+  } else {
+    mcconnell_filter
+  }
+  valid_all <- rep(TRUE, nrow(coords))
+  valid_all[rows] <- filter(
+    xy = coords[rows, , drop = FALSE],
+    time = time[rows],
+    track = track,
+    max_speed = max_speed,
+    projected = projected
+  )
+  valid_all
+}
 
-    # Track coordinates.
-    xy <- coords[this_track, , drop = FALSE]
+#' Speeds between pairs of locations for the McConnell filter
+#'
+#' Speeds are in distance units (of `dist`) per hour, as in the original
+#' implementation. A step with no displacement has zero speed even if no time
+#' elapsed (e.g. duplicated records), rather than NaN, which would stop bad
+#' windows being detected.
+#'
+#' @param dist Distances between the locations `from` and `to`.
+#' @param from,to Indices of the locations.
+#' @param time Times of all the locations, in seconds.
+#' @returns The speeds.
+#' @keywords internal
+#' @noRd
+mcconnell_speed <- function(dist, from, to, time) {
+  speed <- dist / ((time[to] - time[from]) / 3600)
+  speed[!is.na(dist) & dist == 0] <- 0
+  speed
+}
 
-    # Track timestamps.
-    track_time <- time[this_track]
+#' An upper bound of geodesic distances on the WGS84 ellipsoid
+#'
+#' The great circle distance (with the haversine formula) on a sphere whose
+#' radius is the polar radius of curvature of the ellipsoid, `a^2 / b`, is at
+#' least the geodesic distance between the same longitudes and latitudes on
+#' the ellipsoid: both radii of curvature of the ellipsoid (in the meridian
+#' and in the prime vertical) are at most `a^2 / b` (which they reach at the
+#' poles), so any path is no longer on the ellipsoid than on the sphere. The
+#' bound is at most about 1% above the geodesic distance (at the equator), and
+#' closest to it near the poles. A margin of a micrometre covers rounding
+#' errors (e.g. in the cosine of latitudes close to the poles), which are much
+#' smaller.
+#'
+#' @param xy Matrix of longitudes and latitudes.
+#' @param from,to Indices of the locations.
+#' @returns The upper bounds, in metres.
+#' @keywords internal
+#' @noRd
+mcconnell_dist_bound <- function(xy, from, to) {
+  a <- 6378137
+  b <- a * (1 - 1 / 298.257223563)
+  rad <- pi / 180
+  lat_from <- xy[from, 2] * rad
+  lat_to <- xy[to, 2] * rad
+  h <- sin((lat_to - lat_from) / 2)^2 +
+    cos(lat_from) * cos(lat_to) * sin((xy[to, 1] - xy[from, 1]) * rad / 2)^2
+  2 * a^2 / b * asin(pmin(1, sqrt(h))) * (1 + 1e-9) + 1e-6
+}
 
-    # Run filtering procedure.
-    valid_all[this_track] <- filter_one_track(
-      xy = xy,
-      track_time = track_time,
-      max_speed = max_speed,
-      projected = projected,
-      check_first_last = check_first_last,
-      pprm = pprm,
-      track_label = i_track
+#' The McConnell speed filter, on all the tracks at once
+#'
+#' The algorithm of McConnell et al. (1992), as implemented in
+#' `trip::speedfilter()`: in each pass, the root mean square (RMS) of the
+#' speeds of a window of five consecutive valid locations is computed for the
+#' location at its centre, from the speeds of the two steps before and after
+#' it and of the steps from two locations before and to two locations after
+#' it. In each run of consecutive locations whose RMS exceeds `max_speed`, the
+#' one with the largest RMS (the first one, if several share it) is removed.
+#' The passes go on, for each track, while a pass leaves a location above
+#' `max_speed` that was not removed.
+#'
+#' The flags are the same as those of the original implementation, which
+#' filtered each track on its own and computed all the speeds again in each
+#' pass. Here, all the tracks are filtered together, and a pass only computes
+#' the windows that include a location removed in the previous pass (the
+#' others are unchanged). For longitudes and latitudes, geodesic distances are
+#' only computed for the windows that could exceed `max_speed`: those whose RMS
+#' is above it with an upper bound of the distances (see
+#' `mcconnell_dist_bound()`), which is much faster to compute.
+#'
+#' @param xy Matrix of the coordinates of the locations, ordered by track and
+#'   by time within each track.
+#' @param time Times of the locations, in seconds.
+#' @param track Track of each location (the locations of a track must be
+#'   consecutive).
+#' @param max_speed Maximum speed, in units of distance (of the coordinates)
+#'   per hour.
+#' @param projected Whether the coordinates are projected (otherwise they are
+#'   longitudes and latitudes).
+#' @returns A logical vector, `TRUE` for the valid locations.
+#' @keywords internal
+#' @noRd
+mcconnell_filter <- function(xy, time, track, max_speed, projected) {
+  n <- length(track)
+  valid <- rep(TRUE, n)
+  if (n == 0) {
+    return(valid)
+  }
+
+  # ---------------------------------------------------------------------------
+  # Links between valid locations
+  # ---------------------------------------------------------------------------
+  # The filter works on the sequence of the valid locations of each track.
+  # Rather than subsetting the locations in each pass, each location keeps the
+  # index of the previous (prv) and next (nxt) valid location in its track (NA
+  # at the ends of the track), and these links are updated when locations are
+  # removed (a doubly linked list).
+  first <- c(TRUE, track[-1] != track[-n])
+  last <- c(track[-1] != track[-n], TRUE)
+  prv <- seq_len(n) - 1L
+  prv[first] <- NA
+  nxt <- seq_len(n) + 1L
+  nxt[last] <- NA
+
+  # ---------------------------------------------------------------------------
+  # RMS speed of a window
+  # ---------------------------------------------------------------------------
+  # The window of a location c is made of the two valid locations before it
+  # and the two after it in its track:
+  #
+  #   p2 -- p1 -- c -- n1 -- n2
+  #
+  # Its RMS is the root mean square of four speeds: of the steps p1 -> c and
+  # c -> n1, and of the steps p2 -> c and c -> n2 (between locations two
+  # apart, which help to identify isolated spikes). rms_of() computes it from
+  # the distances of these four steps. The columns are in the order of the
+  # original implementation, so that rowSums() gives identical values.
+  rms_of <- function(centre, p2, p1, n1, n2, d_p1, d_n1, d_p2, d_n2) {
+    speeds <- cbind(
+      mcconnell_speed(d_p1, p1, centre, time),
+      mcconnell_speed(d_n1, centre, n1, time),
+      mcconnell_speed(d_p2, p2, centre, time),
+      mcconnell_speed(d_n2, centre, n2, time)
+    )
+    sqrt(rowSums(speeds^2) / 4)
+  }
+
+  # The same, with the distances of the four steps computed by `dist`.
+  rms_with <- function(dist, centre, p2, p1, n1, n2) {
+    if (length(centre) == 0) {
+      return(numeric(0))
+    }
+    rms_of(
+      centre, p2, p1, n1, n2,
+      dist(p1, centre), dist(centre, n1), dist(p2, centre), dist(centre, n2)
     )
   }
 
-  # Return final validity vector matching input event order.
-  valid_all
+  # Exact distances: geodesic for longitudes and latitudes, and Euclidean for
+  # projected coordinates.
+  exact <- function(from, to) {
+    dist_fast(
+      xy[from, 1],
+      xy[from, 2],
+      xy[to, 1],
+      xy[to, 2],
+      longlat = !projected
+    )
+  }
+
+  # Upper bounds of the geodesic distances, much faster to compute (see
+  # mcconnell_dist_bound()).
+  bound <- function(from, to) {
+    mcconnell_dist_bound(xy, from, to)
+  }
+
+  # RMS of the windows of the locations `centre`. As in the original
+  # implementation, a location without two valid locations on each side in its
+  # track (one of the first two or last two of the track) has no window, and
+  # gets 0. With longitudes and latitudes, the RMS is first computed with the
+  # upper bounds of the distances: a window that is not above max_speed with
+  # the bounds is not above it with the exact distances either, and also gets
+  # 0 (its exact value is never used), so geodesic distances are only computed
+  # for the few windows that could exceed max_speed.
+  window_rms <- function(centre, first_pass = FALSE) {
+    # The neighbours of each location in its window.
+    p1 <- prv[centre]
+    p2 <- prv[p1]
+    n1 <- nxt[centre]
+    n2 <- nxt[n1]
+    rms <- rep(0, length(centre))
+
+    # The locations with a complete window (p2 is NA when p1 is, and n2 when
+    # n1 is).
+    full <- which(!is.na(p2) & !is.na(n2))
+    if (length(full) == 0) {
+      return(rms)
+    }
+
+    if (!projected) {
+      upper <- if (first_pass) {
+        # In the first pass, the neighbours of each location are the adjacent
+        # rows, so the bounds of the steps between consecutive locations, and
+        # between locations two apart, are each computed only once (rather
+        # than once for each of the two windows that share them).
+        steps1 <- bound(seq_len(n - 1), seq_len(n - 1) + 1L)
+        steps2 <- bound(seq_len(n - 2), seq_len(n - 2) + 2L)
+        cf <- centre[full]
+        rms_of(
+          cf, p2[full], p1[full], n1[full], n2[full],
+          steps1[cf - 1], steps1[cf], steps2[cf - 2], steps2[cf]
+        )
+      } else {
+        rms_with(bound, centre[full], p2[full], p1[full], n1[full], n2[full])
+      }
+      # Only the windows that could exceed max_speed need their exact RMS.
+      full <- full[which(upper > max_speed)]
+    }
+
+    rms[full] <- rms_with(
+      exact, centre[full], p2[full], p1[full], n1[full], n2[full]
+    )
+    rms
+  }
+
+  # ---------------------------------------------------------------------------
+  # Passes of the filter
+  # ---------------------------------------------------------------------------
+  # The first pass computes the windows of all the locations. A window is bad
+  # when its RMS exceeds max_speed; `bad` holds the locations of the bad
+  # windows, in the order of the locations (i.e. by track and time).
+  rms <- window_rms(seq_len(n), first_pass = TRUE)
+  bad <- which(rms > max_speed)
+
+  while (length(bad) > 0) {
+    # Group the bad windows into runs of consecutive valid locations: a new
+    # run starts when the next valid location after a bad window is not the
+    # next bad window. A run never spans two tracks, as the first two
+    # locations of a track have no window.
+    m <- length(bad)
+    run <- cumsum(c(TRUE, nxt[bad[-m]] != bad[-1]))
+
+    # In each run, the location with the largest RMS is removed (the first
+    # one, if several share it, as order() keeps ties in their order).
+    by_rms <- order(run, -rms[bad])
+    flagged <- bad[by_rms[!duplicated(run[by_rms])]]
+
+    # The original implementation filters a track again only if this pass
+    # left a bad window that was not removed, i.e. if one of its runs had
+    # more than one bad window. The other tracks are finished, even if
+    # removing a location makes a new window bad.
+    again <- unique(track[bad[tabulate(run)[run] > 1]])
+
+    # Remove the flagged locations, and link the locations before and after
+    # each of them. Removed locations are never next to each other (runs are
+    # separated by at least one location that is not bad), so all the links
+    # can be updated at once.
+    valid[flagged] <- FALSE
+    before <- prv[flagged]
+    after <- nxt[flagged]
+    nxt[before] <- after
+    prv[after] <- before
+
+    # The only windows that change are those that included a removed
+    # location, i.e. the windows of the two valid locations on each side of
+    # it; the others keep their RMS. Only the windows of the tracks that are
+    # filtered again are needed.
+    go_on <- track[flagged] %in% again
+    before <- before[go_on]
+    after <- after[go_on]
+    changed <- unique(c(prv[before], before, after, nxt[after]))
+    changed <- changed[!is.na(changed)]
+    rms[changed] <- window_rms(changed)
+
+    # The bad windows of the next pass: the bad windows that did not change
+    # (in the tracks filtered again), and the changed windows that are bad.
+    bad <- bad[!bad %in% c(flagged, changed) & track[bad] %in% again]
+    bad <- sort(c(bad, changed[rms[changed] > max_speed]))
+  }
+  valid
+}
+
+#' The McConnell speed filter with a check of the first and last locations
+#'
+#' The first (or last) valid location of a track is removed if the RMS of the
+#' speeds from it to the next two valid locations (or from the previous two)
+#' exceeds `max_speed`, and the McConnell filter is then run again on the
+#' remaining locations of the track, until the valid locations do not change.
+#' All the tracks are filtered together, as in `mcconnell_filter()`, each until
+#' its own locations do not change.
+#'
+#' @inheritParams mcconnell_filter
+#' @returns A logical vector, `TRUE` for the valid locations.
+#' @keywords internal
+#' @noRd
+mcconnell_check_first_last <- function(xy, time, track, max_speed, projected) {
+  valid <- rep(TRUE, length(track))
+
+  # Speeds between pairs of locations, with exact distances.
+  speed <- function(from, to) {
+    if (length(from) == 0) {
+      return(numeric(0))
+    }
+    dist <- dist_fast(
+      xy[from, 1],
+      xy[from, 2],
+      xy[to, 1],
+      xy[to, 2],
+      longlat = !projected
+    )
+    mcconnell_speed(dist, from, to, time)
+  }
+
+  # The tracks that are still being filtered. The original implementation
+  # filtered each track on its own, until its valid locations did not change;
+  # here, all these tracks go through each step together.
+  active <- unique(track)
+  while (length(active) > 0) {
+    previous <- valid
+    in_active <- track %in% active
+
+    # -------------------------------------------------------------------------
+    # Endpoint check
+    # -------------------------------------------------------------------------
+    # The positions, among the valid locations `v` of the active tracks, of
+    # the first (starts) and last (ends) valid location of each track with at
+    # least three of them (from the runs of their track ids).
+    v <- which(valid & in_active)
+    runs <- rle(track[v])
+    ends <- cumsum(runs$lengths)
+    ends <- ends[runs$lengths >= 3]
+    starts <- ends - runs$lengths[runs$lengths >= 3] + 1
+    first <- v[starts]
+    last <- v[ends]
+
+    # RMS of the speeds from the first location to the next two, and from the
+    # previous two to the last location. Both endpoints are checked before
+    # either is removed, as in the original implementation.
+    rms_first <- sqrt(
+      (speed(first, v[starts + 1])^2 + speed(first, v[starts + 2])^2) / 2
+    )
+    rms_last <- sqrt(
+      (speed(v[ends - 1], last)^2 + speed(v[ends - 2], last)^2) / 2
+    )
+    valid[first[!is.na(rms_first) & rms_first > max_speed]] <- FALSE
+    valid[last[!is.na(rms_last) & rms_last > max_speed]] <- FALSE
+
+    # -------------------------------------------------------------------------
+    # McConnell filter on the remaining locations
+    # -------------------------------------------------------------------------
+    # As in the original implementation, the filter starts again from all the
+    # remaining locations of each track (not from its previous result).
+    keep <- which(valid & in_active)
+    filtered <- mcconnell_filter(
+      xy = xy[keep, , drop = FALSE],
+      time = time[keep],
+      track = track[keep],
+      max_speed = max_speed,
+      projected = projected
+    )
+    valid[in_active] <- FALSE
+    valid[keep[filtered]] <- TRUE
+
+    # A track is finished when its valid locations did not change in this
+    # step, or when none is left.
+    active <- intersect(unique(track[valid != previous]), track[keep])
+  }
+  valid
 }
