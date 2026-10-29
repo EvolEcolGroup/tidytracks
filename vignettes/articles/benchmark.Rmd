@@ -205,7 +205,7 @@ growth <- function(operation, package, locations) {
 }
 # the overhead of each track (in ms), from the times on the same locations in
 # the most tracks and in the series_tracks tracks (rather than in a single
-# track, on which the speed filter and track2KBA take longer)
+# track, on which some operations take longer, e.g. track2KBA)
 per_track <- function(operation, package) {
   many_time <- time_of(operation, package, many[1], many[2])
   few_time <- time_of(
@@ -231,10 +231,16 @@ distance_ratios <- fmt(range(vapply(
   numeric(2)
 )))
 # the text below assumes that the overhead of each track is less than a
-# millisecond for the speed filter and the trips of tidytracks
+# millisecond for the trips of tidytracks, and that the time of its speed
+# filter hardly depends on the number of tracks (within 50% between a single
+# track and the most tracks, with the same locations)
+speed_filter_times <- c(
+  time_of("speed_filter", "tidytracks", single[1], single[2]),
+  time_of("speed_filter", "tidytracks", many[1], many[2])
+)
 stopifnot(
-  as.numeric(per_track("speed_filter", "tidytracks")) < 1,
-  as.numeric(per_track("trip_split", "tidytracks")) < 1
+  as.numeric(per_track("trip_split", "tidytracks")) < 1,
+  max(speed_filter_times) < 1.5 * min(speed_filter_times)
 )
 ```
 
@@ -281,11 +287,12 @@ series_plot <- function(data, x, x_label) {
   tracks into trips. Its speed filter runs the same algorithm as that of
   `trip`, which takes `r ratio_range("speed_filter", "trip")` times as long.
 - The time of `tidytracks` grows in proportion to the number of locations.
-  It computes the step distances of all the tracks at once, and its speed
-  filter and trip splitting add less than a millisecond per track
-  (`r per_track("speed_filter", "tidytracks")` ms and
-  `r per_track("trip_split", "tidytracks")` ms), whereas `amt` adds
-  `r per_track("distance", "amt")` ms per track to the step distances. This
+  It computes the step distances and runs the speed filter on all the tracks
+  at once, so their times hardly depend on the number of tracks, and its
+  trip splitting adds less than a millisecond per track
+  (`r per_track("trip_split", "tidytracks")` ms), whereas `amt` adds
+  `r per_track("distance", "amt")` ms per track to the step distances, and
+  `trip` `r per_track("speed_filter", "trip")` ms to the speed filter. This
   overhead matters only for data sets with many short tracks.
 
 The packages are compared on two data sets of simulated tracks, as in the
@@ -411,9 +418,12 @@ compared %>%
   distances of all the tracks at once (with `geodist`), whereas `amt` and
   `trip` measure each track in turn.
 - **Speed filter**: `tidytracks` and `trip` run the same algorithm, in R, but
-  `trip` computes the distances between all the remaining locations again in
-  each pass of the filter, whereas `tidytracks` only computes those between
-  locations that have become neighbours: `trip` takes
+  `trip` filters each track in turn, and computes the speeds between all the
+  remaining locations again in each pass of the filter, whereas `tidytracks`
+  filters all the tracks at once, only computes again the speeds around the
+  locations removed in the previous pass, and only computes geodesic
+  distances where the speeds could exceed the maximum (which it finds with a
+  fast upper bound of the distances): `trip` takes
   `r ratio_range("speed_filter", "trip")` times as long.
 - **Trips**: `track2KBA` takes `r ratio_range("trip_split", "track2KBA")`
   times as long as `tidytracks`, as it goes through the locations of each
@@ -438,9 +448,8 @@ proportion to the number of locations: on the `r fmt(prod(largest))`
 locations of the largest data set, `tidytracks` takes about
 `r per_location("distance", "tidytracks")` µs per location for the step
 distances, `r per_location("speed_filter", "tidytracks")` µs for the speed
-filter (which computes the speeds of the whole track again after removing
-each batch of outliers, but only the distances that have changed), and
-`r per_location("trip_split", "tidytracks")` µs for the trips. The time of
+filter, and `r per_location("trip_split", "tidytracks")` µs for the trips.
+The time of
 `track2KBA` grows faster than the length of the tracks, as it updates the
 whole track at many of its steps: with tracks ten
 times as long (from `r fmt(track_lengths[1])` to `r fmt(track_lengths[2])`
@@ -468,10 +477,12 @@ tracks at once, so their time hardly depends on the number of tracks
 `r fmt(most)` tracks, against `r secs("distance", "tidytracks", single)` s
 for a single track), whereas `amt` and `trip` add about
 `r per_track("distance", "amt")` ms and `r per_track("distance", "trip")` ms
-per track. The speed filter adds about
-`r per_track("speed_filter", "tidytracks")` ms per track with `tidytracks`
-(`r per_track("speed_filter", "trip")` ms with `trip`), and trip splitting
-about `r per_track("trip_split", "tidytracks")` ms with `tidytracks`.
+per track. Likewise, the speed filter of `tidytracks` runs on all the tracks
+at once (`r secs("speed_filter", "tidytracks", many)` s for `r fmt(most)`
+tracks, against `r secs("speed_filter", "tidytracks", single)` s for a single
+track), whereas `trip` adds about `r per_track("speed_filter", "trip")` ms
+per track. Trip splitting adds about
+`r per_track("trip_split", "tidytracks")` ms per track with `tidytracks`.
 `track2KBA` adds the trips of each track to those of the previous tracks with
 `rbind()`, which copies them all each time, so it takes
 `r secs("trip_split", "track2KBA", many)` s on the `r fmt(most)` tracks.
