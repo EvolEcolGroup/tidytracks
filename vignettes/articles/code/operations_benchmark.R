@@ -1,138 +1,103 @@
-# Benchmark of common tracking operations in tidytracks (step distances, the
+# Benchmark of common track operations in tidytracks (step distances, the
 # McConnell speed filter and the splitting of tracks into trips) against
-# move2, amt, trip and track2KBA, on simulated tracks of a central place
-# forager. The results are shown in the article "Performance of common
-# tracking operations" (benchmark.Rmd, in the parent directory of this
-# script), which also shows the code of the chunks of this script (the
-# sections that start with a "## ---- label" line, read with
-# knitr::read_chunk()).
+# move2, amt, trip and track2KBA, on tracks of a central place forager
+# (simulated by operations_benchmark_tracks.R, in the same directory as this
+# script, and stored in
+# vignettes/articles/data/operations_benchmark_tracks.rds). The results are
+# shown in the article "Benchmark of common track operations"
+# (benchmark.Rmd, in the parent directory of this script), which also shows
+# the code of the chunks of this script (the sections that start with a
+# "## ---- label" line, read with knitr::read_chunk()).
 #
 # Run from the directory of the article (vignettes/articles), with tidytracks
 # installed with R CMD INSTALL (rather than loaded with devtools::load_all(),
 # which compiles its C++ code without optimisation), and move2, amt, trip,
-# track2KBA, sp, sf, units and bench available:
+# track2KBA, sp, sf and units available:
 #
 #   cd vignettes/articles
 #   Rscript code/operations_benchmark.R
 #
-# Run it on an otherwise idle machine: it takes about 20 minutes (on an Intel
-# i7-10510U), and saves its results in benchmark-results.rds, which the
-# article reads. `Rscript code/operations_benchmark.R quick` runs everything
-# on a few small data sets, to check the script, and saves its results in a
+# Run it on an otherwise idle machine, with at least 96 GB of memory (it uses
+# up to about 70 GB): it takes about two and a quarter hours (on an Intel
+# i9-13900), and saves its results in data/operations_benchmark_*.csv, which
+# the article reads. On a CPU with performance and efficiency cores (such as
+# the i9-13900), run it on a single performance core, so that all the
+# operations are timed on cores of the same speed (on Linux, `lscpu -e` lists
+# the cores with their maximum frequency, and taskset runs R on the given
+# core):
+#
+#   taskset -c 4 Rscript code/operations_benchmark.R
+#
+# `Rscript code/operations_benchmark.R quick` runs everything on the first
+# locations of a few tracks, to check the script, and saves its results in a
 # temporary directory.
 
 ## ---- script-setup ----
 start_time <- Sys.time()
 quick <- identical(commandArgs(trailingOnly = TRUE), "quick")
-out_file <- if (quick) {
-  file.path(tempdir(), "benchmark-results.rds")
-} else {
-  "benchmark-results.rds"
-}
+out_dir <- if (quick) tempdir() else "data"
 
 ## ---- packages ----
 library(tidytracks)
 # move2, amt, trip and track2KBA are not attached: their functions are called
 # with ::, to make clear which package each of them comes from
 
-## ---- simulate-tracks ----
-# Simulate the GPS tracks of a central place forager (e.g. a seabird breeding
-# in a colony), with a location every 5 minutes: each animal alternates stays
-# at its nest (of 2 to 12 hours) and foraging trips (of 6 to 24 hours, to a
-# distance of 10 to 80 km from the nest, out on one bearing and back on
-# another). The locations have a GPS error of about 30 m, and about 1 in 1000
-# of them is an outlier, 50 to 300 km away from where the animal was.
-# Returns a data frame with the id, longitude, latitude and time of each
-# location, whether it is an outlier, and the location of the nest of each
-# animal.
-simulate_tracks <- function(n_tracks, n_locations, seed) {
-  set.seed(seed)
-  # the colony, and the nest of each animal, within about 100 m of it
-  colony_lon <- -2.56
-  colony_lat <- 56.19
-  km_per_degree_lat <- 111.32
-  km_per_degree_lon <- km_per_degree_lat * cos(colony_lat * pi / 180)
-  ids <- sprintf(paste0("bird_%0", nchar(n_tracks), "d"), seq_len(n_tracks))
-  nest_lon <- colony_lon + stats::rnorm(n_tracks, 0, 0.1) / km_per_degree_lon
-  nest_lat <- colony_lat + stats::rnorm(n_tracks, 0, 0.1) / km_per_degree_lat
-  one_track <- function(i) {
-    # bouts at the nest and trips, alternating, until the track has
-    # n_locations (each pair of bouts has at least 96 locations)
-    n_pairs <- ceiling(n_locations / 96) + 1
-    bout_length <- as.vector(rbind(
-      sample(24:144, n_pairs, replace = TRUE),
-      sample(72:288, n_pairs, replace = TRUE)
-    ))
-    on_trip <- rep(c(FALSE, TRUE), n_pairs)
-    # the track starts at a random point of the first stay at the nest
-    bout_length[1] <- sample(bout_length[1], 1)
-    n_bouts <- which(cumsum(bout_length) >= n_locations)[1]
-    bout_length <- bout_length[seq_len(n_bouts)]
-    bout <- rep(seq_len(n_bouts), bout_length)[seq_len(n_locations)]
-    # how far each location is through its bout (between 0 and 1)
-    progress <- sequence(bout_length)[seq_len(n_locations)] /
-      (bout_length[bout] + 1)
-    # distance (in km) and bearing from the nest
-    max_distance <- stats::runif(n_bouts, 10, 80)[bout]
-    distance <- ifelse(on_trip[bout], max_distance * sin(pi * progress), 0)
-    bearing <- stats::runif(n_bouts, 0, 2 * pi)[bout] +
-      0.6 * sin(2 * pi * progress)
-    # positions (in km from the nest), with the GPS error
-    x <- distance * sin(bearing) + stats::rnorm(n_locations, 0, 0.03)
-    y <- distance * cos(bearing) + stats::rnorm(n_locations, 0, 0.03)
-    # outliers
-    outlier <- which(stats::runif(n_locations) < 0.001)
-    jump <- stats::runif(length(outlier), 50, 300)
-    jump_bearing <- stats::runif(length(outlier), 0, 2 * pi)
-    x[outlier] <- x[outlier] + jump * sin(jump_bearing)
-    y[outlier] <- y[outlier] + jump * cos(jump_bearing)
-    # a location every 5 minutes (give or take a few seconds), from a random
-    # time on the first day of tracking
-    time <- stats::runif(1, 0, 86400) +
-      cumsum(c(0, 300 + sample(-5:5, n_locations - 1, replace = TRUE)))
-    list(
-      lon = nest_lon[i] + x / km_per_degree_lon,
-      lat = nest_lat[i] + y / km_per_degree_lat,
-      time = time,
-      outlier = seq_len(n_locations) %in% outlier
-    )
-  }
-  tracks <- lapply(seq_len(n_tracks), one_track)
-  data.frame(
-    id = rep(ids, each = n_locations),
-    lon = unlist(lapply(tracks, `[[`, "lon")),
-    lat = unlist(lapply(tracks, `[[`, "lat")),
-    time = as.POSIXct("2024-06-01", tz = "UTC") +
-      round(unlist(lapply(tracks, `[[`, "time"))),
-    outlier = unlist(lapply(tracks, `[[`, "outlier")),
-    nest_lon = rep(nest_lon, each = n_locations),
-    nest_lat = rep(nest_lat, each = n_locations)
-  )
-}
+## ---- read-tracks ----
+# the tracks simulated by operations_benchmark_tracks.R: a list of four data
+# frames (medium, long, season and year) with the id, longitude, latitude and
+# time of each location, whether it is an outlier, and the location of the nest
+# of each animal, ordered by track and time
+datasets <- readRDS("data/operations_benchmark_tracks.rds")
 
-## ---- data-sets ----
-# Two series of data sets, to separate the cost of each location from the
-# cost of each track: 10 tracks of increasing length, and 100,000 locations
-# in all, split into an increasing number of tracks (10 tracks of 10,000
-# locations are in both series)
-series_tracks <- 10
-track_lengths <- c(1000, 10000, 100000)
-series_total <- 1e5
-track_counts <- c(1, 10, 100, 1000)
-
-## ---- quick-data-sets ----
+## ---- quick-tracks ----
 if (quick) {
-  series_tracks <- 2
-  track_lengths <- c(100, 1000)
-  series_total <- 1000
-  track_counts <- c(1, 2, 10)
+  # the first locations of the first tracks of each data set
+  first_locations <- function(df, tracks, locations) {
+    df <- df[df$id %in% unique(df$id)[seq_len(tracks)], ]
+    df[stats::ave(seq_len(nrow(df)), df$id, FUN = seq_along) <= locations, ]
+  }
+  datasets$medium <- first_locations(datasets$medium, 3, 200)
+  datasets$long <- first_locations(datasets$long, 2, 1000)
+  datasets$season <- first_locations(datasets$season, 2, 2000)
+  datasets$year <- first_locations(datasets$year, 1, 5000)
 }
 
-## ---- data-sets-table ----
-data_sets <- unique(rbind(
-  data.frame(tracks = series_tracks, locations = track_lengths),
-  data.frame(tracks = track_counts, locations = series_total / track_counts)
-))
+## ---- copies ----
+# The operations are timed on copies of the simulated tracks: the medium and
+# long tracks from a single copy (the simulated tracks themselves) to 300
+# copies (30,000 tracks of 1,000 locations, or 3,000 tracks of 10,000
+# locations, i.e. 30 million locations), to see how their times grow with the
+# size of the data, and enough copies of the tracks of a season and of a year
+# for 30 million locations too (1,000 tracks of 30,000 locations, or 300
+# tracks of 100,000 locations), to compare the packages on large data sets of
+# long tracks
+copies <- list(
+  medium = c(1, 3, 10, 30, 100, 300),
+  long = c(1, 3, 10, 30, 100, 300),
+  season = 500,
+  year = 300
+)
+
+# copies of the tracks of a data frame ordered by track and time, each with
+# its own id (that of the track, after the number of the copy), so that the
+# copies are also ordered by track and time
+recycle_tracks <- function(df, n_copies) {
+  if (n_copies == 1) {
+    return(df)
+  }
+  copy <- rep(seq_len(n_copies), each = nrow(df))
+  out <- df[rep(seq_len(nrow(df)), n_copies), ]
+  out$id <- paste0(
+    "copy", sprintf(paste0("%0", nchar(n_copies), "d"), copy), "_", out$id
+  )
+  rownames(out) <- NULL
+  out
+}
+
+## ---- quick-copies ----
+if (quick) {
+  copies <- list(medium = c(1, 2), long = c(1, 2), season = 2, year = 2)
+}
 
 ## ---- inputs ----
 # the input of each package, built from a data frame of locations; tidytracks
@@ -161,7 +126,9 @@ make_inputs <- function(df) {
     move2 = move,
     # nolint next: object_usage_linter.
     amt = amt::make_track(df, lon, lat, time, id = id, crs = 4326),
-    trip = trip::trip(trip_df, c("time", "id")),
+    # the tracks are ordered by time, without duplicates, so trip() does not
+    # need to correct them (which takes longer than its speed filter)
+    trip = trip::trip(trip_df, c("time", "id"), correct_all = FALSE),
     track2KBA = list(
       data = data.frame(
         ID = df$id,
@@ -352,104 +319,116 @@ checks <- list(
 )
 
 ## ---- timing ----
-# Time an operation: a first run (as a warm-up, which also gives its result),
-# then, if it took less than a minute, more runs, until they have taken a
-# minute (but at least 3 and at most 10 runs), whose median time is reported.
+# Time an operation, once (system.time() first frees the memory used by the
+# previous operations), and return its result and its time (in s)
 time_operation <- function(operation, input) {
-  # free the memory used by the previous operations
-  gc()
-  start <- bench::hires_time()
-  result <- operation(input)
-  seconds <- as.numeric(bench::hires_time() - start)
-  runs <- 1
-  if (seconds < 60) {
-    timing <- bench::mark(
-      operation(input),
-      min_time = 60,
-      min_iterations = 3,
-      max_iterations = 10,
-      check = FALSE,
-      memory = FALSE,
-      filter_gc = FALSE
-    )
-    seconds <- as.numeric(timing$median)
-    runs <- timing$n_itr
-  }
-  list(result = result, seconds = seconds, runs = runs)
+  seconds <- system.time(result <- operation(input))[["elapsed"]]
+  list(result = result, seconds = seconds)
 }
 
 ## ---- run-benchmark ----
+# the data sets (the number of copies of each set of simulated tracks), from
+# the smallest to the largest, so that no data set is timed just after a much
+# larger one
+runs <- data.frame(
+  dataset = rep(names(copies), lengths(copies)),
+  copies = unlist(copies, use.names = FALSE)
+)
+n_locations <- runs$copies * vapply(datasets[runs$dataset], nrow, numeric(1))
+runs <- runs[order(n_locations), ]
 timings <- list()
 check_results <- list()
-for (i in seq_len(nrow(data_sets))) {
-  n_tracks <- data_sets$tracks[i]
-  n_locations <- data_sets$locations[i]
-  df <- simulate_tracks(n_tracks, n_locations, seed = i)
+for (i in seq_len(nrow(runs))) {
+  dataset <- runs$dataset[i]
+  n_copies <- runs$copies[i]
+  df <- recycle_tracks(datasets[[dataset]], n_copies)
   inputs <- make_inputs(df)
+  n_tracks <- length(unique(df$id))
   for (operation in names(operations)) {
     results <- list()
     for (package in names(operations[[operation]])) {
-      # track2KBA is not run on the largest data set (the 10 longest tracks):
-      # its time grows faster than the length of the tracks, and it would
-      # take more than 5 minutes (see its time on a single long track)
-      if (package == "track2KBA" && n_tracks * n_locations > series_total) {
+      # track2KBA is only run on up to a million locations: its time grows
+      # with the number of locations times the number of tracks, and it
+      # would take hours on 10 million
+      if (package == "track2KBA" && nrow(df) > 1e6) {
         next
       }
       message(
-        "Timing ", operation, " with ", package, " on ", n_tracks,
-        " tracks of ", n_locations, " locations"
+        "Timing ", operation, " with ", package, " on ", n_copies,
+        " copies of the ", dataset, " tracks"
       )
       timed <- time_operation(
         operations[[operation]][[package]],
         inputs[[package]]
       )
-      results[[package]] <- timed$result
       timings[[length(timings) + 1]] <- data.frame(
+        dataset = dataset,
+        copies = n_copies,
         tracks = n_tracks,
-        locations = n_locations,
+        locations = nrow(df) %/% n_tracks,
         operation = operation,
         package = package,
-        seconds = timed$seconds,
-        runs = timed$runs
+        seconds = timed$seconds
       )
+      # the results are compared on the simulated tracks (their copies give
+      # the same results)
+      if (n_copies == 1) {
+        results[[package]] <- timed$result
+      }
+      rm(timed)
     }
-    # compare the results, if all the packages were run
-    if (all(names(operations[[operation]]) %in% names(results))) {
+    if (n_copies == 1) {
       check_results[[length(check_results) + 1]] <- data.frame(
-        tracks = n_tracks,
-        locations = n_locations,
+        dataset = dataset,
         operation = operation,
         checks[[operation]](results, df)
       )
     }
+    rm(results)
   }
+  rm(df, inputs)
 }
 timings <- do.call(rbind, timings)
 check_results <- do.call(rbind, check_results)
 
 ## ---- session ----
 # the machine and the versions of the software used
-cpu <- tryCatch(
-  sub(
-    "^.*:\\s*", "",
-    grep("^model name", readLines("/proc/cpuinfo"), value = TRUE)[1]
-  ),
-  error = function(e) NA_character_,
-  warning = function(w) NA_character_
+# the value of a field of a file of /proc (on Linux), or NA
+proc_field <- function(file, field) {
+  tryCatch(
+    sub(
+      "^.*:\\s*", "",
+      grep(paste0("^", field), readLines(file), value = TRUE)[1]
+    ),
+    error = function(e) NA_character_,
+    warning = function(w) NA_character_
+  )
+}
+memory_kb <- as.numeric(
+  sub(" kB$", "", proc_field("/proc/meminfo", "MemTotal"))
 )
+blas <- sessionInfo()$BLAS
 session_packages <- c(
   "tidytracks", "move2", "amt", "trip", "track2KBA", "sf", "sp", "s2",
-  "geodist", "units", "bench"
+  "geodist", "units"
 )
 session <- data.frame(
-  item = c("date", "R", "platform", "CPU", "cores", "BLAS", session_packages),
+  item = c(
+    "date", "R", "platform", "CPU", "cores", "cores used", "memory (GB)",
+    "BLAS", session_packages
+  ),
   value = c(
     format(Sys.Date()),
     R.version.string,
     R.version$platform,
-    cpu,
+    proc_field("/proc/cpuinfo", "model name"),
     parallel::detectCores(),
-    basename(sessionInfo()$BLAS),
+    # the cores on which R may run (e.g. a single core, with taskset)
+    proc_field("/proc/self/status", "Cpus_allowed_list"),
+    round(memory_kb / 2^20),
+    # with its directory, which tells which BLAS it is on Debian and Ubuntu
+    # (e.g. blas for the reference BLAS, and openblas-pthread for OpenBLAS)
+    file.path(basename(dirname(blas)), basename(blas)),
     vapply(
       session_packages,
       function(p) as.character(utils::packageVersion(p)),
@@ -460,19 +439,36 @@ session <- data.frame(
 
 ## ---- save ----
 run_minutes <- as.numeric(difftime(Sys.time(), start_time, units = "mins"))
-saveRDS(
-  list(
-    timings = timings,
-    checks = check_results,
-    # the two series of data sets
-    series = list(tracks = series_tracks, total = series_total),
-    session = session,
-    run_minutes = run_minutes
-  ),
-  out_file
+# the most memory used by R during the benchmark
+peak_memory_kb <- as.numeric(
+  sub(" kB$", "", proc_field("/proc/self/status", "VmHWM"))
+)
+session <- rbind(
+  session,
+  data.frame(
+    item = c("run time (minutes)", "peak memory (GB)"),
+    value = c(round(run_minutes), round(peak_memory_kb / 2^20))
+  )
+)
+# system.time() measures times to the millisecond
+timings$seconds <- round(timings$seconds, 3)
+write.csv(
+  timings,
+  file.path(out_dir, "operations_benchmark_timings.csv"),
+  row.names = FALSE
+)
+write.csv(
+  check_results,
+  file.path(out_dir, "operations_benchmark_checks.csv"),
+  row.names = FALSE
+)
+write.csv(
+  session,
+  file.path(out_dir, "operations_benchmark_session.csv"),
+  row.names = FALSE
 )
 print(timings)
 print(check_results)
 message(
-  "Results saved in ", out_file, ", after ", round(run_minutes, 1), " minutes"
+  "Results saved in ", out_dir, ", after ", round(run_minutes, 1), " minutes"
 )

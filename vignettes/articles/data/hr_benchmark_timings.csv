@@ -1,28 +1,54 @@
-"dataset","tracks","locations","method","package","estimator","seconds","runs"
-"medium",100,500,"mcp","tidytracks","tidytracks",0.103905152995139,5
-"medium",100,500,"mcp","amt","amt",0.743867844925262,5
-"medium",100,500,"mcp","adehabitatHR","adehabitatHR",1.12890418805182,5
-"medium",100,500,"kde_ud","tidytracks","tidytracks (binned)",1.9771752669476,5
-"medium",100,500,"kde_ud","tidytracks","tidytracks (exact)",3.60272899002302,5
-"medium",100,500,"kde_ud","amt","amt",1.73426476807799,5
-"medium",100,500,"kde_ud","adehabitatHR","adehabitatHR",6.28613347804639,5
-"medium",100,500,"kde_iso","tidytracks","tidytracks (binned)",2.277668813942,5
-"medium",100,500,"kde_iso","tidytracks","tidytracks (exact)",3.66309787810314,5
-"medium",100,500,"kde_iso","amt","amt",6.61469480709638,5
-"medium",100,500,"kde_iso","adehabitatHR","adehabitatHR",23.2856153399916,5
-"medium",100,500,"locoh","tidytracks","tidytracks",2.56280208216049,5
-"medium",100,500,"locoh","amt","amt",49.1390435840003,5
-"medium",100,500,"locoh","adehabitatHR","adehabitatHR",697.684354305267,1
-"long",10,10000,"mcp","tidytracks","tidytracks",0.0547846039989963,5
-"long",10,10000,"mcp","amt","amt",0.142581080086529,5
-"long",10,10000,"mcp","adehabitatHR","adehabitatHR",1.45039115601685,5
-"long",10,10000,"kde_ud","tidytracks","tidytracks (binned)",0.161890049930662,5
-"long",10,10000,"kde_ud","tidytracks","tidytracks (exact)",4.09312176494859,5
-"long",10,10000,"kde_ud","amt","amt",0.216755861067213,5
-"long",10,10000,"kde_ud","adehabitatHR","adehabitatHR",5.22337727597915,5
-"long",10,10000,"kde_iso","tidytracks","tidytracks (binned)",0.326808196958154,5
-"long",10,10000,"kde_iso","tidytracks","tidytracks (exact)",4.1970682980027,5
-"long",10,10000,"kde_iso","amt","amt",0.690065536997281,5
-"long",10,10000,"kde_iso","adehabitatHR","adehabitatHR",7.10360567097086,5
-"long",10,10000,"locoh","tidytracks","tidytracks",4.84212608786765,5
-"long",10,10000,"locoh","amt","amt",89.2331113815308,1
+"dataset","copies","tracks","locations","method","package","estimator","seconds"
+"medium",1,100,500,"mcp","tidytracks","tidytracks",0.039
+"medium",1,100,500,"mcp","amt","amt",0.305
+"medium",1,100,500,"mcp","adehabitatHR","adehabitatHR",0.418
+"medium",1,100,500,"kde_ud","tidytracks","tidytracks (binned)",1.02
+"medium",1,100,500,"kde_ud","tidytracks","tidytracks (exact)",1.391
+"medium",1,100,500,"kde_ud","amt","amt",0.722
+"medium",1,100,500,"kde_ud","adehabitatHR","adehabitatHR",3.366
+"medium",1,100,500,"kde_iso","tidytracks","tidytracks (binned)",1.242
+"medium",1,100,500,"kde_iso","tidytracks","tidytracks (exact)",1.589
+"medium",1,100,500,"kde_iso","amt","amt",2.753
+"medium",1,100,500,"kde_iso","adehabitatHR","adehabitatHR",9.599
+"medium",1,100,500,"locoh","tidytracks","tidytracks",1.038
+"medium",1,100,500,"locoh","amt","amt",17.819
+"medium",1,100,500,"locoh","adehabitatHR","adehabitatHR",254.251
+"long",1,10,10000,"mcp","tidytracks","tidytracks",0.026
+"long",1,10,10000,"mcp","amt","amt",0.063
+"long",1,10,10000,"mcp","adehabitatHR","adehabitatHR",0.51
+"long",1,10,10000,"kde_ud","tidytracks","tidytracks (binned)",0.099
+"long",1,10,10000,"kde_ud","tidytracks","tidytracks (exact)",5.755
+"long",1,10,10000,"kde_ud","amt","amt",0.087
+"long",1,10,10000,"kde_ud","adehabitatHR","adehabitatHR",2.538
+"long",1,10,10000,"kde_iso","tidytracks","tidytracks (binned)",0.135
+"long",1,10,10000,"kde_iso","tidytracks","tidytracks (exact)",5.813
+"long",1,10,10000,"kde_iso","amt","amt",0.29
+"long",1,10,10000,"kde_iso","adehabitatHR","adehabitatHR",3.252
+"long",1,10,10000,"locoh","tidytracks","tidytracks",2.362
+"long",1,10,10000,"locoh","amt","amt",35.503
+"medium",10,1000,500,"mcp","tidytracks","tidytracks",0.284
+"medium",10,1000,500,"mcp","amt","amt",3.235
+"medium",10,1000,500,"mcp","adehabitatHR","adehabitatHR",3.78
+"medium",10,1000,500,"kde_ud","tidytracks","tidytracks (binned)",11.926
+"medium",10,1000,500,"kde_ud","tidytracks","tidytracks (exact)",16.709
+"medium",10,1000,500,"kde_ud","amt","amt",7.746
+"medium",10,1000,500,"kde_ud","adehabitatHR","adehabitatHR",28.14
+"medium",10,1000,500,"kde_iso","tidytracks","tidytracks (binned)",12.134
+"medium",10,1000,500,"kde_iso","tidytracks","tidytracks (exact)",16.744
+"medium",10,1000,500,"kde_iso","amt","amt",27.619
+"medium",10,1000,500,"kde_iso","adehabitatHR","adehabitatHR",89.565
+"medium",10,1000,500,"locoh","tidytracks","tidytracks",10.554
+"medium",10,1000,500,"locoh","amt","amt",178.532
+"long",10,100,10000,"mcp","tidytracks","tidytracks",0.144
+"long",10,100,10000,"mcp","amt","amt",0.556
+"long",10,100,10000,"mcp","adehabitatHR","adehabitatHR",5.6
+"long",10,100,10000,"kde_ud","tidytracks","tidytracks (binned)",1.128
+"long",10,100,10000,"kde_ud","tidytracks","tidytracks (exact)",53.283
+"long",10,100,10000,"kde_ud","amt","amt",0.842
+"long",10,100,10000,"kde_ud","adehabitatHR","adehabitatHR",24.575
+"long",10,100,10000,"kde_iso","tidytracks","tidytracks (binned)",1.346
+"long",10,100,10000,"kde_iso","tidytracks","tidytracks (exact)",53.198
+"long",10,100,10000,"kde_iso","amt","amt",2.791
+"long",10,100,10000,"kde_iso","adehabitatHR","adehabitatHR",31.223
+"long",10,100,10000,"locoh","tidytracks","tidytracks",23.465
+"long",10,100,10000,"locoh","amt","amt",375.362
