@@ -1,0 +1,35 @@
+"dataset","operation","package","check","value"
+"medium","distance","move2","largest relative difference in step distance",0.00346594164275538
+"medium","distance","amt","largest relative difference in step distance",0.00346594164275538
+"medium","distance","trip","largest relative difference in step distance",2.22044604925031e-16
+"medium","speed_filter","both","outliers",101
+"medium","speed_filter","both","outliers among the first two or last two locations of a track",0
+"medium","speed_filter","tidytracks","locations flagged",101
+"medium","speed_filter","tidytracks","outliers flagged",101
+"medium","speed_filter","trip","locations flagged differently",0
+"medium","speed_filter","trip","tracks with locations flagged differently",0
+"medium","speed_filter","trip","tracks with an outlier second to last, flagged differently",0
+"medium","trip_split","tidytracks","trips",453
+"medium","trip_split","track2KBA","trips",452
+"medium","trip_split","tidytracks","locations in trips",61032
+"medium","trip_split","track2KBA","locations in trips",61422
+"medium","trip_split","track2KBA","returns to the nest in a trip",391
+"medium","trip_split","tidytracks","trips of the last location of a track",1
+"medium","trip_split","both","other locations in a trip in only one package",0
+"long","distance","move2","largest relative difference in step distance",0.00346630788947755
+"long","distance","amt","largest relative difference in step distance",0.00346630788947755
+"long","distance","trip","largest relative difference in step distance",2.22044604925031e-16
+"long","speed_filter","both","outliers",100
+"long","speed_filter","both","outliers among the first two or last two locations of a track",0
+"long","speed_filter","tidytracks","locations flagged",100
+"long","speed_filter","tidytracks","outliers flagged",100
+"long","speed_filter","trip","locations flagged differently",0
+"long","speed_filter","trip","tracks with locations flagged differently",0
+"long","speed_filter","trip","tracks with an outlier second to last, flagged differently",0
+"long","trip_split","tidytracks","trips",414
+"long","trip_split","track2KBA","trips",414
+"long","trip_split","tidytracks","locations in trips",62000
+"long","trip_split","track2KBA","locations in trips",62407
+"long","trip_split","track2KBA","returns to the nest in a trip",407
+"long","trip_split","tidytracks","trips of the last location of a track",0
+"long","trip_split","both","other locations in a trip in only one package",0

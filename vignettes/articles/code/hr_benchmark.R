@@ -2,24 +2,33 @@
 # against those of amt and adehabitatHR, on tracks simulated with amt (by
 # hr_benchmark_tracks.R, in the same directory as this script, and stored in
 # vignettes/articles/data/hr_benchmark_tracks.rds). The results are shown in
-# the article "Benchmarking home ranges against amt and adehabitatHR"
-# (hr_benchmark.Rmd, in the parent directory of this script), which also
-# shows the code of the chunks of this script (the sections that
-# start with a "## ---- label" line, read with knitr::read_chunk()).
+# the article "Benchmark of home range estimators" (hr_benchmark.Rmd, in the
+# parent directory of this script), which also shows the code of the chunks
+# of this script (the sections that start with a "## ---- label" line, read
+# with knitr::read_chunk()).
 #
 # Run from the directory of the article (vignettes/articles), with tidytracks
 # installed with R CMD INSTALL (devtools::load_all() compiles the C++ code of
-# hr_tt_locoh() without optimisation), and amt, adehabitatHR, sp and bench
-# available:
+# hr_tt_locoh() without optimisation), and amt, adehabitatHR and sp
+# available, with a larger protection stack than the default (which
+# adehabitatHR exceeds when it builds the polygons of LoCoH on thousands of
+# locations):
 #
 #   cd vignettes/articles
-#   Rscript code/hr_packages_benchmark.R
+#   Rscript --max-ppsize=500000 code/hr_benchmark.R
 #
-# Run it on an otherwise idle machine: it takes about 35 minutes (on an Intel
-# i7-10510U), and saves its results in data/hr_benchmark_*.csv, which the
-# article reads. `Rscript code/hr_packages_benchmark.R quick` runs everything
-# on the first locations of a few tracks, to check the script, and saves its
-# results in a temporary directory.
+# Run it on an otherwise idle machine: it takes about 25 minutes (on an Intel
+# i9-13900), and saves its results in data/hr_benchmark_*.csv, which the
+# article reads. On a CPU with performance and efficiency cores (such as the
+# i9-13900), run it on a single performance core, so that all the estimators
+# are timed on cores of the same speed (on Linux, `lscpu -e` lists the cores
+# with their maximum frequency, and taskset runs R on the given core):
+#
+#   taskset -c 4 Rscript --max-ppsize=500000 code/hr_benchmark.R
+#
+# `Rscript code/hr_benchmark.R quick` runs everything on the first locations
+# of a few tracks, to check the script, and saves its results in a temporary
+# directory.
 
 ## ---- script-setup ----
 start_time <- Sys.time()
@@ -46,6 +55,32 @@ if (quick) {
   }
   datasets$medium <- first_locations(datasets$medium, 3, 50)
   datasets$long <- first_locations(datasets$long, 2, 300)
+}
+
+## ---- copies ----
+# The home ranges are estimated on the simulated tracks, and on 10 copies of
+# them (1,000 tracks of 500 locations, or 100 tracks of 10,000 locations)
+copies <- c(1, 10)
+
+# copies of the tracks of a data frame ordered by track and time, each with
+# its own id (that of the track, after the number of the copy), so that the
+# copies are also ordered by track and time
+recycle_tracks <- function(df, n_copies) {
+  if (n_copies == 1) {
+    return(df)
+  }
+  copy <- rep(seq_len(n_copies), each = nrow(df))
+  out <- df[rep(seq_len(nrow(df)), n_copies), ]
+  out$id <- paste0(
+    "copy", sprintf(paste0("%0", nchar(n_copies), "d"), copy), "_", out$id
+  )
+  rownames(out) <- NULL
+  out
+}
+
+## ---- quick-copies ----
+if (quick) {
+  copies <- c(1, 2)
 }
 
 ## ---- inputs ----
@@ -276,72 +311,71 @@ areas <- list(
 )
 
 ## ---- timing ----
-# Time an estimator: a first run, which also gives its results, then, if it
-# took less than a minute, 5 more runs, whose median time is reported.
+# Time an estimator, once (system.time() first frees the memory used by the
+# previous estimators), and return its result and its time (in s)
 time_estimator <- function(estimator, input, grid) {
-  start <- bench::hires_time()
-  result <- estimator(input, grid)
-  seconds <- as.numeric(bench::hires_time() - start)
-  runs <- 1
-  if (seconds < 60) {
-    timing <- bench::mark(
-      estimator(input, grid),
-      iterations = 5,
-      check = FALSE,
-      memory = FALSE,
-      filter_gc = FALSE
-    )
-    seconds <- as.numeric(timing$median)
-    runs <- 5
-  }
-  list(result = result, seconds = seconds, runs = runs)
+  seconds <- system.time(result <- estimator(input, grid))[["elapsed"]]
+  list(result = result, seconds = seconds)
 }
 
 ## ---- run-benchmark ----
 timings <- list()
 area_results <- list()
-for (dataset in names(datasets)) {
-  df <- datasets[[dataset]]
-  inputs <- make_inputs(df)
-  grid <- make_grid(df)
-  n_tracks <- length(unique(df$id))
-  for (method in names(estimators)) {
-    for (estimator in names(estimators[[method]])) {
-      # the package of the estimator, i.e. the first word of its name (e.g.
-      # tidytracks for "tidytracks (exact)"), which gives its input and how
-      # to extract its areas
-      package <- sub(" .*", "", estimator)
-      # LoCoH in adehabitatHR would take hours on the long tracks (see the
-      # scaling below)
-      if (method == "locoh" && package == "adehabitatHR" && dataset == "long") {
-        next
-      }
-      message("Timing ", dataset, ", ", method, ", ", estimator)
-      timed <- time_estimator(
-        estimators[[method]][[estimator]],
-        inputs[[package]],
-        grid
-      )
-      timings[[length(timings) + 1]] <- data.frame(
-        dataset = dataset,
-        tracks = n_tracks,
-        locations = nrow(df) / n_tracks,
-        method = method,
-        package = package,
-        estimator = estimator,
-        seconds = timed$seconds,
-        runs = timed$runs
-      )
-      if (method %in% names(areas)) {
-        area_results[[length(area_results) + 1]] <- data.frame(
+# from the smallest data sets to the largest, so that no data set is timed
+# just after a much larger one
+for (n_copies in copies) {
+  for (dataset in names(datasets)) {
+    df <- recycle_tracks(datasets[[dataset]], n_copies)
+    inputs <- make_inputs(df)
+    grid <- make_grid(df)
+    n_tracks <- length(unique(df$id))
+    for (method in names(estimators)) {
+      for (estimator in names(estimators[[method]])) {
+        # the package of the estimator, i.e. the first word of its name (e.g.
+        # tidytracks for "tidytracks (exact)"), which gives its input and how
+        # to extract its areas
+        package <- sub(" .*", "", estimator)
+        # LoCoH in adehabitatHR is only run on the medium tracks, as it would
+        # take most of an hour on their copies, and hours on the long tracks
+        # (see the scaling below)
+        too_long <- dataset == "long" || n_copies > 1
+        if (method == "locoh" && package == "adehabitatHR" && too_long) {
+          next
+        }
+        message(
+          "Timing ", method, ", ", estimator, " on ", n_copies,
+          " copies of the ", dataset, " tracks"
+        )
+        timed <- time_estimator(
+          estimators[[method]][[estimator]],
+          inputs[[package]],
+          grid
+        )
+        timings[[length(timings) + 1]] <- data.frame(
           dataset = dataset,
+          copies = n_copies,
+          tracks = n_tracks,
+          locations = nrow(df) %/% n_tracks,
           method = method,
           package = package,
           estimator = estimator,
-          areas[[method]][[package]](timed$result)
+          seconds = timed$seconds
         )
+        # the areas are compared on the simulated tracks (their copies give
+        # the same home ranges)
+        if (n_copies == 1 && method %in% names(areas)) {
+          area_results[[length(area_results) + 1]] <- data.frame(
+            dataset = dataset,
+            method = method,
+            package = package,
+            estimator = estimator,
+            areas[[method]][[package]](timed$result)
+          )
+        }
+        rm(timed)
       }
     }
+    rm(df, inputs, grid)
   }
 }
 timings <- do.call(rbind, timings)
@@ -350,7 +384,8 @@ area_results <- do.call(rbind, area_results)
 ## ---- locoh-scaling ----
 # LoCoH on a single track, as the number of locations increases: the first
 # 500 to 10,000 locations of the first long track (adehabitatHR only up to
-# 2000 locations, as it would take hours on the full track)
+# 2000 locations: on 5000 locations, it runs out of protection stack, after
+# several minutes, even with the largest one that R allows)
 track <- datasets$long[datasets$long$id == unique(datasets$long$id)[1], ]
 n_locations <- c(500, 1000, 2000, 5000, 10000)
 if (quick) {
@@ -374,8 +409,7 @@ for (n in n_locations) {
     locoh_scaling[[length(locoh_scaling) + 1]] <- data.frame(
       locations = n,
       package = package,
-      seconds = timed$seconds,
-      runs = timed$runs
+      seconds = timed$seconds
     )
   }
 }
@@ -383,38 +417,67 @@ locoh_scaling <- do.call(rbind, locoh_scaling)
 
 ## ---- session ----
 # the machine and the versions of the software used
-cpu <- tryCatch(
-  sub(
-    "^.*:\\s*", "",
-    grep("^model name", readLines("/proc/cpuinfo"), value = TRUE)[1]
-  ),
-  error = function(e) NA_character_,
-  warning = function(w) NA_character_
+# the value of a field of a file of /proc (on Linux), or NA
+proc_field <- function(file, field) {
+  tryCatch(
+    sub(
+      "^.*:\\s*", "",
+      grep(paste0("^", field), readLines(file), value = TRUE)[1]
+    ),
+    error = function(e) NA_character_,
+    warning = function(w) NA_character_
+  )
+}
+memory_kb <- as.numeric(
+  sub(" kB$", "", proc_field("/proc/meminfo", "MemTotal"))
+)
+blas <- sessionInfo()$BLAS
+session_packages <- c(
+  "tidytracks", "amt", "adehabitatHR", "sp", "sf", "terra", "MASS",
+  "KernSmooth"
 )
 session <- data.frame(
   item = c(
-    "date", "R", "platform", "CPU", "cores", "BLAS", "tidytracks", "amt",
-    "adehabitatHR", "sf", "GEOS", "terra", "MASS", "KernSmooth"
+    "date", "R", "platform", "CPU", "cores", "cores used", "memory (GB)",
+    "BLAS", session_packages, "GEOS"
   ),
   value = c(
     format(Sys.Date()),
     R.version.string,
     R.version$platform,
-    cpu,
+    proc_field("/proc/cpuinfo", "model name"),
     parallel::detectCores(),
-    basename(sessionInfo()$BLAS),
-    as.character(utils::packageVersion("tidytracks")),
-    as.character(utils::packageVersion("amt")),
-    as.character(utils::packageVersion("adehabitatHR")),
-    as.character(utils::packageVersion("sf")),
-    sf::sf_extSoftVersion()[["GEOS"]],
-    as.character(utils::packageVersion("terra")),
-    as.character(utils::packageVersion("MASS")),
-    as.character(utils::packageVersion("KernSmooth"))
+    # the cores on which R may run (e.g. a single core, with taskset)
+    proc_field("/proc/self/status", "Cpus_allowed_list"),
+    round(memory_kb / 2^20),
+    # with its directory, which tells which BLAS it is on Debian and Ubuntu
+    # (e.g. blas for the reference BLAS, and openblas-pthread for OpenBLAS)
+    file.path(basename(dirname(blas)), basename(blas)),
+    vapply(
+      session_packages,
+      function(p) as.character(utils::packageVersion(p)),
+      character(1)
+    ),
+    sf::sf_extSoftVersion()[["GEOS"]]
   )
 )
 
 ## ---- save ----
+run_minutes <- as.numeric(difftime(Sys.time(), start_time, units = "mins"))
+# the most memory used by R during the benchmark
+peak_memory_kb <- as.numeric(
+  sub(" kB$", "", proc_field("/proc/self/status", "VmHWM"))
+)
+session <- rbind(
+  session,
+  data.frame(
+    item = c("run time (minutes)", "peak memory (GB)"),
+    value = c(round(run_minutes), round(peak_memory_kb / 2^20))
+  )
+)
+# system.time() measures times to the millisecond
+timings$seconds <- round(timings$seconds, 3)
+locoh_scaling$seconds <- round(locoh_scaling$seconds, 3)
 write.csv(
   timings,
   file.path(out_dir, "hr_benchmark_timings.csv"),
@@ -456,6 +519,5 @@ print(aggregate(
   FUN = max
 ))
 message(
-  "Results saved in ", out_dir, ", after ",
-  format(round(difftime(Sys.time(), start_time, units = "mins"), 1))
+  "Results saved in ", out_dir, ", after ", round(run_minutes, 1), " minutes"
 )

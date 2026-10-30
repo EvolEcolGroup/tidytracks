@@ -1,10 +1,10 @@
 # Simulation, with amt, of the tracks used to benchmark the home range
 # estimators of tidytracks against those of amt and adehabitatHR (with
-# hr_packages_benchmark.R). The benchmark is shown in the article
-# "Benchmarking home ranges against amt and adehabitatHR" (hr_benchmark.Rmd,
-# in the parent directory of this script), which also shows the code of the
-# chunks of this script (the sections that start with a "## ---- label" line,
-# read with knitr::read_chunk()).
+# hr_benchmark.R). The benchmark is shown in the article "Benchmark of home
+# range estimators" (hr_benchmark.Rmd, in the parent directory of this
+# script), which also shows the code of the chunks of this script (the
+# sections that start with a "## ---- label" line, read with
+# knitr::read_chunk()).
 #
 # The tracks are stored in vignettes/articles/data/hr_benchmark_tracks.rds,
 # so the benchmark can be run without simulating them again. To simulate

@@ -1,11 +1,11 @@
 ---
-title: "Performance of common track operations"
+title: "Benchmark of common track operations"
 output:
   rmarkdown::html_vignette:
     toc: true
     toc_depth: 2
 vignette: >
-  %\VignetteIndexEntry{Performance of common track operations}
+  %\VignetteIndexEntry{Benchmark of common track operations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,13 +15,12 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-# the code of the benchmark is in the script code/operations_benchmark.R, from
-# which the chunks below are read (purl = FALSE because pkgdown purls this
-# file from the package root when looking for images, where this relative
-# path does not exist)
+# the code of the benchmark is in two scripts in the directory code (one to
+# simulate the tracks, one to run the benchmark), from which the chunks below
+# are read (purl = FALSE because pkgdown purls this file from the package
+# root when looking for images, where these relative paths do not exist)
+knitr::read_chunk("code/operations_benchmark_tracks.R")
 knitr::read_chunk("code/operations_benchmark.R")
-# the results of the benchmark, saved by the script
-benchmark <- readRDS("benchmark-results.rds")
 ```
 
 `tidytracks` works on `move2` objects, and many of its functions do what
@@ -38,8 +37,8 @@ offer them:
   nest, with `track2KBA` (Beal et al. 2021).
 
 It also checks that, given the same settings, they give the same results,
-and shows how the time of each operation grows with the length and the
-number of the tracks.
+and shows how the time of each operation grows with the size of the data, up
+to tens of millions of locations.
 
 The [results](#results) come first. The second part,
 [How the benchmark was run](#how-the-benchmark-was-run), describes the
@@ -54,34 +53,36 @@ library(tidyr)
 library(ggplot2)
 ```
 
-```{r data_set_roles, include = FALSE}
-series_tracks <- benchmark$series$tracks
-series_total <- benchmark$series$total
-# the two data sets on which the packages are compared: a few long tracks
-# (the data set in both series), and ten times as many tracks of medium
-# length (with the same number of locations in all)
-long <- c(tracks = series_tracks, locations = series_total / series_tracks)
-medium <- c(
-  tracks = 10 * series_tracks,
-  locations = series_total / (10 * series_tracks)
-)
+```{r read_results, include = FALSE}
+# the results of the benchmark, saved by the script in the directory data
+timings <- read.csv("data/operations_benchmark_timings.csv")
+checks <- read.csv("data/operations_benchmark_checks.csv")
+session <- read.csv("data/operations_benchmark_session.csv")
 ```
 
 ```{r check_numbers, include = FALSE}
-checks <- benchmark$checks
-# the value of a check, summed over all the data sets
+# the value of a check, summed over the two data sets
 check_total <- function(operation, package, check) {
   sum(checks$value[
     checks$operation == operation & checks$package == package &
       checks$check == check
   ])
 }
-# a count, with a comma for thousands, for the text and tables
-count <- function(operation, package, check) {
-  format(check_total(operation, package, check), big.mark = ",")
+# a count, with a comma for thousands, for the text and tables, or "none"
+count <- function(operation, package, check, zero = "0") {
+  n <- check_total(operation, package, check)
+  if (n == 0) zero else format(n, big.mark = ",")
 }
-# the largest relative difference between step distances (in %), over all
-# the data sets
+# a count with its noun, e.g. "no trips", "1 trip" or "1,000 trips"
+count_of <- function(operation, package, check, noun) {
+  n <- check_total(operation, package, check)
+  paste(
+    count(operation, package, check, zero = "no"),
+    if (n == 1) noun else paste0(noun, "s")
+  )
+}
+# the largest relative difference between step distances (in %), over the
+# two data sets
 distance_diff <- function(package) {
   100 * max(checks$value[
     checks$operation == "distance" & checks$package == package
@@ -105,17 +106,28 @@ stopifnot(
     "trip_split", "both", "other locations in a trip in only one package"
   ) == 0
 )
-trip_version <- benchmark$session$value[benchmark$session$item == "trip"]
+trip_version <- session$value[session$item == "trip"]
 ```
 
 ```{r read_timings, include = FALSE}
 operation_labels <- c(
   distance = "Step distances",
   speed_filter = "Speed filter",
-  trip_split = "Trips"
+  trip_split = "Trip split"
 )
+dataset_labels <- c(
+  medium = "Medium tracks",
+  long = "Long tracks",
+  season = "Tracks of a season",
+  year = "Tracks of a year"
+)
+# the data sets on which the times grow (copies of the medium and long
+# tracks), and those on which the packages are compared (copies of the tracks
+# of a season and of a year)
+growth_sets <- c("medium", "long")
+compared_sets <- c("season", "year")
 package_levels <- c("tidytracks", "move2", "amt", "trip", "track2KBA")
-timings <- benchmark$timings %>%
+timings <- timings %>%
   mutate(
     total = tracks * locations,
     data_set = paste(
@@ -123,125 +135,216 @@ timings <- benchmark$timings %>%
       format(locations, big.mark = ",", trim = TRUE), "locations"
     ),
     operation = factor(operation_labels[operation], operation_labels),
+    dataset = factor(dataset_labels[dataset], dataset_labels),
     package = factor(package, package_levels)
   )
-# the two data sets on which the packages are compared
+# the packages compared for each operation
+operation_packages <- distinct(timings, operation, package)
+# the packages are compared on the copies of the tracks of a season and of a
+# year, with the operations that were not run on them
 compared <- timings %>%
-  filter(
-    (tracks == medium[["tracks"]] & locations == medium[["locations"]]) |
-      (tracks == long[["tracks"]] & locations == long[["locations"]])
-  ) %>%
-  arrange(desc(tracks)) %>%
+  filter(dataset %in% dataset_labels[compared_sets]) %>%
   mutate(data_set = factor(data_set, unique(data_set)))
-# the two series: tracks of increasing length, and the same total number of
-# locations in more and more tracks
-longer_tracks <- timings %>%
-  filter(tracks == series_tracks)
-more_tracks <- timings %>%
-  filter(total == series_total)
+not_run <- compared %>%
+  distinct(dataset, data_set) %>%
+  cross_join(operation_packages) %>%
+  anti_join(compared, by = c("dataset", "operation", "package"))
+# the times on the copies of the medium and long tracks, up to the most copies
+growth_timings <- timings %>%
+  filter(dataset %in% dataset_labels[growth_sets]) %>%
+  mutate(dataset = droplevels(dataset))
+most_copies <- max(growth_timings$copies)
 ```
 
 ```{r timing_numbers, include = FALSE}
-# the time (s) of an operation with a package, on a data set
-time_of <- function(operation, package, tracks, locations) {
+# the most copies of a data set
+copies_of <- function(dataset) {
+  max(timings$copies[timings$dataset == dataset_labels[[dataset]]])
+}
+# the time (s) of an operation with a package, on copies of a data set (by
+# default the most copies)
+time_of <- function(operation, package, dataset, copies = NULL) {
+  if (is.null(copies)) {
+    copies <- copies_of(dataset)
+  }
   timings$seconds[
     timings$operation == operation_labels[[operation]] &
       timings$package == package &
-      timings$tracks == tracks &
-      timings$locations == locations
+      timings$dataset == dataset_labels[[dataset]] &
+      timings$copies == copies
   ]
 }
 # a number with 2 significant digits, for the text
 fmt <- function(x) {
-  formatC(signif(x, 2), format = "fg", digits = 2, big.mark = ",")
+  trimws(formatC(signif(x, 2), format = "fg", digits = 2, big.mark = ","))
 }
-# the time on a data set, and relative to tidytracks
-secs <- function(operation, package, data_set) {
-  fmt(time_of(operation, package, data_set[1], data_set[2]))
+# a time, in seconds, or in minutes from a minute, or in hours from an hour
+fmt_time <- function(seconds) {
+  case_when(
+    seconds < 60 ~ paste(fmt(seconds), "s"),
+    seconds < 3600 ~ paste(fmt(seconds / 60), "min"),
+    TRUE ~ paste(fmt(seconds / 3600), "h")
+  )
 }
-ratio <- function(operation, package, data_set) {
-  time_of(operation, package, data_set[1], data_set[2]) /
-    time_of(operation, "tidytracks", data_set[1], data_set[2])
+secs <- function(operation, package, dataset, copies = NULL) {
+  fmt_time(time_of(operation, package, dataset, copies))
 }
-# the ratios on the two data sets compared, e.g. "2 to 3", or "2" if they are
-# the same
-ratio_range <- function(operation, package) {
-  ratios <- fmt(range(
-    ratio(operation, package, medium),
-    ratio(operation, package, long)
-  ))
+# the time relative to tidytracks
+ratio <- function(operation, package, dataset, copies = NULL) {
+  time_of(operation, package, dataset, copies) /
+    time_of(operation, "tidytracks", dataset, copies)
+}
+# the ratios on two data sets (by default those on which the packages are
+# compared), e.g. "2 to 3", or "2" if they are the same
+ratio_range <- function(operation, package, datasets = compared_sets,
+                        copies = NULL) {
+  ratios <- fmt(range(vapply(
+    datasets,
+    function(dataset) ratio(operation, package, dataset, copies),
+    numeric(1)
+  )))
   if (ratios[1] == ratios[2]) {
     ratios[1]
   } else {
     paste(ratios[1], "to", ratios[2])
   }
 }
+# the times on the data sets on which the packages are compared, e.g. "12 s
+# and 13 s", or "13 s" if they are the same
+time_range <- function(operation, package, datasets = compared_sets) {
+  times <- vapply(
+    datasets,
+    function(dataset) secs(operation, package, dataset),
+    character(1)
+  )
+  paste(unique(times), collapse = " and ")
+}
+# the number of tracks and of locations of copies of a data set (by default
+# the most copies)
+size_of <- function(dataset, copies = NULL, what = "tracks") {
+  if (is.null(copies)) {
+    copies <- copies_of(dataset)
+  }
+  format(
+    unique(timings[[what]][
+      timings$dataset == dataset_labels[[dataset]] & timings$copies == copies
+    ]),
+    big.mark = ","
+  )
+}
+# the most copies on which track2KBA was run, and their number of locations
+kba_copies <- max(timings$copies[timings$package == "track2KBA"])
+kba_locations <- unique(
+  timings$total[timings$package == "track2KBA" & timings$copies == kba_copies]
+)
 ```
 
 ```{r growth_numbers, include = FALSE}
-track_lengths <- sort(unique(longer_tracks$locations))
-longest <- max(track_lengths)
-track_counts <- sort(unique(more_tracks$tracks))
-most <- max(track_counts)
-# the largest data set (the longest tracks), the data set with the most
-# tracks, and the single track
-largest <- c(series_tracks, longest)
-many <- c(most, series_total / most)
-single <- c(1, series_total)
-# the time per location (in microseconds) on the largest data set
-per_location <- function(operation, package) {
-  fmt(
-    1e6 * time_of(operation, package, largest[1], largest[2]) /
-      prod(largest)
-  )
+# the medium and long tracks have the same number of locations, for the same
+# number of copies
+stopifnot(all(
+  timings$total[timings$dataset == dataset_labels[["medium"]]] ==
+    timings$total[timings$dataset == dataset_labels[["long"]]]
+))
+all_copies <- sort(unique(timings$copies))
+most_locations <- max(timings$total)
+# the time per location (in microseconds) on the most copies of a data set
+per_location <- function(operation, package, dataset) {
+  fmt(1e6 * time_of(operation, package, dataset) / most_locations)
 }
-# how many times longer an operation takes on tracks 10 times as long, in the
-# series of longer tracks
-growth <- function(operation, package, locations) {
-  fmt(
-    time_of(operation, package, series_tracks, 10 * locations) /
-      time_of(operation, package, series_tracks, locations)
-  )
+# the overhead of each track (in ms), from the times on the same number of
+# locations in the medium and long tracks
+per_track_ms <- function(operation, package, copies = most_copies) {
+  n_tracks <- function(dataset) {
+    unique(timings$tracks[
+      timings$dataset == dataset_labels[[dataset]] & timings$copies == copies
+    ])
+  }
+  time_diff <- time_of(operation, package, "medium", copies) -
+    time_of(operation, package, "long", copies)
+  1000 * time_diff / (n_tracks("medium") - n_tracks("long"))
 }
-# the overhead of each track (in ms), from the times on the same locations in
-# the most tracks and in the series_tracks tracks (rather than in a single
-# track, on which some operations take longer, e.g. track2KBA)
-per_track <- function(operation, package) {
-  many_time <- time_of(operation, package, many[1], many[2])
-  few_time <- time_of(
-    operation, package, series_tracks, series_total / series_tracks
-  )
-  fmt(1000 * (many_time - few_time) / (most - series_tracks))
+per_track <- function(operation, package, copies = most_copies) {
+  fmt(per_track_ms(operation, package, copies))
 }
-# the time that track2KBA would take on the largest data set (in minutes),
-# from its time on a single track of the same length
-kba_largest <- round(
-  series_tracks * time_of("trip_split", "track2KBA", 1, longest) / 60
+# how many times longer an operation takes on 10 times as many copies
+growth_ratio <- function(operation, package, dataset, copies) {
+  time_of(operation, package, dataset, 10 * copies) /
+    time_of(operation, package, dataset, copies)
+}
+growth <- function(operation, package, dataset, copies) {
+  fmt(growth_ratio(operation, package, dataset, copies))
+}
+# how many times as many medium tracks as long tracks
+track_ratio <- unique(
+  timings$tracks[timings$dataset == dataset_labels[["medium"]]] /
+    timings$tracks[timings$dataset == dataset_labels[["long"]]]
+)
+# the time (s) that track2KBA would take on the data sets on which the
+# packages are compared, if its time only grew in proportion to the number of
+# locations (which it underestimates, as its time also grows with the number
+# of tracks), from its time on the long tracks, which are the fewest; rounded
+# down to the minute, as a lower bound
+kba_compared <- 60 * floor(
+  time_of("trip_split", "track2KBA", "long", kba_copies) *
+    most_locations / kba_locations / 60
+)
+# how many times longer each operation takes on 10 times as many copies of
+# the medium tracks, up to the most copies on which it was run; the speed
+# filter of trip and track2KBA select the locations of each track from all
+# the locations, so their times grow with the square of the number of tracks
+medium_growth <- timings %>%
+  filter(dataset == dataset_labels[["medium"]]) %>%
+  group_by(operation, package) %>%
+  summarise(
+    growth = seconds[copies == max(copies)] /
+      seconds[copies == max(copies) / 10],
+    .groups = "drop"
+  ) %>%
+  mutate(
+    quadratic = package == "track2KBA" |
+      (package == "trip" & operation == operation_labels[["speed_filter"]])
+  )
+# the text below assumes that the overhead of each track is less than a
+# millisecond for the operations of tidytracks, that track2KBA was also run on
+# 10 times fewer copies than the most on which it was run, and that, on the
+# medium tracks, 10 times as many copies take the speed filter of trip and
+# track2KBA more than 30 times as long, and the other operations less than 20
+# times as long (about in proportion to the number of locations, give or take
+# the variation of single timings)
+stopifnot(
+  all(vapply(
+    names(operation_labels),
+    function(operation) per_track_ms(operation, "tidytracks") < 1,
+    logical(1)
+  )),
+  (kba_copies / 10) %in% all_copies,
+  length(track_ratio) == 1,
+  all(medium_growth$growth[medium_growth$quadratic] > 30),
+  all(medium_growth$growth[!medium_growth$quadratic] < 20)
 )
 ```
 
 ```{r summary_numbers, include = FALSE}
 # the range of the times of the other packages relative to tidytracks, for
-# the step distances on the two data sets compared
+# the step distances on the data sets on which the packages are compared, and
+# the slowest of them
 distance_ratios <- fmt(range(vapply(
   c("move2", "amt", "trip"),
   function(package) {
-    c(ratio("distance", package, medium), ratio("distance", package, long))
+    vapply(
+      compared_sets,
+      function(dataset) ratio("distance", package, dataset),
+      numeric(1)
+    )
   },
-  numeric(2)
+  numeric(length(compared_sets))
 )))
-# the text below assumes that the overhead of each track is less than a
-# millisecond for the trips of tidytracks, and that the time of its speed
-# filter hardly depends on the number of tracks (within 50% between a single
-# track and the most tracks, with the same locations)
-speed_filter_times <- c(
-  time_of("speed_filter", "tidytracks", single[1], single[2]),
-  time_of("speed_filter", "tidytracks", many[1], many[2])
-)
-stopifnot(
-  as.numeric(per_track("trip_split", "tidytracks")) < 1,
-  max(speed_filter_times) < 1.5 * min(speed_filter_times)
-)
+slowest_distance <- compared %>%
+  filter(operation == operation_labels[["distance"]]) %>%
+  slice_max(seconds, n = 1, with_ties = FALSE)
+# its package, as code in the text
+slowest_package <- paste0("`", slowest_distance$package, "`")
 ```
 
 ```{r plot_functions, include = FALSE}
@@ -253,26 +356,17 @@ package_colours <- c(
   trip = "#1baf7a",
   track2KBA = "#c4373b"
 )
-# the times of a series of data sets, with one panel per operation
-series_plot <- function(data, x, x_label) {
-  # nolint next: object_usage_linter.
-  ggplot(data, aes(x = {{ x }}, y = seconds, colour = package)) +
-    geom_line(linewidth = 0.8) +
-    geom_point(size = 2.5) +
-    facet_wrap(~operation, nrow = 1, scales = "free_y") +
-    scale_x_log10(labels = scales::label_comma()) +
-    scale_y_log10(labels = scales::label_number(drop0trailing = TRUE)) +
-    scale_colour_manual(values = package_colours) +
-    labs(x = x_label, y = "Time (s, log scale)", colour = NULL) +
-    theme_minimal() +
-    theme(
-      panel.grid.minor = element_blank(),
-      panel.spacing.x = unit(1.5, "lines"),
-      # room for the last label of the x axis
-      plot.margin = margin(5.5, 15, 5.5, 5.5),
-      legend.position = "top"
-    )
-}
+# times on a log scale, labelled in seconds, minutes and hours, every factor
+# of 10 (or of about 3, for the plot of the data sets on which the packages
+# are compared)
+time_labels <- c(
+  "0.01" = "0.01 s", "0.03" = "0.03 s", "0.1" = "0.1 s", "0.3" = "0.3 s",
+  "1" = "1 s", "3" = "3 s", "10" = "10 s", "60" = "1 min", "180" = "3 min",
+  "600" = "10 min", "1800" = "30 min", "3600" = "1 h"
+)
+time_breaks <- as.numeric(names(time_labels))
+# 0.01 s, 0.1 s, 1 s, 10 s, 1 min, 10 min and 1 h
+decades <- c(1, 3, 5, 7, 8, 10, 12)
 ```
 
 ## Summary
@@ -280,35 +374,71 @@ series_plot <- function(data, x, x_label) {
 - Given the same settings, the packages give the same results, except at
   the ends of some tracks and trips, and up to the differences between
   geodesic distances and distances on a sphere.
-- `tidytracks` is the fastest for the three operations: for the step
-  distances, the other packages take `r distance_ratios[1]` to
-  `r distance_ratios[2]` times as long, and `track2KBA` takes
-  `r ratio_range("trip_split", "track2KBA")` times as long to split the
-  tracks into trips. Its speed filter runs the same algorithm as that of
-  `trip`, which takes `r ratio_range("speed_filter", "trip")` times as long.
-- The time of `tidytracks` grows in proportion to the number of locations.
-  It computes the step distances and runs the speed filter on all the tracks
-  at once, so their times hardly depend on the number of tracks, and its
-  trip splitting adds less than a millisecond per track
-  (`r per_track("trip_split", "tidytracks")` ms), whereas `amt` adds
-  `r per_track("distance", "amt")` ms per track to the step distances, and
-  `trip` `r per_track("speed_filter", "trip")` ms to the speed filter. This
-  overhead matters only for data sets with many short tracks.
+- `tidytracks` is the fastest for the three operations. On
+  `r size_of("season", what = "total")` locations, in
+  `r size_of("season")` tracks of
+  `r size_of("season", what = "locations")` locations or
+  `r size_of("year")` tracks of `r size_of("year", what = "locations")`
+  locations, it computes the step distances in
+  `r time_range("distance", "tidytracks")`, whereas the other packages
+  take `r distance_ratios[1]` to `r distance_ratios[2]` times as long (up to
+  `r fmt_time(slowest_distance$seconds)` with `r slowest_package`). Its speed
+  filter runs the same algorithm as that of `trip`, which takes
+  `r ratio_range("speed_filter", "trip")` times as long, and more on more
+  tracks
+  (`r secs("speed_filter", "trip", "medium")` for
+  `r size_of("medium")` tracks of
+  `r size_of("medium", what = "locations")` locations, against
+  `r secs("speed_filter", "tidytracks", "medium")`). `track2KBA` takes
+  `r ratio_range("trip_split", "track2KBA", growth_sets, kba_copies)` times
+  as long to split the tracks into trips, on
+  `r size_of("medium", kba_copies, "total")` locations
+  (`r secs("trip_split", "track2KBA", "medium", kba_copies)` for
+  `r size_of("medium", kba_copies)` tracks, against
+  `r secs("trip_split", "tidytracks", "medium", kba_copies)` for
+  `tidytracks`), and would take more than `r fmt_time(kba_compared)` on
+  `r size_of("season", what = "total")` locations.
+- The time of `tidytracks` grows in proportion to the number of locations,
+  and hardly depends on the number of tracks: it handles all the tracks at
+  once, and adds less than a millisecond per track, whereas `amt` adds
+  `r per_track("distance", "amt")` ms per track to the step distances. The
+  speed filter of `trip` and `track2KBA` select the locations of each track
+  from all the locations, so their times grow with the square of the number
+  of tracks.
 
-The packages are compared on two data sets of simulated tracks, as in the
-[home range benchmark](hr_benchmark.html): many tracks of medium length
-(`r format(medium[["tracks"]], big.mark = ",")` tracks of
-`r format(medium[["locations"]], big.mark = ",")` locations), and a few long
-tracks (`r format(long[["tracks"]], big.mark = ",")` tracks of
-`r format(long[["locations"]], big.mark = ",")` locations), with the same
-settings in all the packages. Two series of data sets then show how the times
-grow with the length and the number of the tracks (see
-[The data sets](#the-data-sets) and
-[Running the operations](#running-the-operations)).
+The packages are run with the same settings on copies of four sets of
+simulated tracks (see [The data sets](#the-data-sets) and
+[Running the operations](#running-the-operations)). They are compared on
+`r size_of("season", what = "total")` locations in long tracks: copies of
+tracks of a season and of a year, i.e. `r size_of("season")` tracks of
+`r size_of("season", what = "locations")` locations, and
+`r size_of("year")` tracks of `r size_of("year", what = "locations")`
+locations. To show how the times grow with the size of the data, the data
+sets of medium tracks (of `r size_of("medium", what = "locations")`
+locations) and of long tracks (of `r size_of("long", what = "locations")`
+locations) grow from a single copy of the simulated tracks
+(`r size_of("medium", 1)` and `r size_of("long", 1)` tracks) to
+`r most_copies` copies (`r size_of("medium", what = "total")` locations).
 
 ## Do the packages give the same results?
 
 ```{r table_checks, echo = FALSE}
+# the locations flagged differently by the speed filters
+flagged <- count("speed_filter", "tidytracks", "locations flagged")
+speed_filter_diff <- if (
+  check_total("speed_filter", "trip", "locations flagged differently") == 0
+) {
+  paste0("none (of the ", flagged, " flagged locations)")
+} else {
+  paste0(
+    count("speed_filter", "trip", "locations flagged differently"),
+    " of the ", flagged, " flagged locations, in ",
+    count_of(
+      "speed_filter", "trip", "tracks with locations flagged differently",
+      "track"
+    )
+  )
+}
 tibble::tribble(
   ~operation, ~package, ~difference,
   "Step distances", "move2",
@@ -318,61 +448,75 @@ tibble::tribble(
   "Step distances", "amt",
   paste0("up to ", signif(distance_diff("amt"), 2), "% (on a sphere)"),
   "Step distances", "trip", "none (up to rounding errors)",
-  "Speed filter", "trip",
-  paste0(
-    count("speed_filter", "trip", "locations flagged differently"),
-    " of ", count("speed_filter", "tidytracks", "locations flagged"),
-    " flagged locations, in ",
-    count("speed_filter", "trip", "tracks with locations flagged differently"),
-    " tracks"
-  ),
-  "Trips", "track2KBA",
+  "Speed filter", "trip", speed_filter_diff,
+  "Trip split", "track2KBA",
   paste0(
     "only at the ends of trips (",
-    count("trip_split", "track2KBA", "returns to the nest in a trip"),
-    " locations) and of tracks (",
-    count("trip_split", "tidytracks", "trips of the last location of a track"),
-    " trips)"
+    count_of(
+      "trip_split", "track2KBA", "returns to the nest in a trip", "location"
+    ),
+    ") and of tracks (",
+    count_of(
+      "trip_split", "tidytracks", "trips of the last location of a track",
+      "trip"
+    ),
+    ")"
   )
 ) %>%
   knitr::kable(
     col.names = c("Operation", "Package", "Difference from tidytracks"),
     align = "lll",
-    caption = "Differences between the results, over all the data sets."
+    caption = paste(
+      "Differences between the results, on the simulated medium and long",
+      "tracks (their copies give the same results)."
+    )
   )
 ```
 
 - **Step distances**: `move2` and `amt` measure the steps on a sphere rather
   than on the ellipsoid (with `sf::sf_use_s2(FALSE)`, they give the same
   distances as `tidytracks`).
-- **Speed filter**: the locations flagged differently are in tracks whose
-  second-to-last location is an outlier. `tidytracks` then flags the
-  locations before the outlier, one at a time, until the speeds to the outlier
-  are low enough, whereas `trip` (in version `r trip_version`) flags only the
-  location just before it, as it computes the speeds between locations two
-  steps apart wrongly for longitudes and latitudes. Neither package can flag
-  the first two and last two locations of a track, whose speeds are not
-  computed by the filter: `r count("speed_filter", "both", "outliers among the first two or last two locations of a track")`
+- **Speed filter**: the two packages flag the same locations, except in
+  tracks whose second-to-last location is an outlier
+  (`r count_of("speed_filter", "trip", "tracks with locations flagged differently", "track")`
+  here). `tidytracks` then flags the locations before the outlier, one at a
+  time, until the speeds to the outlier are low enough, whereas `trip` (in
+  version `r trip_version`) flags only the location just before it, as it
+  computes the speeds between locations two steps apart wrongly for
+  longitudes and latitudes. Neither package can flag the first two and last
+  two locations of a track, whose speeds are not computed by the filter, and
+  an outlier among them can make them flag other locations of the same track
+  instead
+  (`r count("speed_filter", "both", "outliers among the first two or last two locations of a track", zero = "none")`
   of the `r count("speed_filter", "both", "outliers")` simulated outliers are
-  among them, and other locations of the same tracks are flagged instead
-  (`check_first_last = TRUE` makes `tidytracks` also check the first and last
-  locations).
-- **Trips**: `track2KBA` includes in each trip the first location back within
-  5 km of the nest, and, when the last location of a track is the first one
-  beyond 5 km of the nest, `tidytracks` makes it a trip of its own (an
-  incomplete one), whereas `track2KBA` does not.
+  among them; `check_first_last = TRUE` makes `tidytracks` also check the
+  first and last locations).
+- **Trip split**: `track2KBA` includes in each trip the first location back
+  within 5 km of the nest, and, when the last location of a track is the
+  first one beyond 5 km of the nest, `tidytracks` makes it a trip of its own
+  (an incomplete one), whereas `track2KBA` does not.
 
 ## How long do they take?
+
+On `r size_of("season", what = "total")` locations in long tracks (copies of
+the tracks of a season and of a year):
 
 ```{r plot_timings, echo = FALSE, fig.width = 7, fig.height = 4.5}
 ggplot(compared, aes(x = seconds, y = package, colour = package)) +
   geom_point(size = 3) +
+  # the packages that were not run on these data sets
+  geom_text(
+    data = not_run,
+    aes(x = sqrt(prod(range(compared$seconds))), label = "not run"),
+    colour = "grey40",
+    size = 3
+  ) +
   # each operation with its own packages
   facet_grid(operation ~ data_set, scales = "free_y", space = "free_y") +
-  scale_x_log10(labels = scales::label_number(drop0trailing = TRUE)) +
+  scale_x_log10(breaks = time_breaks, labels = time_labels) +
   scale_y_discrete(limits = rev) +
   scale_colour_manual(values = package_colours, guide = "none") +
-  labs(x = "Time (s, log scale)", y = NULL) +
+  labs(x = "Time (log scale)", y = NULL) +
   theme_minimal() +
   theme(
     panel.grid.minor = element_blank(),
@@ -391,22 +535,21 @@ ggplot(compared, aes(x = seconds, y = package, colour = package)) +
 # one column per package; empty for the packages that do not have an
 # operation
 compared %>%
-  mutate(
-    seconds = formatC(signif(seconds, 2), format = "fg", digits = 2)
-  ) %>%
-  select(data_set, operation, package, seconds) %>%
+  bind_rows(not_run) %>%
+  mutate(time = ifelse(is.na(seconds), "not run", fmt_time(seconds))) %>%
+  select(data_set, operation, package, time) %>%
   arrange(data_set, operation, package) %>%
-  pivot_wider(names_from = package, values_from = seconds, values_fill = "") %>%
+  pivot_wider(names_from = package, values_from = time, values_fill = "") %>%
   select(data_set, operation, any_of(package_levels)) %>%
   knitr::kable(
     col.names = c(
       "Data set", "Operation",
-      intersect(package_levels, levels(droplevels(compared$package)))
+      intersect(package_levels, levels(droplevels(timings$package)))
     ),
     align = "llrrrrr",
     caption = paste(
-      "Time (s) of each operation on all the tracks of each data set",
-      "(median of three to ten runs)."
+      "Time of each operation on all the tracks of the data sets of",
+      "copies of the tracks of a season and of a year."
     )
   )
 ```
@@ -418,83 +561,128 @@ compared %>%
   distances of all the tracks at once (with `geodist`), whereas `amt` and
   `trip` measure each track in turn.
 - **Speed filter**: `tidytracks` and `trip` run the same algorithm, in R, but
-  `trip` filters each track in turn, and computes the speeds between all the
-  remaining locations again in each pass of the filter, whereas `tidytracks`
-  filters all the tracks at once, only computes again the speeds around the
-  locations removed in the previous pass, and only computes geodesic
-  distances where the speeds could exceed the maximum (which it finds with a
-  fast upper bound of the distances): `trip` takes
-  `r ratio_range("speed_filter", "trip")` times as long.
-- **Trips**: `track2KBA` takes `r ratio_range("trip_split", "track2KBA")`
-  times as long as `tidytracks`, as it goes through the locations of each
-  track one at a time, in R.
+  `trip` filters each track in turn (selecting its locations from all the
+  locations), and computes the speeds between all the remaining locations
+  again in each pass of the filter, whereas `tidytracks` filters all the
+  tracks at once, only computes again the speeds around the locations removed
+  in the previous pass, and only computes geodesic distances where the speeds
+  could exceed the maximum (which it finds with a fast upper bound of the
+  distances): `trip` takes `r ratio_range("speed_filter", "trip")` times as
+  long. Its time also grows with the square of the number of tracks (see
+  [How the times grow](#how-the-times-grow)): on the same number of
+  locations in `r size_of("medium")` medium tracks, it takes
+  `r secs("speed_filter", "trip", "medium")`, against
+  `r secs("speed_filter", "tidytracks", "medium")` for `tidytracks`.
+- **Trip split**: `track2KBA` was not run on these data sets, as it would
+  take more than `r fmt_time(kba_compared)` on them
+  (`r fmt(most_locations / kba_locations)` times its time on the
+  `r size_of("long", kba_copies, "total")` locations of
+  `r size_of("long", kba_copies)` long tracks, if its time only grew in
+  proportion to the number of locations, whereas it also grows with the
+  number of tracks). On `r kba_copies` copies of the medium and long tracks,
+  it takes
+  `r ratio_range("trip_split", "track2KBA", growth_sets, kba_copies)` times
+  as long as `tidytracks`
+  (`r secs("trip_split", "track2KBA", "medium", kba_copies)` on the
+  `r size_of("medium", kba_copies)` medium tracks, and
+  `r secs("trip_split", "track2KBA", "long", kba_copies)` on the
+  `r size_of("long", kba_copies)` long tracks), as it goes through the
+  locations of each track one at a time, in R (see below).
 
 ## How the times grow
 
-### Longer tracks
-
-```{r plot_longer_tracks, echo = FALSE, fig.width = 7, fig.height = 3.4}
-series_plot(
-  longer_tracks,
-  locations,
-  paste0(
-    "Locations per track (", series_tracks, " tracks, log scale)"
+```{r plot_growth, echo = FALSE, fig.width = 7, fig.height = 5}
+ggplot(growth_timings, aes(x = total, y = seconds, colour = package)) +
+  geom_line(linewidth = 0.8) +
+  geom_point(size = 2) +
+  facet_grid(dataset ~ operation) +
+  scale_x_log10(
+    labels = scales::label_number(scale_cut = scales::cut_short_scale())
+  ) +
+  scale_y_log10(
+    breaks = time_breaks[decades],
+    labels = time_labels[decades]
+  ) +
+  scale_colour_manual(values = package_colours) +
+  labs(
+    x = "Locations (log scale)",
+    y = "Time (log scale)",
+    colour = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.spacing.x = unit(1.5, "lines"),
+    # room for the last label of the x axis
+    plot.margin = margin(5.5, 15, 5.5, 5.5),
+    legend.position = "top",
+    panel.border = element_rect(
+      colour = "grey70",
+      fill = NA,
+      linewidth = 0.5
+    )
   )
-)
 ```
 
-With `r series_tracks` tracks, the time of the operations grows about in
-proportion to the number of locations: on the `r fmt(prod(largest))`
-locations of the largest data set, `tidytracks` takes about
-`r per_location("distance", "tidytracks")` µs per location for the step
-distances, `r per_location("speed_filter", "tidytracks")` µs for the speed
-filter, and `r per_location("trip_split", "tidytracks")` µs for the trips.
-The time of
-`track2KBA` grows faster than the length of the tracks, as it updates the
-whole track at many of its steps: with tracks ten
-times as long (from `r fmt(track_lengths[1])` to `r fmt(track_lengths[2])`
-locations), it takes `r growth("trip_split", "track2KBA", track_lengths[1])`
-times as long. It was thus not run on the largest data set, on which it would
-take more than `r kba_largest` minutes.
+The data sets grow by copying the tracks, from `r size_of("medium", 1)`
+medium tracks or `r size_of("long", 1)` long tracks
+(`r size_of("medium", 1, "total")` locations) to `r size_of("medium")`
+medium tracks or `r size_of("long")` long tracks
+(`r size_of("medium", what = "total")` locations). The times of `tidytracks`,
+`move2` and `amt`, and the step distances of `trip`, grow about in proportion
+to the number of locations: on the most copies of the medium tracks,
+`tidytracks` takes about
+`r per_location("distance", "tidytracks", "medium")` µs per location for the
+step distances, `r per_location("speed_filter", "tidytracks", "medium")` µs
+for the speed filter, and `r per_location("trip_split", "tidytracks", "medium")`
+µs for the trips, against
+`r per_location("distance", "move2", "medium")` µs for the step distances of
+`move2`.
 
-### More tracks
+The medium and long tracks have the same number of locations, but the medium
+tracks are `r track_ratio` times as many, so the difference between their
+times gives the overhead of each track (e.g. to select its locations, or to
+build its results). `tidytracks` and `move2` compute the step distances of
+all the tracks at once, so their times hardly depend on the number of tracks
+(`r secs("distance", "tidytracks", "medium")` with `tidytracks` for
+`r size_of("medium")` tracks, against
+`r secs("distance", "tidytracks", "long")` for `r size_of("long")` tracks),
+whereas `amt` and `trip` add about `r per_track("distance", "amt")` ms and
+`r per_track("distance", "trip")` ms per track. Likewise, the speed filter of
+`tidytracks` runs on all the tracks at once
+(`r secs("speed_filter", "tidytracks", "medium")` for `r size_of("medium")`
+tracks, against `r secs("speed_filter", "tidytracks", "long")` for
+`r size_of("long")` tracks).
 
-```{r plot_more_tracks, echo = FALSE, fig.width = 7, fig.height = 3.4}
-series_plot(
-  more_tracks,
-  tracks,
-  paste0(
-    "Number of tracks (", fmt(series_total), " locations in all, log scale)"
-  )
-)
-```
-
-With the same `r fmt(series_total)` locations in more and more tracks, the
-time of the operations that handle each track in turn grows with the number
-of tracks. `tidytracks` and `move2` compute the step distances of all the
-tracks at once, so their time hardly depends on the number of tracks
-(`r secs("distance", "tidytracks", many)` s with `tidytracks` for
-`r fmt(most)` tracks, against `r secs("distance", "tidytracks", single)` s
-for a single track), whereas `amt` and `trip` add about
-`r per_track("distance", "amt")` ms and `r per_track("distance", "trip")` ms
-per track. Likewise, the speed filter of `tidytracks` runs on all the tracks
-at once (`r secs("speed_filter", "tidytracks", many)` s for `r fmt(most)`
-tracks, against `r secs("speed_filter", "tidytracks", single)` s for a single
-track), whereas `trip` adds about `r per_track("speed_filter", "trip")` ms
-per track. Trip splitting adds about
-`r per_track("trip_split", "tidytracks")` ms per track with `tidytracks`.
-`track2KBA` adds the trips of each track to those of the previous tracks with
-`rbind()`, which copies them all each time, so it takes
-`r secs("trip_split", "track2KBA", many)` s on the `r fmt(most)` tracks.
+The speed filter of `trip` and `track2KBA` select the locations of each track
+from all the locations, which takes longer the more locations there are, so
+the overhead of each track grows with the size of the data: `trip` adds about
+`r per_track("speed_filter", "trip", most_copies / 10)` ms per track to the
+speed filter on `r most_copies / 10` copies of the tracks, and
+`r per_track("speed_filter", "trip")` ms on `r most_copies` copies. Their
+times thus grow with the square of the number of tracks: ten times as many
+copies of the medium tracks take `trip`
+`r growth("speed_filter", "trip", "medium", most_copies / 10)` times as long
+to filter them (from `r size_of("medium", most_copies / 10)` to
+`r size_of("medium")` tracks), and `track2KBA`
+`r growth("trip_split", "track2KBA", "medium", kba_copies / 10)` times as
+long to split them into trips (from `r size_of("medium", kba_copies / 10)` to
+`r size_of("medium", kba_copies)` tracks), as it also adds the trips of each
+track to those of the previous tracks with `rbind()`, which copies them all
+each time.
 
 # How the benchmark was run
 
-The benchmark takes about `r round(benchmark$run_minutes / 5) * 5` minutes to
-run, so it was run once with the script
+The benchmark takes about
+`r round(as.numeric(session$value[session$item == "run time (minutes)"]) / 10) * 10`
+minutes to run, so it was run once with the script
 `vignettes/articles/code/operations_benchmark.R` (in the source code of the
-package), and its results are read here from
-`vignettes/articles/benchmark-results.rds`. The code shown below is taken
-from that script. Timings depend on the machine (see
+package), and its results are read here from the directory
+`vignettes/articles/data`. It uses tracks simulated beforehand with the
+script `vignettes/articles/code/operations_benchmark_tracks.R`, and stored in
+the same directory, so it can be run again (e.g. on another machine) without
+simulating them. The code shown below is taken from these two scripts.
+Timings depend on the machine (see
 [Machine and software](#machine-and-software)), but the differences between
 the packages, and how the times grow with the size of the data, should be
 similar on other machines.
@@ -507,8 +695,7 @@ The benchmark uses these packages:
 ## Simulating tracks
 
 The tracks are those of a central place forager, such as a seabird breeding
-in a colony, with a GPS location every 5 minutes. They are simulated, so that
-data sets of any size can be made with the same properties:
+in a colony, with a GPS location every 5 minutes:
 
 ```{r simulate-tracks}
 ```
@@ -517,7 +704,12 @@ For example, the first two days of three tracks (the black points are the
 nests, and the lines that leave the map go to outliers):
 
 ```{r example_tracks, fig.width = 7, fig.height = 3}
-example_tracks <- simulate_tracks(n_tracks = 3, n_locations = 576, seed = 1)
+example_tracks <- simulate_tracks(
+  "example",
+  n_tracks = 3,
+  n_locations = 576,
+  seed = 1
+)
 ggplot(example_tracks, aes(lon, lat)) +
   geom_path(colour = "grey40", linewidth = 0.3) +
   geom_point(
@@ -538,59 +730,61 @@ ggplot(example_tracks, aes(lon, lat)) +
 
 ## The data sets
 
+We simulate four sets of tracks: tracks of medium length, and fewer, longer
+tracks, with the same number of locations in all (about three and a half days
+and five weeks of tracking respectively), and a few tracks of a season and of
+a year (about three and a half months and a year of tracking):
+
+```{r simulate-datasets, eval = FALSE}
+```
+
+The tracks were simulated once (with `code/operations_benchmark_tracks.R`),
+and stored in `data/operations_benchmark_tracks.rds`, from which the
+benchmark reads them:
+
+```{r read-tracks, eval = FALSE}
+```
+
 The time taken by an operation on a set of tracks has two parts: one that
-grows with the number of locations, and an overhead for each track (e.g. to
-select its locations, or to build its results). The benchmark uses two series
-of data sets: tracks of increasing length (with the same number of tracks),
-and the same total number of locations split into an increasing number of
-tracks (from a single long track to many short ones):
+grows with the number of locations, and an overhead for each track. To see
+how each part grows, the operations are timed on more and more copies of the
+medium and long tracks. The packages are compared on copies of the tracks of
+a season and of a year, with as many locations as the most copies of the
+medium and long tracks:
 
-```{r data-sets, eval = FALSE}
+```{r copies, eval = FALSE}
 ```
-
-```{r data-sets-table, eval = FALSE}
-```
-
-Two of these data sets, many tracks of medium length and a few long tracks,
-are those on which the packages are compared:
 
 ```{r table_data_sets, echo = FALSE}
-data_sets <- benchmark$timings %>%
-  distinct(tracks, locations) %>%
-  mutate(
-    total = tracks * locations,
-    days = locations * 5 / (60 * 24),
-    comparison = case_when(
-      tracks == long[["tracks"]] & locations == long[["locations"]] ~
-        "long tracks",
-      tracks == medium[["tracks"]] & locations == medium[["locations"]] ~
-        "medium tracks",
-      TRUE ~ ""
-    ),
-    series = case_when(
-      tracks == series_tracks & total == series_total ~ "both",
-      tracks == series_tracks ~ "longer tracks",
-      TRUE ~ "more tracks"
-    )
-  )
-stopifnot(sum(data_sets$comparison != "") == 2)
-data_sets %>%
-  # the series of longer tracks first, then the other data sets
-  arrange(tracks != series_tracks, tracks, locations) %>%
-  mutate(
-    across(
-      c(tracks, locations, total),
-      ~ formatC(.x, format = "d", big.mark = ",")
-    ),
-    days = formatC(signif(days, 2), format = "fg", digits = 2)
-  ) %>%
-  select(tracks, locations, days, total, comparison, series) %>%
+# one row per number of locations, and one column per set of simulated
+# tracks, with the number of tracks of its copies
+timings %>%
+  distinct(dataset, tracks, total) %>%
+  pivot_wider(names_from = dataset, values_from = tracks) %>%
+  arrange(total) %>%
+  mutate(across(
+    everything(),
+    ~ ifelse(is.na(.x), "", formatC(.x, format = "d", big.mark = ","))
+  )) %>%
+  select(total, all_of(unname(dataset_labels))) %>%
   knitr::kable(
     col.names = c(
-      "Tracks", "Locations per track", "Days per track", "Total locations",
-      "Comparison", "Series"
+      "Locations",
+      paste(
+        "Tracks of",
+        vapply(
+          names(dataset_labels),
+          function(dataset) size_of(dataset, what = "locations"),
+          character(1)
+        ),
+        "locations"
+      )
     ),
-    align = "rrrrll"
+    align = "rrrrr",
+    caption = paste(
+      "The data sets: the number of tracks of each length (copies of the",
+      "simulated tracks), for each number of locations."
+    )
   )
 ```
 
@@ -624,16 +818,16 @@ The settings are matched so that the packages give the same results:
   maximum speed of 120 km/h (`trip` takes it in km/h, for longitudes and
   latitudes). The optional check of the first and last locations of each
   track of `tidytracks` is off by default.
-- **Trips**: both packages use the nest of each animal, start a trip when
+- **Trip split**: both packages use the nest of each animal, start a trip when
   the animal goes further than 5 km from it, end it when it comes back
   within 5 km, and keep the locations at the nest. `track2KBA` drops trips
   shorter than a minimum duration, which is set to 0 here, as `tidytracks`
   has none.
 
-Each operation is run once, as a warm-up, which also gives the results
-compared, and then, if that took less than a minute, again until these runs
-have taken a minute (but at least three and at most ten times), of which the
-median time is reported:
+Each operation is run once, on an otherwise idle machine, and on a single
+performance core of its CPU (see
+[Running the benchmark again](#running-the-benchmark-again)); the operations
+that take long are timed precisely enough by a single run:
 
 ```{r timing, eval = FALSE}
 ```
@@ -642,22 +836,22 @@ median time is reported:
 ```
 
 The results of each package are then compared with those of `tidytracks`, on
-each data set:
+the simulated medium and long tracks:
 
 ```{r checks, eval = FALSE}
 ```
 
 ## From the results to the tables and plots
 
-The benchmark saves its results in `benchmark-results.rds`, which is read and
-summarised for the [results](#results) above with this code:
+The benchmark saves its results in `data/operations_benchmark_*.csv`, which
+are read and summarised for the [results](#results) above with this code:
 
-```{r, ref.label = c("results_packages", "data_set_roles", "read_timings"), eval = FALSE}
+```{r, ref.label = c("results_packages", "read_results", "read_timings"), eval = FALSE}
 ```
 
 and the plots of the timings are drawn with:
 
-```{r, ref.label = c("plot_functions", "plot_timings", "plot_longer_tracks", "plot_more_tracks"), eval = FALSE}
+```{r, ref.label = c("plot_functions", "plot_timings", "plot_growth"), eval = FALSE}
 ```
 
 ## Running the benchmark again
@@ -665,22 +859,34 @@ and the plots of the timings are drawn with:
 To run the benchmark again (e.g. after changing `tidytracks`, or on another
 machine), install `tidytracks` (with `R CMD INSTALL`, rather than loading it
 with `devtools::load_all()`, which compiles its C++ code without
-optimisation) and the other packages, and run, on an otherwise idle machine:
+optimisation) and the other packages, and run, on an otherwise idle machine
+with more than `r session$value[session$item == "peak memory (GB)"]` GB of
+memory (the most that the benchmark used, on the largest data sets):
 
 ```sh
 cd vignettes/articles
-Rscript code/operations_benchmark.R
+taskset -c 4 Rscript code/operations_benchmark.R
 ```
 
-which overwrites `benchmark-results.rds`; then render this article again.
-`Rscript code/operations_benchmark.R quick` runs everything on a few small
-data sets in less than a minute, to check the script, and saves its results
-in a temporary directory instead.
+which overwrites `data/operations_benchmark_*.csv`; then render this article
+again. `taskset -c 4` (on Linux) runs R on core 4 only: on a CPU with
+performance and efficiency cores, such as the Intel i9-13900 used here, the
+efficiency cores are almost half as fast, and R could otherwise move from one
+kind of core to the other during the benchmark, which would change the times
+of some operations more than others. Use one of the performance cores
+(`lscpu -e` lists the cores, with their maximum frequency), or drop
+`taskset -c 4` on a CPU whose cores are all the same.
+
+`Rscript code/operations_benchmark.R quick` runs everything on the first
+locations of a few tracks, to check the script, and saves its results in a
+temporary directory instead. The simulated tracks are only needed again for a
+different simulation: `Rscript code/operations_benchmark_tracks.R` simulates
+them and overwrites `data/operations_benchmark_tracks.rds`.
 
 ## Machine and software
 
 ```{r table_session, echo = FALSE}
-benchmark$session %>%
+session %>%
   knitr::kable(col.names = c("", ""))
 ```
 
