@@ -88,8 +88,8 @@ ctmm_tt_summary(buffalo_fit)
 #> # A tibble: 2 × 12
 #>   track model_name     dof_area  area_low  area_est  area_high tau_position_low
 #>   <fct> <chr>             <dbl>     [m^2]     [m^2]      [m^2]              [s]
-#> 1 Cilla OU anisotropic     3.29 22314822. 98190269. 229207954.           25886.
-#> 2 Gabs  OU anisotropic     1.68  8261025. 91503637. 272347023.           33010.
+#> 1 Cilla OU anisotropic     3.29 22314818. 98190277. 229207994.           25886.
+#> 2 Gabs  OU anisotropic     1.68  8261023. 91503644. 272347060.           33010.
 #> # ℹ 5 more variables: tau_position_est [s], tau_position_high [s],
 #> #   diffusion_low [m^2/s], diffusion_est [m^2/s], diffusion_high [m^2/s]
 ```

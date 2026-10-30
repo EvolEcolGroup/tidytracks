@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Benchmarking home ranges against amt and adehabitatHR • tidytracks</title>
+<title>Benchmark of home range estimators • tidytracks</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Benchmarking home ranges against amt and adehabitatHR">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Benchmark of home range estimators">
 <meta name="robots" content="noindex">
 </head>
 <body>
@@ -36,9 +36,9 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
-    <li><a class="dropdown-item" href="../articles/benchmark.html">Performance of common track operations</a></li>
+    <li><a class="dropdown-item" href="../articles/benchmark.html">Benchmark of common track operations</a></li>
     <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
-    <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
+    <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmark of home range estimators</a></li>
     <li><a class="dropdown-item" href="../articles/reading_cleaning.html">Reading and cleaning data</a></li>
   </ul>
 </li>
@@ -62,7 +62,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Benchmarking home ranges against amt and adehabitatHR</h1>
+      <h1>Benchmark of home range estimators</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/EvolEcolGroup/tidytracks/blob/dev/vignettes/articles/hr_benchmark.Rmd" class="external-link"><code>vignettes/articles/hr_benchmark.Rmd</code></a></small>
@@ -75,8 +75,8 @@
 <code>adehabitatHR</code> (Calenge 2006) can all estimate home ranges
 with minimum convex polygons (MCP), kernel density estimation (KDE) and
 local convex hulls (LoCoH). This article compares how long they take, on
-tracks simulated with <code>amt</code>, and checks that, given the same
-settings, they give the same home ranges.</p>
+tracks simulated with <code>amt</code> and on copies of them, and checks
+that, given the same settings, they give the same home ranges.</p>
 <p>The <a href="#results">results</a> come first. The second part, <a href="#how-the-benchmark-was-run">How the benchmark was run</a>,
 describes the simulated tracks and the benchmark, with their code, and
 how to run it again.</p>
@@ -90,34 +90,36 @@ how to run it again.</p>
 <li>Given the same settings, the three packages give the same MCP and
 LoCoH home ranges. The KDE isopleths of <code>adehabitatHR</code>, and
 those of the binned method of <code>tidytracks</code>, are within about
-0.1% of the exact ones of <code>tidytracks</code>, and those of
-<code>amt</code> within about 1%, as its grid points are not at the
+0.14% of the exact ones of <code>tidytracks</code>, and those of
+<code>amt</code> within about 1.1%, as its grid points are not at the
 centres of the cells.</li>
 <li>
-<code>tidytracks</code> is the fastest for MCP and LoCoH (more than
-10 times faster than <code>amt</code>, and more than 100 times faster
-than <code>adehabitatHR</code>, for LoCoH), and, with its default binned
-method, for the KDE isopleths (2 to 3 times faster than
-<code>amt</code>).</li>
+<code>tidytracks</code> is the fastest for LoCoH: on 100 tracks of
+10,000 locations, it takes 23 s, against 6.3 min for <code>amt</code>,
+and <code>adehabitatHR</code> takes 4.2 min on 100 tracks of 500
+locations (against 1 s). LoCoH in <code>adehabitatHR</code> becomes
+impractical beyond a few thousand locations per track.</li>
+<li>
+<code>tidytracks</code> is also the fastest for MCP
+(<code>amt</code> and <code>adehabitatHR</code> take 3.9 to 11 and 13 to
+39 times as long), and, with its default binned method, for the KDE
+isopleths (<code>amt</code> and <code>adehabitatHR</code> take 2.1 to
+2.3 and 7.4 to 23 times as long).</li>
 <li>For the UDs of long tracks, the binned methods of
-<code>tidytracks</code> and <code>amt</code> are the fastest
-(<code>tidytracks</code> slightly faster), more than 20 times faster
-than the exact methods.</li>
-<li>LoCoH in <code>adehabitatHR</code> becomes impractical beyond a few
-thousand locations per track.</li>
+<code>tidytracks</code> and <code>amt</code> are the fastest, 47 times
+faster than the exact method of <code>tidytracks</code>.</li>
 </ul>
-<p>The packages are compared on two data sets of tracks simulated with
-<code>amt</code>: many tracks of medium length (100 tracks of 500
-locations), and a few long tracks (10 tracks of 10,000 locations), with
-the same settings in all the packages (see <a href="#the-data-sets">The
-data sets</a> and <a href="#running-the-estimators">Running the
-estimators</a>).</p>
+<p>The packages are compared on copies of two sets of tracks simulated
+with <code>amt</code>: tracks of medium length (100 tracks of 500
+locations), and long tracks (10 tracks of 10,000 locations), with the
+same settings in all the packages. The largest data sets have 10 copies
+of these tracks (see <a href="#the-data-sets">The data sets</a> and <a href="#running-the-estimators">Running the estimators</a>).</p>
 </div>
 <div class="section level3">
 <h3 id="do-the-packages-give-the-same-home-ranges">Do the packages give the same home ranges?<a class="anchor" aria-label="anchor" href="#do-the-packages-give-the-same-home-ranges"></a>
 </h3>
 <p>For each method, data set and level, we compare the area of the home
-range of each track from each estimator with the area from
+range of each simulated track from each estimator with the area from
 <code>tidytracks</code> (with its exact method, for the KDE):</p>
 <table class="table">
 <colgroup>
@@ -254,17 +256,19 @@ stretched by up to half a cell towards the edges of the grid.</p>
 <div class="section level3">
 <h3 id="how-long-do-they-take">How long do they take?<a class="anchor" aria-label="anchor" href="#how-long-do-they-take"></a>
 </h3>
+<p>On the largest data sets (10 copies of the simulated tracks):</p>
 <p><img src="hr_benchmark_files/figure-html/plot_timings-1.png" class="r-plt" alt="" width="672"></p>
-<table class="table">
-<caption>Time (s) to estimate the home ranges of all the tracks. For the
-KDE, the column tidytracks is for its default, binned, method.</caption>
+<table style="width:100%;" class="table">
+<caption>Time to estimate the home ranges of all the tracks, on the
+simulated tracks and their copies. For the KDE, the column tidytracks is
+for its default, binned, method.</caption>
 <colgroup>
 <col width="30%">
-<col width="15%">
-<col width="11%">
-<col width="23%">
-<col width="5%">
-<col width="13%">
+<col width="14%">
+<col width="10%">
+<col width="22%">
+<col width="7%">
+<col width="12%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">Data set</th>
@@ -278,75 +282,139 @@ KDE, the column tidytracks is for its default, binned, method.</caption>
 <tr class="odd">
 <td align="left">100 tracks of 500 locations</td>
 <td align="left">MCP</td>
-<td align="right">0.1</td>
+<td align="right">0.039 s</td>
 <td align="right"></td>
-<td align="right">0.74</td>
-<td align="right">1.1</td>
+<td align="right">0.3 s</td>
+<td align="right">0.42 s</td>
 </tr>
 <tr class="even">
 <td align="left">100 tracks of 500 locations</td>
 <td align="left">KDE: UD</td>
-<td align="right">2</td>
-<td align="right">3.6</td>
-<td align="right">1.7</td>
-<td align="right">6.3</td>
+<td align="right">1 s</td>
+<td align="right">1.4 s</td>
+<td align="right">0.72 s</td>
+<td align="right">3.4 s</td>
 </tr>
 <tr class="odd">
 <td align="left">100 tracks of 500 locations</td>
 <td align="left">KDE: isopleths</td>
-<td align="right">2.3</td>
-<td align="right">3.7</td>
-<td align="right">6.6</td>
-<td align="right">23</td>
+<td align="right">1.2 s</td>
+<td align="right">1.6 s</td>
+<td align="right">2.8 s</td>
+<td align="right">9.6 s</td>
 </tr>
 <tr class="even">
 <td align="left">100 tracks of 500 locations</td>
 <td align="left">LoCoH</td>
-<td align="right">2.6</td>
+<td align="right">1 s</td>
 <td align="right"></td>
-<td align="right">49</td>
-<td align="right">700</td>
+<td align="right">18 s</td>
+<td align="right">4.2 min</td>
+</tr>
+<tr class="odd">
+<td align="left">1,000 tracks of 500 locations</td>
+<td align="left">MCP</td>
+<td align="right">0.28 s</td>
+<td align="right"></td>
+<td align="right">3.2 s</td>
+<td align="right">3.8 s</td>
+</tr>
+<tr class="even">
+<td align="left">1,000 tracks of 500 locations</td>
+<td align="left">KDE: UD</td>
+<td align="right">12 s</td>
+<td align="right">17 s</td>
+<td align="right">7.7 s</td>
+<td align="right">28 s</td>
+</tr>
+<tr class="odd">
+<td align="left">1,000 tracks of 500 locations</td>
+<td align="left">KDE: isopleths</td>
+<td align="right">12 s</td>
+<td align="right">17 s</td>
+<td align="right">28 s</td>
+<td align="right">1.5 min</td>
+</tr>
+<tr class="even">
+<td align="left">1,000 tracks of 500 locations</td>
+<td align="left">LoCoH</td>
+<td align="right">11 s</td>
+<td align="right"></td>
+<td align="right">3 min</td>
+<td align="right">not run</td>
 </tr>
 <tr class="odd">
 <td align="left">10 tracks of 10,000 locations</td>
 <td align="left">MCP</td>
-<td align="right">0.055</td>
+<td align="right">0.026 s</td>
 <td align="right"></td>
-<td align="right">0.14</td>
-<td align="right">1.5</td>
+<td align="right">0.063 s</td>
+<td align="right">0.51 s</td>
 </tr>
 <tr class="even">
 <td align="left">10 tracks of 10,000 locations</td>
 <td align="left">KDE: UD</td>
-<td align="right">0.16</td>
-<td align="right">4.1</td>
-<td align="right">0.22</td>
-<td align="right">5.2</td>
+<td align="right">0.099 s</td>
+<td align="right">5.8 s</td>
+<td align="right">0.087 s</td>
+<td align="right">2.5 s</td>
 </tr>
 <tr class="odd">
 <td align="left">10 tracks of 10,000 locations</td>
 <td align="left">KDE: isopleths</td>
-<td align="right">0.33</td>
-<td align="right">4.2</td>
-<td align="right">0.69</td>
-<td align="right">7.1</td>
+<td align="right">0.14 s</td>
+<td align="right">5.8 s</td>
+<td align="right">0.29 s</td>
+<td align="right">3.3 s</td>
 </tr>
 <tr class="even">
 <td align="left">10 tracks of 10,000 locations</td>
 <td align="left">LoCoH</td>
-<td align="right">4.8</td>
+<td align="right">2.4 s</td>
 <td align="right"></td>
-<td align="right">89</td>
+<td align="right">36 s</td>
+<td align="right">not run</td>
+</tr>
+<tr class="odd">
+<td align="left">100 tracks of 10,000 locations</td>
+<td align="left">MCP</td>
+<td align="right">0.14 s</td>
+<td align="right"></td>
+<td align="right">0.56 s</td>
+<td align="right">5.6 s</td>
+</tr>
+<tr class="even">
+<td align="left">100 tracks of 10,000 locations</td>
+<td align="left">KDE: UD</td>
+<td align="right">1.1 s</td>
+<td align="right">53 s</td>
+<td align="right">0.84 s</td>
+<td align="right">25 s</td>
+</tr>
+<tr class="odd">
+<td align="left">100 tracks of 10,000 locations</td>
+<td align="left">KDE: isopleths</td>
+<td align="right">1.3 s</td>
+<td align="right">53 s</td>
+<td align="right">2.8 s</td>
+<td align="right">31 s</td>
+</tr>
+<tr class="even">
+<td align="left">100 tracks of 10,000 locations</td>
+<td align="left">LoCoH</td>
+<td align="right">23 s</td>
+<td align="right"></td>
+<td align="right">6.3 min</td>
 <td align="right">not run</td>
 </tr>
 </tbody>
 </table>
 <ul>
 <li>
-<strong>MCP</strong> takes at most about a second in all three
-packages. <code>tidytracks</code> is the fastest: <code>amt</code> takes
-7.2 times as long on the medium tracks, and <code>adehabitatHR</code> 11
-times (26 times on the long tracks).</li>
+<strong>MCP</strong> takes at most 5.6 s in all three packages.
+<code>tidytracks</code> is the fastest: <code>amt</code> takes 11 times
+as long on the medium tracks, and <code>adehabitatHR</code> 13 times (39
+times on the long tracks).</li>
 <li>
 <strong>KDE</strong>: the exact estimators (<code>tidytracks</code>
 with <code>method = "exact"</code>, and <code>adehabitatHR</code>)
@@ -356,21 +424,21 @@ cells, whilst the binned estimators (<code>tidytracks</code> with its
 default, <code>method = "binned"</code>, and <code>amt</code>) first bin
 the locations onto the grid, so that their time hardly depends on the
 number of locations. On the long tracks, the binned estimators are thus
-much faster: the UDs take 0.16 s with <code>tidytracks</code> and 0.22 s
-with <code>amt</code>, against 4.1 s with the exact method of
-<code>tidytracks</code> (25 times as long) and 5.2 s with
+much faster: the UDs take 1.1 s with <code>tidytracks</code> and 0.84 s
+with <code>amt</code>, against 53 s with the exact method of
+<code>tidytracks</code> (47 times as long) and 25 s with
 <code>adehabitatHR</code>. On the medium tracks, which have fewer
-locations, the kernels take less time than building the UD of each
-track: <code>tidytracks</code> (with either method) and <code>amt</code>
-take 1.7 to 3.6 s, and <code>adehabitatHR</code> 6.3 s. Drawing the
+locations each, the time is mostly spent on building the UD of each
+track: <code>tidytracks</code> takes 12 s (17 s with its exact method),
+<code>amt</code> 7.7 s and <code>adehabitatHR</code> 28 s. Drawing the
 isopleths of the medium tracks adds little to the time of
 <code>tidytracks</code>, which draws them straight from the UDs, without
-building rasters (0.3 s with the binned method), but 4.9 s to that of
-<code>amt</code>, and 17 s to that of <code>adehabitatHR</code>. From
+building rasters (0.21 s with the binned method), but 20 s to that of
+<code>amt</code>, and 1 min to that of <code>adehabitatHR</code>. From
 the locations to the isopleths, the binned method of
 <code>tidytracks</code> is thus the fastest on both data sets:
-<code>amt</code> takes 2.1 to 2.9 times as long, and
-<code>adehabitatHR</code> 10 to 22 times. Most of the time of the exact
+<code>amt</code> takes 2.1 to 2.3 times as long, and
+<code>adehabitatHR</code> 7.4 to 23 times. Most of the time of the exact
 method of <code>tidytracks</code> on long tracks is spent in a matrix
 product (in <code><a href="https://rdrr.io/pkg/MASS/man/kde2d.html" class="external-link">MASS::kde2d()</a></code>), which an optimised BLAS (such
 as OpenBLAS) can make several times faster, as it can the matrix
@@ -378,11 +446,12 @@ products of the binned method; this benchmark used the reference BLAS of
 R.</li>
 <li>
 <strong>LoCoH</strong>: <code>tidytracks</code> is the fastest, by
-far: <code>amt</code> takes 18 to 19 times as long, and
-<code>adehabitatHR</code> 270 times as long on the medium tracks (12
-minutes, against 2.6 s). <code>LoCoH.k()</code> from
-<code>adehabitatHR</code> was not run on the long tracks, as it would
-take hours (see below).</li>
+far: <code>amt</code> takes 16 to 17 times as long (6.3 min on the 100
+long tracks, against 23 s). <code>LoCoH.k()</code> from
+<code>adehabitatHR</code> was only run on the 100 simulated medium
+tracks, on which it takes 240 times as long as <code>tidytracks</code>
+(4.2 min, against 1 s): it would take about 42 min on their 10 copies,
+and 28 h on the 100 long tracks (see below).</li>
 </ul>
 </div>
 <div class="section level3">
@@ -393,25 +462,28 @@ take hours (see below).</li>
 about linearly with the number of locations, whilst that of
 <code>adehabitatHR</code>, which computes the distances between all
 pairs of locations (in R), roughly quadruples each time the number of
-locations doubles. A track of 10,000 locations would thus take it about
-50 minutes, and the 10 long tracks about 8 hours, against 0.5 s per
-track for <code>tidytracks</code>.</p>
+locations doubles: it takes 40 s on 2,000 locations (on 5,000 locations,
+it stopped after several minutes, as it ran out of protection stack,
+even with the largest one that R allows). A track of 10,000 locations
+would thus take it about 17 min, and the 100 long tracks of the largest
+data set about 28 h, against 0.24 s per track for
+<code>tidytracks</code>.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="how-the-benchmark-was-run">How the benchmark was run<a class="anchor" aria-label="anchor" href="#how-the-benchmark-was-run"></a>
 </h2>
-<p>The benchmark takes about 35 minutes to run, so it was run once with
-the script <code>vignettes/articles/code/hr_packages_benchmark.R</code>
-(in the source code of the package), and its results are read here from
-the directory <code>vignettes/articles/data</code>. It uses tracks
-simulated beforehand with the script
+<p>The benchmark takes about 20 minutes to run, so it was run once with
+the script <code>vignettes/articles/code/hr_benchmark.R</code> (in the
+source code of the package), and its results are read here from the
+directory <code>vignettes/articles/data</code>. It uses tracks simulated
+beforehand with the script
 <code>vignettes/articles/code/hr_benchmark_tracks.R</code>, and stored
 in the same directory, so it can be run again (e.g. on another machine)
 without simulating them. The code shown below is taken from these two
 scripts. Timings depend on the machine (see <a href="#machine-and-software">Machine and software</a>), but the
-differences between the packages should be similar on other
-machines.</p>
+differences between the packages, and how the times grow with the size
+of the data, should be similar on other machines.</p>
 <p>The benchmark uses these packages:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/EvolEcolGroup/tidytracks" class="external-link">tidytracks</a></span><span class="op">)</span></span>
@@ -498,9 +570,9 @@ centre:</p>
 <div class="section level3">
 <h3 id="the-data-sets">The data sets<a class="anchor" aria-label="anchor" href="#the-data-sets"></a>
 </h3>
-<p>We simulate two data sets, with the same model: many tracks of medium
-length, and a few long tracks (with one location per hour, about three
-weeks and fourteen months of tracking respectively):</p>
+<p>We simulate two sets of tracks, with the same model: tracks of medium
+length, and fewer, longer tracks (with one location per hour, about
+three weeks and fourteen months of tracking respectively):</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the number of tracks and of locations per track of each data set</span></span>
 <span><span class="va">sizes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -538,6 +610,48 @@ reads them:</p>
 <span><span class="co"># (medium and long) with the id, coordinates (x and y, in EPSG:32630) and time</span></span>
 <span><span class="co"># of each location</span></span>
 <span><span class="va">datasets</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/serialize.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_tracks.rds"</span><span class="op">)</span></span></code></pre></div>
+<p>The home ranges are estimated on these tracks, and on copies of
+them:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># The home ranges are estimated on the simulated tracks, and on 10 copies of</span></span>
+<span><span class="co"># them (1,000 tracks of 500 locations, or 100 tracks of 10,000 locations)</span></span>
+<span><span class="va">copies</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">10</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># copies of the tracks of a data frame ordered by track and time, each with</span></span>
+<span><span class="co"># its own id (that of the track, after the number of the copy), so that the</span></span>
+<span><span class="co"># copies are also ordered by track and time</span></span>
+<span><span class="va">recycle_tracks</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">df</span>, <span class="va">n_copies</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="va">n_copies</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="va">copy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n_copies</span><span class="op">)</span>, each <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">out</span> <span class="op">&lt;-</span> <span class="va">df</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span><span class="op">)</span>, <span class="va">n_copies</span><span class="op">)</span>, <span class="op">]</span></span>
+<span>  <span class="va">out</span><span class="op">$</span><span class="va">id</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
+<span>    <span class="st">"copy"</span>, <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"%0"</span>, <span class="fu"><a href="https://rdrr.io/r/base/nchar.html" class="external-link">nchar</a></span><span class="op">(</span><span class="va">n_copies</span><span class="op">)</span>, <span class="st">"d"</span><span class="op">)</span>, <span class="va">copy</span><span class="op">)</span>, <span class="st">"_"</span>, <span class="va">out</span><span class="op">$</span><span class="va">id</span></span>
+<span>  <span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
+<span>  <span class="va">out</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<table class="table">
+<caption>The data sets.</caption>
+<thead><tr class="header">
+<th align="right">Copies</th>
+<th align="left">Medium tracks</th>
+<th align="left">Long tracks</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">100 tracks of 500 locations</td>
+<td align="left">10 tracks of 10,000 locations</td>
+</tr>
+<tr class="even">
+<td align="right">10</td>
+<td align="left">1,000 tracks of 500 locations</td>
+<td align="left">100 tracks of 10,000 locations</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level3">
 <h3 id="running-the-estimators">Running the estimators<a class="anchor" aria-label="anchor" href="#running-the-estimators"></a>
@@ -547,7 +661,7 @@ object for <code>tidytracks</code>, a <code>track_xy</code> for
 <code>amt</code> and a <code>SpatialPointsDataFrame</code> (from
 <code>sp</code>) for <code>adehabitatHR</code>. These are built from the
 data frame of each data set (outside of the timings):</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the input of each package, built from a data frame of locations</span></span>
 <span><span class="va">make_inputs</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -566,7 +680,7 @@ data frame of each data set (outside of the timings):</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p>The KDEs are estimated on the same grid for all the packages:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the grid on which the KDEs of all the tracks are estimated: the extent of</span></span>
 <span><span class="co"># all the locations, extended on each side by half its longest side, with 200</span></span>
 <span><span class="co"># cells along its longest side. It is given to each package in its own way:</span></span>
@@ -605,7 +719,7 @@ in one call; <code>amt</code> estimates the home range of a single
 track, so its estimators are applied to each track in turn, after
 nesting the tracks as shown in the documentation of
 <code>amt</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">iso_levels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.95</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># The home range of each track, with each method and estimator, from the</span></span>
@@ -754,82 +868,85 @@ which counts the location itself). For each level, the isopleth is the
 union of the smallest hulls whose coverage (the proportion of locations
 in the hulls) is closest to the level.</li>
 </ul>
-<p>Each estimator is run once, and, if that took less than a minute,
-five more times, of which the median time is reported:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Time an estimator: a first run, which also gives its results, then, if it</span></span>
-<span><span class="co"># took less than a minute, 5 more runs, whose median time is reported.</span></span>
-<span><span class="va">time_estimator</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">estimator</span>, <span class="va">input</span>, <span class="va">grid</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">start</span> <span class="op">&lt;-</span> <span class="fu">bench</span><span class="fu">::</span><span class="fu">hires_time</span><span class="op">(</span><span class="op">)</span></span>
-<span>  <span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">estimator</span><span class="op">(</span><span class="va">input</span>, <span class="va">grid</span><span class="op">)</span></span>
-<span>  <span class="va">seconds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu">bench</span><span class="fu">::</span><span class="fu">hires_time</span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="va">start</span><span class="op">)</span></span>
-<span>  <span class="va">runs</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
-<span>  <span class="kw">if</span> <span class="op">(</span><span class="va">seconds</span> <span class="op">&lt;</span> <span class="fl">60</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="va">timing</span> <span class="op">&lt;-</span> <span class="fu">bench</span><span class="fu">::</span><span class="fu">mark</span><span class="op">(</span></span>
-<span>      <span class="fu">estimator</span><span class="op">(</span><span class="va">input</span>, <span class="va">grid</span><span class="op">)</span>,</span>
-<span>      iterations <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>      check <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>      memory <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>      filter_gc <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span>    <span class="op">)</span></span>
-<span>    <span class="va">seconds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">timing</span><span class="op">$</span><span class="va">median</span><span class="op">)</span></span>
-<span>    <span class="va">runs</span> <span class="op">&lt;-</span> <span class="fl">5</span></span>
-<span>  <span class="op">}</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>result <span class="op">=</span> <span class="va">result</span>, seconds <span class="op">=</span> <span class="va">seconds</span>, runs <span class="op">=</span> <span class="va">runs</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
+<p>Each estimator is run once, on an otherwise idle machine, and on a
+single performance core of its CPU (see <a href="#running-the-benchmark-again">Running the benchmark again</a>);
+the estimators that take long are timed precisely enough by a single
+run:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Time an estimator, once (system.time() first frees the memory used by the</span></span>
+<span><span class="co"># previous estimators), and return its result and its time (in s)</span></span>
+<span><span class="va">time_estimator</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">estimator</span>, <span class="va">input</span>, <span class="va">grid</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">seconds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">estimator</span><span class="op">(</span><span class="va">input</span>, <span class="va">grid</span><span class="op">)</span><span class="op">)</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>result <span class="op">=</span> <span class="va">result</span>, seconds <span class="op">=</span> <span class="va">seconds</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">timings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">area_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="kw">for</span> <span class="op">(</span><span class="va">dataset</span> <span class="kw">in</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">datasets</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">df</span> <span class="op">&lt;-</span> <span class="va">datasets</span><span class="op">[[</span><span class="va">dataset</span><span class="op">]</span><span class="op">]</span></span>
-<span>  <span class="va">inputs</span> <span class="op">&lt;-</span> <span class="fu">make_inputs</span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
-<span>  <span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu">make_grid</span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
-<span>  <span class="va">n_tracks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">id</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="kw">for</span> <span class="op">(</span><span class="va">method</span> <span class="kw">in</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">estimators</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="kw">for</span> <span class="op">(</span><span class="va">estimator</span> <span class="kw">in</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">estimators</span><span class="op">[[</span><span class="va">method</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>      <span class="co"># the package of the estimator, i.e. the first word of its name (e.g.</span></span>
-<span>      <span class="co"># tidytracks for "tidytracks (exact)"), which gives its input and how</span></span>
-<span>      <span class="co"># to extract its areas</span></span>
-<span>      <span class="va">package</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">" .*"</span>, <span class="st">""</span>, <span class="va">estimator</span><span class="op">)</span></span>
-<span>      <span class="co"># LoCoH in adehabitatHR would take hours on the long tracks (see the</span></span>
-<span>      <span class="co"># scaling below)</span></span>
-<span>      <span class="kw">if</span> <span class="op">(</span><span class="va">method</span> <span class="op">==</span> <span class="st">"locoh"</span> <span class="op">&amp;&amp;</span> <span class="va">package</span> <span class="op">==</span> <span class="st">"adehabitatHR"</span> <span class="op">&amp;&amp;</span> <span class="va">dataset</span> <span class="op">==</span> <span class="st">"long"</span><span class="op">)</span> <span class="op">{</span></span>
-<span>        <span class="kw">next</span></span>
-<span>      <span class="op">}</span></span>
-<span>      <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Timing "</span>, <span class="va">dataset</span>, <span class="st">", "</span>, <span class="va">method</span>, <span class="st">", "</span>, <span class="va">estimator</span><span class="op">)</span></span>
-<span>      <span class="va">timed</span> <span class="op">&lt;-</span> <span class="fu">time_estimator</span><span class="op">(</span></span>
-<span>        <span class="va">estimators</span><span class="op">[[</span><span class="va">method</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">estimator</span><span class="op">]</span><span class="op">]</span>,</span>
-<span>        <span class="va">inputs</span><span class="op">[[</span><span class="va">package</span><span class="op">]</span><span class="op">]</span>,</span>
-<span>        <span class="va">grid</span></span>
-<span>      <span class="op">)</span></span>
-<span>      <span class="va">timings</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">timings</span><span class="op">)</span> <span class="op">+</span> <span class="fl">1</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>        dataset <span class="op">=</span> <span class="va">dataset</span>,</span>
-<span>        tracks <span class="op">=</span> <span class="va">n_tracks</span>,</span>
-<span>        locations <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="op">/</span> <span class="va">n_tracks</span>,</span>
-<span>        method <span class="op">=</span> <span class="va">method</span>,</span>
-<span>        package <span class="op">=</span> <span class="va">package</span>,</span>
-<span>        estimator <span class="op">=</span> <span class="va">estimator</span>,</span>
-<span>        seconds <span class="op">=</span> <span class="va">timed</span><span class="op">$</span><span class="va">seconds</span>,</span>
-<span>        runs <span class="op">=</span> <span class="va">timed</span><span class="op">$</span><span class="va">runs</span></span>
-<span>      <span class="op">)</span></span>
-<span>      <span class="kw">if</span> <span class="op">(</span><span class="va">method</span> <span class="op"><a href="https://rspatial.github.io/terra/reference/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">areas</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>        <span class="va">area_results</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">area_results</span><span class="op">)</span> <span class="op">+</span> <span class="fl">1</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span><span class="co"># from the smallest data sets to the largest, so that no data set is timed</span></span>
+<span><span class="co"># just after a much larger one</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">n_copies</span> <span class="kw">in</span> <span class="va">copies</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw">for</span> <span class="op">(</span><span class="va">dataset</span> <span class="kw">in</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">datasets</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">df</span> <span class="op">&lt;-</span> <span class="fu">recycle_tracks</span><span class="op">(</span><span class="va">datasets</span><span class="op">[[</span><span class="va">dataset</span><span class="op">]</span><span class="op">]</span>, <span class="va">n_copies</span><span class="op">)</span></span>
+<span>    <span class="va">inputs</span> <span class="op">&lt;-</span> <span class="fu">make_inputs</span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
+<span>    <span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu">make_grid</span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
+<span>    <span class="va">n_tracks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">id</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="kw">for</span> <span class="op">(</span><span class="va">method</span> <span class="kw">in</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">estimators</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>      <span class="kw">for</span> <span class="op">(</span><span class="va">estimator</span> <span class="kw">in</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">estimators</span><span class="op">[[</span><span class="va">method</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>        <span class="co"># the package of the estimator, i.e. the first word of its name (e.g.</span></span>
+<span>        <span class="co"># tidytracks for "tidytracks (exact)"), which gives its input and how</span></span>
+<span>        <span class="co"># to extract its areas</span></span>
+<span>        <span class="va">package</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">" .*"</span>, <span class="st">""</span>, <span class="va">estimator</span><span class="op">)</span></span>
+<span>        <span class="co"># LoCoH in adehabitatHR is only run on the medium tracks, as it would</span></span>
+<span>        <span class="co"># take most of an hour on their copies, and hours on the long tracks</span></span>
+<span>        <span class="co"># (see the scaling below)</span></span>
+<span>        <span class="va">too_long</span> <span class="op">&lt;-</span> <span class="va">dataset</span> <span class="op">==</span> <span class="st">"long"</span> <span class="op">||</span> <span class="va">n_copies</span> <span class="op">&gt;</span> <span class="fl">1</span></span>
+<span>        <span class="kw">if</span> <span class="op">(</span><span class="va">method</span> <span class="op">==</span> <span class="st">"locoh"</span> <span class="op">&amp;&amp;</span> <span class="va">package</span> <span class="op">==</span> <span class="st">"adehabitatHR"</span> <span class="op">&amp;&amp;</span> <span class="va">too_long</span><span class="op">)</span> <span class="op">{</span></span>
+<span>          <span class="kw">next</span></span>
+<span>        <span class="op">}</span></span>
+<span>        <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span></span>
+<span>          <span class="st">"Timing "</span>, <span class="va">method</span>, <span class="st">", "</span>, <span class="va">estimator</span>, <span class="st">" on "</span>, <span class="va">n_copies</span>,</span>
+<span>          <span class="st">" copies of the "</span>, <span class="va">dataset</span>, <span class="st">" tracks"</span></span>
+<span>        <span class="op">)</span></span>
+<span>        <span class="va">timed</span> <span class="op">&lt;-</span> <span class="fu">time_estimator</span><span class="op">(</span></span>
+<span>          <span class="va">estimators</span><span class="op">[[</span><span class="va">method</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">estimator</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>          <span class="va">inputs</span><span class="op">[[</span><span class="va">package</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>          <span class="va">grid</span></span>
+<span>        <span class="op">)</span></span>
+<span>        <span class="va">timings</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">timings</span><span class="op">)</span> <span class="op">+</span> <span class="fl">1</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>          dataset <span class="op">=</span> <span class="va">dataset</span>,</span>
+<span>          copies <span class="op">=</span> <span class="va">n_copies</span>,</span>
+<span>          tracks <span class="op">=</span> <span class="va">n_tracks</span>,</span>
+<span>          locations <span class="op">=</span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/dimensions.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%/%</a></span> <span class="va">n_tracks</span>,</span>
 <span>          method <span class="op">=</span> <span class="va">method</span>,</span>
 <span>          package <span class="op">=</span> <span class="va">package</span>,</span>
 <span>          estimator <span class="op">=</span> <span class="va">estimator</span>,</span>
-<span>          <span class="va">areas</span><span class="op">[[</span><span class="va">method</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">package</span><span class="op">]</span><span class="op">]</span><span class="op">(</span><span class="va">timed</span><span class="op">$</span><span class="va">result</span><span class="op">)</span></span>
+<span>          seconds <span class="op">=</span> <span class="va">timed</span><span class="op">$</span><span class="va">seconds</span></span>
 <span>        <span class="op">)</span></span>
+<span>        <span class="co"># the areas are compared on the simulated tracks (their copies give</span></span>
+<span>        <span class="co"># the same home ranges)</span></span>
+<span>        <span class="kw">if</span> <span class="op">(</span><span class="va">n_copies</span> <span class="op">==</span> <span class="fl">1</span> <span class="op">&amp;&amp;</span> <span class="va">method</span> <span class="op"><a href="https://rspatial.github.io/terra/reference/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">areas</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>          <span class="va">area_results</span><span class="op">[[</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">area_results</span><span class="op">)</span> <span class="op">+</span> <span class="fl">1</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>            dataset <span class="op">=</span> <span class="va">dataset</span>,</span>
+<span>            method <span class="op">=</span> <span class="va">method</span>,</span>
+<span>            package <span class="op">=</span> <span class="va">package</span>,</span>
+<span>            estimator <span class="op">=</span> <span class="va">estimator</span>,</span>
+<span>            <span class="va">areas</span><span class="op">[[</span><span class="va">method</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">package</span><span class="op">]</span><span class="op">]</span><span class="op">(</span><span class="va">timed</span><span class="op">$</span><span class="va">result</span><span class="op">)</span></span>
+<span>          <span class="op">)</span></span>
+<span>        <span class="op">}</span></span>
+<span>        <span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">timed</span><span class="op">)</span></span>
 <span>      <span class="op">}</span></span>
 <span>    <span class="op">}</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">inputs</span>, <span class="va">grid</span><span class="op">)</span></span>
 <span>  <span class="op">}</span></span>
 <span><span class="op">}</span></span>
 <span><span class="va">timings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">timings</span><span class="op">)</span></span>
 <span><span class="va">area_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="va">area_results</span><span class="op">)</span></span></code></pre></div>
-<p>The areas of the home ranges are then extracted from the results of
-each package (with the functions in <code>areas</code>, in the script).
-<code>LoCoH.k()</code> from <code>adehabitatHR</code> is not run on the
-long tracks: it would take hours (see <a href="#locoh-on-a-single-track">LoCoH on a single track</a>).</p>
+<p>The areas of the home ranges of the simulated tracks (whose copies
+give the same home ranges) are then extracted from the results of each
+package (with the functions in <code>areas</code>, in the script).
+<code>LoCoH.k()</code> from <code>adehabitatHR</code> is only run on the
+simulated medium tracks: it would take about 42 min on their copies, and
+2.8 h on the simulated long tracks alone (see <a href="#locoh-on-a-single-track">LoCoH on a single track</a>).</p>
 </div>
 <div class="section level3">
 <h3 id="from-the-results-to-the-tables-and-plots">From the results to the tables and plots<a class="anchor" aria-label="anchor" href="#from-the-results-to-the-tables-and-plots"></a>
@@ -837,12 +954,16 @@ long tracks: it would take hours (see <a href="#locoh-on-a-single-track">LoCoH o
 <p>The benchmark saves its results in
 <code>data/hr_benchmark_*.csv</code>, which are read and summarised for
 the <a href="#results">results</a> above with this code:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># to summarise and plot the results</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org" class="external-link">tidyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span><span class="co"># the results of the benchmark, saved by the script in the directory data</span></span>
 <span><span class="va">area_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_areas.csv"</span><span class="op">)</span></span>
+<span><span class="va">timings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_timings.csv"</span><span class="op">)</span></span>
+<span><span class="va">locoh_scaling</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_locoh_scaling.csv"</span><span class="op">)</span></span>
+<span><span class="va">session</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_session.csv"</span><span class="op">)</span></span>
 <span><span class="co"># the estimators, in the order of the tables and plots</span></span>
 <span><span class="va">estimator_levels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"tidytracks"</span>, <span class="st">"tidytracks (binned)"</span>, <span class="st">"tidytracks (exact)"</span>,</span>
@@ -866,7 +987,6 @@ the <a href="#results">results</a> above with this code:</p>
 <span>    max_diff <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">diff</span><span class="op">)</span>,</span>
 <span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
 <span>  <span class="op">)</span></span>
-<span><span class="va">timings</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_timings.csv"</span><span class="op">)</span></span>
 <span><span class="co"># labels for the plots and tables</span></span>
 <span><span class="va">method_labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  mcp <span class="op">=</span> <span class="st">"MCP"</span>,</span>
@@ -878,44 +998,73 @@ the <a href="#results">results</a> above with this code:</p>
 <span><span class="va">timings</span> <span class="op">&lt;-</span> <span class="va">timings</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    data_set <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
-<span>      <span class="va">tracks</span>, <span class="st">"tracks of"</span>,</span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">tracks</span>, big.mark <span class="op">=</span> <span class="st">","</span>, trim <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="st">"tracks of"</span>,</span>
 <span>      <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">locations</span>, big.mark <span class="op">=</span> <span class="st">","</span>, trim <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="st">"locations"</span></span>
 <span>    <span class="op">)</span>,</span>
-<span>    data_set <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">data_set</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">data_set</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">method_labels</span><span class="op">[</span><span class="va">method</span><span class="op">]</span>, <span class="va">method_labels</span><span class="op">)</span>,</span>
 <span>    package <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">package</span>, <span class="va">package_levels</span><span class="op">)</span>,</span>
 <span>    estimator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">estimator</span>, <span class="va">estimator_levels</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
-<span><span class="va">locoh_scaling</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"data/hr_benchmark_locoh_scaling.csv"</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span><span class="co"># the estimators of each method</span></span>
+<span><span class="va">method_estimators</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">timings</span>, <span class="va">method</span>, <span class="va">package</span>, <span class="va">estimator</span><span class="op">)</span></span>
+<span><span class="co"># the packages are compared on the largest data sets (the most copies of the</span></span>
+<span><span class="co"># tracks), with the estimators that were not run on them</span></span>
+<span><span class="va">most_copies</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">timings</span><span class="op">$</span><span class="va">copies</span><span class="op">)</span></span>
+<span><span class="va">compared</span> <span class="op">&lt;-</span> <span class="va">timings</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">copies</span> <span class="op">==</span> <span class="va">most_copies</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>data_set <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">data_set</span>, <span class="fu"><a href="https://rspatial.github.io/terra/reference/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">data_set</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">not_run</span> <span class="op">&lt;-</span> <span class="va">compared</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">dataset</span>, <span class="va">data_set</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/cross_join.html" class="external-link">cross_join</a></span><span class="op">(</span><span class="va">method_estimators</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter-joins.html" class="external-link">anti_join</a></span><span class="op">(</span><span class="va">compared</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dataset"</span>, <span class="st">"method"</span>, <span class="st">"estimator"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">locoh_scaling</span> <span class="op">&lt;-</span> <span class="va">locoh_scaling</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>package <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">package</span>, <span class="va">package_levels</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>and the plots of the timings are drawn with:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># one colour per package (and the name of each estimator on the y axis)</span></span>
 <span><span class="va">package_colours</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  tidytracks <span class="op">=</span> <span class="st">"#2a78d6"</span>,</span>
 <span>  amt <span class="op">=</span> <span class="st">"#eb6834"</span>,</span>
 <span>  adehabitatHR <span class="op">=</span> <span class="st">"#1baf7a"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">timings</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">seconds</span>, y <span class="op">=</span> <span class="va">estimator</span>, colour <span class="op">=</span> <span class="va">package</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span><span class="co"># times on a log scale, labelled in seconds, minutes and hours, every factor</span></span>
+<span><span class="co"># of 10 (in all the plots, which span too many factors of 10 to label every</span></span>
+<span><span class="co"># factor of about 3)</span></span>
+<span><span class="va">time_labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>  <span class="st">"0.01"</span> <span class="op">=</span> <span class="st">"0.01 s"</span>, <span class="st">"0.03"</span> <span class="op">=</span> <span class="st">"0.03 s"</span>, <span class="st">"0.1"</span> <span class="op">=</span> <span class="st">"0.1 s"</span>, <span class="st">"0.3"</span> <span class="op">=</span> <span class="st">"0.3 s"</span>,</span>
+<span>  <span class="st">"1"</span> <span class="op">=</span> <span class="st">"1 s"</span>, <span class="st">"3"</span> <span class="op">=</span> <span class="st">"3 s"</span>, <span class="st">"10"</span> <span class="op">=</span> <span class="st">"10 s"</span>, <span class="st">"60"</span> <span class="op">=</span> <span class="st">"1 min"</span>, <span class="st">"180"</span> <span class="op">=</span> <span class="st">"3 min"</span>,</span>
+<span>  <span class="st">"600"</span> <span class="op">=</span> <span class="st">"10 min"</span>, <span class="st">"1800"</span> <span class="op">=</span> <span class="st">"30 min"</span>, <span class="st">"3600"</span> <span class="op">=</span> <span class="st">"1 h"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">time_breaks</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">time_labels</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co"># 0.01 s, 0.1 s, 1 s, 10 s, 1 min, 10 min and 1 h</span></span>
+<span><span class="va">decades</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">5</span>, <span class="fl">7</span>, <span class="fl">8</span>, <span class="fl">10</span>, <span class="fl">12</span><span class="op">)</span></span>
+<span><span class="co"># the limits of an axis of times, at the labels just below and above them</span></span>
+<span><span class="va">decade_limits</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">seconds</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">breaks</span> <span class="op">&lt;-</span> <span class="va">time_breaks</span><span class="op">[</span><span class="va">decades</span><span class="op">]</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">breaks</span><span class="op">[</span><span class="va">breaks</span> <span class="op">&lt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">seconds</span><span class="op">)</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">breaks</span><span class="op">[</span><span class="va">breaks</span> <span class="op">&gt;=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">seconds</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">compared</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">seconds</span>, y <span class="op">=</span> <span class="va">estimator</span>, colour <span class="op">=</span> <span class="va">package</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="co"># the combinations that were not run</span></span>
+<span>  <span class="co"># the estimators that were not run on these data sets</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_text.html" class="external-link">geom_text</a></span><span class="op">(</span></span>
-<span>    data <span class="op">=</span> <span class="va">timings</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>      <span class="fu"><a href="https://tidyr.tidyverse.org/reference/complete.html" class="external-link">complete</a></span><span class="op">(</span><span class="va">data_set</span>, <span class="fu"><a href="https://tidyr.tidyverse.org/reference/expand.html" class="external-link">nesting</a></span><span class="op">(</span><span class="va">method</span>, <span class="va">estimator</span>, <span class="va">package</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">seconds</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fl">1</span>, label <span class="op">=</span> <span class="st">"not run"</span><span class="op">)</span>,</span>
+<span>    data <span class="op">=</span> <span class="va">not_run</span>,</span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/prod.html" class="external-link">prod</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">compared</span><span class="op">$</span><span class="va">seconds</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, label <span class="op">=</span> <span class="st">"not run"</span><span class="op">)</span>,</span>
 <span>    colour <span class="op">=</span> <span class="st">"grey40"</span>,</span>
 <span>    size <span class="op">=</span> <span class="fl">3</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="co"># each method with its own estimators</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_grid.html" class="external-link">facet_grid</a></span><span class="op">(</span><span class="va">method</span> <span class="op">~</span> <span class="va">data_set</span>, scales <span class="op">=</span> <span class="st">"free_y"</span>, space <span class="op">=</span> <span class="st">"free_y"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_log10</a></span><span class="op">(</span></span>
-<span>    breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">1</span>, <span class="fl">10</span>, <span class="fl">100</span>, <span class="fl">1000</span><span class="op">)</span>,</span>
-<span>    labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0.1"</span>, <span class="st">"1"</span>, <span class="st">"10"</span>, <span class="st">"100"</span>, <span class="st">"1000"</span><span class="op">)</span></span>
+<span>    breaks <span class="op">=</span> <span class="va">time_breaks</span><span class="op">[</span><span class="va">decades</span><span class="op">]</span>,</span>
+<span>    labels <span class="op">=</span> <span class="va">time_labels</span><span class="op">[</span><span class="va">decades</span><span class="op">]</span>,</span>
+<span>    limits <span class="op">=</span> <span class="fu">decade_limits</span><span class="op">(</span><span class="va">compared</span><span class="op">$</span><span class="va">seconds</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_discrete.html" class="external-link">scale_y_discrete</a></span><span class="op">(</span>limits <span class="op">=</span> <span class="va">rev</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_colour_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="va">package_colours</span>, guide <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Time (s, log scale)"</span>, y <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Time (log scale)"</span>, y <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
 <span>    panel.grid.minor <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_blank</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -949,13 +1098,13 @@ the <a href="#results">results</a> above with this code:</p>
 <span>    expand <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/expansion.html" class="external-link">expansion</a></span><span class="op">(</span>mult <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.05</span>, <span class="fl">0.3</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_log10</a></span><span class="op">(</span></span>
-<span>    breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">1</span>, <span class="fl">10</span>, <span class="fl">100</span><span class="op">)</span>,</span>
-<span>    labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0.1"</span>, <span class="st">"1"</span>, <span class="st">"10"</span>, <span class="st">"100"</span><span class="op">)</span></span>
+<span>    breaks <span class="op">=</span> <span class="va">time_breaks</span><span class="op">[</span><span class="va">decades</span><span class="op">]</span>,</span>
+<span>    labels <span class="op">=</span> <span class="va">time_labels</span><span class="op">[</span><span class="va">decades</span><span class="op">]</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_colour_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="va">package_colours</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    x <span class="op">=</span> <span class="st">"Locations (log scale)"</span>,</span>
-<span>    y <span class="op">=</span> <span class="st">"Time (s, log scale)"</span>,</span>
+<span>    y <span class="op">=</span> <span class="st">"Time (log scale)"</span>,</span>
 <span>    colour <span class="op">=</span> <span class="cn">NULL</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
@@ -969,16 +1118,25 @@ the <a href="#results">results</a> above with this code:</p>
 <code>tidytracks</code> (with <code>R CMD INSTALL</code>, rather than
 loading it with <code>devtools::load_all()</code>, which compiles its
 C++ code without optimisation), <code>amt</code>,
-<code>adehabitatHR</code>, <code>sp</code> and <code>bench</code>, and
-run, on an otherwise idle machine:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="bu">cd</span> vignettes/articles</span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="ex">Rscript</span> code/hr_packages_benchmark.R</span></code></pre></div>
+<code>adehabitatHR</code> and <code>sp</code>, and run, on an otherwise
+idle machine (with a larger protection stack than the default, which
+<code>adehabitatHR</code> exceeds when it builds the polygons of LoCoH
+on thousands of locations):</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="bu">cd</span> vignettes/articles</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="ex">taskset</span> <span class="at">-c</span> 4 Rscript <span class="at">--max-ppsize</span><span class="op">=</span>500000 code/hr_benchmark.R</span></code></pre></div>
 <p>which overwrites <code>data/hr_benchmark_*.csv</code>; then render
-this article again.
-<code>Rscript code/hr_packages_benchmark.R quick</code> runs everything
-on the first locations of a few tracks, to check the script, and saves
-its results in a temporary directory instead. The simulated tracks are
-only needed again for a different simulation:
+this article again. <code>taskset -c 4</code> (on Linux) runs R on core
+4 only: on a CPU with performance and efficiency cores, such as the
+Intel i9-13900 used here, the efficiency cores are almost half as fast,
+and R could otherwise move from one kind of core to the other during the
+benchmark, which would change the times of some estimators more than
+others. Use one of the performance cores (<code>lscpu -e</code> lists
+the cores, with their maximum frequency), or drop
+<code>taskset -c 4</code> on a CPU whose cores are all the same.</p>
+<p><code>Rscript code/hr_benchmark.R quick</code> runs everything on the
+first locations of a few tracks, to check the script, and saves its
+results in a temporary directory instead. The simulated tracks are only
+needed again for a different simulation:
 <code>Rscript code/hr_benchmark_tracks.R</code> simulates them and
 overwrites <code>data/hr_benchmark_tracks.rds</code>.</p>
 </div>
@@ -988,11 +1146,11 @@ overwrites <code>data/hr_benchmark_tracks.rds</code>.</p>
 <table class="table"><tbody>
 <tr class="odd">
 <td align="left">date</td>
-<td align="left">2026-10-28</td>
+<td align="left">2026-10-30</td>
 </tr>
 <tr class="even">
 <td align="left">R</td>
-<td align="left">R version 4.6.1 (2026-06-24)</td>
+<td align="left">R version 4.5.2 (2025-10-31)</td>
 </tr>
 <tr class="odd">
 <td align="left">platform</td>
@@ -1000,15 +1158,23 @@ overwrites <code>data/hr_benchmark_tracks.rds</code>.</p>
 </tr>
 <tr class="even">
 <td align="left">CPU</td>
-<td align="left">Intel(R) Core(TM) i7-10510U CPU @ 1.80GHz</td>
+<td align="left">13th Gen Intel(R) Core(TM) i9-13900</td>
 </tr>
 <tr class="odd">
 <td align="left">cores</td>
+<td align="left">24</td>
+</tr>
+<tr class="even">
+<td align="left">cores used</td>
 <td align="left">4</td>
+</tr>
+<tr class="odd">
+<td align="left">memory (GB)</td>
+<td align="left">126</td>
 </tr>
 <tr class="even">
 <td align="left">BLAS</td>
-<td align="left">libblas.so.3</td>
+<td align="left">blas/libblas.so.3.12.0</td>
 </tr>
 <tr class="odd">
 <td align="left">tidytracks</td>
@@ -1023,12 +1189,12 @@ overwrites <code>data/hr_benchmark_tracks.rds</code>.</p>
 <td align="left">0.4.22</td>
 </tr>
 <tr class="even">
-<td align="left">sf</td>
-<td align="left">1.1.3</td>
+<td align="left">sp</td>
+<td align="left">2.2.3</td>
 </tr>
 <tr class="odd">
-<td align="left">GEOS</td>
-<td align="left">3.12.1</td>
+<td align="left">sf</td>
+<td align="left">1.1.3</td>
 </tr>
 <tr class="even">
 <td align="left">terra</td>
@@ -1041,6 +1207,18 @@ overwrites <code>data/hr_benchmark_tracks.rds</code>.</p>
 <tr class="even">
 <td align="left">KernSmooth</td>
 <td align="left">2.23.27</td>
+</tr>
+<tr class="odd">
+<td align="left">GEOS</td>
+<td align="left">3.12.2</td>
+</tr>
+<tr class="even">
+<td align="left">run time (minutes)</td>
+<td align="left">23</td>
+</tr>
+<tr class="odd">
+<td align="left">peak memory (GB)</td>
+<td align="left">3</td>
 </tr>
 </tbody></table>
 </div>

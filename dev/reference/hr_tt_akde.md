@@ -230,7 +230,7 @@ hr_tt_akde(buffalo_sub, buffalo_fit, levels = c(0.5, 0.95))
 #> Simple feature collection with 4 features and 13 fields
 #> Geometry type: MULTIPOLYGON
 #> Dimension:     XY
-#> Bounding box:  xmin: 30598.58 ymin: -6594.996 xmax: 48214.79 ymax: 7132.412
+#> Bounding box:  xmin: 30598.58 ymin: -6594.997 xmax: 48214.79 ymax: 7132.411
 #> Projected CRS: PROJCRS["unknown",
 #>     BASEGEOGCRS["unknown",
 #>         DATUM["World Geodetic System 1984",

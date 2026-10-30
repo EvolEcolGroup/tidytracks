@@ -28,8 +28,8 @@
 - [`hr_tt_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md)
   gains a `method` argument. Its new default, `"binned"`, bins the
   locations onto the grid and then smooths them with the kernel, which
-  is much faster for many locations (see the article “Benchmarking home
-  ranges against amt and adehabitatHR”).
+  is much faster for many locations (see the article “Benchmark of home
+  range estimators”).
 - New
   [`track_tot_distance()`](https://evolecolgroup.github.io/tidytracks/dev/reference/track_tot_distance.md)
   to compute the total distance travelled along each track, with a
@@ -118,9 +118,14 @@
 
 ### Documentation
 
-- New article, “Benchmarking home ranges against amt and adehabitatHR”,
-  which compares the time taken by the MCP, KDE and LoCoH estimators of
-  tidytracks, amt and adehabitatHR on tracks simulated with amt, and
+- New article, “Benchmark of common track operations”, which compares
+  the time taken by tidytracks, move2, amt, trip and track2KBA to
+  compute step distances, run the McConnell speed filter and split
+  tracks into trips, on up to 30 million simulated locations, and checks
+  that they give the same results.
+- New article, “Benchmark of home range estimators”, which compares the
+  time taken by the MCP, KDE and LoCoH estimators of tidytracks, amt and
+  adehabitatHR on tracks simulated with amt (and copies of them), and
   checks that they give the same home ranges.
 - The new article “Reading and cleaning data”, on the package website,
   shows how to read tracking data (including date-times in different

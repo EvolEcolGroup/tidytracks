@@ -20,9 +20,9 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/animations.html">Animations and maps</a></li>
-    <li><a class="dropdown-item" href="../articles/benchmark.html">Performance of common track operations</a></li>
+    <li><a class="dropdown-item" href="../articles/benchmark.html">Benchmark of common track operations</a></li>
     <li><a class="dropdown-item" href="../articles/ctmm_models.html">Movement models with ctmm</a></li>
-    <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmarking home ranges against amt and adehabitatHR</a></li>
+    <li><a class="dropdown-item" href="../articles/hr_benchmark.html">Benchmark of home range estimators</a></li>
     <li><a class="dropdown-item" href="../articles/reading_cleaning.html">Reading and cleaning data</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -52,7 +52,7 @@
 <li>
 <code><a href="../reference/hr_tt_locoh.html">hr_tt_locoh()</a></code>, a fast implementation to estimate home ranges with local convex hulls (LoCoH).</li>
 <li>
-<code><a href="../reference/hr_tt_kde.html">hr_tt_kde()</a></code> gains a <code>method</code> argument. Its new default, <code>"binned"</code>, bins the locations onto the grid and then smooths them with the kernel, which is much faster for many locations (see the article “Benchmarking home ranges against amt and adehabitatHR”).</li>
+<code><a href="../reference/hr_tt_kde.html">hr_tt_kde()</a></code> gains a <code>method</code> argument. Its new default, <code>"binned"</code>, bins the locations onto the grid and then smooths them with the kernel, which is much faster for many locations (see the article “Benchmark of home range estimators”).</li>
 <li>New <code><a href="../reference/track_tot_distance.html">track_tot_distance()</a></code> to compute the total distance travelled along each track, with a <code>units</code> argument to choose the output units.</li>
 <li>tidytracks can now use the methods of <code>move2utils</code>, a suggested package installed from GitHub with <code>remotes::install_github("move2universe/move2utils")</code>, through wrappers that follow the tidytracks conventions: physical quantities are given as <code>units</code> objects, and events without a location are allowed. Projected coordinates must be in metres, as <code>move2utils</code> assumes.
 <ul><li>
@@ -88,7 +88,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="documentation-development-version">Documentation<a class="anchor" aria-label="anchor" href="#documentation-development-version"></a></h3>
-<ul><li>New article, “Benchmarking home ranges against amt and adehabitatHR”, which compares the time taken by the MCP, KDE and LoCoH estimators of tidytracks, amt and adehabitatHR on tracks simulated with amt, and checks that they give the same home ranges.</li>
+<ul><li>New article, “Benchmark of common track operations”, which compares the time taken by tidytracks, move2, amt, trip and track2KBA to compute step distances, run the McConnell speed filter and split tracks into trips, on up to 30 million simulated locations, and checks that they give the same results.</li>
+<li>New article, “Benchmark of home range estimators”, which compares the time taken by the MCP, KDE and LoCoH estimators of tidytracks, amt and adehabitatHR on tracks simulated with amt (and copies of them), and checks that they give the same home ranges.</li>
 <li>The new article “Reading and cleaning data”, on the package website, shows how to read tracking data (including date-times in different formats), and how to clean them step by step: removing locations at null island, duplicated records and outliers, interpolating missing locations, and resampling tracks to a regular interval.</li>
 </ul></div>
 </div>
