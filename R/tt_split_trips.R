@@ -1,12 +1,23 @@
 #' Split tracks into trips for central place foragers
 #'
 #' @description This function splits tracks into trips for central place
-#'   foragers by identifying the trips based on a distance from the colony/nest.
-#'   Events with an empty geometry (i.e. no location) are assigned to the same
-#'   trip as the preceding event with a location (or the following one, at the
-#'   start of a track), unless that event is the first location back at the
-#'   centre included in a trip (see `include_first_inbound`), in which case they
-#'   are at the centre.
+#'   foragers, based on the distance of each location from the colony/nest (the
+#'   centre). A trip is an excursion beyond `buffer_outbound`, with no minimum
+#'   duration (a single location beyond it is a trip); gaps in the data do not
+#'   split trips.
+#'
+#'   `buffer_inbound` is used to classify trips as complete or incomplete: a
+#'   trip is incomplete if the track starts or ends while the animal is beyond
+#'   `buffer_inbound` (e.g. the logger only started recording after the animal
+#'   had left, or its battery failed before the animal returned). Only the
+#'   first and last trip of a track can be incomplete. `buffer_inbound` is
+#'   usually the same as, or larger than, `buffer_outbound`.
+#'
+#' @details Events without a location (empty geometries) are assigned to the
+#'   trip of the preceding event with a location (or of the following one, at
+#'   the start of a track), so they only join a trip when they fall between two
+#'   of its events. In particular, events without a location after a return
+#'   location added by `boundary_events` stay at the centre.
 #'
 #' @param x A move2 object
 #' @param centre_col character string, the name of the column in the metadata
@@ -18,21 +29,52 @@
 #'   trip starts when the animal moves further than this distance from the
 #'   centre, and ends when it comes back within it. Specified as a unit object,
 #'   e.g `as_units(10000, "m")` or `as_units(10, "km")`.
-#' @param buffer_inbound the distance from the centre within which the last
-#'   location of a track has to be for the last trip of the track to be
-#'   complete (rather than incomplete, i.e. the data end before the animal
-#'   returned to the centre). Specified as a unit object, e.g
-#'   `as_units(10000, "m")` or `as_units(10, "km")`.
-#' @param complete boolean, if TRUE, only complete trips (i.e. the ones that
-#'   started in the outbound buffer and ended within the inbound buffer) are
-#'   kept. If FALSE, all trips are kept, and events at the colony (i.e.
-#'   in-between trips) are collected into a dummy trip labelled "trip_na".
-#' @param include_first_inbound boolean, if TRUE, each trip that ends back at
-#'   the centre also includes the location that ends it, i.e. the first
-#'   location back within `buffer_outbound`, which is otherwise the first event
-#'   at the centre. Trips then include the return to the centre, as the trips
-#'   of `tripSplit()` in the `track2KBA` package do.
-#' @returns a move2 object with the trips split.
+#' @param buffer_inbound the distance from the centre within which the first
+#'   and last locations of a track have to be for its first and last trips to
+#'   be complete (rather than incomplete, i.e. the data start after the animal
+#'   left the centre, or end before it returned). Specified as a unit object,
+#'   e.g `as_units(10000, "m")` or `as_units(10, "km")`.
+#' @param complete boolean, if TRUE, only complete trips are kept. If FALSE,
+#'   all trips are kept, and events at the colony (i.e. in-between trips) are
+#'   collected into a dummy trip labelled "trip_na".
+#' @param boundary_events which locations at the centre, i.e. within
+#'   `buffer_outbound`, are also included in the trips, so that the trips
+#'   connect to the centre:
+#'   * `"none"` (the default): none, trips only include the events outside
+#'   `buffer_outbound`.
+#'   * `"return"`: each trip that ends back at the centre also includes the
+#'   location that ends it, i.e. its first location back within
+#'   `buffer_outbound`, as the trips of `tripSplit()` in the `track2KBA`
+#'   package do.
+#'   * `"departure"`: each trip that does not start the track also includes
+#'   its departure location, i.e. the last location within `buffer_outbound`
+#'   before it.
+#'   * `"both"`: both of the above. If a single location at the centre
+#'   separates two trips, it is the return of the earlier trip, and the later
+#'   trip has no departure location.
+#'
+#'   Trips that start or end the track have no departure or return location.
+#' @returns The `move2` object, modified: each track is split into its
+#'   foraging trips, and each trip is treated as a separate track:
+#'   - The events have a new column, `trip_id`, which becomes the track id
+#'     column. The original track id column is kept, so trips can still be
+#'     grouped by track.
+#'   - The metadata has one row per trip, with the columns of its original
+#'     track (repeated for each of its trips), and new columns `trip_id`
+#'     (linking to events table `trip_id`), and `trip_type`:
+#'     * `"complete"`: the whole trip was recorded.
+#'     * `"incomplete"`: the track starts or ends during the trip, beyond
+#'       `buffer_inbound`, so part of the trip is missing.
+#'     * `"at_centre"`: not a trip, but all the events of the track at the
+#'       centre (before, between and after its trips), in a single row per
+#'       track.
+#'
+#'   Trips are labelled `<track id>_trip_1`, `<track id>_trip_2`, ... in time
+#'   order, and `<track id>_trip_na` for the events at the centre. With
+#'   `complete = TRUE` (the default), only complete trips are kept, so tracks
+#'   without a complete trip are dropped, and the numbering can have gaps
+#'   (e.g. if the first trip of a track is incomplete, its first trip kept is
+#'   `<track id>_trip_2`).
 #' @export
 #' @importFrom foreach %do%
 #' @importFrom rlang :=
@@ -60,19 +102,25 @@ tt_split_trips <- function(
   buffer_outbound = as_units(1000, "m"),
   buffer_inbound = as_units(1000, "m"),
   complete = TRUE,
-  include_first_inbound = FALSE
+  boundary_events = c("none", "return", "departure", "both")
 ) {
   # Check if x is a move2 object
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")
   }
 
+  boundary_choices <- c("none", "return", "departure", "both")
+  if (identical(boundary_events, boundary_choices)) {
+    boundary_events <- "none"
+  }
   if (
-    !is.logical(include_first_inbound) ||
-      length(include_first_inbound) != 1 ||
-      is.na(include_first_inbound)
+    !is.character(boundary_events) ||
+      length(boundary_events) != 1 ||
+      !boundary_events %in% boundary_choices
   ) {
-    stop("include_first_inbound must be TRUE or FALSE")
+    stop(
+      'boundary_events must be one of "none", "return", "departure" or "both"'
+    )
   }
 
   # Check if centre_col is provided
@@ -152,7 +200,7 @@ tt_split_trips <- function(
       centre_y = centre_col[i, 2],
       buffer_inbound = buffer_in_uless,
       buffer_outbound = buffer_out_uless,
-      include_first_inbound = include_first_inbound
+      boundary_events = boundary_events
     )
     trips$track_rows <- track_rows
     trips
@@ -201,8 +249,9 @@ tt_split_trips <- function(
 #' @param centre_y the y coordinate for the central place (e.g. colony, nest)
 #' @param buffer_outbound the buffer for outbound trips
 #' @param buffer_inbound the buffer for inbound trips
-#' @param include_first_inbound a logical indicating if the first location back
-#'   within the outbound buffer is included in the trip it ends
+#' @param boundary_events one of "none", "return", "departure" or "both", the
+#'   locations at the centre (just before and/or just after each trip) to
+#'   include in the trips
 #' @returns a vector with trip IDs for each event (events to remove are marked
 #' as NA)
 #' @keywords internal
@@ -216,7 +265,7 @@ split_one_track <- function(
   centre_y,
   buffer_outbound,
   buffer_inbound,
-  include_first_inbound
+  boundary_events
 ) {
   centre_x_vec <- rep(centre_x, length(x))
   centre_y_vec <- rep(centre_y, length(y))
@@ -247,12 +296,33 @@ split_one_track <- function(
   trip_labels[(runs$values) == TRUE] <-
     paste0(paste0(label, "_trip_"), seq_len(sum((runs$values) == TRUE)))
   trip_labels_vec <- rep(trip_labels, times = runs$lengths)
+  trip_ends <- cumsum(runs$lengths)[runs$values]
+  trip_starts <- trip_ends - runs$lengths[runs$values] + 1
+  # add to each trip that starts after the track does its departure location,
+  # i.e. the last location within the outbound buffer before the trip, and the
+  # events without a location between it and the trip (every run of events at
+  # the centre has a location, as events without a location take the state of
+  # a located event)
+  if (boundary_events %in% c("departure", "both")) {
+    trip_starts <- trip_starts[trip_starts > 1]
+    departures <- located[findInterval(trip_starts - 1, located)]
+    # with both, a single location at the centre between two trips is the
+    # return of the earlier trip, so the later trip has no departure, and the
+    # events without a location in between, which are not between two events
+    # of either trip, stay at the centre
+    if (boundary_events == "both") {
+      has_departure <- !departures %in% (trip_ends + 1)
+      trip_starts <- trip_starts[has_departure]
+      departures <- departures[has_departure]
+    }
+    trip_labels_vec[sequence(trip_starts - departures, from = departures)] <-
+      rep(trip_labels_vec[trip_starts], times = trip_starts - departures)
+  }
   # add to each trip that ends before the track does the event after its last
   # one, which is the first location back within the outbound buffer (events
   # without a location take the state of the preceding location, so the event
   # after a trip always has a location)
-  if (include_first_inbound) {
-    trip_ends <- cumsum(runs$lengths)[runs$values]
+  if (boundary_events %in% c("return", "both")) {
     trip_ends <- trip_ends[trip_ends < length(out_events)]
     trip_labels_vec[trip_ends + 1] <- trip_labels_vec[trip_ends]
   }
@@ -284,8 +354,10 @@ split_one_track <- function(
     last_trip <- trip_meta$trip_id == paste0(label, "_trip_", n_trips)
     trip_meta$trip_type[last_trip] <- "incomplete"
   }
-  # check if first trip is incomplete (data starts outside colony)
-  if (runs$values[1] == TRUE) {
+  # check if first trip is incomplete (data starts outside the inbound buffer;
+  # if the track starts with a trip, its first location is outside the
+  # outbound buffer, so the track has a location)
+  if (runs$values[1] && dist_to_centre[located[1]] > buffer_inbound) {
     trip_meta$trip_type[1] <- "incomplete"
   }
 

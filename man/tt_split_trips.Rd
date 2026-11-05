@@ -10,7 +10,7 @@ tt_split_trips(
   buffer_outbound = as_units(1000, "m"),
   buffer_inbound = as_units(1000, "m"),
   complete = TRUE,
-  include_first_inbound = FALSE
+  boundary_events = c("none", "return", "departure", "both")
 )
 }
 \arguments{
@@ -27,34 +27,83 @@ trip starts when the animal moves further than this distance from the
 centre, and ends when it comes back within it. Specified as a unit object,
 e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
-\item{buffer_inbound}{the distance from the centre within which the last
-location of a track has to be for the last trip of the track to be
-complete (rather than incomplete, i.e. the data end before the animal
-returned to the centre). Specified as a unit object, e.g
-\code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
+\item{buffer_inbound}{the distance from the centre within which the first
+and last locations of a track have to be for its first and last trips to
+be complete (rather than incomplete, i.e. the data start after the animal
+left the centre, or end before it returned). Specified as a unit object,
+e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
-\item{complete}{boolean, if TRUE, only complete trips (i.e. the ones that
-started in the outbound buffer and ended within the inbound buffer) are
-kept. If FALSE, all trips are kept, and events at the colony (i.e.
-in-between trips) are collected into a dummy trip labelled "trip_na".}
+\item{complete}{boolean, if TRUE, only complete trips are kept. If FALSE,
+all trips are kept, and events at the colony (i.e. in-between trips) are
+collected into a dummy trip labelled "trip_na".}
 
-\item{include_first_inbound}{boolean, if TRUE, each trip that ends back at
-the centre also includes the location that ends it, i.e. the first
-location back within \code{buffer_outbound}, which is otherwise the first event
-at the centre. Trips then include the return to the centre, as the trips
-of \code{tripSplit()} in the \code{track2KBA} package do.}
+\item{boundary_events}{which locations at the centre, i.e. within
+\code{buffer_outbound}, are also included in the trips, so that the trips
+connect to the centre:
+\itemize{
+\item \code{"none"} (the default): none, trips only include the events outside
+\code{buffer_outbound}.
+\item \code{"return"}: each trip that ends back at the centre also includes the
+location that ends it, i.e. its first location back within
+\code{buffer_outbound}, as the trips of \code{tripSplit()} in the \code{track2KBA}
+package do.
+\item \code{"departure"}: each trip that does not start the track also includes
+its departure location, i.e. the last location within \code{buffer_outbound}
+before it.
+\item \code{"both"}: both of the above. If a single location at the centre
+separates two trips, it is the return of the earlier trip, and the later
+trip has no departure location.
+}
+
+Trips that start or end the track have no departure or return location.}
 }
 \value{
-a move2 object with the trips split.
+The \code{move2} object, modified: each track is split into its
+foraging trips, and each trip is treated as a separate track:
+\itemize{
+\item The events have a new column, \code{trip_id}, which becomes the track id
+column. The original track id column is kept, so trips can still be
+grouped by track.
+\item The metadata has one row per trip, with the columns of its original
+track (repeated for each of its trips), and new columns \code{trip_id}
+(linking to events table \code{trip_id}), and \code{trip_type}:
+\itemize{
+\item \code{"complete"}: the whole trip was recorded.
+\item \code{"incomplete"}: the track starts or ends during the trip, beyond
+\code{buffer_inbound}, so part of the trip is missing.
+\item \code{"at_centre"}: not a trip, but all the events of the track at the
+centre (before, between and after its trips), in a single row per
+track.
+}
+}
+
+Trips are labelled \verb{<track id>_trip_1}, \verb{<track id>_trip_2}, ... in time
+order, and \verb{<track id>_trip_na} for the events at the centre. With
+\code{complete = TRUE} (the default), only complete trips are kept, so tracks
+without a complete trip are dropped, and the numbering can have gaps
+(e.g. if the first trip of a track is incomplete, its first trip kept is
+\verb{<track id>_trip_2}).
 }
 \description{
 This function splits tracks into trips for central place
-foragers by identifying the trips based on a distance from the colony/nest.
-Events with an empty geometry (i.e. no location) are assigned to the same
-trip as the preceding event with a location (or the following one, at the
-start of a track), unless that event is the first location back at the
-centre included in a trip (see \code{include_first_inbound}), in which case they
-are at the centre.
+foragers, based on the distance of each location from the colony/nest (the
+centre). A trip is an excursion beyond \code{buffer_outbound}, with no minimum
+duration (a single location beyond it is a trip); gaps in the data do not
+split trips.
+
+\code{buffer_inbound} is used to classify trips as complete or incomplete: a
+trip is incomplete if the track starts or ends while the animal is beyond
+\code{buffer_inbound} (e.g. the logger only started recording after the animal
+had left, or its battery failed before the animal returned). Only the
+first and last trip of a track can be incomplete. \code{buffer_inbound} is
+usually the same as, or larger than, \code{buffer_outbound}.
+}
+\details{
+Events without a location (empty geometries) are assigned to the
+trip of the preceding event with a location (or of the following one, at
+the start of a track), so they only join a trip when they fall between two
+of its events. In particular, events without a location after a return
+location added by \code{boundary_events} stay at the centre.
 }
 \examples{
 # First, add a sf point column to metadata giving nest location
