@@ -541,8 +541,8 @@ test_that("tt_split_trips can include the boundary locations in each trip", {
       paste0("b", c("_trip_1", "_trip_na", "_trip_2", "_trip_na"))
     )
   )
-  
-  # with boundary_events = "return", the first point back at the centre is 
+
+  # with boundary_events = "return", the first point back at the centre is
   # added onto the end of each trip
   result <- tt_split_trips(
     test_mt,
@@ -602,9 +602,9 @@ test_that("tt_split_trips can include the boundary locations in each trip", {
     )
   )
 
-  # with boundary_events = "both", the single location at the nest between the 
-  # two trips of "b" (and the fifth location of "a") is the return of the 
-  # earlier trip, and the event without a location that follows it in "a", 
+  # with boundary_events = "both", the single location at the nest between the
+  # two trips of "b" (and the fifth location of "a") is the return of the
+  # earlier trip, and the event without a location that follows it in "a",
   # which is not between two events of either trip, stays at the nest
   result <- tt_split_trips(
     test_mt,
