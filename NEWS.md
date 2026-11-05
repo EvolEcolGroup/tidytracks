@@ -86,6 +86,15 @@ duplicated track ids in the metadata.
 * Speed improvements (same results) for `hr_tt_mcp()`, `hr_tt_kde()` and
   `hr_tt_ud_iso()`.
 
+## Bug fixes
+
+* When `buffer_inbound` is smaller than `buffer_outbound` (very unlikely): 
+  `tt_split_trips()` no longer classifies the last trip of a track as
+  incomplete when the track ends after the animal is back within
+  `buffer_outbound` but still outside `buffer_inbound` (which can only happen 
+  when `buffer_inbound` is smaller than `buffer_outbound`). A trip is now only
+  incomplete if the track starts or ends during it.
+
 ## Documentation
 
 * New article, "Benchmarking home ranges against amt and adehabitatHR", which

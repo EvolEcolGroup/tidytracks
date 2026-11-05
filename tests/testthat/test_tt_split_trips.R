@@ -287,6 +287,42 @@ test_that("tt_split_trips uses the inbound buffer at the start of a track", {
   expect_identical(trip_type(as_units(10, "km")), "incomplete")
 })
 
+test_that("tt_split_trips uses the inbound buffer at the end of a track", {
+  trip_type <- function(longitude, buffer_inbound) {
+    coords_df <- data.frame(
+      bird_id = "a",
+      longitude = longitude,
+      latitude = 0,
+      date_time = as.POSIXct("2020-01-01", tz = "UTC") +
+        (seq_along(longitude) - 1) * 3600
+    )
+    test_mt <- move2::mt_as_move2(
+      sf::st_as_sf(coords_df, coords = c("longitude", "latitude"), crs = 4326),
+      time_column = "date_time",
+      track_id_column = "bird_id"
+    )
+    show_meta(test_mt)$centre_sf <- sf_point_col(x = 0, y = 0, crs = 4326)
+    meta <- show_meta(tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_outbound = as_units(10, "km"),
+      buffer_inbound = buffer_inbound,
+      complete = FALSE
+    ))
+    meta$trip_type[meta$trip_id == "a_trip_1"]
+  }
+  # the track ends on a trip, 33 km from the nest: the trip is complete if
+  # this is within the inbound buffer, and incomplete otherwise
+  ends_on_trip <- c(0, 0.3, 0.5, 0.3)
+  expect_identical(trip_type(ends_on_trip, as_units(50, "km")), "complete")
+  expect_identical(trip_type(ends_on_trip, as_units(10, "km")), "incomplete")
+  # the track ends after the bird is back at the nest, with a location 5 km
+  # from it (beyond the inbound buffer, but within the outbound one): the trip
+  # is complete
+  ends_at_centre <- c(0, 0.5, 0, 0.045)
+  expect_identical(trip_type(ends_at_centre, as_units(1, "km")), "complete")
+})
+
 
 test_that("tt_split_trips pairs each track with its own centre", {
   # each bird makes one trip from its own nest; the nests are 50 degrees apart
@@ -417,7 +453,8 @@ test_that("tt_split_trips handles events without a location", {
 test_that("tt_split_trips marks the last trip, not the centre, incomplete", {
   # the inbound buffer is smaller than the outbound one, and both tracks end
   # 5 km from the nest: "a" never leaves the outbound buffer, and "b" starts
-  # with a trip and then stays within the outbound buffer
+  # with a trip and then stays within the outbound buffer (its trip is
+  # incomplete because the track starts on it, 55 km from the nest)
   coords_df <- data.frame(
     bird_id = rep(c("a", "b"), each = 4),
     longitude = c(0, 0.01, 0.03, 0.045, 0.5, 0.3, 0.045, 0.045),

@@ -27,11 +27,11 @@ trip starts when the animal moves further than this distance from the
 centre, and ends when it comes back within it. Specified as a unit object,
 e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
-\item{buffer_inbound}{the distance from the centre within which the first
-and last locations of a track have to be for its first and last trips to
-be complete (rather than incomplete, i.e. the data start after the animal
-left the centre, or end before it returned). Specified as a unit object,
-e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
+\item{buffer_inbound}{a distance from the centre, usually the same as or
+larger than \code{buffer_outbound}, within which a track can start or end during
+a trip and that trip still be classified as complete (see Description). It
+has no effect if it is the same as, or smaller than, \code{buffer_outbound}.
+Specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
 
 \item{complete}{boolean, if TRUE, only complete trips are kept. If FALSE,
 all trips are kept, and events at the colony (i.e. in-between trips) are
@@ -69,8 +69,9 @@ track (repeated for each of its trips), and new columns \code{trip_id}
 (linking to events table \code{trip_id}), and \code{trip_type}:
 \itemize{
 \item \code{"complete"}: the whole trip was recorded.
-\item \code{"incomplete"}: the track starts or ends during the trip, beyond
-\code{buffer_inbound}, so part of the trip is missing.
+\item \code{"incomplete"}: the track starts or ends during the trip (beyond
+\code{buffer_inbound}, if that is larger than \code{buffer_outbound}), so part
+of the trip is missing.
 \item \code{"at_centre"}: not a trip, but all the events of the track at the
 centre (before, between and after its trips), in a single row per
 track.
@@ -86,17 +87,25 @@ without a complete trip are dropped, and the numbering can have gaps
 }
 \description{
 This function splits tracks into trips for central place
-foragers, based on the distance of each location from the colony/nest (the
-centre). A trip is an excursion beyond \code{buffer_outbound}, with no minimum
-duration (a single location beyond it is a trip); gaps in the data do not
-split trips.
+foragers, based on when the animal moves away from, and returns to, the
+colony/nest (the centre). A trip is an excursion beyond \code{buffer_outbound},
+with no minimum duration (a single location beyond it is a trip); gaps in
+the data do not split trips.
 
-\code{buffer_inbound} is used to classify trips as complete or incomplete: a
-trip is incomplete if the track starts or ends while the animal is beyond
-\code{buffer_inbound} (e.g. the logger only started recording after the animal
-had left, or its battery failed before the animal returned). Only the
-first and last trip of a track can be incomplete. \code{buffer_inbound} is
-usually the same as, or larger than, \code{buffer_outbound}.
+Trips are classified as complete or incomplete. If the track starts or
+ends beyond \code{buffer_outbound}, i.e. during a trip, that trip is incomplete
+(e.g. the logger only started recording after the animal had left, or its
+battery failed before the animal returned). So only the first and last
+trips of a track can be incomplete, and a track that starts and ends at
+the centre only has complete trips.
+
+\code{buffer_inbound} can make this check more tolerant. If it is larger than
+\code{buffer_outbound}, it is used instead, so a trip is only incomplete if the
+track starts or ends beyond \code{buffer_inbound}. For example, with
+\code{buffer_outbound} = 10 km and \code{buffer_inbound} = 50 km, a track that
+starts 30 km from the centre has a complete first trip. If
+\code{buffer_inbound} is the same as, or smaller than, \code{buffer_outbound}, it has
+no effect.
 }
 \details{
 Events without a location (empty geometries) are assigned to the

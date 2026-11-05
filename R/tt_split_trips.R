@@ -1,17 +1,25 @@
 #' Split tracks into trips for central place foragers
 #'
 #' @description This function splits tracks into trips for central place
-#'   foragers, based on the distance of each location from the colony/nest (the
-#'   centre). A trip is an excursion beyond `buffer_outbound`, with no minimum
-#'   duration (a single location beyond it is a trip); gaps in the data do not
-#'   split trips.
+#'   foragers, based on when the animal moves away from, and returns to, the
+#'   colony/nest (the centre). A trip is an excursion beyond `buffer_outbound`,
+#'   with no minimum duration (a single location beyond it is a trip); gaps in
+#'   the data do not split trips.
 #'
-#'   `buffer_inbound` is used to classify trips as complete or incomplete: a
-#'   trip is incomplete if the track starts or ends while the animal is beyond
-#'   `buffer_inbound` (e.g. the logger only started recording after the animal
-#'   had left, or its battery failed before the animal returned). Only the
-#'   first and last trip of a track can be incomplete. `buffer_inbound` is
-#'   usually the same as, or larger than, `buffer_outbound`.
+#'   Trips are classified as complete or incomplete. If the track starts or
+#'   ends beyond `buffer_outbound`, i.e. during a trip, that trip is incomplete
+#'   (e.g. the logger only started recording after the animal had left, or its
+#'   battery failed before the animal returned). So only the first and last
+#'   trips of a track can be incomplete, and a track that starts and ends at
+#'   the centre only has complete trips.
+#'
+#'   `buffer_inbound` can make this check more tolerant. If it is larger than
+#'   `buffer_outbound`, it is used instead, so a trip is only incomplete if the
+#'   track starts or ends beyond `buffer_inbound`. For example, with
+#'   `buffer_outbound` = 10 km and `buffer_inbound` = 50 km, a track that
+#'   starts 30 km from the centre has a complete first trip. If
+#'   `buffer_inbound` is the same as, or smaller than, `buffer_outbound`, it has
+#'   no effect.
 #'
 #' @details Events without a location (empty geometries) are assigned to the
 #'   trip of the preceding event with a location (or of the following one, at
@@ -29,11 +37,12 @@
 #'   trip starts when the animal moves further than this distance from the
 #'   centre, and ends when it comes back within it. Specified as a unit object,
 #'   e.g `as_units(10000, "m")` or `as_units(10, "km")`.
-#' @param buffer_inbound the distance from the centre within which the first
-#'   and last locations of a track have to be for its first and last trips to
-#'   be complete (rather than incomplete, i.e. the data start after the animal
-#'   left the centre, or end before it returned). Specified as a unit object,
-#'   e.g `as_units(10000, "m")` or `as_units(10, "km")`.
+#' @param buffer_inbound a distance from the centre, usually the same as or
+#'   larger than `buffer_outbound`, within which a track can start or end during
+#'   a trip and that trip still be classified as complete (see Description). It
+#'   has no effect if it is the same as, or smaller than, `buffer_outbound`.
+#'   Specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
+#'   "km")`.
 #' @param complete boolean, if TRUE, only complete trips are kept. If FALSE,
 #'   all trips are kept, and events at the colony (i.e. in-between trips) are
 #'   collected into a dummy trip labelled "trip_na".
@@ -63,8 +72,9 @@
 #'     track (repeated for each of its trips), and new columns `trip_id`
 #'     (linking to events table `trip_id`), and `trip_type`:
 #'     * `"complete"`: the whole trip was recorded.
-#'     * `"incomplete"`: the track starts or ends during the trip, beyond
-#'       `buffer_inbound`, so part of the trip is missing.
+#'     * `"incomplete"`: the track starts or ends during the trip (beyond
+#'       `buffer_inbound`, if that is larger than `buffer_outbound`), so part
+#'       of the trip is missing.
 #'     * `"at_centre"`: not a trip, but all the events of the track at the
 #'       centre (before, between and after its trips), in a single row per
 #'       track.
@@ -345,12 +355,16 @@ split_one_track <- function(
     ),
     nrow = length(trip_ids)
   )
-  # check if last trip is incomplete (data ends outside colony); the last trip
-  # is not necessarily the last row of trip_meta (e.g. if the track starts
-  # with a trip), and a track might have no trip at all
-  n_trips <- sum(runs$values)
-  last_dist <- utils::tail(dist_to_centre[!is.na(dist_to_centre)], 1)
-  if (n_trips > 0 && length(last_dist) == 1 && last_dist > buffer_inbound) {
+  # check if last trip is incomplete (the track ends during the trip, outside
+  # the inbound buffer; if the track ends with a trip, its last location is
+  # outside the outbound buffer, so the track has a location); a track that
+  # ends at the centre, even beyond the inbound buffer, has no incomplete last
+  # trip
+  if (
+    utils::tail(runs$values, 1) &&
+      dist_to_centre[utils::tail(located, 1)] > buffer_inbound
+  ) {
+    n_trips <- sum(runs$values)
     last_trip <- trip_meta$trip_id == paste0(label, "_trip_", n_trips)
     trip_meta$trip_type[last_trip] <- "incomplete"
   }
