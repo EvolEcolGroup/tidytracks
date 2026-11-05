@@ -18,6 +18,18 @@
   for many locations (see the article "Benchmark of home range estimators").
 * New `track_tot_distance()` to compute the total distance travelled along each
   track, with a `units` argument to choose the output units.
+* `tt_split_trips()` gains a `boundary_events` argument, to include in each
+  trip its first location back within `buffer_outbound` (`"return"`, as the
+  trips of `tripSplit()` in the `track2KBA` package do), its last location
+  within `buffer_outbound` before leaving (`"departure"`), or both
+  (`"both"`). The default, `"none"`, keeps the previous behaviour.
+* `tt_split_trips()` classification of complete trips is updated to be more
+  consistent in its use of `buffer_inbound`: the first trip of a track is
+  classified as incomplete if the track starts beyond `buffer_inbound` (before,
+  beyond `buffer_outbound`), as it does for the last trip at the end of the 
+  track. This only changes the results when `buffer_inbound` is larger than
+  `buffer_outbound`.
+* `tt_split_trips` documentation is updated with more details.
 * tidytracks can now use the methods of `move2utils`, a suggested package
   installed from GitHub with
   `remotes::install_github("move2universe/move2utils")`, through wrappers
@@ -72,6 +84,15 @@
 duplicated track ids in the metadata.
 * Speed improvements (same results) for `hr_tt_mcp()`, `hr_tt_kde()` and
   `hr_tt_ud_iso()`.
+
+## Bug fixes
+
+* When `buffer_inbound` is smaller than `buffer_outbound` (very unlikely): 
+  `tt_split_trips()` no longer classifies the last trip of a track as
+  incomplete when the track ends after the animal is back within
+  `buffer_outbound` but still outside `buffer_inbound` (which can only happen 
+  when `buffer_inbound` is smaller than `buffer_outbound`). A trip is now only
+  incomplete if the track starts or ends during it.
 
 ## Documentation
 

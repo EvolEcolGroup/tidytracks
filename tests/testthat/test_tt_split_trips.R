@@ -257,6 +257,72 @@ test_that("tt_split_trips marks trips starting outside incomplete", {
   expect_equal(nrow(show_meta(result_complete)), 0)
 })
 
+test_that("tt_split_trips uses the inbound buffer at the start of a track", {
+  # the track starts on a trip, 33 km from the nest
+  coords_df <- data.frame(
+    bird_id = "a",
+    longitude = c(0.3, 0.5, 0.3, 0),
+    latitude = 0,
+    date_time = as.POSIXct("2020-01-01", tz = "UTC") + (0:3) * 3600
+  )
+  test_mt <- move2::mt_as_move2(
+    sf::st_as_sf(coords_df, coords = c("longitude", "latitude"), crs = 4326),
+    time_column = "date_time",
+    track_id_column = "bird_id"
+  )
+  show_meta(test_mt)$centre_sf <- sf_point_col(x = 0, y = 0, crs = 4326)
+  trip_type <- function(buffer_inbound) {
+    meta <- show_meta(tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_outbound = as_units(10, "km"),
+      buffer_inbound = buffer_inbound,
+      complete = FALSE
+    ))
+    meta$trip_type[meta$trip_id == "a_trip_1"]
+  }
+  # within the inbound buffer, as the track starts, the first trip is complete
+  expect_identical(trip_type(as_units(50, "km")), "complete")
+  # beyond it, the first trip is incomplete
+  expect_identical(trip_type(as_units(10, "km")), "incomplete")
+})
+
+test_that("tt_split_trips uses the inbound buffer at the end of a track", {
+  trip_type <- function(longitude, buffer_inbound) {
+    coords_df <- data.frame(
+      bird_id = "a",
+      longitude = longitude,
+      latitude = 0,
+      date_time = as.POSIXct("2020-01-01", tz = "UTC") +
+        (seq_along(longitude) - 1) * 3600
+    )
+    test_mt <- move2::mt_as_move2(
+      sf::st_as_sf(coords_df, coords = c("longitude", "latitude"), crs = 4326),
+      time_column = "date_time",
+      track_id_column = "bird_id"
+    )
+    show_meta(test_mt)$centre_sf <- sf_point_col(x = 0, y = 0, crs = 4326)
+    meta <- show_meta(tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_outbound = as_units(10, "km"),
+      buffer_inbound = buffer_inbound,
+      complete = FALSE
+    ))
+    meta$trip_type[meta$trip_id == "a_trip_1"]
+  }
+  # the track ends on a trip, 33 km from the nest: the trip is complete if
+  # this is within the inbound buffer, and incomplete otherwise
+  ends_on_trip <- c(0, 0.3, 0.5, 0.3)
+  expect_identical(trip_type(ends_on_trip, as_units(50, "km")), "complete")
+  expect_identical(trip_type(ends_on_trip, as_units(10, "km")), "incomplete")
+  # the track ends after the bird is back at the nest, with a location 5 km
+  # from it (beyond the inbound buffer, but within the outbound one): the trip
+  # is complete
+  ends_at_centre <- c(0, 0.5, 0, 0.045)
+  expect_identical(trip_type(ends_at_centre, as_units(1, "km")), "complete")
+})
+
 
 test_that("tt_split_trips pairs each track with its own centre", {
   # each bird makes one trip from its own nest; the nests are 50 degrees apart
@@ -387,7 +453,8 @@ test_that("tt_split_trips handles events without a location", {
 test_that("tt_split_trips marks the last trip, not the centre, incomplete", {
   # the inbound buffer is smaller than the outbound one, and both tracks end
   # 5 km from the nest: "a" never leaves the outbound buffer, and "b" starts
-  # with a trip and then stays within the outbound buffer
+  # with a trip and then stays within the outbound buffer (its trip is
+  # incomplete because the track starts on it, 55 km from the nest)
   coords_df <- data.frame(
     bird_id = rep(c("a", "b"), each = 4),
     longitude = c(0, 0.01, 0.03, 0.045, 0.5, 0.3, 0.045, 0.045),
@@ -415,4 +482,201 @@ test_that("tt_split_trips marks the last trip, not the centre, incomplete", {
   meta <- show_meta(result)
   expect_identical(meta$trip_id, c("a_trip_na", "b_trip_1", "b_trip_na"))
   expect_identical(meta$trip_type, c("at_centre", "incomplete", "at_centre"))
+})
+
+test_that("tt_split_trips can include the boundary locations in each trip", {
+  # "a" makes two trips from the nest, the second one ending at the end of
+  # the track, with its fourth and sixth locations missing (before and after
+  # its first location back at the nest); "b" starts on a trip, and comes back
+  # to the nest for a single location before its second trip
+  coords_df <- data.frame(
+    bird_id = rep(c("a", "b"), c(8, 4)),
+    longitude = c(0, 0.5, 1, 0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0),
+    latitude = 0,
+    date_time = as.POSIXct("2020-01-01", tz = "UTC") + c(0:7, 0:3) * 3600
+  )
+  test_mt <- move2::mt_as_move2(
+    sf::st_as_sf(coords_df, coords = c("longitude", "latitude"), crs = 4326),
+    time_column = "date_time",
+    track_id_column = "bird_id"
+  )
+  show_meta(test_mt)$centre_sf <- sf_point_col(
+    x = c(0, 0),
+    y = c(0, 0),
+    crs = 4326
+  )
+  # make these two points empty geometries
+  sf::st_geometry(test_mt)[c(4, 6)] <- sf::st_point()
+
+  # by default, the first location back at the nest is at_centre
+  result <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(10, "km"),
+    complete = FALSE
+  )
+  expect_identical(
+    result$trip_id,
+    c(
+      paste0("a", c("_trip_na", rep("_trip_1", 3), rep("_trip_na", 2))),
+      paste0("a", c("_trip_2", "_trip_na")),
+      paste0("b", c("_trip_1", "_trip_na", "_trip_2", "_trip_na"))
+    )
+  )
+  # same with boundary_events = "none" (the default)
+  result <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(10, "km"),
+    complete = FALSE,
+    boundary_events = "none"
+  )
+  expect_identical(
+    result$trip_id,
+    c(
+      paste0("a", c("_trip_na", rep("_trip_1", 3), rep("_trip_na", 2))),
+      paste0("a", c("_trip_2", "_trip_na")),
+      paste0("b", c("_trip_1", "_trip_na", "_trip_2", "_trip_na"))
+    )
+  )
+
+  # with boundary_events = "return", the first point back at the centre is
+  # added onto the end of each trip
+  result <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(10, "km"),
+    complete = FALSE,
+    boundary_events = "return"
+  )
+  expect_identical(
+    result$trip_id,
+    c(
+      paste0("a", c("_trip_na", rep("_trip_1", 4), "_trip_na")),
+      paste0("a", c("_trip_2", "_trip_2")),
+      paste0("b", c("_trip_1", "_trip_1", "_trip_2", "_trip_2"))
+    )
+  )
+  # "b" is now never at the nest outside its trips
+  meta <- show_meta(result)
+  expect_identical(
+    meta$trip_id,
+    c("a_trip_na", "a_trip_1", "a_trip_2", "b_trip_1", "b_trip_2")
+  )
+  expect_identical(
+    meta$trip_type,
+    c("at_centre", "complete", "complete", "incomplete", "complete")
+  )
+
+  # the departure of the second trip of "a" is its fifth location, followed by
+  # an event without a location; the first trip of "b" starts the track, so it
+  # has no departure location
+  result <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(10, "km"),
+    complete = FALSE,
+    boundary_events = "departure"
+  )
+  expect_identical(
+    result$trip_id,
+    c(
+      paste0("a", c(rep("_trip_1", 4), rep("_trip_2", 3), "_trip_na")),
+      paste0("b", c("_trip_1", "_trip_2", "_trip_2", "_trip_na"))
+    )
+  )
+  meta <- show_meta(result)
+  expect_identical(
+    meta$trip_id,
+    c("a_trip_1", "a_trip_2", "a_trip_na", "b_trip_1", "b_trip_2", "b_trip_na")
+  )
+  expect_identical(
+    meta$trip_type,
+    c(
+      "complete", "complete", "at_centre",
+      "incomplete", "complete", "at_centre"
+    )
+  )
+
+  # with boundary_events = "both", the single location at the nest between the
+  # two trips of "b" (and the fifth location of "a") is the return of the
+  # earlier trip, and the event without a location that follows it in "a",
+  # which is not between two events of either trip, stays at the nest
+  result <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(10, "km"),
+    complete = FALSE,
+    boundary_events = "both"
+  )
+  expect_identical(
+    result$trip_id,
+    c(
+      paste0("a", c(rep("_trip_1", 5), "_trip_na", rep("_trip_2", 2))),
+      paste0("b", c("_trip_1", "_trip_1", "_trip_2", "_trip_2"))
+    )
+  )
+  meta <- show_meta(result)
+  expect_identical(
+    meta$trip_id,
+    c("a_trip_1", "a_trip_na", "a_trip_2", "b_trip_1", "b_trip_2")
+  )
+  expect_identical(
+    meta$trip_type,
+    c("complete", "at_centre", "complete", "incomplete", "complete")
+  )
+
+  # with both, when the stay at the nest between two trips has more than one
+  # location, the later trip keeps its departure location
+  two_locations <- move2::mt_as_move2(
+    sf::st_as_sf(
+      data.frame(
+        bird_id = "c",
+        longitude = c(0.5, 0, 0, 0.5, 0),
+        latitude = 0,
+        date_time = as.POSIXct("2020-01-01", tz = "UTC") + (0:4) * 3600
+      ),
+      coords = c("longitude", "latitude"),
+      crs = 4326
+    ),
+    time_column = "date_time",
+    track_id_column = "bird_id"
+  )
+  show_meta(two_locations)$centre_sf <- sf_point_col(x = 0, y = 0, crs = 4326)
+  result <- tt_split_trips(
+    two_locations,
+    centre_col = "centre_sf",
+    buffer_outbound = as_units(10, "km"),
+    buffer_inbound = as_units(10, "km"),
+    complete = FALSE,
+    boundary_events = "both"
+  )
+  # check the events were assigned to trips correctly
+  expect_identical(
+    result$trip_id,
+    paste0("c", c("_trip_1", "_trip_1", "_trip_2", "_trip_2", "_trip_2"))
+  )
+  # check the trips are correctly labelled incomplete (starts outside buffer)
+  # and complete respectively
+  expect_identical(
+    show_meta(result)$trip_type,
+    c("incomplete", "complete")
+  )
+
+  # check the boundary_events argument is correctly checked
+  for (bad in list(NA, TRUE, "all", c("return", "departure"))) {
+    expect_error(
+      tt_split_trips(
+        test_mt,
+        centre_col = "centre_sf",
+        boundary_events = bad
+      ),
+      "boundary_events must be one of"
+    )
+  }
 })
