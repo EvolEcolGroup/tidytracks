@@ -45,6 +45,7 @@ reference:
         - starts_with("geom_")
         - animate_map
         - autoplot.hr_tt_ud_tbl
+        - autoplot.fpt_profile_tbl
   - title: "Home range"
     desc: "Estimate home range and habitat use from movement data."
     contents:

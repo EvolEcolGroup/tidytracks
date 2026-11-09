@@ -82,3 +82,48 @@ create_toy_tt <- function() {
   )
   return(test_tt)
 }
+
+# A track that alternates fast straight commutes with slow, tortuous searches
+# within patches of the given radius, in metres. Locations are regular in time.
+simulate_ars_track <- function(id, patch_radius, n_patches = 6, seed = 1) {
+  set.seed(seed)
+  commute_step <- 3000
+  search_step <- patch_radius / 8
+  xy <- matrix(numeric(0), ncol = 2)
+  centre <- c(500000, 5000000)
+  for (patch in seq_len(n_patches)) {
+    angle <- stats::runif(1, -pi / 4, pi / 4)
+    commute <- seq(commute_step, 20 * patch_radius, by = commute_step)
+    xy <- rbind(
+      xy,
+      cbind(centre[1] + commute * cos(angle), centre[2] + commute * sin(angle))
+    )
+    centre <- xy[nrow(xy), ]
+    position <- centre
+    for (step in seq_len(150)) {
+      proposal <- position + stats::rnorm(2, 0, search_step)
+      # stay within the patch
+      if (sqrt(sum((proposal - centre)^2)) <= patch_radius) {
+        position <- proposal
+      }
+      xy <- rbind(xy, position)
+    }
+    centre <- position
+  }
+  data.frame(
+    id = id,
+    x = xy[, 1],
+    y = xy[, 2],
+    time = as.POSIXct("2024-01-01", tz = "UTC") + 300 * seq_len(nrow(xy))
+  )
+}
+
+as_ars_move2 <- function(df) {
+  move2::mt_as_move2(
+    df,
+    coords = c("x", "y"),
+    crs = 32631,
+    time_column = "time",
+    track_id_column = "id"
+  )
+}

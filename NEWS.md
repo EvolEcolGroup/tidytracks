@@ -2,6 +2,13 @@
 
 ## New features
 
+* New `event_fpt()`, `track_fpt_profile()` and `track_suggest_ars_scale()` for
+  first passage time analysis: the time taken to cross a circle around each
+  location, how its variance changes with the radius (with an `autoplot()`
+  method), and the scale of area-restricted search suggested by its peak, which
+  can inform the bandwidth of `hr_tt_kde()`. The first passage time is computed
+  within each track, so it does not run across trips after `tt_split_trips()`.
+
 * New interface to the package `ctmm`, to fit continuous-time movement models
   to tibbles of tracks (see the new article "Movement models with ctmm").
   This includes the new functions: `mt_as_telemetry()`, `ctmm_tt_fit()`,
