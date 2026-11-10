@@ -1,4 +1,4 @@
-#' Deprecated functions in tidytracks
+#' Deprecated functions and arguments in tidytracks
 #'
 #' These functions have been renamed with an `hr_tt_` prefix to avoid name
 #' clashes with other packages. The old names still work for backwards
@@ -15,6 +15,13 @@
 #' * `hr_ud_wrap()`: use [hr_tt_ud_wrap()]
 #' * `hr_ud_unwrap()`: use [hr_tt_ud_unwrap()]
 #' * `hr_ud_saveRDS()`: use [hr_tt_ud_saveRDS()]
+#'
+#' Some arguments have also been renamed, to better describe what they do. The
+#' old names still work in the same way, with a warning. The deprecated
+#' arguments and their replacements are:
+#'
+#' * [tt_split_trips()] `buffer_outbound`: use `buffer_trip`
+#' * [tt_split_trips()] `buffer_inbound`: use `buffer_complete`
 #'
 #' @param x,h,bbox,res,levels,method,... Arguments passed to the replacement
 #'   function; see its documentation for details.

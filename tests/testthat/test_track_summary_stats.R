@@ -88,8 +88,8 @@ test_that("track_summary_stats correctly computes track summaries", {
   test_tt_split <- tt_split_trips(
     test_tt,
     centre_col = "colony_sf",
-    buffer_outbound = as_units(100, "km"),
-    buffer_inbound = as_units(100, "km"),
+    buffer_trip = as_units(100, "km"),
+    buffer_complete = as_units(100, "km"),
     complete = FALSE
   )
   # check that the trip ids are correct

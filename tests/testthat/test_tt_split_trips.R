@@ -32,8 +32,8 @@ test_that("tt_split_trips accepts one centre per track", {
   test_mt_split <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(100, "km"),
-    buffer_inbound = as_units(100, "km"),
+    buffer_trip = as_units(100, "km"),
+    buffer_complete = as_units(100, "km"),
     complete = FALSE
   )
 
@@ -103,8 +103,8 @@ test_that("tt_split_trips accepts one centre per track", {
   test_mt_split2 <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(100000, "m"),
-    buffer_inbound = as_units(100, "km"),
+    buffer_trip = as_units(100000, "m"),
+    buffer_complete = as_units(100, "km"),
     complete = FALSE
   )
   expect_identical(test_mt_split, test_mt_split2)
@@ -117,21 +117,22 @@ test_that("tt_split_trips accepts one centre per track", {
   test_mt_split2b <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(100000, "m"),
-    buffer_inbound = as_units(100, "km"),
+    buffer_trip = as_units(100000, "m"),
+    buffer_complete = as_units(100, "km"),
     complete = FALSE
   )
   expect_identical(test_mt_split$trip_id, test_mt_split2b$trip_id)
 
-  # change inbound buffer
+  # change completeness buffer
   test_mt_split3 <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(100, "km"),
-    buffer_inbound = as_units(300, "km"),
+    buffer_trip = as_units(100, "km"),
+    buffer_complete = as_units(300, "km"),
     complete = FALSE
   )
-  # the last trip of id_1 is incomplete
+  # the last trip of id_1 is complete, as the track ends within the
+  # completeness buffer
   expect_true(
     (show_meta(test_mt_split3) %>%
        dplyr::filter(trip_id == "id_1_trip_3"))$trip_type ==
@@ -142,8 +143,8 @@ test_that("tt_split_trips accepts one centre per track", {
   test_mt_split4 <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(100, "km"),
-    buffer_inbound = as_units(300, "km"),
+    buffer_trip = as_units(100, "km"),
+    buffer_complete = as_units(300, "km"),
     complete = TRUE
   )
   # all trips should be complete
@@ -156,8 +157,8 @@ test_that("tt_split_trips accepts one centre per track", {
     tt_split_trips(
       test_mt,
       centre_col = "non_existent_column",
-      buffer_outbound = as_units(100, "km"),
-      buffer_inbound = as_units(100, "km"),
+      buffer_trip = as_units(100, "km"),
+      buffer_complete = as_units(100, "km"),
       complete = FALSE
     ),
     "centre_col must be a column name in the metadata table"
@@ -166,8 +167,8 @@ test_that("tt_split_trips accepts one centre per track", {
     tt_split_trips(
       test_mt,
       centre_col = "bird_id",
-      buffer_outbound = as_units(100, "km"),
-      buffer_inbound = as_units(100, "km"),
+      buffer_trip = as_units(100, "km"),
+      buffer_complete = as_units(100, "km"),
       complete = FALSE
     ),
     "centre_col must be a `sfc_POINT` column in the metadata table"
@@ -182,8 +183,8 @@ test_that("tt_split_trips accepts one centre per track", {
     tt_split_trips(
       test_mt,
       centre_col = "centre_sf",
-      buffer_outbound = as_units(100, "km"),
-      buffer_inbound = as_units(100, "km"),
+      buffer_trip = as_units(100, "km"),
+      buffer_complete = as_units(100, "km"),
       complete = FALSE
     ),
     "centre_col must not contain empty geometries"
@@ -195,11 +196,87 @@ test_that("tt_split_trips accepts one centre per track", {
     tt_split_trips(
       test_mt,
       centre_col = "centre_sf",
-      buffer_outbound = as_units(100, "km"),
-      buffer_inbound = as_units(100, "km"),
+      buffer_trip = as_units(100, "km"),
+      buffer_complete = as_units(100, "km"),
       complete = FALSE
     ),
     "centre_col must have a crs specified"
+  )
+})
+
+test_that("tt_split_trips still accepts the deprecated buffer names", {
+  # create the toy dataframe of longitude, latitude, date_time, bird_id
+  coords_df <- create_toy_df()
+
+  # convert to a tidytracks object
+  test_mt <- tt_read_data(
+    events = coords_df,
+    col_track_id = "bird_id",
+    col_coords = c("longitude", "latitude"),
+    col_date_time = "date_time"
+  )
+  show_meta(test_mt)$centre_sf <- sf_point_col(
+    x = c(0, 0),
+    y = c(0, 0),
+    crs = 4326
+  )
+
+  # split the trips with the new names (with a larger completeness buffer, so
+  # that both buffers change the result: the last trip of id_1 is complete)
+  test_mt_split <- tt_split_trips(
+    test_mt,
+    centre_col = "centre_sf",
+    buffer_trip = as_units(100, "km"),
+    buffer_complete = as_units(300, "km"),
+    complete = FALSE
+  )
+
+  # the old name of the trip buffer gives a warning and the same result
+  expect_warning(
+    test_mt_split_old <- tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_outbound = as_units(100, "km"),
+      buffer_complete = as_units(300, "km"),
+      complete = FALSE
+    ),
+    "buffer_outbound"
+  )
+  expect_identical(test_mt_split_old, test_mt_split)
+
+  # the old name of the completeness buffer gives a warning and the same result
+  expect_warning(
+    test_mt_split_old <- tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_trip = as_units(100, "km"),
+      buffer_inbound = as_units(300, "km"),
+      complete = FALSE
+    ),
+    "buffer_inbound"
+  )
+  expect_identical(test_mt_split_old, test_mt_split)
+
+  # giving both the old and the new name for the same buffer is an error
+  expect_error(
+    tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_trip = as_units(100, "km"),
+      buffer_outbound = as_units(100, "km"),
+      complete = FALSE
+    ),
+    "buffer_trip and buffer_outbound"
+  )
+  expect_error(
+    tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_complete = as_units(300, "km"),
+      buffer_inbound = as_units(300, "km"),
+      complete = FALSE
+    ),
+    "buffer_complete and buffer_inbound"
   )
 })
 
@@ -231,8 +308,8 @@ test_that("tt_split_trips marks trips starting outside incomplete", {
   result <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(100, "km"),
-    buffer_inbound = as_units(100, "km"),
+    buffer_trip = as_units(100, "km"),
+    buffer_complete = as_units(100, "km"),
     complete = FALSE
   )
 
@@ -250,14 +327,14 @@ test_that("tt_split_trips marks trips starting outside incomplete", {
   result_complete <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(100, "km"),
-    buffer_inbound = as_units(100, "km"),
+    buffer_trip = as_units(100, "km"),
+    buffer_complete = as_units(100, "km"),
     complete = TRUE
   )
   expect_equal(nrow(show_meta(result_complete)), 0)
 })
 
-test_that("tt_split_trips uses the inbound buffer at the start of a track", {
+test_that("tt_split_trips uses buffer_complete at the start of a track", {
   # the track starts on a trip, 33 km from the nest
   coords_df <- data.frame(
     bird_id = "a",
@@ -271,24 +348,25 @@ test_that("tt_split_trips uses the inbound buffer at the start of a track", {
     track_id_column = "bird_id"
   )
   show_meta(test_mt)$centre_sf <- sf_point_col(x = 0, y = 0, crs = 4326)
-  trip_type <- function(buffer_inbound) {
+  trip_type <- function(buffer_complete) {
     meta <- show_meta(tt_split_trips(
       test_mt,
       centre_col = "centre_sf",
-      buffer_outbound = as_units(10, "km"),
-      buffer_inbound = buffer_inbound,
+      buffer_trip = as_units(10, "km"),
+      buffer_complete = buffer_complete,
       complete = FALSE
     ))
     meta$trip_type[meta$trip_id == "a_trip_1"]
   }
-  # within the inbound buffer, as the track starts, the first trip is complete
+  # within the completeness buffer, as the track starts, the first trip is
+  # complete
   expect_identical(trip_type(as_units(50, "km")), "complete")
   # beyond it, the first trip is incomplete
   expect_identical(trip_type(as_units(10, "km")), "incomplete")
 })
 
-test_that("tt_split_trips uses the inbound buffer at the end of a track", {
-  trip_type <- function(longitude, buffer_inbound) {
+test_that("tt_split_trips uses buffer_complete at the end of a track", {
+  trip_type <- function(longitude, buffer_complete) {
     coords_df <- data.frame(
       bird_id = "a",
       longitude = longitude,
@@ -305,19 +383,19 @@ test_that("tt_split_trips uses the inbound buffer at the end of a track", {
     meta <- show_meta(tt_split_trips(
       test_mt,
       centre_col = "centre_sf",
-      buffer_outbound = as_units(10, "km"),
-      buffer_inbound = buffer_inbound,
+      buffer_trip = as_units(10, "km"),
+      buffer_complete = buffer_complete,
       complete = FALSE
     ))
     meta$trip_type[meta$trip_id == "a_trip_1"]
   }
   # the track ends on a trip, 33 km from the nest: the trip is complete if
-  # this is within the inbound buffer, and incomplete otherwise
+  # this is within the completeness buffer, and incomplete otherwise
   ends_on_trip <- c(0, 0.3, 0.5, 0.3)
   expect_identical(trip_type(ends_on_trip, as_units(50, "km")), "complete")
   expect_identical(trip_type(ends_on_trip, as_units(10, "km")), "incomplete")
   # the track ends after the bird is back at the nest, with a location 5 km
-  # from it (beyond the inbound buffer, but within the outbound one): the trip
+  # from it (beyond the completeness buffer, but within the trip one): the trip
   # is complete
   ends_at_centre <- c(0, 0.5, 0, 0.045)
   expect_identical(trip_type(ends_at_centre, as_units(1, "km")), "complete")
@@ -353,8 +431,8 @@ test_that("tt_split_trips pairs each track with its own centre", {
   result <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(10, "km"),
-    buffer_inbound = as_units(10, "km"),
+    buffer_trip = as_units(10, "km"),
+    buffer_complete = as_units(10, "km"),
     complete = FALSE
   )
   expect_identical(
@@ -386,8 +464,8 @@ test_that("tt_split_trips labels events that are not grouped or sorted", {
     tt_split_trips(
       test_mt,
       centre_col = "centre_sf",
-      buffer_outbound = as_units(10, "km"),
-      buffer_inbound = as_units(10, "km"),
+      buffer_trip = as_units(10, "km"),
+      buffer_complete = as_units(10, "km"),
       complete = FALSE
     )$trip_id
   }
@@ -438,8 +516,8 @@ test_that("tt_split_trips handles events without a location", {
   result <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(10, "km"),
-    buffer_inbound = as_units(10, "km"),
+    buffer_trip = as_units(10, "km"),
+    buffer_complete = as_units(10, "km"),
     complete = FALSE
   )
   expect_identical(
@@ -451,9 +529,9 @@ test_that("tt_split_trips handles events without a location", {
 })
 
 test_that("tt_split_trips marks the last trip, not the centre, incomplete", {
-  # the inbound buffer is smaller than the outbound one, and both tracks end
-  # 5 km from the nest: "a" never leaves the outbound buffer, and "b" starts
-  # with a trip and then stays within the outbound buffer (its trip is
+  # the completeness buffer is smaller than the trip one, and both tracks end
+  # 5 km from the nest: "a" never leaves the trip buffer, and "b" starts
+  # with a trip and then stays within the trip buffer (its trip is
   # incomplete because the track starts on it, 55 km from the nest)
   coords_df <- data.frame(
     bird_id = rep(c("a", "b"), each = 4),
@@ -475,8 +553,8 @@ test_that("tt_split_trips marks the last trip, not the centre, incomplete", {
   result <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(10, "km"),
-    buffer_inbound = as_units(1, "km"),
+    buffer_trip = as_units(10, "km"),
+    buffer_complete = as_units(1, "km"),
     complete = FALSE
   )
   meta <- show_meta(result)
@@ -512,8 +590,8 @@ test_that("tt_split_trips can include the boundary locations in each trip", {
   result <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(10, "km"),
-    buffer_inbound = as_units(10, "km"),
+    buffer_trip = as_units(10, "km"),
+    buffer_complete = as_units(10, "km"),
     complete = FALSE
   )
   expect_identical(
@@ -528,8 +606,8 @@ test_that("tt_split_trips can include the boundary locations in each trip", {
   result <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(10, "km"),
-    buffer_inbound = as_units(10, "km"),
+    buffer_trip = as_units(10, "km"),
+    buffer_complete = as_units(10, "km"),
     complete = FALSE,
     boundary_events = "none"
   )
@@ -547,8 +625,8 @@ test_that("tt_split_trips can include the boundary locations in each trip", {
   result <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(10, "km"),
-    buffer_inbound = as_units(10, "km"),
+    buffer_trip = as_units(10, "km"),
+    buffer_complete = as_units(10, "km"),
     complete = FALSE,
     boundary_events = "return"
   )
@@ -577,8 +655,8 @@ test_that("tt_split_trips can include the boundary locations in each trip", {
   result <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(10, "km"),
-    buffer_inbound = as_units(10, "km"),
+    buffer_trip = as_units(10, "km"),
+    buffer_complete = as_units(10, "km"),
     complete = FALSE,
     boundary_events = "departure"
   )
@@ -609,8 +687,8 @@ test_that("tt_split_trips can include the boundary locations in each trip", {
   result <- tt_split_trips(
     test_mt,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(10, "km"),
-    buffer_inbound = as_units(10, "km"),
+    buffer_trip = as_units(10, "km"),
+    buffer_complete = as_units(10, "km"),
     complete = FALSE,
     boundary_events = "both"
   )
@@ -651,8 +729,8 @@ test_that("tt_split_trips can include the boundary locations in each trip", {
   result <- tt_split_trips(
     two_locations,
     centre_col = "centre_sf",
-    buffer_outbound = as_units(10, "km"),
-    buffer_inbound = as_units(10, "km"),
+    buffer_trip = as_units(10, "km"),
+    buffer_complete = as_units(10, "km"),
     complete = FALSE,
     boundary_events = "both"
   )

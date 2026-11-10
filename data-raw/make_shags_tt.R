@@ -64,8 +64,8 @@ unique(shags_tt$bird_id)
 shags_trips <- shags_tt %>%
   tt_split_trips(
     centre_col = "colony_coord",
-    buffer_outbound = as_units(1, "km"),
-    buffer_inbound = as_units(1, "km"),
+    buffer_trip = as_units(1, "km"),
+    buffer_complete = as_units(1, "km"),
     complete = TRUE
   )
 
@@ -115,8 +115,8 @@ data.frame(
 shags_truncated_trips <- shags_tt_truncated %>%
   tt_split_trips(
     centre_col = "colony_coord",
-    buffer_outbound = as_units(3, "km"),
-    buffer_inbound = as_units(3, "km"),
+    buffer_trip = as_units(3, "km"),
+    buffer_complete = as_units(3, "km"),
     complete = TRUE
   )
 
