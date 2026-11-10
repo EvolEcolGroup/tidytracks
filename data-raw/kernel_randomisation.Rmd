@@ -356,8 +356,8 @@ the resolution and accuracy of your locations, and the likely movements of your 
 shags_tt_split <- shags_tt %>%
   tt_split_trips(
     centre_col = "colony_coord",
-    buffer_outbound = as_units(3, "km"),
-    buffer_inbound = as_units(3, "km"),
+    buffer_trip = as_units(3, "km"),
+    buffer_complete = as_units(3, "km"),
     complete = TRUE
   )
 ```
@@ -380,10 +380,13 @@ kb_40 migrated away from the colony and did not return so was also removed.
 
 **How the trip splitting works:**
 
-Essentially, the `buffer_outbound` and `buffer_inbound` arguments in
-`tt_split_trips` define zones around the central place (colony) that an animal
-must cross to be considered as starting or ending a trip. The `complete = TRUE`
-argument ensures that only trips which both leave and return to the colony
+Essentially, the `buffer_trip` argument in `tt_split_trips()` defines a zone
+around the central place (colony) that delimits trips: a trip starts when the
+animal moves beyond this distance from the colony, and ends when it comes back
+within it. A trip is incomplete if the track starts or ends during it (e.g. the
+logger started recording after the animal had left). `buffer_complete` only
+makes this classification more tolerant when it is larger than `buffer_trip`;
+here both are 3 km, so it has no effect. The `complete = TRUE` argument ensures that only trips which both leave and return to the colony
 (i.e., complete round trips) are retained. As a result, any tracks that do not
 leave the buffer zone, or trips that are not complete, are removed from the
 dataset.

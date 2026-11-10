@@ -12,7 +12,7 @@
 \alias{hr_ud_unwrap}
 \alias{hr_ud_saveRDS}
 \alias{hr_ud_sum}
-\title{Deprecated functions in tidytracks}
+\title{Deprecated functions and arguments in tidytracks}
 \usage{
 hr_kde(
   x,
@@ -61,6 +61,14 @@ The deprecated functions and their replacements are:
 \item \code{hr_ud_wrap()}: use \code{\link[=hr_tt_ud_wrap]{hr_tt_ud_wrap()}}
 \item \code{hr_ud_unwrap()}: use \code{\link[=hr_tt_ud_unwrap]{hr_tt_ud_unwrap()}}
 \item \code{hr_ud_saveRDS()}: use \code{\link[=hr_tt_ud_saveRDS]{hr_tt_ud_saveRDS()}}
+}
+
+Some arguments have also been renamed, to better describe what they do. The
+old names still work in the same way, with a warning. The deprecated
+arguments and their replacements are:
+\itemize{
+\item \code{\link[=tt_split_trips]{tt_split_trips()}} \code{buffer_outbound}: use \code{buffer_trip}
+\item \code{\link[=tt_split_trips]{tt_split_trips()}} \code{buffer_inbound}: use \code{buffer_complete}
 }
 }
 \keyword{internal}
