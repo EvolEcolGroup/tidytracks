@@ -1,4 +1,4 @@
-# Deprecated functions in tidytracks
+# Deprecated functions and arguments in tidytracks
 
 These functions have been renamed with an `hr_tt_` prefix to avoid name
 clashes with other packages. The old names still work for backwards
@@ -70,3 +70,13 @@ The deprecated functions and their replacements are:
 
 - `hr_ud_saveRDS()`: use
   [`hr_tt_ud_saveRDS()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_saveRDS.md)
+
+Some arguments have also been renamed, to better describe what they do.
+The old names still work in the same way, with a warning. The deprecated
+arguments and their replacements are:
+
+- [`tt_split_trips()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_split_trips.md)
+  `buffer_outbound`: use `buffer_trip`
+
+- [`tt_split_trips()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_split_trips.md)
+  `buffer_inbound`: use `buffer_complete`

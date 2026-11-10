@@ -494,8 +494,8 @@ operations <- list(
       tt_split_trips(
         input,
         centre_col = "nest",
-        buffer_outbound = as_units(5, "km"),
-        buffer_inbound = as_units(5, "km"),
+        buffer_trip = as_units(5, "km"),
+        buffer_complete = as_units(5, "km"),
         complete = FALSE
       )
     },

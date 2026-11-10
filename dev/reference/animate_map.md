@@ -118,9 +118,9 @@ gganimate::animate(
 #> # A tibble: 4 × 7
 #>   format width height colorspace matte filesize density
 #>   <chr>  <int>  <int> <chr>      <lgl>    <int> <chr>  
-#> 1 gif      480    480 sRGB       FALSE        0 72x72  
-#> 2 gif      480    480 sRGB       TRUE         0 72x72  
-#> 3 gif      480    480 sRGB       TRUE         0 72x72  
-#> 4 gif      480    480 sRGB       TRUE         0 72x72  
+#> 1 gif      480    480 sRGB       FALSE        0 +72x+72
+#> 2 gif      480    480 sRGB       TRUE         0 +72x+72
+#> 3 gif      480    480 sRGB       TRUE         0 +72x+72
+#> 4 gif      480    480 sRGB       TRUE         0 +72x+72
 # }
 ```
