@@ -141,6 +141,20 @@
 
 ### Bug fixes
 
+- `lwgeom` is now imported rather than suggested.
+  [`event_azimuth()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_azimuth.md)
+  always needs it (through
+  [`move2::mt_azimuth()`](https://bartk.gitlab.io/move2/reference/mt_azimuth.html)),
+  and
+  [`event_distance()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_distance.md),
+  [`track_tot_distance()`](https://evolecolgroup.github.io/tidytracks/dev/reference/track_tot_distance.md),
+  [`event_speed()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_speed.md)
+  and
+  [`track_summary_stats()`](https://evolecolgroup.github.io/tidytracks/dev/reference/track_summary_stats.md)
+  need it for coordinates in longitude and latitude when s2 is switched
+  off (through
+  [`sf::st_distance()`](https://r-spatial.github.io/sf/reference/geos_measures.html));
+  without it they failed with “there is no package called ‘lwgeom’”.
 - When `buffer_complete` is smaller than `buffer_trip` (very unlikely):
   [`tt_split_trips()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_split_trips.md)
   no longer classifies the last trip of a track as incomplete when the
