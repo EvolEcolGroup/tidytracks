@@ -94,6 +94,12 @@ duplicated track ids in the metadata.
 
 ## Bug fixes
 
+* `lwgeom` is now imported rather than suggested. `event_azimuth()` always
+  needs it (through `move2::mt_azimuth()`), and `event_distance()`,
+  `track_tot_distance()`, `event_speed()` and `track_summary_stats()` need it
+  for coordinates in longitude and latitude when s2 is switched off (through
+  `sf::st_distance()`); without it they failed with "there is no package
+  called 'lwgeom'".
 * When `buffer_complete` is smaller than `buffer_trip` (very unlikely): 
   `tt_split_trips()` no longer classifies the last trip of a track as
   incomplete when the track ends after the animal is back within

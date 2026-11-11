@@ -98,6 +98,7 @@ importFrom(ggplot2,
   autoplot,
   ggproto
 )
+importFrom(lwgeom,st_geod_azimuth)
 importFrom(move2,mt_as_move2)
 importFrom(rlang,
   "!!!",
