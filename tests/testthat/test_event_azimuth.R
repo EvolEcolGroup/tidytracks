@@ -1,5 +1,4 @@
 test_that("event_azimuth returns degrees by default", {
-  skip_if_not_installed("lwgeom")
   azimuth <- event_azimuth(example_tt)
   expect_equal(units(azimuth), units(as_units("degrees")))
   expect_equal(
@@ -9,7 +8,6 @@ test_that("event_azimuth returns degrees by default", {
 })
 
 test_that("event_azimuth gives NA for events without a location", {
-  skip_if_not_installed("lwgeom")
   # as event_distance(), NA for the segments to and from the third event
   x_empty <- example_tt
   sf::st_geometry(x_empty)[3] <- sf::st_point()
