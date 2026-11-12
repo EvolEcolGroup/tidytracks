@@ -42,8 +42,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // locoh_cpp
-Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y, std::string type, double n, Rcpp::NumericVector levels, double buffer, double shift_x, double shift_y);
-RcppExport SEXP _tidytracks_locoh_cpp(SEXP xSEXP, SEXP ySEXP, SEXP typeSEXP, SEXP nSEXP, SEXP levelsSEXP, SEXP bufferSEXP, SEXP shift_xSEXP, SEXP shift_ySEXP) {
+Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y, std::string type, double n, Rcpp::NumericVector levels, double buffer, double shift_x, double shift_y, bool union_hulls, bool shift_back);
+RcppExport SEXP _tidytracks_locoh_cpp(SEXP xSEXP, SEXP ySEXP, SEXP typeSEXP, SEXP nSEXP, SEXP levelsSEXP, SEXP bufferSEXP, SEXP shift_xSEXP, SEXP shift_ySEXP, SEXP union_hullsSEXP, SEXP shift_backSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -55,7 +55,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type buffer(bufferSEXP);
     Rcpp::traits::input_parameter< double >::type shift_x(shift_xSEXP);
     Rcpp::traits::input_parameter< double >::type shift_y(shift_ySEXP);
-    rcpp_result_gen = Rcpp::wrap(locoh_cpp(x, y, type, n, levels, buffer, shift_x, shift_y));
+    Rcpp::traits::input_parameter< bool >::type union_hulls(union_hullsSEXP);
+    Rcpp::traits::input_parameter< bool >::type shift_back(shift_backSEXP);
+    rcpp_result_gen = Rcpp::wrap(locoh_cpp(x, y, type, n, levels, buffer, shift_x, shift_y, union_hulls, shift_back));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -75,7 +77,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_tidytracks_kde_linbin_cpp", (DL_FUNC) &_tidytracks_kde_linbin_cpp, 7},
     {"_tidytracks_locoh_neighbours_cpp", (DL_FUNC) &_tidytracks_locoh_neighbours_cpp, 4},
-    {"_tidytracks_locoh_cpp", (DL_FUNC) &_tidytracks_locoh_cpp, 8},
+    {"_tidytracks_locoh_cpp", (DL_FUNC) &_tidytracks_locoh_cpp, 10},
     {"_tidytracks_convex_hull_cpp", (DL_FUNC) &_tidytracks_convex_hull_cpp, 2},
     {NULL, NULL, 0}
 };

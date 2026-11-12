@@ -25,7 +25,11 @@
 #'
 #' The neighbour search, the hulls, their areas and the number of hulls needed
 #' for each level are computed in C++ (with a k-d tree for the neighbour
-#' search); the union of the hulls is computed with [sf::st_union()].
+#' search). Without a buffer, the union of the hulls is also computed in C++,
+#' taking advantage of the hulls being convex (with exact geometric
+#' predicates, and the same formula as GEOS for the points where the edges of
+#' two hulls cross), which is much faster than with GEOS; with a buffer, it is
+#' computed with [sf::st_union()].
 #'
 #' The rules follow `amt::hr_locoh()`: each
 #' level is matched to the union of hulls whose coverage (the proportion of
@@ -194,30 +198,31 @@ hr_tt_locoh <- function(
     )
   }
 
+  # the isopleths of all groups, and their areas, computed in one call
+  geometry <- sf::st_sfc(unlist(geometry, recursive = FALSE))
+  area <- locoh_area(geometry, crs = crs, longlat = longlat)
+
   # create a tibble with the results of all groups in one go (creating a
   # tibble for each group and combining them takes much longer when there
-  # are many groups), cast it to an sf object, and compute all the areas in
-  # one call
+  # are many groups), and cast it to an sf object. If there is a single
+  # grouping variable, the column of the groups is named after it (naming it
+  # here, rather than renaming it afterwards, saves time on short tracks);
+  # otherwise it is named group_id
+  group_column <- if (length(dplyr::group_vars(x)) == 1) {
+    dplyr::group_vars(x)
+  } else {
+    "group_id"
+  }
   locoh_results <- tibble::tibble(
-    group_id = rep(group_labels, each = length(levels)),
+    !!group_column := rep(group_labels, each = length(levels)),
     method = "locoh",
     type = type,
     n = rep(n, each = length(levels)),
     level = rep(levels, times = length(group_labels)),
-    area = NA_real_,
-    geometry = sf::st_sfc(unlist(geometry, recursive = FALSE))
+    area = area,
+    geometry = geometry
   )
   locoh_results <- sf::st_as_sf(locoh_results, crs = crs)
-  locoh_results$area <- sf::st_area(locoh_results)
-
-  # if there was a single grouping variable, rename the group_id column
-  if (length(dplyr::group_vars(x)) == 1) {
-    locoh_results <- locoh_results %>%
-      dplyr::rename_with(
-        ~ dplyr::group_vars(x),
-        dplyr::all_of("group_id")
-      )
-  }
 
   # add a method attribute
   attr(locoh_results, "hr_tt_method") <- "locoh"
@@ -269,6 +274,32 @@ check_locoh_n <- function(n, type, n_locations, group_labels) {
   n
 }
 
+#' Areas of the LoCoH isopleths
+#'
+#' Internal function that computes the areas of the isopleths as
+#' [sf::st_area()] does, but asks PROJ for the parameters of the CRS only
+#' once (to get its units) rather than twice, which matters for short tracks:
+#' for projected data, the areas are computed without the CRS, and given the
+#' squared units of the CRS, as [sf::st_area()] does.
+#'
+#' @param geometry An `sfc` of the isopleths, without a CRS.
+#' @param crs The CRS of the isopleths.
+#' @param longlat Whether the CRS is longitude/latitude.
+#' @returns The areas, as a `units` vector (or a numeric vector if the CRS
+#'   has no units), as given by [sf::st_area()].
+#' @keywords internal
+#' @noRd
+locoh_area <- function(geometry, crs, longlat) {
+  unit <- if (longlat) NULL else crs$ud_unit
+  if (is.null(unit)) {
+    # longitude/latitude (areas on the sphere), or a CRS without units
+    return(sf::st_area(sf::st_set_crs(geometry, crs)))
+  }
+  area <- sf::st_area(geometry)
+  units(area) <- unit^2
+  area
+}
+
 #' Create LoCoH home ranges at multiple levels for a given group
 #'
 #' This is the internal function that is called by `hr_tt_locoh` to create the
@@ -281,8 +312,8 @@ check_locoh_n <- function(n, type, n_locations, group_labels) {
 #' @param levels A vector of levels for the home ranges
 #' @param buffer the distance by which to buffer the home ranges
 #' @param longlat whether the coordinates are longitudes and latitudes
-#' @returns An `sfc` of multipolygons (without a CRS), one per level (in the
-#'   order of `levels`)
+#' @returns The multipolygons (without a CRS), one per level (in the order of
+#'   `levels`), as an `sfc` or as a list of `sfg` objects
 #' @keywords internal
 #' @noRd
 locoh_one_group <- function(xy, n, type, levels, buffer, longlat) {
@@ -299,8 +330,13 @@ locoh_one_group <- function(xy, n, type, levels, buffer, longlat) {
   shift <- c(mean(range(xy[, 1])), mean(range(xy[, 2])))
 
   # the C++ code finds the neighbours, builds the hulls, sorts them by area,
-  # and works out how many of the smallest hulls each level needs; it returns
-  # those hulls as sf geometries, from the smallest to the largest
+  # and works out how many of the smallest hulls each level needs. Without a
+  # buffer, it also merges the hulls into the isopleths (much faster than
+  # GEOS, as it can take advantage of the hulls being convex), and returns
+  # them as MULTIPOLYGONs, shifted back to the original coordinates for
+  # projected data. Otherwise (or in the rare cases where it cannot merge
+  # them reliably), it returns the hulls needed by the isopleths as sf
+  # geometries, from the smallest to the largest, to be merged by GEOS below.
   hulls <- locoh_cpp( # nolint: object_usage_linter.
     xy[, 1],
     xy[, 2],
@@ -309,8 +345,21 @@ locoh_one_group <- function(xy, n, type, levels, buffer, longlat) {
     levels = levels,
     buffer = buffer,
     shift_x = shift[1],
-    shift_y = shift[2]
+    shift_y = shift[2],
+    union_hulls = buffer == 0,
+    shift_back = !longlat
   )
+  if (!is.null(hulls$isopleths)) {
+    if (!longlat) {
+      return(hulls$isopleths)
+    }
+    # see below for why isopleths in longitude/latitude are simplified
+    geometry <- sf::st_simplify(
+      sf::st_sfc(hulls$isopleths),
+      dTolerance = 1e-9
+    )
+    return(sf::st_cast(geometry, "MULTIPOLYGON") + shift)
+  }
 
   # Union the hulls for each level. The isopleths are nested (the isopleth
   # for a level is the union of the j smallest hulls, with j increasing with

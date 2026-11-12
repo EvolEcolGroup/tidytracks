@@ -86,7 +86,11 @@ as a starting value for \code{n}.
 
 The neighbour search, the hulls, their areas and the number of hulls needed
 for each level are computed in C++ (with a k-d tree for the neighbour
-search); the union of the hulls is computed with \code{\link[sf:st_union]{sf::st_union()}}.
+search). Without a buffer, the union of the hulls is also computed in C++,
+taking advantage of the hulls being convex (with exact geometric
+predicates, and the same formula as GEOS for the points where the edges of
+two hulls cross), which is much faster than with GEOS; with a buffer, it is
+computed with \code{\link[sf:st_union]{sf::st_union()}}.
 
 The rules follow \code{amt::hr_locoh()}: each
 level is matched to the union of hulls whose coverage (the proportion of

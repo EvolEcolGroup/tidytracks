@@ -6,8 +6,9 @@
 // isopleth for a given level is the union of the smallest hulls that, between
 // them, contain the requested proportion of the locations.
 //
-// This file does everything except the final union of the hulls, which is
-// left to GEOS (via the `sf` package) on the R side:
+// This file does everything up to the union of the hulls, which is computed
+// either in convex_union.cpp (without a buffer) or by GEOS (via the `sf`
+// package) on the R side:
 //   1. a 2-d k-d tree for fast neighbour queries (k nearest neighbours, and
 //      all neighbours within a distance);
 //   2. the neighbour set of each root, for the three flavours of LoCoH:
@@ -20,7 +21,8 @@
 //      its area and perimeter;
 //   4. the ordering of the hulls by area, the cumulative proportion of
 //      locations covered as hulls are added, and the number of hulls needed
-//      for each requested level.
+//      for each requested level;
+//   5. (optionally) the union of those hulls, with convex_union.cpp.
 //
 // The rules follow the implementation of `amt::hr_locoh()`, so that the two
 // give the same isopleths:
@@ -35,8 +37,11 @@
 
 #include <Rcpp.h>
 
+#include "convex_union.h"
+
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <queue>
 #include <string>
 #include <utility>
@@ -83,8 +88,13 @@ public:
     }
     // max-heap of (squared distance, index): the top is the worst of the
     // best candidates found so far, i.e. the one to drop when a better
-    // candidate turns up; pairs compare by distance first, then by index
-    std::priority_queue<std::pair<double, int>> heap;
+    // candidate turns up; pairs compare by distance first, then by index.
+    // Room for k + 1 candidates is reserved, to avoid reallocations as the
+    // heap grows.
+    std::vector<std::pair<double, int>> storage;
+    storage.reserve(static_cast<std::size_t>(k) + 1);
+    std::priority_queue<std::pair<double, int>> heap(
+      std::less<std::pair<double, int>>(), std::move(storage));
     knn_search(0, qx, qy, static_cast<std::size_t>(k), exclude, heap);
     // pop the heap from the worst to the best candidate, filling `out` back
     // to front so that it ends up sorted from the nearest to the farthest
@@ -371,6 +381,7 @@ NeighbourSets find_neighbours(const double* x, const double* y, int n_pts,
 
 struct Point {
   double x, y;
+  int idx;  // index of the location (one of them, for duplicated locations)
   // lexicographic order (by x, then y), needed by the monotone chain
   bool operator<(const Point& o) const {
     return x < o.x || (x == o.x && y < o.y);
@@ -426,9 +437,11 @@ std::vector<Point> convex_hull(std::vector<Point> pts) {
 // Area (by the shoelace formula) and perimeter of a convex polygon given by
 // its vertices in counter-clockwise order. A segment (2 vertices) has area 0
 // and a perimeter of twice its length (it is a polygon that goes there and
-// back again), and a single point has area and perimeter 0.
-void area_perimeter(const std::vector<Point>& hull, double& area,
-                    double& perimeter) {
+// back again), and a single point has area and perimeter 0. The perimeter is
+// only needed with a buffer (see locoh_cpp()); as std::hypot() is slow, it is
+// left at 0 if `with_perimeter` is false.
+void area_perimeter(const std::vector<Point>& hull, bool with_perimeter,
+                    double& area, double& perimeter) {
   area = 0.0;
   perimeter = 0.0;
   const std::size_t m = hull.size();
@@ -439,7 +452,9 @@ void area_perimeter(const std::vector<Point>& hull, double& area,
     const Point& a = hull[i];
     const Point& b = hull[(i + 1) % m];  // wrap around to close the ring
     area += a.x * b.y - b.x * a.y;
-    perimeter += std::hypot(b.x - a.x, b.y - a.y);
+    if (with_perimeter) {
+      perimeter += std::hypot(b.x - a.x, b.y - a.y);
+    }
   }
   area = std::fabs(area) / 2.0;
 }
@@ -477,6 +492,31 @@ SEXP hull_to_sfg(const std::vector<Point>& hull, double shift_x,
   Rcpp::List polygon = Rcpp::List::create(ring);
   polygon.attr("class") = Rcpp::CharacterVector::create("XY", "POLYGON", "sfg");
   return polygon;
+}
+
+// Turn an isopleth computed by convex_union::union_of_convex_polygons() into
+// an `sf` MULTIPOLYGON (an empty one if the isopleth is empty), with its
+// coordinates shifted by (shift_x, shift_y).
+SEXP multipolygon_to_sfg(const convex_union::MultiPolygon& isopleth,
+                         double shift_x, double shift_y) {
+  Rcpp::List polygons(isopleth.size());
+  for (std::size_t i = 0; i < isopleth.size(); ++i) {
+    Rcpp::List rings(isopleth[i].size());
+    for (std::size_t j = 0; j < isopleth[i].size(); ++j) {
+      const convex_union::Ring& ring = isopleth[i][j];
+      const int m = static_cast<int>(ring.x.size());
+      Rcpp::NumericMatrix coords(m, 2);
+      for (int k = 0; k < m; ++k) {
+        coords(k, 0) = ring.x[k] + shift_x;
+        coords(k, 1) = ring.y[k] + shift_y;
+      }
+      rings[j] = coords;
+    }
+    polygons[i] = rings;
+  }
+  polygons.attr("class") =
+    Rcpp::CharacterVector::create("XY", "MULTIPOLYGON", "sfg");
+  return polygons;
 }
 
 // Check the inputs shared by the exported functions.
@@ -564,21 +604,34 @@ Rcpp::List locoh_neighbours_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
 //'   GEOS, which computes the union of the hulls, loses precision with large
 //'   coordinates (e.g. projected coordinates in the millions): small
 //'   details, such as a buffer of 1e-5, are then distorted.
+//' @param union_hulls whether to compute the isopleths (the unions of the
+//'   hulls with an area) here, in the shifted coordinates, rather than
+//'   leaving them to GEOS (see convex_union.cpp).
+//' @param shift_back whether to shift the isopleths back to the original
+//'   coordinates.
 //' @returns A list with:
 //' - `n_hulls`: for each level, the number of (smallest) hulls whose union
 //'   is the isopleth;
 //' - `coverage`: for each level, the proportion of locations in those hulls;
-//' - `hulls`: the `max(n_hulls)` smallest hulls, from the smallest to the
-//'   largest, as a list of `sfg` objects (POLYGON, or LINESTRING or POINT
-//'   for degenerate hulls with no area), in shifted coordinates;
-//' - `degenerate`: a logical vector, `TRUE` for the hulls with no area;
-//' - `root`: the (1-based) index of the root location of each hull.
+//' - `isopleths`: if `union_hulls` is `TRUE` (and the union could be
+//'   computed), the isopleth for each level, as a list of MULTIPOLYGON `sfg`
+//'   objects (in shifted coordinates, unless `shift_back` is `TRUE`), or else
+//'   `NULL`;
+//' - `hulls`: if `isopleths` is `NULL`, the `max(n_hulls)` smallest hulls,
+//'   from the smallest to the largest, as a list of `sfg` objects (POLYGON,
+//'   or LINESTRING or POINT for degenerate hulls with no area), in shifted
+//'   coordinates (an empty list otherwise);
+//' - `degenerate`: a logical vector, `TRUE` for the hulls in `hulls` with no
+//'   area;
+//' - `root`: the (1-based) index of the root location of each hull in
+//'   `hulls`.
 //' @keywords internal
 //' @noRd
 // [[Rcpp::export]]
 Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
                      std::string type, double n, Rcpp::NumericVector levels,
-                     double buffer, double shift_x, double shift_y) {
+                     double buffer, double shift_x, double shift_y,
+                     bool union_hulls = false, bool shift_back = false) {
   check_inputs(x, y, type, n);
   if (!std::isfinite(buffer) || buffer < 0) {
     Rcpp::stop("buffer must be a non-negative number");
@@ -603,12 +656,12 @@ Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
     pts.clear();
     for (std::size_t j = sets.offsets[i]; j < sets.offsets[i + 1]; ++j) {
       const int k = sets.members[j];
-      pts.push_back(Point{px[k], py[k]});
+      pts.push_back(Point{px[k], py[k], k});
     }
     hulls[i] = convex_hull(pts);
     double area = 0.0;
     double perimeter = 0.0;
-    area_perimeter(hulls[i], area, perimeter);
+    area_perimeter(hulls[i], buffer > 0, area, perimeter);
     // amt buffers every hull before measuring its area. For a convex
     // polygon, the area after buffering by b is exactly (Steiner formula)
     //   area + perimeter * b + pi * b^2,
@@ -672,13 +725,85 @@ Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
     max_hulls = std::max(max_hulls, best + 1);
   }
 
+  // --- union of the hulls (optional) ---------------------------------------
+  // The isopleth for a level is the union of the hulls with an area among its
+  // n_hulls smallest hulls (hulls with no area add nothing to it). The union
+  // is computed in the shifted coordinates, which GEOS would be given
+  // otherwise; the vertices of the hulls are referred to by the index of a
+  // location, which must be the same for all the locations at the same place
+  // (in shifted coordinates): we use the first of them.
+  Rcpp::List isopleths;
+  bool have_isopleths = false;
+  if (union_hulls) {
+    std::vector<double> sx(n_pts);
+    std::vector<double> sy(n_pts);
+    for (int i = 0; i < n_pts; ++i) {
+      sx[i] = px[i] - shift_x;
+      sy[i] = py[i] - shift_y;
+    }
+    std::vector<int> by_place(n_pts);
+    for (int i = 0; i < n_pts; ++i) {
+      by_place[i] = i;
+    }
+    std::sort(by_place.begin(), by_place.end(), [&sx, &sy](int a, int b) {
+      if (sx[a] != sx[b]) {
+        return sx[a] < sx[b];
+      }
+      if (sy[a] != sy[b]) {
+        return sy[a] < sy[b];
+      }
+      return a < b;
+    });
+    std::vector<int> vertex_id(n_pts);
+    for (int i = 0; i < n_pts; ++i) {
+      const int k = by_place[i];
+      const int prev = i > 0 ? by_place[i - 1] : -1;
+      vertex_id[k] = (prev >= 0 && sx[prev] == sx[k] && sy[prev] == sy[k])
+                       ? vertex_id[prev]
+                       : k;
+    }
+    // the hulls with an area, from the smallest to the largest, and how many
+    // of them each level needs
+    std::vector<std::size_t> offsets(1, 0);
+    std::vector<int> vertices;
+    std::vector<int> n_polygons(max_hulls + 1, 0);
+    for (int j = 0; j < max_hulls; ++j) {
+      const std::vector<Point>& hull = hulls[order[j]];
+      n_polygons[j + 1] = n_polygons[j];
+      if (hull.size() >= 3) {
+        for (const Point& p : hull) {
+          vertices.push_back(vertex_id[p.idx]);
+        }
+        offsets.push_back(vertices.size());
+        ++n_polygons[j + 1];
+      }
+    }
+    std::vector<int> counts(n_levels);
+    for (R_xlen_t l = 0; l < n_levels; ++l) {
+      counts[l] = n_polygons[n_hulls[l]];
+    }
+    std::vector<convex_union::MultiPolygon> unions;
+    if (convex_union::union_of_convex_polygons(sx, sy, offsets, vertices,
+                                               counts, unions)) {
+      isopleths = Rcpp::List(n_levels);
+      for (R_xlen_t l = 0; l < n_levels; ++l) {
+        isopleths[l] = multipolygon_to_sfg(unions[l],
+                                           shift_back ? shift_x : 0.0,
+                                           shift_back ? shift_y : 0.0);
+      }
+      have_isopleths = true;
+    }
+  }
+
   // --- return the hulls needed by the largest isopleth ---------------------
   // only the max_hulls smallest hulls take part in any isopleth, so the
-  // other hulls are not converted to R objects
-  Rcpp::List hull_sfg(max_hulls);
-  Rcpp::LogicalVector degenerate(max_hulls);
-  Rcpp::IntegerVector root(max_hulls);
-  for (int j = 0; j < max_hulls; ++j) {
+  // other hulls are not converted to R objects (nor any hull, if the
+  // isopleths have been computed here)
+  const int n_returned = have_isopleths ? 0 : max_hulls;
+  Rcpp::List hull_sfg(n_returned);
+  Rcpp::LogicalVector degenerate(n_returned);
+  Rcpp::IntegerVector root(n_returned);
+  for (int j = 0; j < n_returned; ++j) {
     const std::vector<Point>& hull = hulls[order[j]];
     hull_sfg[j] = hull_to_sfg(hull, shift_x, shift_y);
     degenerate[j] = hull.size() < 3;
@@ -688,6 +813,8 @@ Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
   return Rcpp::List::create(
     Rcpp::Named("n_hulls") = n_hulls,
     Rcpp::Named("coverage") = level_coverage,
+    Rcpp::Named("isopleths") =
+      have_isopleths ? static_cast<SEXP>(isopleths) : R_NilValue,
     Rcpp::Named("hulls") = hull_sfg,
     Rcpp::Named("degenerate") = degenerate,
     Rcpp::Named("root") = root);
@@ -712,7 +839,7 @@ Rcpp::NumericMatrix convex_hull_cpp(Rcpp::NumericVector x,
   std::vector<Point> pts;
   pts.reserve(x.size());
   for (R_xlen_t i = 0; i < x.size(); ++i) {
-    pts.push_back(Point{x[i], y[i]});
+    pts.push_back(Point{x[i], y[i], static_cast<int>(i)});
   }
   const std::vector<Point> hull = convex_hull(pts);
   Rcpp::NumericMatrix out(static_cast<int>(hull.size()), 2);

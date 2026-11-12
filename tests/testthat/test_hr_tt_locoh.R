@@ -306,6 +306,64 @@ test_that("convex hulls match grDevices::chull", {
   )
 })
 
+test_that("the union of the hulls in C++ matches their union by GEOS", {
+  # the isopleths merged by GEOS, from the hulls returned by locoh_cpp() (an
+  # isopleth with no hulls with an area is empty, as in hr_tt_locoh())
+  geos_isopleths <- function(xy, type, n, levels) {
+    hulls <- locoh_cpp(xy[, 1], xy[, 2], type, n, levels, 0, 0, 0)
+    do.call(c, lapply(hulls$n_hulls, function(n_hulls) {
+      polygons <- hulls$hulls[seq_len(n_hulls)][!hulls$degenerate[
+        seq_len(n_hulls)
+      ]]
+      if (length(polygons) == 0) {
+        return(sf::st_sfc(sf::st_multipolygon()))
+      }
+      sf::st_union(sf::st_sfc(polygons))
+    }))
+  }
+  set.seed(5)
+  datasets <- list(
+    random = cbind(stats::runif(300), stats::runif(300)),
+    # locations on a grid, many of them duplicated: hulls share vertices and
+    # edges, and have edges along the same lines
+    lattice = cbind(sample(0:15, 400, TRUE), sample(0:15, 400, TRUE)),
+    # a random walk rounded to whole numbers, as in data with rounded
+    # coordinates
+    rounded = round(apply(matrix(stats::rnorm(1000), ncol = 2), 2, cumsum) * 10)
+  )
+  levels <- c(0.95, 0.75, 0.5, 0.25)
+  for (xy in datasets) {
+    extent <- max(diff(range(xy[, 1])), diff(range(xy[, 2])))
+    for (type in c("k", "r", "a")) {
+      for (n in switch(type, k = c(3, 10), r = extent / 10, a = extent / 3)) {
+        cpp <- locoh_cpp(
+          xy[, 1], xy[, 2], type, n, levels, 0, 0, 0,
+          union_hulls = TRUE
+        )
+        expect_false(is.null(cpp$isopleths))
+        cpp_isopleths <- sf::st_sfc(cpp$isopleths)
+        geos <- geos_isopleths(xy, type, n, levels)
+        expect_true(all(sf::st_is_valid(cpp_isopleths)))
+        expect_equal(
+          as.numeric(sf::st_area(cpp_isopleths)),
+          as.numeric(sf::st_area(geos)),
+          tolerance = 1e-9
+        )
+        for (i in seq_along(levels)) {
+          sym_diff <- sf::st_area(sf::st_sym_difference(
+            cpp_isopleths[i],
+            geos[i]
+          ))
+          expect_lte(
+            sum(as.numeric(sym_diff)),
+            1e-9 * as.numeric(sf::st_area(geos[i]))
+          )
+        }
+      }
+    }
+  }
+})
+
 test_that("hr_tt_locoh gives the same home ranges as amt", {
   skip_if_not_installed("amt")
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
