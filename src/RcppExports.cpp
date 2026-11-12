@@ -27,6 +27,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// kde_convolve_cpp
+Rcpp::NumericMatrix kde_convolve_cpp(Rcpp::NumericMatrix counts, Rcpp::NumericVector wx, Rcpp::NumericVector wy, int ncx, int ncy, int offx, int offy);
+RcppExport SEXP _tidytracks_kde_convolve_cpp(SEXP countsSEXP, SEXP wxSEXP, SEXP wySEXP, SEXP ncxSEXP, SEXP ncySEXP, SEXP offxSEXP, SEXP offySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type counts(countsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type wx(wxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type wy(wySEXP);
+    Rcpp::traits::input_parameter< int >::type ncx(ncxSEXP);
+    Rcpp::traits::input_parameter< int >::type ncy(ncySEXP);
+    Rcpp::traits::input_parameter< int >::type offx(offxSEXP);
+    Rcpp::traits::input_parameter< int >::type offy(offySEXP);
+    rcpp_result_gen = Rcpp::wrap(kde_convolve_cpp(counts, wx, wy, ncx, ncy, offx, offy));
+    return rcpp_result_gen;
+END_RCPP
+}
 // locoh_neighbours_cpp
 Rcpp::List locoh_neighbours_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y, std::string type, double n);
 RcppExport SEXP _tidytracks_locoh_neighbours_cpp(SEXP xSEXP, SEXP ySEXP, SEXP typeSEXP, SEXP nSEXP) {
@@ -74,6 +91,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_tidytracks_kde_linbin_cpp", (DL_FUNC) &_tidytracks_kde_linbin_cpp, 7},
+    {"_tidytracks_kde_convolve_cpp", (DL_FUNC) &_tidytracks_kde_convolve_cpp, 7},
     {"_tidytracks_locoh_neighbours_cpp", (DL_FUNC) &_tidytracks_locoh_neighbours_cpp, 4},
     {"_tidytracks_locoh_cpp", (DL_FUNC) &_tidytracks_locoh_cpp, 8},
     {"_tidytracks_convex_hull_cpp", (DL_FUNC) &_tidytracks_convex_hull_cpp, 2},

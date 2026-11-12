@@ -22,6 +22,32 @@ kde_linbin_cpp <- function(x, y, x0, y0, res, nx, ny) {
     .Call(`_tidytracks_kde_linbin_cpp`, x, y, x0, y0, res, nx, ny)
 }
 
+#' Smoothing of binned counts with a separable kernel
+#'
+#' Internal function called by `kde_density_binned()`: convolves the binned
+#' counts with the kernel along x, and then along y, and returns the result
+#' at the centres of the cells of the grid. A grid point of the binned counts
+#' contributes to a cell if their distance (in cells) is within the
+#' half-width of the kernel along that axis, with the weight of the kernel at
+#' that distance.
+#'
+#' @param counts the binned counts, as returned by `kde_linbin_cpp()`, with
+#'   one row per grid point along x and one column per grid point along y.
+#' @param wx,wy the weights of the kernel along x and along y, at 0, 1, ...,
+#'   half-width grid points from its centre (as from
+#'   `kde_kernel_weights()`).
+#' @param ncx,ncy the number of cells of the grid along x and along y.
+#' @param offx,offy the number of grid points of the binned counts before
+#'   the centre of the first cell of the grid, along x and along y (the
+#'   centre of cell `i` is grid point `i + offx`, both 0-based).
+#' @returns A matrix with one row per cell along x (from west to east) and
+#'   one column per cell along y (from south to north).
+#' @keywords internal
+#' @noRd
+kde_convolve_cpp <- function(counts, wx, wy, ncx, ncy, offx, offy) {
+    .Call(`_tidytracks_kde_convolve_cpp`, counts, wx, wy, ncx, ncy, offx, offy)
+}
+
 #' Neighbour sets used by LoCoH
 #'
 #' Internal function, exported for testing: returns the neighbour set of

@@ -1,17 +1,29 @@
-// Linear binning of locations onto a regular grid, for the binned kernel
-// density estimate of hr_tt_kde(method = "binned").
+// The binned kernel density estimate of hr_tt_kde(method = "binned"), in two
+// steps, both called by kde_density_binned():
 //
-// Each location is split between the (up to) four grid points that surround
-// it, with weights that decrease linearly with its distance from each of them
-// along x and along y (bilinear weights, which sum to 1). This is the linear
-// binning of KernSmooth::bkde2D() (Wand 1994), whose own implementation is
-// not exported by KernSmooth. The binned counts are then smoothed with the
-// kernel in R, in kde_density_binned().
+// 1. Linear binning of the locations onto a regular grid (kde_linbin_cpp()).
+//    Each location is split between the (up to) four grid points that
+//    surround it, with weights that decrease linearly with its distance from
+//    each of them along x and along y (bilinear weights, which sum to 1).
+//    This is the linear binning of KernSmooth::bkde2D() (Wand 1994), whose
+//    own implementation is not exported by KernSmooth.
+// 2. Smoothing of the binned counts with the kernel (kde_convolve_cpp()).
+//    The Gaussian kernel is separable (the kernel in 2D is the product of a
+//    kernel along x and one along y), so the 2D convolution is a convolution
+//    along x followed by one along y. Each is computed directly, over the
+//    grid points within reach of the (truncated) kernel only, and skipping
+//    the empty bins, so that it takes a time proportional to the number of
+//    cells within reach of the locations times the width of the kernel.
+//    KernSmooth::bkde2D() instead computes the 2D convolution with fast
+//    Fourier transforms, on a grid padded to a power of 2 along each axis,
+//    which takes longer.
 
 #include <Rcpp.h>
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <vector>
 
 // Locate a coordinate along one axis of the grid, given in grid units (0 at
 // the first grid point, n - 1 at the last one): `i` is the index (0-based) of
@@ -89,4 +101,100 @@ Rcpp::NumericMatrix kde_linbin_cpp(Rcpp::NumericVector x,
     }
   }
   return counts;
+}
+
+//' Smoothing of binned counts with a separable kernel
+//'
+//' Internal function called by `kde_density_binned()`: convolves the binned
+//' counts with the kernel along x, and then along y, and returns the result
+//' at the centres of the cells of the grid. A grid point of the binned counts
+//' contributes to a cell if their distance (in cells) is within the
+//' half-width of the kernel along that axis, with the weight of the kernel at
+//' that distance.
+//'
+//' @param counts the binned counts, as returned by `kde_linbin_cpp()`, with
+//'   one row per grid point along x and one column per grid point along y.
+//' @param wx,wy the weights of the kernel along x and along y, at 0, 1, ...,
+//'   half-width grid points from its centre (as from
+//'   `kde_kernel_weights()`).
+//' @param ncx,ncy the number of cells of the grid along x and along y.
+//' @param offx,offy the number of grid points of the binned counts before
+//'   the centre of the first cell of the grid, along x and along y (the
+//'   centre of cell `i` is grid point `i + offx`, both 0-based).
+//' @returns A matrix with one row per cell along x (from west to east) and
+//'   one column per cell along y (from south to north).
+//' @keywords internal
+//' @noRd
+// [[Rcpp::export]]
+Rcpp::NumericMatrix kde_convolve_cpp(Rcpp::NumericMatrix counts,
+                                     Rcpp::NumericVector wx,
+                                     Rcpp::NumericVector wy, int ncx, int ncy,
+                                     int offx, int offy) {
+  if (wx.size() < 1 || wy.size() < 1) {
+    Rcpp::stop("the kernel must have at least one weight along each axis");
+  }
+  if (ncx < 1 || ncy < 1) {
+    Rcpp::stop("the grid must have at least one cell along each axis");
+  }
+  const int nbx = counts.nrow(), nby = counts.ncol();
+  const int lx = wx.size() - 1, ly = wy.size() - 1;
+  const double *cnt = counts.begin();
+  const double *kx = wx.begin();
+  const double *ky = wy.begin();
+
+  // 1) Along x: tmp(i, b) is the sum over the grid points a of
+  // wx[|i + offx - a|] * counts(a, b). Each non-empty bin is spread onto the
+  // cells within the half-width of the kernel; the grid points along y with
+  // no locations (empty columns of counts) are flagged, to be skipped along
+  // y, as are the cells along x that the kernel does not reach (outside
+  // [i_min, i_max]).
+  std::vector<double> tmp(static_cast<size_t>(ncx) * nby, 0.0);
+  std::vector<char> used(nby, 0);
+  int i_min = ncx, i_max = -1;
+  for (int b = 0; b < nby; ++b) {
+    const double *cb = cnt + static_cast<size_t>(b) * nbx;
+    double *tb = tmp.data() + static_cast<size_t>(b) * ncx;
+    for (int a = 0; a < nbx; ++a) {
+      const double c = cb[a];
+      if (c == 0.0) {
+        continue;
+      }
+      // the cell whose centre is grid point a (it may be outside the grid)
+      const int centre = a - offx;
+      const int i0 = std::max(0, centre - lx);
+      const int i1 = std::min(ncx - 1, centre + lx);
+      if (i0 > i1) {
+        continue;
+      }
+      used[b] = 1;
+      i_min = std::min(i_min, i0);
+      i_max = std::max(i_max, i1);
+      for (int i = i0; i <= i1; ++i) {
+        tb[i] += c * kx[std::abs(i - centre)];
+      }
+    }
+  }
+
+  // 2) Along y: z(i, j) is the sum over the grid points b of
+  // wy[|j + offy - b|] * tmp(i, b), added one (non-empty) column of tmp at a
+  // time, along the cells within reach of the kernel along x
+  Rcpp::NumericMatrix z(ncx, ncy);
+  double *zp = z.begin();
+  for (int b = 0; b < nby; ++b) {
+    if (!used[b]) {
+      continue;
+    }
+    const double *tb = tmp.data() + static_cast<size_t>(b) * ncx;
+    const int centre = b - offy;
+    const int j0 = std::max(0, centre - ly);
+    const int j1 = std::min(ncy - 1, centre + ly);
+    for (int j = j0; j <= j1; ++j) {
+      const double w = ky[std::abs(j - centre)];
+      double *zj = zp + static_cast<size_t>(j) * ncx;
+      for (int i = i_min; i <= i_max; ++i) {
+        zj[i] += w * tb[i];
+      }
+    }
+  }
+  return z;
 }

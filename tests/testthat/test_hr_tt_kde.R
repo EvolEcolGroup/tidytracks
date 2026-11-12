@@ -477,6 +477,60 @@ test_that("kde_linbin_cpp splits each location between its grid points", {
   )
 })
 
+test_that("kde_convolve_cpp is the product with the kernel matrices", {
+  # the convolution as products with the (banded) kernel matrices along x and
+  # along y, each with one row per cell and one column per grid point of the
+  # binned counts, the centre of cell i being grid point i + offset
+  kernel_matrix <- function(weights, n_cells, n_bins, offset) {
+    distance <- abs(outer(seq_len(n_cells) + offset, seq_len(n_bins), "-"))
+    kernel <- matrix(0, n_cells, n_bins)
+    in_band <- distance < length(weights)
+    kernel[in_band] <- weights[distance[in_band] + 1]
+    kernel
+  }
+  check_convolution <- function(nbx, nby, ncx, ncy, offx, offy, lx, ly) {
+    # sparse counts, as from the binning of a few locations
+    counts <- matrix(
+      stats::rexp(nbx * nby) * (stats::runif(nbx * nby) < 0.3),
+      nbx,
+      nby
+    )
+    wx <- stats::runif(lx + 1)
+    wy <- stats::runif(ly + 1)
+    expect_equal(
+      kde_convolve_cpp(counts, wx, wy, ncx, ncy, offx, offy),
+      kernel_matrix(wx, ncx, nbx, offx) %*%
+        counts %*%
+        t(kernel_matrix(wy, ncy, nby, offy)),
+      tolerance = 1e-12
+    )
+  }
+  set.seed(42)
+  # grid points of the binned counts on both sides of the cells
+  check_convolution(30, 25, 20, 15, 4, 6, 3, 5)
+  # a kernel wider than the grid
+  check_convolution(12, 10, 10, 8, 1, 2, 11, 9)
+  # a kernel of a single grid point
+  check_convolution(12, 10, 10, 8, 1, 2, 0, 0)
+  # no grid points beyond the cells, and a single one along y
+  check_convolution(10, 1, 10, 1, 0, 0, 2, 0)
+  # no locations
+  expect_equal(
+    kde_convolve_cpp(matrix(0, 5, 4), 1, 1, 3, 2, 1, 1),
+    matrix(0, 3, 2)
+  )
+})
+
+test_that("kde_kernel_weights integrate to 1 over the band", {
+  # 3.4 bandwidths of 25 are 85, i.e. 8 cells of 10
+  weights <- kde_kernel_weights(n_bins = 100, h = 25, res = 10)
+  expect_length(weights, 9)
+  expect_equal(10 * (2 * sum(weights) - weights[1]), 1)
+  expect_true(all(diff(weights) < 0))
+  # at most as wide as the grid of binned counts
+  expect_length(kde_kernel_weights(n_bins = 5, h = 25, res = 10), 5)
+})
+
 test_that("the binned UD is the KDE of KernSmooth::bkde2D()", {
   skip_if_not_installed("KernSmooth")
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
@@ -501,5 +555,5 @@ test_that("the binned UD is the KDE of KernSmooth::bkde2D()", {
       c(bbox[["ymin"]] + res / 2, bbox[["ymax"]] - res / 2)
     )
   )
-  expect_equal(binned, kde_ud_layout(bkde$fhat), tolerance = 1e-10)
+  expect_equal(binned, kde_ud_standardise(bkde$fhat), tolerance = 1e-10)
 })

@@ -160,21 +160,36 @@ test_that("hr_tt_ud_iso closes isopleths along the edges of the grid", {
       crs = "EPSG:32630"
     )
     xy <- terra::crds(ud)
-    for (density in list(
-      exp(-(xy[, 1]^2) / (2 * 10^2)),
-      exp(-((xy[, 1] - 50)^2 + (xy[, 2] - 50)^2) / (2 * 20^2))
-    )) {
+    levels <- c(0.5, 0.95)
+    for (shape in c("band", "bump")) {
+      density <- switch(
+        shape,
+        band = exp(-(xy[, 1]^2) / (2 * 10^2)),
+        bump = exp(-((xy[, 1] - 50)^2 + (xy[, 2] - 50)^2) / (2 * 20^2))
+      )
       terra::values(ud) <- density / sum(density)
       names(ud) <- "ud"
-      iso <- hr_tt_ud_iso(ud, levels = c(0.5, 0.95))
+      iso <- hr_tt_ud_iso(ud, levels = levels)
       expect_true(all(sf::st_is_valid(iso)))
-      # the isopleths cover the cells within them, up to the edges
-      cud <- terra::values(hr_tt_cud(ud))
-      expect_equal(
-        as.numeric(iso$area),
-        c(sum(cud <= 0.5), sum(cud <= 0.95)) * prod(terra::res(ud)),
-        tolerance = 0.02
+      # the isopleths cover the area within them, up to the edges
+      expected <- switch(
+        shape,
+        # the band is normal along x, with a standard deviation of 10, so its
+        # isopleths span qnorm((1 + level) / 2) standard deviations on each
+        # side of x = 0, along the 100 m of the grid (all the cells of a
+        # column of the grid have the same UD, so they share their
+        # cumulative UD, and the cells within an isopleth are whole columns)
+        band = 2 * 10 * stats::qnorm((1 + levels) / 2) * 100,
+        # the cells within the isopleths
+        bump = vapply(
+          levels,
+          function(level) {
+            sum(terra::values(hr_tt_cud(ud)) <= level) * prod(terra::res(ud))
+          },
+          numeric(1)
+        )
       )
+      expect_equal(as.numeric(iso$area), expected, tolerance = 0.02)
     }
   }
 })
@@ -190,5 +205,40 @@ test_that("hr_tt_ud_iso ignores duplicated levels", {
   expect_equal(
     hr_tt_kde(boar_tt, res = 50, levels = c(0.5, 0.95, 0.5)),
     hr_tt_kde(boar_tt, res = 50, levels = c(0.5, 0.95))
+  )
+})
+
+test_that("raster_xy_matrix and xy_matrix_values convert between layouts", {
+  # a raster of 2 rows and 3 columns, filled row by row from the north-west
+  r <- terra::rast(
+    nrows = 2,
+    ncols = 3,
+    xmin = 0,
+    xmax = 3,
+    ymin = 0,
+    ymax = 2,
+    vals = c(1, 2, 3, 4, 5, 6)
+  )
+  m <- raster_xy_matrix(r)
+  # one row per column of cells, from the west, and one column per row of
+  # cells, from the south
+  expect_equal(m, matrix(c(4, 5, 6, 1, 2, 3), 3, 2))
+  # as grDevices::contourLines() expects it, for the centres of the cells
+  lines <- grDevices::contourLines(
+    x = terra::xFromCol(r, 1:3),
+    y = terra::yFromRow(r, 2:1),
+    z = m,
+    levels = 3.5
+  )
+  # the contour crosses each column of cells between the centres of its
+  # northern (1 to 3, at y = 1.5) and southern (4 to 6, at y = 0.5) cells,
+  # where their values interpolate to 3.5
+  contour <- lines[[1]]
+  expect_equal(contour$y[order(contour$x)], c(2 / 3, 1, 4 / 3))
+  # and back, in the order of the cells of the raster
+  expect_equal(xy_matrix_values(m), c(1, 2, 3, 4, 5, 6))
+  expect_equal(
+    terra::values(terra::setValues(r, xy_matrix_values(m)), mat = FALSE),
+    terra::values(r, mat = FALSE)
   )
 })

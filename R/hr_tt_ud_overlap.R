@@ -308,10 +308,9 @@ condition_ud_values <- function(values, cond_level) {
 #' @keywords internal
 #' @noRd
 ud_level_mask <- function(values, level) {
-  # Restore cumulative values to their original cell positions after sorting
-  # cells from highest to lowest UD value.
-  order_index <- order(-values)
-  cumulative_values <- cumsum(values[order_index])[order(order_index)]
+  # the cumulative UD of each cell (cells with the same UD share it, so they
+  # are all within the isopleth or all outside it)
+  cumulative_values <- cumulative_ud(values) # nolint: object_usage_linter.
   mask <- !is.na(cumulative_values) & cumulative_values <= level
   # on a grid that is coarse relative to the UD, the cell with the highest
   # value can hold more than `level` of the UD, leaving no cell within the
