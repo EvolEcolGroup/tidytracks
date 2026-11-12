@@ -29,7 +29,11 @@
 #' taking advantage of the hulls being convex (with exact geometric
 #' predicates, and the same formula as GEOS for the points where the edges of
 #' two hulls cross), which is much faster than with GEOS; with a buffer, it is
-#' computed with [sf::st_union()].
+#' computed with [sf::st_union()]. The union is also computed with
+#' [sf::st_union()] where it would take longer in C++ (with hundreds of
+#' neighbours per location), and in the rare cases where it cannot be
+#' computed reliably in C++, or where rounding makes an isopleth from C++
+#' invalid (unless the isopleth from [sf::st_union()] is invalid too).
 #'
 #' The rules follow `amt::hr_locoh()`: each
 #' level is matched to the union of hulls whose coverage (the proportion of
@@ -205,23 +209,39 @@ hr_tt_locoh <- function(
   # create a tibble with the results of all groups in one go (creating a
   # tibble for each group and combining them takes much longer when there
   # are many groups), and cast it to an sf object. If there is a single
-  # grouping variable, the column of the groups is named after it (naming it
-  # here, rather than renaming it afterwards, saves time on short tracks);
-  # otherwise it is named group_id
+  # grouping variable, the column of the groups is named after it (renaming
+  # it before casting to sf, rather than with dplyr::rename_with() after,
+  # saves time on short tracks); otherwise it is named group_id. The columns
+  # are computed before the tibble is created: tibble() evaluates each column
+  # with the columns before it in scope, so a column of groups named, e.g.,
+  # "levels" would otherwise be used instead of the levels.
   group_column <- if (length(dplyr::group_vars(x)) == 1) {
     dplyr::group_vars(x)
   } else {
     "group_id"
   }
+  output_columns <- c("method", "type", "n", "level", "area", "geometry")
+  if (group_column %in% output_columns) {
+    stop(
+      "the grouping variable (or the track id column) cannot be named ",
+      "like a column of the result (",
+      paste0("\"", output_columns, "\"", collapse = ", "),
+      "); rename it first"
+    )
+  }
+  group_values <- rep(group_labels, each = length(levels))
+  n_values <- rep(n, each = length(levels))
+  level_values <- rep(levels, times = length(group_labels))
   locoh_results <- tibble::tibble(
-    !!group_column := rep(group_labels, each = length(levels)),
+    group_id = group_values,
     method = "locoh",
     type = type,
-    n = rep(n, each = length(levels)),
-    level = rep(levels, times = length(group_labels)),
+    n = n_values,
+    level = level_values,
     area = area,
     geometry = geometry
   )
+  names(locoh_results)[1] <- group_column
   locoh_results <- sf::st_as_sf(locoh_results, crs = crs)
 
   # add a method attribute
@@ -300,6 +320,18 @@ locoh_area <- function(geometry, crs, longlat) {
   area
 }
 
+# The most work, per vertex of the hulls, that the union of the hulls in C++
+# (convex_union.cpp) may take before it is left to GEOS. Its work grows with
+# the number of hulls that overlap each hull times their number of vertices,
+# which is small for the usual LoCoH (about 40 units per vertex for k = 10),
+# but large with hundreds of neighbours (e.g. 420 for k = 500), or hulls with
+# hundreds of vertices, when GEOS is faster. On an Intel i9-13900, the union
+# in C++ takes 2-20 ns per unit of work, and GEOS 1-4 microseconds per vertex
+# of the hulls: on tracks of 500 to 25,000 locations, with k from 10 to 1000
+# and a with up to hundreds of vertices per hull, they took about as long
+# with 200 to 700 units per vertex.
+locoh_union_budget <- 250
+
 #' Create LoCoH home ranges at multiple levels for a given group
 #'
 #' This is the internal function that is called by `hr_tt_locoh` to create the
@@ -312,11 +344,18 @@ locoh_area <- function(geometry, crs, longlat) {
 #' @param levels A vector of levels for the home ranges
 #' @param buffer the distance by which to buffer the home ranges
 #' @param longlat whether the coordinates are longitudes and latitudes
+#' @param cpp_union whether to merge the hulls in C++ when there is no buffer
+#'   (`TRUE`, the default), or always with GEOS (`FALSE`, used by the tests to
+#'   compare the two)
+#' @param union_budget the most work, per vertex of the hulls, that the union
+#'   in C++ may take, beyond which GEOS is faster (see `locoh_union_budget`)
 #' @returns The multipolygons (without a CRS), one per level (in the order of
-#'   `levels`), as an `sfc` or as a list of `sfg` objects
+#'   `levels`), as an `sfc`
 #' @keywords internal
 #' @noRd
-locoh_one_group <- function(xy, n, type, levels, buffer, longlat) {
+locoh_one_group <- function(xy, n, type, levels, buffer, longlat,
+                            cpp_union = TRUE,
+                            union_budget = locoh_union_budget) {
   # The hulls are built on a plane (in degrees for unprojected data), so they
   # are also merged on a plane, by GEOS, without a CRS (with a CRS in
   # longitude/latitude, sf would use s2, on the sphere, instead).
@@ -333,34 +372,72 @@ locoh_one_group <- function(xy, n, type, levels, buffer, longlat) {
   # and works out how many of the smallest hulls each level needs. Without a
   # buffer, it also merges the hulls into the isopleths (much faster than
   # GEOS, as it can take advantage of the hulls being convex), and returns
-  # them as MULTIPOLYGONs, shifted back to the original coordinates for
-  # projected data. Otherwise (or in the rare cases where it cannot merge
-  # them reliably), it returns the hulls needed by the isopleths as sf
-  # geometries, from the smallest to the largest, to be merged by GEOS below.
-  hulls <- locoh_cpp( # nolint: object_usage_linter.
-    xy[, 1],
-    xy[, 2],
-    type = type,
-    n = n,
-    levels = levels,
-    buffer = buffer,
-    shift_x = shift[1],
-    shift_y = shift[2],
-    union_hulls = buffer == 0,
-    shift_back = !longlat
-  )
-  if (!is.null(hulls$isopleths)) {
-    if (!longlat) {
-      return(hulls$isopleths)
-    }
-    # see below for why isopleths in longitude/latitude are simplified
-    geometry <- sf::st_simplify(
-      sf::st_sfc(hulls$isopleths),
-      dTolerance = 1e-9
+  # them as MULTIPOLYGONs, in the original coordinates. Otherwise (or where
+  # it cannot merge them reliably, or would take longer than GEOS), it
+  # returns the hulls needed by the isopleths as sf geometries (in shifted
+  # coordinates), from the smallest to the largest, to be merged by GEOS (in
+  # locoh_union_geos()).
+  locoh <- function(union_hulls) {
+    locoh_cpp( # nolint: object_usage_linter.
+      xy[, 1],
+      xy[, 2],
+      type = type,
+      n = n,
+      levels = levels,
+      buffer = buffer,
+      shift_x = shift[1],
+      shift_y = shift[2],
+      union_hulls = union_hulls,
+      union_budget = union_budget
     )
-    return(sf::st_cast(geometry, "MULTIPOLYGON") + shift)
   }
+  union_hulls <- cpp_union && buffer == 0
+  hulls <- locoh(union_hulls)
+  if (is.null(hulls$isopleths)) {
+    return(locoh_union_geos(hulls, levels, buffer, longlat, shift))
+  }
+  geometry <- sf::st_sfc(hulls$isopleths)
+  if (longlat) {
+    # see locoh_union_geos() for why isopleths in longitude/latitude are
+    # simplified
+    geometry <- sf::st_cast(
+      sf::st_simplify(geometry, dTolerance = 1e-9),
+      "MULTIPOLYGON"
+    )
+  }
+  # The C++ code decides the topology of the isopleths exactly, but rounding
+  # the coordinates of the points where the edges of the hulls cross can, in
+  # rare cases, make an isopleth invalid (e.g. where two such points round to
+  # nearly the same point). The hulls are then merged by GEOS, and its
+  # isopleth for a level is used instead if it is valid (GEOS gives invalid
+  # isopleths in other cases, and they can then also be wrong, whilst those
+  # from C++ have the right area); checking their validity is fast.
+  valid <- sf::st_is_valid(geometry) %in% TRUE
+  if (!all(valid)) {
+    geos <- locoh_union_geos(locoh(FALSE), levels, buffer, longlat, shift)
+    use_geos <- !valid & sf::st_is_valid(geos) %in% TRUE
+    geometry[use_geos] <- geos[use_geos]
+  }
+  geometry
+}
 
+#' Merge LoCoH hulls into isopleths with GEOS
+#'
+#' Internal function called by `locoh_one_group()`: the union of the hulls
+#' needed by each isopleth, computed by GEOS (with a buffer, or if the union
+#' could not be computed in C++).
+#'
+#' @param hulls the list returned by `locoh_cpp()` (with `union_hulls =
+#'   FALSE`, or if the union could not be computed in C++).
+#' @param levels A vector of levels for the home ranges
+#' @param buffer the distance by which to buffer the home ranges
+#' @param longlat whether the coordinates are longitudes and latitudes
+#' @param shift the shift of the coordinates of the hulls, to be added back
+#' @returns The multipolygons (without a CRS), one per level (in the order of
+#'   `levels`), as an `sfc`
+#' @keywords internal
+#' @noRd
+locoh_union_geos <- function(hulls, levels, buffer, longlat, shift) {
   # Union the hulls for each level. The isopleths are nested (the isopleth
   # for a level is the union of the j smallest hulls, with j increasing with
   # the level), so rather than computing each union from scratch, we start

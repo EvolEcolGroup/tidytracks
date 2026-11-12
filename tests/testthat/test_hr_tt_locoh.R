@@ -435,3 +435,193 @@ test_that("hr_tt_locoh gives valid isopleths for unprojected data", {
     expect_no_error(sf::st_intersects(locoh, track))
   }
 })
+
+# the union of polygons (anticlockwise matrices of coordinates) with
+# convex_union_cpp(), the points at the same place sharing an index (as the
+# union requires)
+union_of <- function(polygons, counts = length(polygons), budget = 0) {
+  xy <- do.call(rbind, polygons)
+  key <- paste(sprintf("%a", xy[, 1]), sprintf("%a", xy[, 2]))
+  convex_union_cpp( # nolint: object_usage_linter.
+    xy[, 1],
+    xy[, 2],
+    offsets = c(0L, cumsum(vapply(polygons, nrow, 1L))),
+    vertices = match(key, key) - 1L,
+    counts = as.integer(counts),
+    max_work_per_vertex = budget
+  )
+}
+rectangle <- function(x0, y0, x1, y1) {
+  cbind(c(x0, x1, x1, x0), c(y0, y0, y1, y1))
+}
+
+test_that("the union in C++ tells holes from shells exactly", {
+  # four rectangles round a hole of 1 cm by 1 cm, at the coordinates of a UTM
+  # zone: from the rounded raw coordinates, the area of the hole would have
+  # the wrong sign, and the hole would be taken for a shell
+  x0 <- 600000.01
+  y0 <- 5500000.01
+  frame <- list(
+    rectangle(x0, y0, x0 + 0.03, y0 + 0.01),
+    rectangle(x0, y0 + 0.02, x0 + 0.03, y0 + 0.03),
+    rectangle(x0, y0, x0 + 0.01, y0 + 0.03),
+    rectangle(x0 + 0.02, y0, x0 + 0.03, y0 + 0.03)
+  )
+  union <- union_of(frame)
+  expect_true(union$built)
+  # a single polygon, with a shell and a hole
+  expect_length(union$isopleths[[1]], 1)
+  expect_length(union$isopleths[[1]][[1]], 2)
+  isopleth <- sf::st_sfc(union$isopleths)
+  expect_true(sf::st_is_valid(isopleth))
+  expect_equal(as.numeric(sf::st_area(isopleth)), 8e-4, tolerance = 1e-6)
+  # and the same rings in the opposite order (the hole first)
+  union <- union_of(frame[4:1])
+  expect_equal(
+    as.numeric(sf::st_area(sf::st_sfc(union$isopleths))),
+    8e-4,
+    tolerance = 1e-6
+  )
+})
+
+test_that("the union in C++ gives up on inputs it cannot handle", {
+  # a star polygon: it turns left at every vertex, but goes round twice
+  pentagon <- cbind(cos(2 * pi * (0:4) / 5), sin(2 * pi * (0:4) / 5))
+  union <- union_of(list(pentagon[c(1, 3, 5, 2, 4), ]))
+  expect_false(union$built)
+  expect_equal(union$stats[[4]], 23)
+  # a polygon that is not strictly convex
+  union <- union_of(list(cbind(c(0, 1, 2, 1), c(0, 0, 0, 1))))
+  expect_false(union$built)
+  expect_equal(union$stats[[4]], 22)
+  # coordinates beyond the range of the exact predicates (with a range of
+  # coordinates that overflows, the union could otherwise loop for ever)
+  union <- union_of(list(
+    cbind(c(-1e300, -9e299, -1e300), c(0, 0, 1e299)),
+    cbind(c(9e299, 1e300, 1e300), c(0, 0, 1e299))
+  ))
+  expect_false(union$built)
+  expect_equal(union$stats[[4]], 21)
+  # no polygons
+  union <- union_of(list(rectangle(0, 0, 1, 1)), counts = 0)
+  expect_true(union$built)
+  expect_length(union$isopleths[[1]], 0)
+})
+
+test_that("the union in C++ stays within its budget", {
+  set.seed(11)
+  xy <- cbind(stats::runif(300), stats::runif(300))
+  hulls <- locoh_cpp(xy[, 1], xy[, 2], "k", 10, c(0.95, 0.5), 0, 0, 0,
+    union_hulls = TRUE, union_budget = 1e6
+  )
+  expect_false(is.null(hulls$isopleths))
+  expect_equal(hulls$union_stats[[4]], 0)
+  # the work estimated from a sample of the hulls is close to the work done
+  expect_equal(hulls$union_stats[[1]], hulls$union_stats[[2]],
+    tolerance = 0.5
+  )
+  # with a tiny budget, the union is left to GEOS
+  hulls <- locoh_cpp(xy[, 1], xy[, 2], "k", 10, c(0.95, 0.5), 0, 0, 0,
+    union_hulls = TRUE, union_budget = 1e-3
+  )
+  expect_null(hulls$isopleths)
+  expect_equal(hulls$union_stats[[4]], 30)
+  expect_length(hulls$hulls, max(hulls$n_hulls))
+})
+
+test_that("the isopleths merged by GEOS are those merged in C++", {
+  # GEOS is used where the union in C++ would take too long, cannot be built,
+  # or gives invalid isopleths
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  first_track <- event_track_id(boar_tt) == event_track_id(boar_tt)[1]
+  xy <- sf::st_coordinates(boar_tt)[first_track, ]
+  levels <- c(0.95, 0.75, 0.5, 0.25)
+  for (type in c("k", "a")) {
+    n <- if (type == "k") 10 else 2000
+    cpp <- locoh_one_group(xy, n, type, levels, 0, longlat = FALSE)
+    geos <- locoh_one_group(xy, n, type, levels, 0,
+      longlat = FALSE, cpp_union = FALSE
+    )
+    expect_equal(
+      as.numeric(sf::st_area(cpp)),
+      as.numeric(sf::st_area(geos)),
+      tolerance = 1e-9
+    )
+    expect_lte(
+      max(as.numeric(sf::st_area(
+        sf::st_sym_difference(cpp, geos, by_element = TRUE)
+      ))),
+      1e-9 * max(as.numeric(sf::st_area(geos)))
+    )
+    # with a tiny budget, GEOS is used
+    expect_identical(
+      locoh_one_group(xy, n, type, levels, 0,
+        longlat = FALSE, union_budget = 1e-3
+      ),
+      geos
+    )
+  }
+})
+
+test_that("the union in C++ works on coordinates rounded to 1e-4 degrees", {
+  # shifting such coordinates to the centre of the locations rounds them,
+  # which made some hulls concave, so that the union in C++ gave up
+  set.seed(3)
+  xy <- round(cbind(
+    cumsum(stats::rnorm(1000, sd = 5e-4)) - 0.001,
+    cumsum(stats::rnorm(1000, sd = 5e-4)) + 52.2
+  ), 4)
+  shift <- c(mean(range(xy[, 1])), mean(range(xy[, 2])))
+  hulls <- locoh_cpp(xy[, 1], xy[, 2], "k", 10, c(0.95, 0.75, 0.5, 0.25), 0,
+    shift[1], shift[2],
+    union_hulls = TRUE
+  )
+  expect_false(is.null(hulls$isopleths))
+  expect_true(all(sf::st_is_valid(sf::st_sfc(hulls$isopleths))))
+})
+
+test_that("hr_tt_locoh gives valid isopleths for nearly degenerate hulls", {
+  # locations on circles and rays, where rounding the points where the edges
+  # of the hulls cross made the isopleths from C++ invalid
+  circles <- function(r, a) {
+    make_locoh_tt(cbind(r * cos(a * pi / 6), r * sin(a * pi / 6)))
+  }
+  iso <- hr_tt_locoh(
+    circles(c(3, 3, 2, 1, 1, 3), c(10, 9, 10, 10, 8, 10)),
+    n = 3.91679,
+    type = "a",
+    levels = 1
+  )
+  expect_true(all(sf::st_is_valid(iso)))
+  iso <- hr_tt_locoh(
+    circles(c(3, 3, 2, 2, 3, 1, 2), c(6, 5, 0, 5, 6, 5, 4)),
+    n = 3,
+    levels = 1
+  )
+  expect_true(all(sf::st_is_valid(iso)))
+})
+
+test_that("hr_tt_locoh works with groups named like its own variables", {
+  # tibble() would use a column of groups named "levels" or "group_labels"
+  # instead of the variables of the same names
+  for (name in c("levels", "group_labels")) {
+    x <- example_tt
+    x[[name]] <- ifelse(
+      x$track_id == unique(x$track_id)[1],
+      "p",
+      "q"
+    )
+    iso <- hr_tt_locoh(dplyr::group_by(x, .data[[name]]), n = 3)
+    expect_equal(names(iso)[1], name)
+    expect_equal(iso$level, c(0.95, 0.5, 0.95, 0.5))
+    expect_equal(iso[[name]], c("p", "p", "q", "q"))
+  }
+  # a column of groups named like a column of the result gives an error,
+  # rather than a result with two columns of the same name
+  x <- example_tt
+  x$level <- "p"
+  expect_error(
+    hr_tt_locoh(dplyr::group_by(x, level), n = 3),
+    "cannot be named like a column of the result"
+  )
+})

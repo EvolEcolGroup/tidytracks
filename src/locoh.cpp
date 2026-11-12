@@ -35,9 +35,23 @@
 //     `order()` does), and the level is matched to the number of hulls whose
 //     coverage is closest to it (as `which.min(abs(coverage - level))`).
 
+// Contracting a * b + c into a fused multiply-add (the default of gcc for
+// GNU C++, when the target has FMA instructions, e.g. on ARM64, and of clang)
+// would change the rounding of the distances, of the cross products of the
+// convex hulls and of their areas, and so the neighbours, the hulls and their
+// order (and so the isopleths) from one platform to another: it is switched
+// off, before any function is defined, so that all the functions in this file
+// are compiled alike.
+#if defined(__clang__)
+#pragma STDC FP_CONTRACT OFF
+#elif defined(__GNUC__)
+#pragma GCC optimize("fp-contract=off")
+#endif
+
 #include <Rcpp.h>
 
 #include "convex_union.h"
+#include "exact_predicates.h"
 
 #include <algorithm>
 #include <cmath>
@@ -434,6 +448,40 @@ std::vector<Point> convex_hull(std::vector<Point> pts) {
   return hull;
 }
 
+// The vertices of a convex hull (from convex_hull()) that are strictly convex
+// in exact arithmetic. convex_hull() decides the turns in floating point,
+// which can keep a vertex that is collinear with its neighbours, or very
+// slightly inwards from them; the union of the hulls (convex_union.cpp) needs
+// strictly convex polygons. This recomputes the hull of the vertices with
+// exact turns (in counter-clockwise order, as convex_hull()), which drops
+// such vertices; the hull then changes by no more than rounding errors. A
+// result with fewer than 3 vertices means that the vertices are collinear.
+std::vector<Point> strictly_convex_hull(const std::vector<Point>& hull) {
+  std::vector<Point> pts(hull);
+  std::sort(pts.begin(), pts.end());
+  const std::size_t m = pts.size();
+  std::vector<Point> out(2 * m);
+  auto turn = [](const Point& o, const Point& a, const Point& b) {
+    return exact_predicates::orientation(o.x, o.y, a.x, a.y, b.x, b.y);
+  };
+  std::size_t h = 0;
+  for (std::size_t i = 0; i < m; ++i) {
+    while (h >= 2 && turn(out[h - 2], out[h - 1], pts[i]) <= 0) {
+      --h;
+    }
+    out[h++] = pts[i];
+  }
+  const std::size_t lower = h + 1;
+  for (std::size_t i = m - 1; i > 0; --i) {
+    while (h >= lower && turn(out[h - 2], out[h - 1], pts[i - 1]) <= 0) {
+      --h;
+    }
+    out[h++] = pts[i - 1];
+  }
+  out.resize(h - 1);
+  return out;
+}
+
 // Area (by the shoelace formula) and perimeter of a convex polygon given by
 // its vertices in counter-clockwise order. A segment (2 vertices) has area 0
 // and a perimeter of twice its length (it is a polygon that goes there and
@@ -605,18 +653,18 @@ Rcpp::List locoh_neighbours_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
 //'   coordinates (e.g. projected coordinates in the millions): small
 //'   details, such as a buffer of 1e-5, are then distorted.
 //' @param union_hulls whether to compute the isopleths (the unions of the
-//'   hulls with an area) here, in the shifted coordinates, rather than
+//'   hulls with an area) here, in the original coordinates, rather than
 //'   leaving them to GEOS (see convex_union.cpp).
-//' @param shift_back whether to shift the isopleths back to the original
-//'   coordinates.
+//' @param union_budget if positive, the most work (per vertex of the hulls)
+//'   that the union of the hulls may take (see convex_union.cpp): beyond it,
+//'   it is left to GEOS, which is then faster.
 //' @returns A list with:
 //' - `n_hulls`: for each level, the number of (smallest) hulls whose union
 //'   is the isopleth;
 //' - `coverage`: for each level, the proportion of locations in those hulls;
 //' - `isopleths`: if `union_hulls` is `TRUE` (and the union could be
 //'   computed), the isopleth for each level, as a list of MULTIPOLYGON `sfg`
-//'   objects (in shifted coordinates, unless `shift_back` is `TRUE`), or else
-//'   `NULL`;
+//'   objects (in the original coordinates), or else `NULL`;
 //' - `hulls`: if `isopleths` is `NULL`, the `max(n_hulls)` smallest hulls,
 //'   from the smallest to the largest, as a list of `sfg` objects (POLYGON,
 //'   or LINESTRING or POINT for degenerate hulls with no area), in shifted
@@ -624,14 +672,18 @@ Rcpp::List locoh_neighbours_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
 //' - `degenerate`: a logical vector, `TRUE` for the hulls in `hulls` with no
 //'   area;
 //' - `root`: the (1-based) index of the root location of each hull in
-//'   `hulls`.
+//'   `hulls`;
+//' - `union_stats`: the work estimated for the union of the hulls, the work
+//'   done, the number of vertices of the hulls (all 0 if the union was not
+//'   attempted), and why the union was not built (0 if it was, see
+//'   convex_union.h).
 //' @keywords internal
 //' @noRd
 // [[Rcpp::export]]
 Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
                      std::string type, double n, Rcpp::NumericVector levels,
                      double buffer, double shift_x, double shift_y,
-                     bool union_hulls = false, bool shift_back = false) {
+                     bool union_hulls = false, double union_budget = 0.0) {
   check_inputs(x, y, type, n);
   if (!std::isfinite(buffer) || buffer < 0) {
     Rcpp::stop("buffer must be a non-negative number");
@@ -728,29 +780,27 @@ Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
   // --- union of the hulls (optional) ---------------------------------------
   // The isopleth for a level is the union of the hulls with an area among its
   // n_hulls smallest hulls (hulls with no area add nothing to it). The union
-  // is computed in the shifted coordinates, which GEOS would be given
-  // otherwise; the vertices of the hulls are referred to by the index of a
-  // location, which must be the same for all the locations at the same place
-  // (in shifted coordinates): we use the first of them.
+  // is computed in the original coordinates (its predicates are exact, so it
+  // does not need the shifted coordinates given to GEOS; shifting them would
+  // round them, and could make the hulls slightly concave). The vertices of
+  // the hulls are referred to by the index of a location, which must be the
+  // same for all the locations at the same place: we use the first of them.
   Rcpp::List isopleths;
   bool have_isopleths = false;
+  convex_union::UnionStats stats;
   if (union_hulls) {
-    std::vector<double> sx(n_pts);
-    std::vector<double> sy(n_pts);
-    for (int i = 0; i < n_pts; ++i) {
-      sx[i] = px[i] - shift_x;
-      sy[i] = py[i] - shift_y;
-    }
+    std::vector<double> ux(px, px + n_pts);
+    std::vector<double> uy(py, py + n_pts);
     std::vector<int> by_place(n_pts);
     for (int i = 0; i < n_pts; ++i) {
       by_place[i] = i;
     }
-    std::sort(by_place.begin(), by_place.end(), [&sx, &sy](int a, int b) {
-      if (sx[a] != sx[b]) {
-        return sx[a] < sx[b];
+    std::sort(by_place.begin(), by_place.end(), [&ux, &uy](int a, int b) {
+      if (ux[a] != ux[b]) {
+        return ux[a] < ux[b];
       }
-      if (sy[a] != sy[b]) {
-        return sy[a] < sy[b];
+      if (uy[a] != uy[b]) {
+        return uy[a] < uy[b];
       }
       return a < b;
     });
@@ -758,38 +808,47 @@ Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
     for (int i = 0; i < n_pts; ++i) {
       const int k = by_place[i];
       const int prev = i > 0 ? by_place[i - 1] : -1;
-      vertex_id[k] = (prev >= 0 && sx[prev] == sx[k] && sy[prev] == sy[k])
+      vertex_id[k] = (prev >= 0 && ux[prev] == ux[k] && uy[prev] == uy[k])
                        ? vertex_id[prev]
                        : k;
     }
     // the hulls with an area, from the smallest to the largest, and how many
-    // of them each level needs
+    // of them each level needs. The union needs strictly convex polygons,
+    // which the hulls are in floating point (see convex_hull()), but a vertex
+    // can be collinear with its neighbours, or very slightly inwards, in
+    // exact arithmetic: such vertices are dropped (which changes the hull by
+    // no more than rounding errors), and hulls whose vertices are all
+    // collinear are left out.
     std::vector<std::size_t> offsets(1, 0);
     std::vector<int> vertices;
     std::vector<int> n_polygons(max_hulls + 1, 0);
     for (int j = 0; j < max_hulls; ++j) {
-      const std::vector<Point>& hull = hulls[order[j]];
       n_polygons[j + 1] = n_polygons[j];
-      if (hull.size() >= 3) {
-        for (const Point& p : hull) {
-          vertices.push_back(vertex_id[p.idx]);
-        }
-        offsets.push_back(vertices.size());
-        ++n_polygons[j + 1];
+      const std::vector<Point>& hull = hulls[order[j]];
+      if (hull.size() < 3) {
+        continue;
       }
+      const std::vector<Point> strict = strictly_convex_hull(hull);
+      if (strict.size() < 3) {
+        continue;
+      }
+      for (const Point& p : strict) {
+        vertices.push_back(vertex_id[p.idx]);
+      }
+      offsets.push_back(vertices.size());
+      ++n_polygons[j + 1];
     }
     std::vector<int> counts(n_levels);
     for (R_xlen_t l = 0; l < n_levels; ++l) {
       counts[l] = n_polygons[n_hulls[l]];
     }
     std::vector<convex_union::MultiPolygon> unions;
-    if (convex_union::union_of_convex_polygons(sx, sy, offsets, vertices,
-                                               counts, unions)) {
+    if (convex_union::union_of_convex_polygons(ux, uy, offsets, vertices,
+                                               counts, unions, union_budget,
+                                               &stats)) {
       isopleths = Rcpp::List(n_levels);
       for (R_xlen_t l = 0; l < n_levels; ++l) {
-        isopleths[l] = multipolygon_to_sfg(unions[l],
-                                           shift_back ? shift_x : 0.0,
-                                           shift_back ? shift_y : 0.0);
+        isopleths[l] = multipolygon_to_sfg(unions[l], 0.0, 0.0);
       }
       have_isopleths = true;
     }
@@ -817,7 +876,9 @@ Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
       have_isopleths ? static_cast<SEXP>(isopleths) : R_NilValue,
     Rcpp::Named("hulls") = hull_sfg,
     Rcpp::Named("degenerate") = degenerate,
-    Rcpp::Named("root") = root);
+    Rcpp::Named("root") = root,
+    Rcpp::Named("union_stats") = Rcpp::NumericVector::create(
+      stats.estimated_work, stats.work, stats.n_vertices, stats.failure));
 }
 
 //' Convex hull of a set of points
@@ -848,4 +909,79 @@ Rcpp::NumericMatrix convex_hull_cpp(Rcpp::NumericVector x,
     out(static_cast<int>(i), 1) = hull[i].y;
   }
   return out;
+}
+
+//' Union of nested sets of convex polygons
+//'
+//' Internal function, used by the tests: calls
+//' `convex_union::union_of_convex_polygons()` (see convex_union.h) on
+//' polygons given directly, rather than on the hulls of LoCoH.
+//'
+//' @param x,y the coordinates of the vertices.
+//' @param offsets the (0-based) position in `vertices` of the first vertex of
+//'   each polygon, followed by the length of `vertices`.
+//' @param vertices the (0-based) indices of the vertices of the polygons,
+//'   anticlockwise.
+//' @param counts for each union, the number of polygons in it (the first
+//'   ones).
+//' @param max_work_per_vertex the budget of the union (0 for none).
+//' @returns A list with `built` (whether the union was built), `isopleths`
+//'   (a list of MULTIPOLYGON `sfg` objects, one per value of `counts`, or
+//'   `NULL`) and `stats` (the estimated work, the work done, the number of
+//'   vertices, and why the union was not built).
+//' @keywords internal
+//' @noRd
+// [[Rcpp::export]]
+Rcpp::List convex_union_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
+                            Rcpp::IntegerVector offsets,
+                            Rcpp::IntegerVector vertices,
+                            Rcpp::IntegerVector counts,
+                            double max_work_per_vertex = 0.0) {
+  const R_xlen_t n_points = x.size();
+  if (y.size() != n_points) {
+    Rcpp::stop("x and y must have the same length");
+  }
+  const R_xlen_t n_polygons = offsets.size() - 1;
+  if (n_polygons < 0 || offsets[0] != 0 ||
+      offsets[n_polygons] != vertices.size()) {
+    Rcpp::stop("offsets must go from 0 to the number of vertices");
+  }
+  for (R_xlen_t p = 0; p < n_polygons; ++p) {
+    if (offsets[p + 1] < offsets[p]) {
+      Rcpp::stop("offsets must be increasing");
+    }
+  }
+  for (const int v : vertices) {
+    if (v < 0 || v >= n_points) {
+      Rcpp::stop("vertices must be indices of points");
+    }
+  }
+  for (const int c : counts) {
+    if (c < 0 || c > n_polygons) {
+      Rcpp::stop("counts must be between 0 and the number of polygons");
+    }
+  }
+  const std::vector<double> ux(x.begin(), x.end());
+  const std::vector<double> uy(y.begin(), y.end());
+  const std::vector<std::size_t> uoffsets(offsets.begin(), offsets.end());
+  const std::vector<int> uvertices(vertices.begin(), vertices.end());
+  const std::vector<int> ucounts(counts.begin(), counts.end());
+  std::vector<convex_union::MultiPolygon> unions;
+  convex_union::UnionStats stats;
+  const bool built = convex_union::union_of_convex_polygons(
+    ux, uy, uoffsets, uvertices, ucounts, unions, max_work_per_vertex, &stats);
+  SEXP isopleths = R_NilValue;
+  Rcpp::List out;
+  if (built) {
+    Rcpp::List list(unions.size());
+    for (std::size_t l = 0; l < unions.size(); ++l) {
+      list[l] = multipolygon_to_sfg(unions[l], 0.0, 0.0);
+    }
+    out = list;
+    isopleths = out;
+  }
+  return Rcpp::List::create(
+    Rcpp::Named("built") = built, Rcpp::Named("isopleths") = isopleths,
+    Rcpp::Named("stats") = Rcpp::NumericVector::create(
+      stats.estimated_work, stats.work, stats.n_vertices, stats.failure));
 }

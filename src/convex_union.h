@@ -20,6 +20,20 @@ struct Ring {
 using Polygon = std::vector<Ring>;
 using MultiPolygon = std::vector<Polygon>;
 
+// The work done by union_of_convex_polygons() (see convex_union.cpp): the
+// work estimated from a sample of the polygons, the work done (0 if the
+// union was not attempted), and the total number of vertices of the
+// polygons; and, if the union was not built, why (a code from
+// convex_union.cpp, where fail() is called: 1-12 when linking the pieces
+// into rings and polygons, 20-24 when checking the polygons, 30-31 when the
+// work would exceed the budget).
+struct UnionStats {
+  double estimated_work = 0.0;
+  double work = 0.0;
+  double n_vertices = 0.0;
+  int failure = 0;
+};
+
 // Compute the union of nested sets of strictly convex polygons.
 //
 // The vertices of the polygons are points of (x, y), referred to by their
@@ -32,14 +46,21 @@ using MultiPolygon = std::vector<Polygon>;
 // anticlockwise (the orientation of the polygons returned by GEOS).
 //
 // Returns false (and leaves `out` unspecified) if the polygons are not
-// strictly convex, or if the union cannot be built reliably (see
-// convex_union.cpp); the caller should then compute the union in another way.
+// strictly convex, if their coordinates are too large or too small for the
+// exact predicates (beyond 2^100 or 2^-100), if the union cannot be built
+// reliably (see convex_union.cpp), or, if `max_work_per_vertex` is positive,
+// if building it would take more than about that many units of work per
+// vertex of the polygons (see convex_union.cpp); the caller should then
+// compute the union in another way. If `stats` is not null, the work is
+// reported there.
 bool union_of_convex_polygons(const std::vector<double>& x,
                               const std::vector<double>& y,
                               const std::vector<std::size_t>& offsets,
                               const std::vector<int>& vertices,
                               const std::vector<int>& counts,
-                              std::vector<MultiPolygon>& out);
+                              std::vector<MultiPolygon>& out,
+                              double max_work_per_vertex = 0.0,
+                              UnionStats* stats = nullptr);
 
 } // namespace convex_union
 

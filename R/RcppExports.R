@@ -63,18 +63,18 @@ locoh_neighbours_cpp <- function(x, y, type, n) {
 #'   coordinates (e.g. projected coordinates in the millions): small
 #'   details, such as a buffer of 1e-5, are then distorted.
 #' @param union_hulls whether to compute the isopleths (the unions of the
-#'   hulls with an area) here, in the shifted coordinates, rather than
+#'   hulls with an area) here, in the original coordinates, rather than
 #'   leaving them to GEOS (see convex_union.cpp).
-#' @param shift_back whether to shift the isopleths back to the original
-#'   coordinates.
+#' @param union_budget if positive, the most work (per vertex of the hulls)
+#'   that the union of the hulls may take (see convex_union.cpp): beyond it,
+#'   it is left to GEOS, which is then faster.
 #' @returns A list with:
 #' - `n_hulls`: for each level, the number of (smallest) hulls whose union
 #'   is the isopleth;
 #' - `coverage`: for each level, the proportion of locations in those hulls;
 #' - `isopleths`: if `union_hulls` is `TRUE` (and the union could be
 #'   computed), the isopleth for each level, as a list of MULTIPOLYGON `sfg`
-#'   objects (in shifted coordinates, unless `shift_back` is `TRUE`), or else
-#'   `NULL`;
+#'   objects (in the original coordinates), or else `NULL`;
 #' - `hulls`: if `isopleths` is `NULL`, the `max(n_hulls)` smallest hulls,
 #'   from the smallest to the largest, as a list of `sfg` objects (POLYGON,
 #'   or LINESTRING or POINT for degenerate hulls with no area), in shifted
@@ -82,11 +82,15 @@ locoh_neighbours_cpp <- function(x, y, type, n) {
 #' - `degenerate`: a logical vector, `TRUE` for the hulls in `hulls` with no
 #'   area;
 #' - `root`: the (1-based) index of the root location of each hull in
-#'   `hulls`.
+#'   `hulls`;
+#' - `union_stats`: the work estimated for the union of the hulls, the work
+#'   done, the number of vertices of the hulls (all 0 if the union was not
+#'   attempted), and why the union was not built (0 if it was, see
+#'   convex_union.h).
 #' @keywords internal
 #' @noRd
-locoh_cpp <- function(x, y, type, n, levels, buffer, shift_x, shift_y, union_hulls = FALSE, shift_back = FALSE) {
-    .Call(`_tidytracks_locoh_cpp`, x, y, type, n, levels, buffer, shift_x, shift_y, union_hulls, shift_back)
+locoh_cpp <- function(x, y, type, n, levels, buffer, shift_x, shift_y, union_hulls = FALSE, union_budget = 0.0) {
+    .Call(`_tidytracks_locoh_cpp`, x, y, type, n, levels, buffer, shift_x, shift_y, union_hulls, union_budget)
 }
 
 #' Convex hull of a set of points
@@ -101,5 +105,29 @@ locoh_cpp <- function(x, y, type, n, levels, buffer, shift_x, shift_y, union_hul
 #' @noRd
 convex_hull_cpp <- function(x, y) {
     .Call(`_tidytracks_convex_hull_cpp`, x, y)
+}
+
+#' Union of nested sets of convex polygons
+#'
+#' Internal function, used by the tests: calls
+#' `convex_union::union_of_convex_polygons()` (see convex_union.h) on
+#' polygons given directly, rather than on the hulls of LoCoH.
+#'
+#' @param x,y the coordinates of the vertices.
+#' @param offsets the (0-based) position in `vertices` of the first vertex of
+#'   each polygon, followed by the length of `vertices`.
+#' @param vertices the (0-based) indices of the vertices of the polygons,
+#'   anticlockwise.
+#' @param counts for each union, the number of polygons in it (the first
+#'   ones).
+#' @param max_work_per_vertex the budget of the union (0 for none).
+#' @returns A list with `built` (whether the union was built), `isopleths`
+#'   (a list of MULTIPOLYGON `sfg` objects, one per value of `counts`, or
+#'   `NULL`) and `stats` (the estimated work, the work done, the number of
+#'   vertices, and why the union was not built).
+#' @keywords internal
+#' @noRd
+convex_union_cpp <- function(x, y, offsets, vertices, counts, max_work_per_vertex = 0.0) {
+    .Call(`_tidytracks_convex_union_cpp`, x, y, offsets, vertices, counts, max_work_per_vertex)
 }
 

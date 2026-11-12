@@ -20,18 +20,40 @@
 // the largest isopleth, and the pieces of each isopleth are then picked out
 // from the hulls that it contains.
 //
-// All the decisions (on which side of a line a point lies, and in which order
-// two points lie along an edge) are taken with exact predicates (section 1),
-// so that they are consistent with each other. The points where the boundary
-// switches from one hull to another are the crossings of two edges, which are
-// referred to by the two edges (section 3); their coordinates are only
-// computed for the output, with the same formula as GEOS. If the pieces do not
-// link into rings (which should only happen in degenerate cases, such as
-// three edges crossing at the same point, when the same point can be referred
-// to by different pairs of edges), the union is not built, and the caller
-// falls back to GEOS.
+// All the decisions (on which side of a line a point lies, in which order two
+// points lie along an edge, and whether a ring is a shell or a hole) are
+// taken with exact predicates (section 1, and exact_predicates.h), so that
+// they are consistent with each other. The points where the boundary switches
+// from one hull to another are the crossings of two edges, which are referred
+// to by the two edges (section 3); their coordinates are only computed for the
+// output, with the same formula as GEOS.
+//
+// The union is not built, and the caller falls back to GEOS, if:
+//   - the pieces do not link into rings (which should only happen in
+//     degenerate cases, such as three edges crossing at the same point, when
+//     the same point can be referred to by different pairs of edges);
+//   - the polygons are not strictly convex, or their coordinates are out of
+//     the range for which the predicates are exact;
+//   - the work would exceed the budget given by the caller (see section 5).
+// Rounding the coordinates of the crossings can, in rare cases, make the
+// result invalid (e.g. where two crossings, or a crossing and a vertex, round
+// to nearly the same point): the caller checks its validity.
+
+// Contracting a * b + c into a fused multiply-add (the default of gcc for
+// GNU C++, when the target has FMA instructions, e.g. on ARM64, and of clang)
+// would change the rounding of the coordinates of the crossings and of the
+// areas of the rings, and so the output from one platform to another (the
+// exact predicates do not depend on it): it is switched off, before any
+// function is defined, so that all the functions in this file are compiled
+// alike.
+#if defined(__clang__)
+#pragma STDC FP_CONTRACT OFF
+#elif defined(__GNUC__)
+#pragma GCC optimize("fp-contract=off")
+#endif
 
 #include "convex_union.h"
+#include "exact_predicates.h"
 
 #include <Rcpp.h>
 
@@ -49,114 +71,25 @@ namespace convex_union {
 namespace {
 
 // ---------------------------------------------------------------------------
-// 1. Exact predicates
+// 1. Exact predicates (see exact_predicates.h)
 // ---------------------------------------------------------------------------
-//
-// The basic predicate is the sign of the cross product (b - a) x (d - c),
-// which, with c = a, tells on which side of the line from a to b the point d
-// lies (positive on the left, negative on the right, zero on the line). It is
-// computed in floating point, with Shewchuk's (1997) bound on its rounding
-// error; only when the bound cannot tell the sign is it computed exactly, as
-// an "expansion" (a sum of doubles that represents a number with no rounding
-// error, built with error-free transformations).
-//
-// Shewchuk, J. R. (1997). Adaptive precision floating-point arithmetic and
-// fast robust geometric predicates. Discrete & Computational Geometry, 18,
-// 305-363.
 
-constexpr double kEps = std::numeric_limits<double>::epsilon() / 2.0;
-// bound on the relative rounding error of (b - a) x (d - c), as a proportion
-// of |(bx - ax) * (dy - cy)| + |(by - ay) * (dx - cx)|
-constexpr double kCrossBound = (3.0 + 16.0 * kEps) * kEps;
+using exact_predicates::Approx;
+using exact_predicates::cross_approx;
+using exact_predicates::cross_exact;
+using exact_predicates::cross_sign;
+using exact_predicates::grow;
+using exact_predicates::kCrossBound;
+using exact_predicates::kEps;
+using exact_predicates::sign_of;
+using exact_predicates::two_product;
 
-inline int sign_of(double v) { return (v > 0.0) - (v < 0.0); }
-
-// a + b = x + y exactly, with x the rounded sum (Knuth's two-sum)
-inline void two_sum(double a, double b, double& x, double& y) {
-  x = a + b;
-  const double b_virtual = x - a;
-  const double a_virtual = x - b_virtual;
-  y = (a - a_virtual) + (b - b_virtual);
-}
-
-// a - b = x + y exactly, with x the rounded difference
-inline void two_diff(double a, double b, double& x, double& y) {
-  x = a - b;
-  const double b_virtual = a - x;
-  const double a_virtual = x + b_virtual;
-  y = (a - a_virtual) + (b_virtual - b);
-}
-
-// a * b = x + y exactly, with x the rounded product (std::fma computes
-// a * b - x with a single rounding, which is then exact)
-inline void two_product(double a, double b, double& x, double& y) {
-  x = a * b;
-  y = std::fma(a, b, -x);
-}
-
-// Add b to the expansion e[0], ..., e[n - 1] (whose components do not overlap
-// and are sorted by increasing magnitude), in place (Shewchuk's
-// Grow-Expansion, leaving out zero components). e must have room for n + 1
-// components.
-inline void grow(double* e, int& n, double b) {
-  double q = b;
-  int k = 0;
-  for (int i = 0; i < n; ++i) {
-    const double ei = e[i];
-    double sum;
-    double err;
-    two_sum(q, ei, sum, err);
-    if (err != 0.0) {
-      e[k++] = err;
-    }
-    q = sum;
-  }
-  if (q != 0.0) {
-    e[k++] = q;
-  }
-  n = k;
-}
-
-// The same for an expansion stored in a vector, which grows as needed.
-void grow(std::vector<double>& e, double b) {
-  int n = static_cast<int>(e.size());
-  e.push_back(0.0);
-  grow(e.data(), n, b);
-  e.resize(n);
-}
-
-// The sign of an expansion is that of its largest component, the last one.
-inline int sign_of(const double* e, int n) {
-  return n == 0 ? 0 : sign_of(e[n - 1]);
-}
-
-// (b - a) x (d - c), exactly, as an expansion (of at most 16 components).
-std::vector<double> cross_exact(double ax, double ay, double bx, double by,
-                                double cx, double cy, double dx, double dy) {
-  // each difference is exactly hi + lo
-  double ux[2];
-  double uy[2];
-  double vx[2];
-  double vy[2];
-  two_diff(bx, ax, ux[0], ux[1]);
-  two_diff(by, ay, uy[0], uy[1]);
-  two_diff(dx, cx, vx[0], vx[1]);
-  two_diff(dy, cy, vy[0], vy[1]);
-  double e[17];
-  int n = 0;
-  for (int i = 0; i < 2; ++i) {
-    for (int j = 0; j < 2; ++j) {
-      double hi;
-      double lo;
-      two_product(ux[i], vy[j], hi, lo);
-      grow(e, n, lo);
-      grow(e, n, hi);
-      two_product(uy[i], vx[j], hi, lo);
-      grow(e, n, -lo);
-      grow(e, n, -hi);
-    }
-  }
-  return std::vector<double>(e, e + n);
+// Why the last union was not built (see UnionStats in convex_union.h): set
+// by fail(), which returns false.
+int last_failure = 0;
+inline bool fail(int reason) {
+  last_failure = reason;
+  return false;
 }
 
 // The product of two expansions, exactly.
@@ -175,39 +108,6 @@ std::vector<double> product(const std::vector<double>& e,
   return out;
 }
 
-// (b - a) x (d - c) in floating point, with a bound on its rounding error.
-struct Approx {
-  double value;
-  double error;
-};
-
-inline Approx cross_approx(double ax, double ay, double bx, double by,
-                           double cx, double cy, double dx, double dy) {
-  const double l = (bx - ax) * (dy - cy);
-  const double r = (by - ay) * (dx - cx);
-  return {l - r, kCrossBound * (std::fabs(l) + std::fabs(r))};
-}
-
-// The sign of (b - a) x (d - c), given its approximation: from the
-// approximation if the error bound allows it, or else from the exact value.
-// (An error bound of zero means that both products are exactly zero, as the
-// difference of two doubles is only zero if they are equal, and the products
-// of differences of coordinates do not underflow.)
-inline int cross_sign(const Approx& approx, double ax, double ay, double bx,
-                      double by, double cx, double cy, double dx, double dy) {
-  if (approx.value > approx.error) {
-    return 1;
-  }
-  if (-approx.value > approx.error) {
-    return -1;
-  }
-  if (approx.error == 0.0) {
-    return 0;
-  }
-  const std::vector<double> e = cross_exact(ax, ay, bx, by, cx, cy, dx, dy);
-  return sign_of(e.data(), static_cast<int>(e.size()));
-}
-
 // ---------------------------------------------------------------------------
 // 2. Clipping an edge against a convex polygon
 // ---------------------------------------------------------------------------
@@ -218,11 +118,13 @@ inline int cross_sign(const Approx& approx, double ax, double ay, double bx,
 // the polygon whose ends lie strictly on either side of it.
 
 struct Breakpoint {
-  int v;          // the vertex, or -1 for a crossing
-  int g1, g2;     // crossing: the ends of the edge crossed
-  int s1;         // crossing: the side of g1 relative to the edge
-  int sa, sb;     // crossing: the sides of a and b relative to g1 -> g2
-  Approx oa, ob;  // crossing: (g2 - g1) x (a - g1) and (g2 - g1) x (b - g1)
+  int v = -1;           // the vertex, or -1 for a crossing
+  int g1 = -1, g2 = -1; // crossing: the ends of the edge crossed
+  int s1 = 0;           // crossing: the side of g1 relative to the edge
+  int sa = 0, sb = 0;   // crossing: the sides of a and b relative to g1 -> g2
+  // crossing: (g2 - g1) x (a - g1) and (g2 - g1) x (b - g1)
+  Approx oa = {0.0, 0.0};
+  Approx ob = {0.0, 0.0};
 };
 
 class Edge {
@@ -699,6 +601,33 @@ public:
                        x_[s], y_[s]);
   }
 
+  // When the direction turns from p -> q to r -> s (by less than half a
+  // turn), the change in the number of times it has gone round: 1 if it
+  // turns anticlockwise past the direction of the positive x axis, -1 if it
+  // turns clockwise past it, and 0 otherwise. The sum of these changes round
+  // a closed ring is its turning number (1 for a simple ring that goes
+  // anticlockwise, -1 for one that goes clockwise), computed exactly from
+  // the directions of the edges, whatever the rounding of the coordinates
+  // of the crossings. Returns 2 if the directions are opposite (a spike,
+  // where the turn could go either way).
+  int wraps(int p, int q, int r, int s) const {
+    const Approx approx =
+      cross_approx(x_[p], y_[p], x_[q], y_[q], x_[r], y_[r], x_[s], y_[s]);
+    const int turn = cross_sign(approx, x_[p], y_[p], x_[q], y_[q], x_[r],
+                                y_[r], x_[s], y_[s]);
+    const int order = compare(p, q, r, s);
+    if (turn == 0) {
+      // the same direction (no turn), or opposite directions
+      return order == 0 ? 0 : 2;
+    }
+    if (turn > 0) {
+      // anticlockwise: past the x axis if r -> s comes before p -> q
+      return order > 0 ? 1 : 0;
+    }
+    // clockwise: past the x axis if r -> s comes after p -> q
+    return order < 0 ? -1 : 0;
+  }
+
 private:
   const double* x_;
   const double* y_;
@@ -711,13 +640,18 @@ private:
   }
 };
 
-// Twice the signed area of a ring (positive if anticlockwise).
+// Twice the signed area of a ring (positive if anticlockwise), with the
+// coordinates taken relative to its first vertex: with the raw coordinates,
+// the rounding errors of the products would be proportional to the square of
+// the coordinates, which can be much larger than the area of a small ring.
 double ring_area2(const std::vector<double>& rx,
                   const std::vector<double>& ry) {
   double area = 0.0;
   const std::size_t n = rx.size();
+  const double x0 = rx[0];
+  const double y0 = ry[0];
   for (std::size_t i = 0, j = n - 1; i < n; j = i++) {
-    area += rx[j] * ry[i] - rx[i] * ry[j];
+    area += (rx[j] - x0) * (ry[i] - y0) - (rx[i] - x0) * (ry[j] - y0);
   }
   return area;
 }
@@ -758,7 +692,7 @@ bool assemble(const std::vector<Piece>& pieces, Nodes& nodes,
     from[i] = local_id(nodes.find(pieces[i].from));
     to[i] = local_id(nodes.find(pieces[i].to));
     if (from[i] == to[i]) {
-      return false;
+      return fail(1);
     }
   }
   const int n_nodes = static_cast<int>(local.size());
@@ -771,7 +705,7 @@ bool assemble(const std::vector<Piece>& pieces, Nodes& nodes,
   for (int v = 0; v < n_nodes; ++v) {
     // every node must have as many pieces going in as going out
     if (n_in[v] != out_start[v + 1]) {
-      return false;
+      return fail(2);
     }
     out_start[v + 1] += out_start[v];
   }
@@ -828,7 +762,7 @@ bool assemble(const std::vector<Piece>& pieces, Nodes& nodes,
       // going round the node, pieces must alternate between going in and out,
       // in distinct directions
       if (r.outgoing == s.outgoing || order.compare(r.p, r.q, s.p, s.q) == 0) {
-        return false;
+        return fail(3);
       }
       if (s.outgoing == false) {
         // r, going out, is the first piece clockwise from s, coming in
@@ -850,12 +784,32 @@ bool assemble(const std::vector<Piece>& pieces, Nodes& nodes,
   std::vector<double> shell_area;
   std::vector<int> stack;
   std::vector<int> on_stack(n_nodes, -1);  // position on the stack, or -1
-  // add the ring made of the nodes from position `start` of the stack to its
-  // end, and take them off the stack (except the first one)
+  // Add the ring made of the pieces from position `start` of the stack to its
+  // end, and take them off the stack (except the first one). The ring is a
+  // shell if it goes round the union anticlockwise (with the union on its
+  // left), or a hole if it goes round it clockwise, which is decided exactly,
+  // from the directions of the edges of its pieces (rather than from the
+  // area of the ring, as rounding the coordinates of the crossings could
+  // change its sign for a tiny ring). Returns false if that cannot be
+  // decided (where consecutive pieces go back on themselves, as a spike, or
+  // where the ring does not go round once), or if the ring has fewer than 3
+  // vertices once its coordinates are rounded. (Rounding can otherwise make a
+  // ring invalid, e.g. where two nodes round to nearly the same point: the
+  // caller checks the validity of the result.)
   auto add_ring = [&](std::size_t start) {
+    const std::size_t end = stack.size();
     Ring ring;
-    for (std::size_t k = start; k < stack.size(); ++k) {
-      const int node = nodes.find(pieces[stack[k]].from);
+    int turning = 0;
+    for (std::size_t k = start; k < end; ++k) {
+      const Piece& piece = pieces[stack[k]];
+      const Piece& next_piece = pieces[stack[k + 1 < end ? k + 1 : start]];
+      // the turn to the next piece, exactly
+      const int w = order.wraps(piece.a, piece.b, next_piece.a, next_piece.b);
+      if (w == 2) {
+        return fail(4);
+      }
+      turning += w;
+      const int node = nodes.find(piece.from);
       const double nx = nodes.x(node);
       const double ny = nodes.y(node);
       // two nodes can round to the same coordinates: keep only one vertex
@@ -874,16 +828,15 @@ bool assemble(const std::vector<Piece>& pieces, Nodes& nodes,
       ring.y.pop_back();
     }
     if (ring.x.size() < 3) {
-      return false;
+      return fail(7);
     }
-    const double area2 = ring_area2(ring.x, ring.y);
-    if (area2 > 0.0) {
+    if (turning == 1) {
+      shell_area.push_back(std::fabs(ring_area2(ring.x, ring.y)));
       shells.push_back(std::move(ring));
-      shell_area.push_back(area2);
-    } else if (area2 < 0.0) {
+    } else if (turning == -1) {
       holes.push_back(std::move(ring));
     } else {
-      return false;
+      return fail(8);
     }
     return true;
   };
@@ -897,7 +850,7 @@ bool assemble(const std::vector<Piece>& pieces, Nodes& nodes,
     int j = i;
     do {
       if (used[j] || next[j] < 0) {
-        return false;
+        return fail(9);
       }
       used[j] = 1;
       const int v = from[j];
@@ -965,7 +918,7 @@ bool assemble(const std::vector<Piece>& pieces, Nodes& nodes,
         const bool in0 = point_in_ring(m0x, m0y, shells[s].x, shells[s].y);
         const bool in1 = point_in_ring(m1x, m1y, shells[s].x, shells[s].y);
         if (in0 != in1) {
-          return false;
+          return fail(11);
         }
         if (in0 && (best < 0 || shell_area[s] < shell_area[best])) {
           best = s;
@@ -973,7 +926,7 @@ bool assemble(const std::vector<Piece>& pieces, Nodes& nodes,
       }
     }
     if (best < 0) {
-      return false;
+      return fail(12);
     }
     shell_holes[best].push_back(h);
   }
@@ -1013,12 +966,14 @@ struct Interval {
 // 5. The union
 // ---------------------------------------------------------------------------
 
-bool union_of_convex_polygons(const std::vector<double>& x,
-                              const std::vector<double>& y,
-                              const std::vector<std::size_t>& offsets,
-                              const std::vector<int>& vertices,
-                              const std::vector<int>& counts,
-                              std::vector<MultiPolygon>& out) {
+namespace {
+
+bool union_impl(const std::vector<double>& x, const std::vector<double>& y,
+                const std::vector<std::size_t>& offsets,
+                const std::vector<int>& vertices,
+                const std::vector<int>& counts,
+                std::vector<MultiPolygon>& out, double max_work_per_vertex,
+                UnionStats* stats) {
   const int n_levels = static_cast<int>(counts.size());
   out.assign(n_levels, MultiPolygon());
   int n_used = 0;
@@ -1037,18 +992,36 @@ bool union_of_convex_polygons(const std::vector<double>& x,
     return &vertices[offsets[p]];
   };
 
-  // the polygons must be strictly convex, anticlockwise
+  // The polygons must be strictly convex, anticlockwise: every turn is to the
+  // left, and the boundary goes round once (which rules out star polygons,
+  // whose turns are all to the left too). Their coordinates must also be in
+  // the range for which the predicates are exact (see exact_predicates.h).
+  const DirectionOrder direction_order(px, py);
   for (int p = 0; p < n_used; ++p) {
     const int m = size_of(p);
-    const int* g = vertices_of(p);
     if (m < 3) {
-      return false;
+      return fail(20);
+    }
+    const int* g = vertices_of(p);
+    int turning = 0;
+    for (int j = 0; j < m; ++j) {
+      if (!exact_predicates::safe_coordinate(px[g[j]]) ||
+          !exact_predicates::safe_coordinate(py[g[j]])) {
+        return fail(21);
+      }
     }
     for (int j = 0; j < m; ++j) {
-      const Edge e(px, py, g[j], g[(j + 1) % m]);
-      if (e.side(g[(j + 2) % m]) <= 0) {
-        return false;
+      const int a = g[j];
+      const int b = g[(j + 1) % m];
+      const int c = g[(j + 2) % m];
+      const Edge e(px, py, a, b);
+      if (e.side(c) <= 0) {
+        return fail(22);
       }
+      turning += direction_order.wraps(a, b, b, c);
+    }
+    if (turning != 1) {
+      return fail(23);
     }
   }
 
@@ -1094,6 +1067,11 @@ bool union_of_convex_polygons(const std::vector<double>& x,
   int nx = 1;
   int ny = 1;
   while (true) {
+    // (the coordinates are finite and bounded, so this always ends, but a
+    // cell size that is not finite would make it loop for ever)
+    if (!std::isfinite(cell)) {
+      return fail(24);
+    }
     nx = static_cast<int>(std::min(1e6, (x1 - x0) / cell)) + 1;
     ny = static_cast<int>(std::min(1e6, (y1 - y0) / cell)) + 1;
     if (static_cast<double>(nx) * ny <= 4.0 * n_used + 16.0) {
@@ -1150,6 +1128,7 @@ bool union_of_convex_polygons(const std::vector<double>& x,
   std::vector<int> candidates;
   std::vector<double> candidate_box;
   std::vector<int> seen(n_used, -1);
+  int stamp = 0;
   std::vector<int> side;
   std::vector<Breakpoint> breakpoints;
   std::vector<int> sorted;
@@ -1158,10 +1137,17 @@ bool union_of_convex_polygons(const std::vector<double>& x,
   std::vector<int> group_node;
   std::vector<Interval> intervals;
 
-  for (int h = 0; h < n_used; ++h) {
-    if (h % 1000 == 0) {
-      Rcpp::checkUserInterrupt();
-    }
+  // The work done for polygon h: the polygons that may overlap it are found,
+  // and each of its edges is clipped against them. If `build` is true, the
+  // pieces of the edges on the boundary of each union are added to
+  // `pieces`; otherwise, the edges are only clipped, to estimate the work
+  // (see below). Returns the work done, counted as the number of items
+  // scanned in the cells of the grid, plus the number of vertices of the
+  // polygons that the edges are clipped against (the sides of all of them
+  // are computed), plus the number of breakpoints.
+  auto process = [&](int h, bool build) {
+    double work = 0.0;
+    const int this_stamp = stamp++;
     const int m = size_of(h);
     const int* hv = vertices_of(h);
     const double* hb = &box[4 * static_cast<std::size_t>(h)];
@@ -1174,13 +1160,14 @@ bool union_of_convex_polygons(const std::vector<double>& x,
     for (int i = cell_x(hb[0]); i <= cell_x(hb[1]); ++i) {
       for (int j = cell_y(hb[2]); j <= cell_y(hb[3]); ++j) {
         const std::size_t c = static_cast<std::size_t>(i) * ny + j;
+        work += cell_start[c + 1] - cell_start[c];
         for (int k = cell_start[c]; k < cell_start[c + 1]; ++k) {
           const CellItem& item = cell_items[k];
           if (!boxes_overlap(item.box, hb) || item.polygon == h ||
-              seen[item.polygon] == h) {
+              seen[item.polygon] == this_stamp) {
             continue;
           }
-          seen[item.polygon] = h;
+          seen[item.polygon] = this_stamp;
           candidates.push_back(item.polygon);
           candidate_box.insert(candidate_box.end(), item.box, item.box + 4);
         }
@@ -1226,6 +1213,7 @@ bool union_of_convex_polygons(const std::vector<double>& x,
           }
           Breakpoint lo;
           Breakpoint hi;
+          work += size_of(g);
           if (!e.covered(vertices_of(g), size_of(g), g < h, side, lo, hi)) {
             continue;
           }
@@ -1239,7 +1227,8 @@ bool union_of_convex_polygons(const std::vector<double>& x,
           breakpoints.push_back(hi);
         }
       }
-      if (all_covered) {
+      work += static_cast<double>(breakpoints.size());
+      if (all_covered || !build) {
         continue;
       }
 
@@ -1319,6 +1308,63 @@ bool union_of_convex_polygons(const std::vector<double>& x,
         }
       }
     }
+    return work;
+  };
+
+  // A safety valve: the work grows with the number of polygons that overlap
+  // each polygon, times their number of vertices, and so much faster than
+  // the time GEOS takes when the polygons are large and overlap heavily
+  // (e.g. LoCoH with hundreds of neighbours). The work is estimated from an
+  // evenly spaced sample of the polygons, and if it exceeds the budget (a
+  // number of units of work per vertex of the polygons, which stands for the
+  // time GEOS would take), the union is not built, and the caller falls back
+  // to GEOS. The work done is also counted as the union is built, which
+  // gives up if it goes well over the budget.
+  double n_vertices = 0.0;
+  for (int p = 0; p < n_used; ++p) {
+    n_vertices += size_of(p);
+  }
+  const double budget =
+    max_work_per_vertex > 0.0
+      ? max_work_per_vertex * n_vertices
+      : std::numeric_limits<double>::infinity();
+  // (a sixteenth of the polygons, but at least 16 and at most 256, so that
+  // the estimate takes a small part of the work)
+  const int n_sample = std::min(n_used, std::max(16, std::min(256, n_used / 16)));
+  double sample_work = 0.0;
+  for (int s = 0; s < n_sample; ++s) {
+    const int h = static_cast<int>(
+      (static_cast<double>(s) + 0.5) * n_used / n_sample);
+    sample_work += process(h, false);
+  }
+  const double estimated_work = sample_work * n_used / n_sample;
+  if (stats != nullptr) {
+    stats->estimated_work = estimated_work;
+    stats->n_vertices = n_vertices;
+  }
+  if (estimated_work > budget) {
+    return fail(30);
+  }
+  double work = 0.0;
+  // the user is given a chance to interrupt every so often (by work rather
+  // than by polygon, as the work per polygon varies a lot)
+  constexpr double kInterruptEvery = 1e7;
+  double next_interrupt = kInterruptEvery;
+  for (int h = 0; h < n_used; ++h) {
+    work += process(h, true);
+    if (work > next_interrupt) {
+      Rcpp::checkUserInterrupt();
+      next_interrupt = work + kInterruptEvery;
+    }
+    if (work > 2.0 * budget) {
+      if (stats != nullptr) {
+        stats->work = work;
+      }
+      return fail(31);
+    }
+  }
+  if (stats != nullptr) {
+    stats->work = work;
   }
 
   // link the pieces of each union into polygons
@@ -1329,6 +1375,25 @@ bool union_of_convex_polygons(const std::vector<double>& x,
     }
   }
   return true;
+}
+
+} // namespace
+
+bool union_of_convex_polygons(const std::vector<double>& x,
+                              const std::vector<double>& y,
+                              const std::vector<std::size_t>& offsets,
+                              const std::vector<int>& vertices,
+                              const std::vector<int>& counts,
+                              std::vector<MultiPolygon>& out,
+                              double max_work_per_vertex,
+                              UnionStats* stats) {
+  last_failure = 0;
+  const bool built = union_impl(x, y, offsets, vertices, counts, out,
+                                max_work_per_vertex, stats);
+  if (stats != nullptr) {
+    stats->failure = built ? 0 : last_failure;
+  }
+  return built;
 }
 
 } // namespace convex_union

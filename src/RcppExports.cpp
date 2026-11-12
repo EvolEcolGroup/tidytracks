@@ -42,8 +42,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // locoh_cpp
-Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y, std::string type, double n, Rcpp::NumericVector levels, double buffer, double shift_x, double shift_y, bool union_hulls, bool shift_back);
-RcppExport SEXP _tidytracks_locoh_cpp(SEXP xSEXP, SEXP ySEXP, SEXP typeSEXP, SEXP nSEXP, SEXP levelsSEXP, SEXP bufferSEXP, SEXP shift_xSEXP, SEXP shift_ySEXP, SEXP union_hullsSEXP, SEXP shift_backSEXP) {
+Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y, std::string type, double n, Rcpp::NumericVector levels, double buffer, double shift_x, double shift_y, bool union_hulls, double union_budget);
+RcppExport SEXP _tidytracks_locoh_cpp(SEXP xSEXP, SEXP ySEXP, SEXP typeSEXP, SEXP nSEXP, SEXP levelsSEXP, SEXP bufferSEXP, SEXP shift_xSEXP, SEXP shift_ySEXP, SEXP union_hullsSEXP, SEXP union_budgetSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -56,8 +56,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type shift_x(shift_xSEXP);
     Rcpp::traits::input_parameter< double >::type shift_y(shift_ySEXP);
     Rcpp::traits::input_parameter< bool >::type union_hulls(union_hullsSEXP);
-    Rcpp::traits::input_parameter< bool >::type shift_back(shift_backSEXP);
-    rcpp_result_gen = Rcpp::wrap(locoh_cpp(x, y, type, n, levels, buffer, shift_x, shift_y, union_hulls, shift_back));
+    Rcpp::traits::input_parameter< double >::type union_budget(union_budgetSEXP);
+    rcpp_result_gen = Rcpp::wrap(locoh_cpp(x, y, type, n, levels, buffer, shift_x, shift_y, union_hulls, union_budget));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -73,12 +73,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// convex_union_cpp
+Rcpp::List convex_union_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y, Rcpp::IntegerVector offsets, Rcpp::IntegerVector vertices, Rcpp::IntegerVector counts, double max_work_per_vertex);
+RcppExport SEXP _tidytracks_convex_union_cpp(SEXP xSEXP, SEXP ySEXP, SEXP offsetsSEXP, SEXP verticesSEXP, SEXP countsSEXP, SEXP max_work_per_vertexSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type offsets(offsetsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type vertices(verticesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type counts(countsSEXP);
+    Rcpp::traits::input_parameter< double >::type max_work_per_vertex(max_work_per_vertexSEXP);
+    rcpp_result_gen = Rcpp::wrap(convex_union_cpp(x, y, offsets, vertices, counts, max_work_per_vertex));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_tidytracks_kde_linbin_cpp", (DL_FUNC) &_tidytracks_kde_linbin_cpp, 7},
     {"_tidytracks_locoh_neighbours_cpp", (DL_FUNC) &_tidytracks_locoh_neighbours_cpp, 4},
     {"_tidytracks_locoh_cpp", (DL_FUNC) &_tidytracks_locoh_cpp, 10},
     {"_tidytracks_convex_hull_cpp", (DL_FUNC) &_tidytracks_convex_hull_cpp, 2},
+    {"_tidytracks_convex_union_cpp", (DL_FUNC) &_tidytracks_convex_union_cpp, 6},
     {NULL, NULL, 0}
 };
 

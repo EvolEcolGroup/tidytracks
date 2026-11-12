@@ -90,7 +90,11 @@ search). Without a buffer, the union of the hulls is also computed in C++,
 taking advantage of the hulls being convex (with exact geometric
 predicates, and the same formula as GEOS for the points where the edges of
 two hulls cross), which is much faster than with GEOS; with a buffer, it is
-computed with \code{\link[sf:st_union]{sf::st_union()}}.
+computed with \code{\link[sf:st_union]{sf::st_union()}}. The union is also computed with
+\code{\link[sf:st_union]{sf::st_union()}} where it would take longer in C++ (with hundreds of
+neighbours per location), and in the rare cases where it cannot be
+computed reliably in C++, or where rounding makes an isopleth from C++
+invalid (unless the isopleth from \code{\link[sf:st_union]{sf::st_union()}} is invalid too).
 
 The rules follow \code{amt::hr_locoh()}: each
 level is matched to the union of hulls whose coverage (the proportion of
