@@ -15,10 +15,12 @@ Ecography
 Fedak
 Fieberg
 Fortmann
+GEOS
 Getz
 Hirt
 Hofmeyr
 Jetz
+KBA
 KDEs
 Kays
 Kochanny
@@ -83,6 +85,7 @@ kde
 lat
 linewidth
 lon
+lwgeom
 magrittr
 multilines
 multipolygons
