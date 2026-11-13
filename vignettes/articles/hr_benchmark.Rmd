@@ -451,10 +451,10 @@ timings %>%
   `r secs("medium", "kde_ud", binned)` (`r secs("medium", "kde_ud", exact)`
   with its exact method), `amt` `r secs("medium", "kde_ud", "amt")` and
   `adehabitatHR` `r secs("medium", "kde_ud", "adehabitatHR")`. Drawing the
-  isopleths of the medium tracks adds little to the time of `tidytracks`,
-  which draws them straight from the UDs, without building rasters
-  (`r fmt_time(time_of("medium", "kde_iso", binned) - time_of("medium", "kde_ud", binned))`
-  with the binned method), but
+  isopleths of the medium tracks adds
+  `r fmt_time(time_of("medium", "kde_iso", binned) - time_of("medium", "kde_ud", binned))`
+  to the time of `tidytracks` (with the binned method), which draws them
+  straight from the UDs, without building rasters, but
   `r fmt_time(time_of("medium", "kde_iso", "amt") - time_of("medium", "kde_ud", "amt"))`
   to that of `amt`, and
   `r fmt_time(time_of("medium", "kde_iso", "adehabitatHR") - time_of("medium", "kde_ud", "adehabitatHR"))`
