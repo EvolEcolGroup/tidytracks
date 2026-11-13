@@ -18,14 +18,15 @@
 #'   in proportion to how close it is to each of them (linear binning, as in
 #'   [KernSmooth::bkde2D()]), and then smooths the bin counts with the
 #'   kernel. As the Gaussian kernel is separable, the smoothing is computed
-#'   as two matrix products, one along each axis of the grid, so the time it
-#'   takes grows with the number of cells times the number of rows and
-#'   columns of the grid, whatever the number of locations: it is much faster
-#'   than the exact method when there are many more locations than rows and
-#'   columns, and about as fast when there are about as many. Binning moves
-#'   each location by less than a cell, so the UD is very close to the exact
-#'   one when the bandwidth spans several cells. The kernel is truncated at
-#'   3.4 bandwidths from each location, beyond which it is negligible.
+#'   along one axis of the grid and then along the other, over the cells
+#'   within reach of the kernel only, so the time it takes grows with the
+#'   number of cells times the width of the kernel (in cells), whatever the
+#'   number of locations: it is much faster than the exact method, except
+#'   for groups with only a few locations, for which both are fast. Binning
+#'   moves each location by less than a cell, so the UD is very close to the
+#'   exact one when the bandwidth spans several cells. The kernel is
+#'   truncated at 3.4 bandwidths from each location, beyond which it is
+#'   negligible.
 #'
 #' By default, the full UD is returned. If `levels` is set, the
 #' isopleths for the specified levels are returned instead, along with their
@@ -298,7 +299,7 @@ hr_tt_kde <- function(
       kde_raster(density, grid, h = h[group_id], id = group_id)
     } else {
       # return its isopleths (the UD itself is not needed, so no raster is
-      # built for it)
+      # built for it); the UD is laid out as cud_isopleths() expects it
       cud <- hr_tt_cud(density$ud) # nolint: object_usage_linter.
       iso <- cud_isopleths( # nolint: object_usage_linter.
         cud,
@@ -308,7 +309,10 @@ hr_tt_kde <- function(
         levels = iso_levels,
         ops_crs = if (grid$longlat) grid$iso_crs else sf::NA_crs_,
         cud_raster = function() {
-          terra::rast(grid$template, vals = as.vector(t(cud)), names = "cud")
+          terra::setValues(
+            grid$template,
+            xy_matrix_values(cud) # nolint: object_usage_linter.
+          )
         }
       )
       iso_sf(iso, grid$iso_crs) # nolint: object_usage_linter.
@@ -415,7 +419,8 @@ align_kde_bbox <- function(bbox, res) {
 #' @param res The resolution of the grid (in the units of the projection of x).
 #' @param crs the crs of the coordinates.
 #' @param isopleths whether isopleths will be computed on the grid.
-#' @returns A list with `template` (an empty `terra::SpatRaster`) and, if
+#' @returns A list with `template` (an empty `terra::SpatRaster`, with a
+#'   layer named `"ud"`) and, if
 #'   `isopleths` is `TRUE`, `iso_crs` (the CRS of the isopleths, as obtained
 #'   from the raster), `longlat` (whether that CRS is in longitude/latitude),
 #'   `x` and `y` (the coordinates of the centres of the columns, and of the
@@ -437,6 +442,8 @@ kde_grid <- function(bbox, res, crs, isopleths) {
     ymax = bbox[["ymax"]],
     crs = crs$wkt
   )
+  # named once here, rather than each of the rasters of the UDs made from it
+  names(template) <- "ud"
   if (!isopleths) {
     return(list(template = template))
   }
@@ -463,9 +470,10 @@ kde_grid <- function(bbox, res, crs, isopleths) {
 #'   the bounding box of the grid over which to compute the KDE.
 #' @param res The resolution of the grid (in the units of the projection of x).
 #' @param h The bandwidth for the kernel density estimation.
-#' @returns A list with `ud` (a matrix of densities that sum to 1, laid out as
-#'   a raster: rows from north to south) and `density_sum` (the sum of the
-#'   densities before standardisation).
+#' @returns A list with `ud` (a matrix of densities that sum to 1, with one
+#'   row per column of cells, from west to east, and one column per row of
+#'   cells, from south to north) and `density_sum` (the sum of the densities
+#'   before standardisation), as from `kde_ud_standardise()`.
 #' @keywords internal
 #' @noRd
 kde_density_exact <- function(xy, bbox, res, h) {
@@ -489,8 +497,9 @@ kde_density_exact <- function(xy, bbox, res, h) {
     )
   )
 
-  # standardise the density and lay it out as a raster
-  kde_ud_layout(kde$z)
+  # standardise the density (kde2d() already divides it by the number of
+  # locations)
+  kde_ud_standardise(kde$z)
 }
 
 # The binned kernel is truncated at this many bandwidths from its centre (as
@@ -507,22 +516,26 @@ binned_kde_reach <- 3.4
 #' split between the four grid points that surround it, in proportion to how
 #' close it is to each of them), and then smooths the bin counts with the
 #' kernel (a discrete convolution). Unlike `KernSmooth::bkde2D()`, which
-#' computes the convolution with fast Fourier transforms, it computes it as
-#' two matrix products, one along x and one along y: the Gaussian kernel is
-#' separable (the kernel in 2D is the product of a kernel along x and one
-#' along y), so this gives the same convolution, and BLAS makes it much
-#' faster than R's FFT. Its cost is then proportional to the number of cells
-#' times the number of rows plus columns of the grid, however many locations
-#' there are. It is not intended to be called directly by the user.
+#' computes the convolution with fast Fourier transforms, it computes it
+#' directly, along x and then along y (with `kde_convolve_cpp()`): the
+#' Gaussian kernel is separable (the kernel in 2D is the product of a kernel
+#' along x and one along y), so this gives the same convolution. Only the
+#' grid points within reach of the (truncated) kernel are visited, and the
+#' empty bins are skipped, so its cost is proportional to the number of
+#' cells within reach of the locations times the width of the kernel (in
+#' cells), however many locations there are. This is several times faster
+#' than the FFT of `KernSmooth::bkde2D()`. It is not intended to be called
+#' directly by the user.
 #'
 #' @param xy a matrix of coordinates
 #' @param bbox A named vector of four elements: xmin, ymin, xmax, ymax to define
 #'   the bounding box of the grid over which to compute the KDE.
 #' @param res The resolution of the grid (in the units of the projection of x).
 #' @param h The bandwidth for the kernel density estimation.
-#' @returns A list with `ud` (a matrix of densities that sum to 1, laid out as
-#'   a raster: rows from north to south) and `density_sum` (the sum of the
-#'   densities before standardisation), as from `kde_density_exact()`.
+#' @returns A list with `ud` (a matrix of densities that sum to 1, with one
+#'   row per column of cells, from west to east, and one column per row of
+#'   cells, from south to north) and `density_sum` (the sum of the densities
+#'   before standardisation), as from `kde_density_exact()`.
 #' @keywords internal
 #' @noRd
 kde_density_binned <- function(xy, bbox, res, h) {
@@ -574,45 +587,45 @@ kde_density_binned <- function(xy, bbox, res, h) {
   )
 
   # The 2D kernel is the product of a kernel along x and one along y, so the
-  # convolution of the counts with it is a convolution along x (a product
-  # with the kernel matrix along x, on the left), followed by a convolution
-  # along y (a product with the kernel matrix along y, on the right). Each
-  # kernel matrix has one row per cell of the grid, and one column per grid
-  # point onto which the locations were binned.
-  kernel_x <- kde_kernel_matrix(n_cells[1], n_bins[1], pad_low[1], h, res)
-  kernel_y <- kde_kernel_matrix(n_cells[2], n_bins[2], pad_low[2], h, res)
-  # the density at the centre of each cell (rows along x, columns along y,
-  # as from MASS::kde2d()), divided by the number of locations so that it
-  # sums to the same as from kde_density_exact()
-  z <- tcrossprod(kernel_x %*% counts, kernel_y) / nrow(xy)
+  # convolution of the counts with it is a convolution along x followed by a
+  # convolution along y, each with the weights of the kernel along its axis.
+  # The result is the density at the centre of each cell (rows along x,
+  # columns along y, as from MASS::kde2d()), times the number of locations.
+  z <- kde_convolve_cpp( # nolint: object_usage_linter.
+    counts,
+    wx = kde_kernel_weights(n_bins[1], h, res),
+    wy = kde_kernel_weights(n_bins[2], h, res),
+    ncx = n_cells[1],
+    ncy = n_cells[2],
+    offx = pad_low[1],
+    offy = pad_low[2]
+  )
 
-  # standardise the density and lay it out as a raster, as for the exact KDE
-  kde_ud_layout(z)
+  # standardise the density, as for the exact KDE (dividing its sum by the
+  # number of locations, so that it is the same as from kde_density_exact())
+  kde_ud_standardise(z, n_locations = nrow(xy))
 }
 
-#' Kernel matrix for one axis of the binned kde
+#' Weights of the kernel along one axis of the binned kde
 #'
-#' Internal function called by `kde_density_binned()`. Builds the (banded)
-#' matrix that convolves binned counts with a Gaussian kernel along one axis:
-#' each row is a cell of the grid, each column a grid point onto which the
-#' locations were binned, and each value is the kernel at the distance
-#' between them. As in `KernSmooth::bkde2D()`, the kernel is truncated at
-#' `binned_kde_reach` bandwidths (in whole cells, and at most the size of the
-#' grid of binned counts), and its values are rescaled so that, as a discrete
-#' density, it integrates to 1 (which makes up for the truncation, and for
-#' evaluating it at a few points only when the bandwidth spans few cells).
+#' Internal function called by `kde_density_binned()`: the weights with which
+#' `kde_convolve_cpp()` convolves binned counts with a Gaussian kernel along
+#' one axis, i.e. the kernel at 0, 1, ... grid points from its centre. As in
+#' `KernSmooth::bkde2D()`, the kernel is truncated at `binned_kde_reach`
+#' bandwidths (in whole cells, and at most the size of the grid of binned
+#' counts), and its values are rescaled so that, as a discrete density, it
+#' integrates to 1 (which makes up for the truncation, and for evaluating it
+#' at a few points only when the bandwidth spans few cells).
 #'
-#' @param n_cells the number of cells of the grid along the axis.
 #' @param n_bins the number of grid points of the binned counts along the
 #'   axis.
-#' @param offset the number of grid points of the binned counts before the
-#'   centre of the first cell of the grid.
 #' @param h The bandwidth for the kernel density estimation.
 #' @param res The resolution of the grid.
-#' @returns A matrix with `n_cells` rows and `n_bins` columns.
+#' @returns A numeric vector with the weights of the kernel at 0, 1, ...,
+#'   half-width grid points from its centre.
 #' @keywords internal
 #' @noRd
-kde_kernel_matrix <- function(n_cells, n_bins, offset, h, res) {
+kde_kernel_weights <- function(n_bins, h, res) {
   # the half-width of the truncated kernel, in cells
   half_width <- min(floor(binned_kde_reach * h / res), n_bins - 1)
   # the kernel (a normal density with standard deviation h) at 0, 1, ...,
@@ -620,43 +633,31 @@ kde_kernel_matrix <- function(n_cells, n_bins, offset, h, res) {
   weights <- stats::dnorm(seq(0, half_width) * res / h) / h
   # rescaled so that the kernel over the whole band (both sides of the
   # centre, which is counted once) times the resolution is 1
-  weights <- weights / (res * (2 * sum(weights) - weights[1]))
-  # the distance (in cells) between the centre of each cell of the grid
-  # (rows) and each grid point of the binned counts (columns); the centre of
-  # the first cell is grid point offset + 1
-  distance <- abs(outer(seq_len(n_cells) + offset, seq_len(n_bins), "-"))
-  # the kernel at these distances, and 0 beyond the half-width
-  kernel <- matrix(0, n_cells, n_bins)
-  in_band <- distance <= half_width
-  kernel[in_band] <- weights[distance[in_band] + 1]
-  kernel
+  weights / (res * (2 * sum(weights) - weights[1]))
 }
 
-#' Standardise a kde and lay it out as a raster
+#' Standardise a kde
 #'
 #' Internal function called by `kde_density_exact()` and
 #' `kde_density_binned()`, which both estimate the density in a matrix with
 #' one row per column of cells (from west to east), and one column per row
-#' of cells (from south to north).
+#' of cells (from south to north). The UD is kept in that layout, which is
+#' the one in which `cud_isopleths()` draws its isopleths; `kde_raster()`
+#' turns it into a raster.
 #'
 #' @param z the matrix of densities.
+#' @param n_locations the number of locations, if `z` is not yet divided by
+#'   it.
 #' @returns A list with `ud` (a matrix of densities that sum to 1, laid out as
-#'   a raster: rows from north to south) and `density_sum` (the sum of the
-#'   densities before standardisation).
+#'   `z`) and `density_sum` (the sum of the densities, divided by
+#'   `n_locations`, before standardisation).
 #' @keywords internal
 #' @noRd
-kde_ud_layout <- function(z) {
-  # estimate the sum of the density
-  sum_density <- sum(z, na.rm = TRUE)
-
-  # standardise the density values to sum to 1
-  z <- z / sum_density
-
-  # lay it out as a raster (flipping the x axis appropriately)
-  z <- t(z)
+kde_ud_standardise <- function(z, n_locations = 1) {
+  sum_z <- sum(z, na.rm = TRUE)
   list(
-    ud = z[rev(seq_len(nrow(z))), , drop = FALSE],
-    density_sum = sum_density
+    ud = z / sum_z,
+    density_sum = sum_z / n_locations
   )
 }
 
@@ -666,15 +667,15 @@ kde_ud_layout <- function(z) {
 #' @param grid the grid, as returned by `kde_grid()`.
 #' @param h The bandwidth for the kernel density estimation.
 #' @param id The identifier for the group (used in raster metadata).
-#' @return A `terra::SpatRaster`.
+#' @return A `terra::SpatRaster`, with a layer named `"ud"`.
 #' @keywords internal
 #' @noRd
 kde_raster <- function(density, grid, h, id) {
-  # rasters are filled row by row
-  r <- terra::rast(
+  # the template is already named "ud", and setValues() returns a new raster
+  # (leaving the template empty)
+  r <- terra::setValues(
     grid$template,
-    vals = as.vector(t(density$ud)),
-    names = "ud"
+    xy_matrix_values(density$ud) # nolint: object_usage_linter.
   )
   terra::metags(r) <- c(
     paste0("id = ", id),

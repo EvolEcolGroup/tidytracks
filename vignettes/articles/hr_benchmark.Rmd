@@ -451,10 +451,10 @@ timings %>%
   `r secs("medium", "kde_ud", binned)` (`r secs("medium", "kde_ud", exact)`
   with its exact method), `amt` `r secs("medium", "kde_ud", "amt")` and
   `adehabitatHR` `r secs("medium", "kde_ud", "adehabitatHR")`. Drawing the
-  isopleths of the medium tracks adds little to the time of `tidytracks`,
-  which draws them straight from the UDs, without building rasters
-  (`r fmt_time(time_of("medium", "kde_iso", binned) - time_of("medium", "kde_ud", binned))`
-  with the binned method), but
+  isopleths of the medium tracks adds
+  `r fmt_time(time_of("medium", "kde_iso", binned) - time_of("medium", "kde_ud", binned))`
+  to the time of `tidytracks` (with the binned method), which draws them
+  straight from the UDs, without building rasters, but
   `r fmt_time(time_of("medium", "kde_iso", "amt") - time_of("medium", "kde_ud", "amt"))`
   to that of `amt`, and
   `r fmt_time(time_of("medium", "kde_iso", "adehabitatHR") - time_of("medium", "kde_ud", "adehabitatHR"))`
@@ -464,8 +464,8 @@ timings %>%
   `adehabitatHR` `r both_ratios("kde_iso", "adehabitatHR", binned)` times.
   Most of the time of the exact method of `tidytracks` on long tracks is
   spent in a matrix product (in `MASS::kde2d()`), which an optimised BLAS
-  (such as OpenBLAS) can make several times faster, as it can the matrix
-  products of the binned method; this benchmark used
+  (such as OpenBLAS) can make several times faster (the binned method does
+  not use BLAS); this benchmark used
   `r if (reference_blas) "the reference BLAS of R" else paste0("an optimised BLAS (", blas, ")")`.
 - **LoCoH**: `tidytracks` is the fastest, by far: `amt` takes
   `r both_ratios("locoh", "amt")` times as long
@@ -666,8 +666,9 @@ The settings are matched so that the packages estimate the same home ranges:
   faster but approximate: those of `amt` (with `KernSmooth::bkde2D()`, which
   smooths them with fast Fourier transforms), and of `tidytracks` with
   `method = "binned"`, its default (which bins the locations as
-  `KernSmooth::bkde2D()` does, but smooths them with two matrix products, one
-  along each axis of the grid, as the Gaussian kernel is separable).
+  `KernSmooth::bkde2D()` does, but smooths them along one axis of the grid
+  and then along the other, as the Gaussian kernel is separable, over the
+  cells within reach of the kernel only).
 - **LoCoH**: hulls of each location and its 10 nearest neighbours (`n = 10`
   in `tidytracks` and `amt`, `k = 11` in `adehabitatHR`, which counts the
   location itself). For each level, the isopleth is the union of the

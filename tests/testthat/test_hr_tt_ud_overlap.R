@@ -259,3 +259,22 @@ test_that("earth_mover_sinkhorn requires move2utils", {
     "requires the suggested package 'move2utils'"
   )
 })
+
+test_that("ud_level_mask keeps cells with the same UD together", {
+  # three cells of 0.2 after a cell of 0.3: in any order, they would hold
+  # 0.5, 0.7 and 0.9 of the UD, i.e. 0.7 on average
+  values <- c(0.3, 0.2, 0.2, 0.2, 0.1)
+  expect_equal(
+    ud_level_mask(values, 0.5),
+    c(TRUE, FALSE, FALSE, FALSE, FALSE)
+  )
+  expect_equal(
+    ud_level_mask(values, 0.75),
+    c(TRUE, TRUE, TRUE, TRUE, FALSE)
+  )
+  # whatever the order of the cells
+  expect_equal(
+    ud_level_mask(rev(values), 0.75),
+    rev(ud_level_mask(values, 0.75))
+  )
+})

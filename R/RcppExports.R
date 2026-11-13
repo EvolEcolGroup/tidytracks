@@ -22,6 +22,32 @@ kde_linbin_cpp <- function(x, y, x0, y0, res, nx, ny) {
     .Call(`_tidytracks_kde_linbin_cpp`, x, y, x0, y0, res, nx, ny)
 }
 
+#' Smoothing of binned counts with a separable kernel
+#'
+#' Internal function called by `kde_density_binned()`: convolves the binned
+#' counts with the kernel along x, and then along y, and returns the result
+#' at the centres of the cells of the grid. A grid point of the binned counts
+#' contributes to a cell if their distance (in cells) is within the
+#' half-width of the kernel along that axis, with the weight of the kernel at
+#' that distance.
+#'
+#' @param counts the binned counts, as returned by `kde_linbin_cpp()`, with
+#'   one row per grid point along x and one column per grid point along y.
+#' @param wx,wy the weights of the kernel along x and along y, at 0, 1, ...,
+#'   half-width grid points from its centre (as from
+#'   `kde_kernel_weights()`).
+#' @param ncx,ncy the number of cells of the grid along x and along y.
+#' @param offx,offy the number of grid points of the binned counts before
+#'   the centre of the first cell of the grid, along x and along y (the
+#'   centre of cell `i` is grid point `i + offx`, both 0-based).
+#' @returns A matrix with one row per cell along x (from west to east) and
+#'   one column per cell along y (from south to north).
+#' @keywords internal
+#' @noRd
+kde_convolve_cpp <- function(counts, wx, wy, ncx, ncy, offx, offy) {
+    .Call(`_tidytracks_kde_convolve_cpp`, counts, wx, wy, ncx, ncy, offx, offy)
+}
+
 #' Neighbour sets used by LoCoH
 #'
 #' Internal function, exported for testing: returns the neighbour set of
@@ -62,19 +88,35 @@ locoh_neighbours_cpp <- function(x, y, type, n) {
 #'   GEOS, which computes the union of the hulls, loses precision with large
 #'   coordinates (e.g. projected coordinates in the millions): small
 #'   details, such as a buffer of 1e-5, are then distorted.
+#' @param union_hulls whether to compute the isopleths (the unions of the
+#'   hulls with an area) here, in the original coordinates, rather than
+#'   leaving them to GEOS (see convex_union.cpp).
+#' @param union_budget if positive, the most work (per vertex of the hulls)
+#'   that the union of the hulls may take (see convex_union.cpp): beyond it,
+#'   it is left to GEOS, which is then faster.
 #' @returns A list with:
 #' - `n_hulls`: for each level, the number of (smallest) hulls whose union
 #'   is the isopleth;
 #' - `coverage`: for each level, the proportion of locations in those hulls;
-#' - `hulls`: the `max(n_hulls)` smallest hulls, from the smallest to the
-#'   largest, as a list of `sfg` objects (POLYGON, or LINESTRING or POINT
-#'   for degenerate hulls with no area), in shifted coordinates;
-#' - `degenerate`: a logical vector, `TRUE` for the hulls with no area;
-#' - `root`: the (1-based) index of the root location of each hull.
+#' - `isopleths`: if `union_hulls` is `TRUE` (and the union could be
+#'   computed), the isopleth for each level, as a list of MULTIPOLYGON `sfg`
+#'   objects (in the original coordinates), or else `NULL`;
+#' - `hulls`: if `isopleths` is `NULL`, the `max(n_hulls)` smallest hulls,
+#'   from the smallest to the largest, as a list of `sfg` objects (POLYGON,
+#'   or LINESTRING or POINT for degenerate hulls with no area), in shifted
+#'   coordinates (an empty list otherwise);
+#' - `degenerate`: a logical vector, `TRUE` for the hulls in `hulls` with no
+#'   area;
+#' - `root`: the (1-based) index of the root location of each hull in
+#'   `hulls`;
+#' - `union_stats`: the work estimated for the union of the hulls, the work
+#'   done, the number of vertices of the hulls (all 0 if the union was not
+#'   attempted), and why the union was not built (0 if it was, see
+#'   convex_union.h).
 #' @keywords internal
 #' @noRd
-locoh_cpp <- function(x, y, type, n, levels, buffer, shift_x, shift_y) {
-    .Call(`_tidytracks_locoh_cpp`, x, y, type, n, levels, buffer, shift_x, shift_y)
+locoh_cpp <- function(x, y, type, n, levels, buffer, shift_x, shift_y, union_hulls = FALSE, union_budget = 0.0) {
+    .Call(`_tidytracks_locoh_cpp`, x, y, type, n, levels, buffer, shift_x, shift_y, union_hulls, union_budget)
 }
 
 #' Convex hull of a set of points
@@ -89,5 +131,29 @@ locoh_cpp <- function(x, y, type, n, levels, buffer, shift_x, shift_y) {
 #' @noRd
 convex_hull_cpp <- function(x, y) {
     .Call(`_tidytracks_convex_hull_cpp`, x, y)
+}
+
+#' Union of nested sets of convex polygons
+#'
+#' Internal function, used by the tests: calls
+#' `convex_union::union_of_convex_polygons()` (see convex_union.h) on
+#' polygons given directly, rather than on the hulls of LoCoH.
+#'
+#' @param x,y the coordinates of the vertices.
+#' @param offsets the (0-based) position in `vertices` of the first vertex of
+#'   each polygon, followed by the length of `vertices`.
+#' @param vertices the (0-based) indices of the vertices of the polygons,
+#'   anticlockwise.
+#' @param counts for each union, the number of polygons in it (the first
+#'   ones).
+#' @param max_work_per_vertex the budget of the union (0 for none).
+#' @returns A list with `built` (whether the union was built), `isopleths`
+#'   (a list of MULTIPOLYGON `sfg` objects, one per value of `counts`, or
+#'   `NULL`) and `stats` (the estimated work, the work done, the number of
+#'   vertices, and why the union was not built).
+#' @keywords internal
+#' @noRd
+convex_union_cpp <- function(x, y, offsets, vertices, counts, max_work_per_vertex = 0.0) {
+    .Call(`_tidytracks_convex_union_cpp`, x, y, offsets, vertices, counts, max_work_per_vertex)
 }
 

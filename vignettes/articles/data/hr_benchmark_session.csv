@@ -1,5 +1,5 @@
 "item","value"
-"date","2026-10-30"
+"date","2026-11-13"
 "R","R version 4.5.2 (2025-10-31)"
 "platform","x86_64-pc-linux-gnu"
 "CPU","13th Gen Intel(R) Core(TM) i9-13900"
@@ -16,5 +16,5 @@
 "MASS","7.3.66"
 "KernSmooth","2.23.27"
 "GEOS","3.12.2"
-"run time (minutes)","23"
+"run time (minutes)","22"
 "peak memory (GB)","3"

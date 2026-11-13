@@ -143,10 +143,10 @@ raster_isopleths <- function(x, levels, crs_cache = NULL) {
     crs_cache$longlat <- isTRUE(sf::st_is_longlat(crs_cache$crs))
   }
 
-  # the cumulative UD, as a matrix laid out as the raster (subsetting the
-  # layer creates a new raster, which takes a while, so it is only done if
-  # there are other layers)
-  ud <- as.matrix(if (terra::nlyr(x) == 1) x else x[["ud"]], wide = TRUE)
+  # the cumulative UD, as a matrix laid out as cud_isopleths() expects it
+  # (subsetting the layer creates a new raster, which takes a while, so it is
+  # only done if there are other layers)
+  ud <- raster_xy_matrix(if (terra::nlyr(x) == 1) x else x[["ud"]])
   cud <- hr_tt_cud(ud) # nolint: object_usage_linter.
   iso <- cud_isopleths(
     cud,
@@ -215,8 +215,9 @@ isopleth_table <- function(x, iso) {
 #' the isopleth for a level if it is inside an odd number of the contour lines
 #' for that level (a contour line nested within another one is a hole).
 #'
-#' @param cud a matrix with the cumulative UD, laid out as the raster (rows
-#'   from north to south).
+#' @param cud a matrix with the cumulative UD, with one row per column of
+#'   cells (from west to east) and one column per row of cells (from south to
+#'   north), as for [grDevices::contourLines()] (see `raster_xy_matrix()`).
 #' @param x,y the coordinates of the centres of the columns, and of the rows
 #'   from south to north.
 #' @param res the size of the cells, along x and along y.
@@ -251,7 +252,7 @@ cud_isopleths <- function(cud, x, y, res, levels, ops_crs, cud_raster) {
       as.raster = TRUE,
       warn = FALSE
     )
-    cud <- as.matrix(sampled, wide = TRUE)
+    cud <- raster_xy_matrix(sampled)
     x <- terra::xFromCol(sampled, seq_len(ncol(sampled)))
     y <- terra::yFromRow(sampled, rev(seq_len(nrow(sampled))))
     res <- terra::res(sampled)
@@ -262,8 +263,7 @@ cud_isopleths <- function(cud, x, y, res, levels, ops_crs, cud_raster) {
   # the edges of the grid, and just beyond them with a value above all the
   # levels: the contour lines then follow the edges of the grid, as do the
   # cells within the isopleth.
-  z <- t(cud[rev(seq_len(nrow(cud))), , drop = FALSE])
-  z <- rbind(z[1, ], z, z[nrow(z), ])
+  z <- rbind(cud[1, ], cud, cud[nrow(cud), ])
   z <- cbind(z[, 1], z, z[, ncol(z)])
   outside <- max(levels) + 1
   z <- cbind(outside, rbind(outside, z, outside), outside)
@@ -349,4 +349,42 @@ hr_ud_iso <- function(x, levels = c(0.50, 0.95)) {
     call. = FALSE
   )
   hr_tt_ud_iso(x = x, levels = levels)
+}
+
+#' The values of a raster as a matrix laid out for contour lines
+#'
+#' Internal function: the values of a raster with a single layer, as a
+#' matrix with one row per column of cells (from west to east) and one
+#' column per row of cells (from south to north), as for
+#' [grDevices::contourLines()] and `cud_isopleths()`, and as `hr_tt_kde()`
+#' estimates the UD. `xy_matrix_values()` does the reverse.
+#'
+#' @param r a `SpatRaster` with a single layer.
+#' @returns A numeric matrix with `ncol(r)` rows and `nrow(r)` columns.
+#' @keywords internal
+#' @noRd
+raster_xy_matrix <- function(r) {
+  # the values of a raster are row by row, from the north: as the columns of
+  # a matrix, each column is a row of cells, from the north
+  values <- terra::values(r, mat = FALSE)
+  dim(values) <- c(terra::ncol(r), terra::nrow(r))
+  values[, rev(seq_len(ncol(values))), drop = FALSE]
+}
+
+#' The values of a matrix laid out for contour lines, in the order of a raster
+#'
+#' Internal function, the reverse of `raster_xy_matrix()`: the values of a
+#' matrix with one row per column of cells (from west to east) and one
+#' column per row of cells (from south to north), in the order in which
+#' they fill a raster (row by row, from the north).
+#'
+#' @param m a numeric matrix, laid out as from `raster_xy_matrix()`.
+#' @returns A numeric vector of the values of `m`, in the order of the cells
+#'   of the raster.
+#' @keywords internal
+#' @noRd
+xy_matrix_values <- function(m) {
+  values <- m[, rev(seq_len(ncol(m))), drop = FALSE]
+  dim(values) <- NULL
+  values
 }
