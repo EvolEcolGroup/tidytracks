@@ -21,16 +21,16 @@ the benchmark, with their code, and how to run it again.
   ones of `tidytracks`, and those of `amt` within about 1.1%, as its
   grid points are not at the centres of the cells.
 - `tidytracks` is the fastest for LoCoH: on 100 tracks of 10,000
-  locations, it takes 23 s, against 6.3 min for `amt`, and
-  `adehabitatHR` takes 4.2 min on 100 tracks of 500 locations (against 1
-  s). LoCoH in `adehabitatHR` becomes impractical beyond a few thousand
-  locations per track.
+  locations, it takes 4.7 s, against 6.1 min for `amt`, and
+  `adehabitatHR` takes 4.2 min on 100 tracks of 500 locations (against
+  0.23 s). LoCoH in `adehabitatHR` becomes impractical beyond a few
+  thousand locations per track.
 - `tidytracks` is also the fastest for MCP (`amt` and `adehabitatHR`
-  take 3.9 to 11 and 13 to 39 times as long), and, with its default
+  take 3.7 to 11 and 13 to 35 times as long), and, with its default
   binned method, for the KDE isopleths (`amt` and `adehabitatHR` take
-  2.1 to 2.3 and 7.4 to 23 times as long).
+  3.2 to 3.9 and 13 to 34 times as long).
 - For the UDs of long tracks, the binned methods of `tidytracks` and
-  `amt` are the fastest, 47 times faster than the exact method of
+  `amt` are the fastest, 96 times faster than the exact method of
   `tidytracks`.
 
 The packages are compared on copies of two sets of tracks simulated with
@@ -87,30 +87,30 @@ On the largest data sets (10 copies of the simulated tracks):
 
 | Data set | Method | tidytracks | tidytracks (exact KDE) | amt | adehabitatHR |
 |:---|:---|---:|---:|---:|---:|
-| 100 tracks of 500 locations | MCP | 0.039 s |  | 0.3 s | 0.42 s |
-| 100 tracks of 500 locations | KDE: UD | 1 s | 1.4 s | 0.72 s | 3.4 s |
-| 100 tracks of 500 locations | KDE: isopleths | 1.2 s | 1.6 s | 2.8 s | 9.6 s |
-| 100 tracks of 500 locations | LoCoH | 1 s |  | 18 s | 4.2 min |
-| 1,000 tracks of 500 locations | MCP | 0.28 s |  | 3.2 s | 3.8 s |
-| 1,000 tracks of 500 locations | KDE: UD | 12 s | 17 s | 7.7 s | 28 s |
-| 1,000 tracks of 500 locations | KDE: isopleths | 12 s | 17 s | 28 s | 1.5 min |
-| 1,000 tracks of 500 locations | LoCoH | 11 s |  | 3 min | not run |
-| 10 tracks of 10,000 locations | MCP | 0.026 s |  | 0.063 s | 0.51 s |
-| 10 tracks of 10,000 locations | KDE: UD | 0.099 s | 5.8 s | 0.087 s | 2.5 s |
-| 10 tracks of 10,000 locations | KDE: isopleths | 0.14 s | 5.8 s | 0.29 s | 3.3 s |
-| 10 tracks of 10,000 locations | LoCoH | 2.4 s |  | 36 s | not run |
-| 100 tracks of 10,000 locations | MCP | 0.14 s |  | 0.56 s | 5.6 s |
-| 100 tracks of 10,000 locations | KDE: UD | 1.1 s | 53 s | 0.84 s | 25 s |
-| 100 tracks of 10,000 locations | KDE: isopleths | 1.3 s | 53 s | 2.8 s | 31 s |
-| 100 tracks of 10,000 locations | LoCoH | 23 s |  | 6.3 min | not run |
+| 100 tracks of 500 locations | MCP | 0.04 s |  | 0.31 s | 0.43 s |
+| 100 tracks of 500 locations | KDE: UD | 0.42 s | 1.3 s | 0.81 s | 3.3 s |
+| 100 tracks of 500 locations | KDE: isopleths | 0.63 s | 1.6 s | 2.6 s | 9.4 s |
+| 100 tracks of 500 locations | LoCoH | 0.23 s |  | 18 s | 4.2 min |
+| 1,000 tracks of 500 locations | MCP | 0.28 s |  | 3 s | 3.7 s |
+| 1,000 tracks of 500 locations | KDE: UD | 4.1 s | 15 s | 7.9 s | 29 s |
+| 1,000 tracks of 500 locations | KDE: isopleths | 6.9 s | 16 s | 27 s | 1.5 min |
+| 1,000 tracks of 500 locations | LoCoH | 2.2 s |  | 2.9 min | not run |
+| 10 tracks of 10,000 locations | MCP | 0.024 s |  | 0.06 s | 0.5 s |
+| 10 tracks of 10,000 locations | KDE: UD | 0.044 s | 5.7 s | 0.086 s | 2.6 s |
+| 10 tracks of 10,000 locations | KDE: isopleths | 0.087 s | 5.7 s | 0.28 s | 3.2 s |
+| 10 tracks of 10,000 locations | LoCoH | 0.47 s |  | 34 s | not run |
+| 100 tracks of 10,000 locations | MCP | 0.15 s |  | 0.55 s | 5.2 s |
+| 100 tracks of 10,000 locations | KDE: UD | 0.55 s | 53 s | 1.2 s | 24 s |
+| 100 tracks of 10,000 locations | KDE: isopleths | 0.9 s | 53 s | 2.9 s | 30 s |
+| 100 tracks of 10,000 locations | LoCoH | 4.7 s |  | 6.1 min | not run |
 
 Time to estimate the home ranges of all the tracks, on the simulated
 tracks and their copies. For the KDE, the column tidytracks is for its
 default, binned, method. {.table style="width:100%;"}
 
-- **MCP** takes at most 5.6 s in all three packages. `tidytracks` is the
+- **MCP** takes at most 5.2 s in all three packages. `tidytracks` is the
   fastest: `amt` takes 11 times as long on the medium tracks, and
-  `adehabitatHR` 13 times (39 times on the long tracks).
+  `adehabitatHR` 13 times (35 times on the long tracks).
 - **KDE**: the exact estimators (`tidytracks` with `method = "exact"`,
   and `adehabitatHR`) evaluate the kernel of every location in every
   cell of the grid, which takes a time proportional to the number of
@@ -118,30 +118,30 @@ default, binned, method. {.table style="width:100%;"}
   (`tidytracks` with its default, `method = "binned"`, and `amt`) first
   bin the locations onto the grid, so that their time hardly depends on
   the number of locations. On the long tracks, the binned estimators are
-  thus much faster: the UDs take 1.1 s with `tidytracks` and 0.84 s with
-  `amt`, against 53 s with the exact method of `tidytracks` (47 times as
-  long) and 25 s with `adehabitatHR`. On the medium tracks, which have
+  thus much faster: the UDs take 0.55 s with `tidytracks` and 1.2 s with
+  `amt`, against 53 s with the exact method of `tidytracks` (96 times as
+  long) and 24 s with `adehabitatHR`. On the medium tracks, which have
   fewer locations each, the time is mostly spent on building the UD of
-  each track: `tidytracks` takes 12 s (17 s with its exact method),
-  `amt` 7.7 s and `adehabitatHR` 28 s. Drawing the isopleths of the
-  medium tracks adds little to the time of `tidytracks`, which draws
-  them straight from the UDs, without building rasters (0.21 s with the
-  binned method), but 20 s to that of `amt`, and 1 min to that of
+  each track: `tidytracks` takes 4.1 s (15 s with its exact method),
+  `amt` 7.9 s and `adehabitatHR` 29 s. Drawing the isopleths of the
+  medium tracks adds 2.8 s to the time of `tidytracks` (with the binned
+  method), which draws them straight from the UDs, without building
+  rasters, but 19 s to that of `amt`, and 60 s to that of
   `adehabitatHR`. From the locations to the isopleths, the binned method
-  of `tidytracks` is thus the fastest on both data sets: `amt` takes 2.1
-  to 2.3 times as long, and `adehabitatHR` 7.4 to 23 times. Most of the
+  of `tidytracks` is thus the fastest on both data sets: `amt` takes 3.2
+  to 3.9 times as long, and `adehabitatHR` 13 to 34 times. Most of the
   time of the exact method of `tidytracks` on long tracks is spent in a
   matrix product (in
   [`MASS::kde2d()`](https://rdrr.io/pkg/MASS/man/kde2d.html)), which an
-  optimised BLAS (such as OpenBLAS) can make several times faster, as it
-  can the matrix products of the binned method; this benchmark used the
-  reference BLAS of R.
-- **LoCoH**: `tidytracks` is the fastest, by far: `amt` takes 16 to 17
-  times as long (6.3 min on the 100 long tracks, against 23 s).
+  optimised BLAS (such as OpenBLAS) can make several times faster (the
+  binned method does not use BLAS); this benchmark used the reference
+  BLAS of R.
+- **LoCoH**: `tidytracks` is the fastest, by far: `amt` takes 77 to 79
+  times as long (6.1 min on the 100 long tracks, against 4.7 s).
   `LoCoH.k()` from `adehabitatHR` was only run on the 100 simulated
-  medium tracks, on which it takes 240 times as long as `tidytracks`
-  (4.2 min, against 1 s): it would take about 42 min on their 10 copies,
-  and 28 h on the 100 long tracks (see below).
+  medium tracks, on which it takes 1,100 times as long as `tidytracks`
+  (4.2 min, against 0.23 s): it would take about 42 min on their 10
+  copies, and 27 h on the 100 long tracks (see below).
 
 ### LoCoH on a single track
 
@@ -150,11 +150,11 @@ default, binned, method. {.table style="width:100%;"}
 The time taken by `tidytracks` and `amt` grows about linearly with the
 number of locations, whilst that of `adehabitatHR`, which computes the
 distances between all pairs of locations (in R), roughly quadruples each
-time the number of locations doubles: it takes 40 s on 2,000 locations
+time the number of locations doubles: it takes 39 s on 2,000 locations
 (on 5,000 locations, it stopped after several minutes, as it ran out of
 protection stack, even with the largest one that R allows). A track of
-10,000 locations would thus take it about 17 min, and the 100 long
-tracks of the largest data set about 28 h, against 0.24 s per track for
+10,000 locations would thus take it about 16 min, and the 100 long
+tracks of the largest data set about 27 h, against 0.055 s per track for
 `tidytracks`.
 
 ## How the benchmark was run
@@ -559,8 +559,9 @@ ranges:
   which smooths them with fast Fourier transforms), and of `tidytracks`
   with `method = "binned"`, its default (which bins the locations as
   [`KernSmooth::bkde2D()`](https://rdrr.io/pkg/KernSmooth/man/bkde2D.html)
-  does, but smooths them with two matrix products, one along each axis
-  of the grid, as the Gaussian kernel is separable).
+  does, but smooths them along one axis of the grid and then along the
+  other, as the Gaussian kernel is separable, over the cells within
+  reach of the kernel only).
 - **LoCoH**: hulls of each location and its 10 nearest neighbours
   (`n = 10` in `tidytracks` and `amt`, `k = 11` in `adehabitatHR`, which
   counts the location itself). For each level, the isopleth is the union
@@ -651,7 +652,7 @@ The areas of the home ranges of the simulated tracks (whose copies give
 the same home ranges) are then extracted from the results of each
 package (with the functions in `areas`, in the script). `LoCoH.k()` from
 `adehabitatHR` is only run on the simulated medium tracks: it would take
-about 42 min on their copies, and 2.8 h on the simulated long tracks
+about 42 min on their copies, and 2.7 h on the simulated long tracks
 alone (see [LoCoH on a single track](#locoh-on-a-single-track)).
 
 ### From the results to the tables and plots
@@ -856,7 +857,7 @@ simulates them and overwrites `data/hr_benchmark_tracks.rds`.
 
 |                    |                                     |
 |:-------------------|:------------------------------------|
-| date               | 2026-10-30                          |
+| date               | 2026-11-13                          |
 | R                  | R version 4.5.2 (2025-10-31)        |
 | platform           | x86_64-pc-linux-gnu                 |
 | CPU                | 13th Gen Intel(R) Core(TM) i9-13900 |
@@ -873,7 +874,7 @@ simulates them and overwrites `data/hr_benchmark_tracks.rds`.
 | MASS               | 7.3.66                              |
 | KernSmooth         | 2.23.27                             |
 | GEOS               | 3.12.2                              |
-| run time (minutes) | 23                                  |
+| run time (minutes) | 22                                  |
 | peak memory (GB)   | 3                                   |
 
 ## References

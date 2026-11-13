@@ -131,14 +131,14 @@ The UD is estimated on a grid of cells, with one of two methods:
   in
   [`KernSmooth::bkde2D()`](https://rdrr.io/pkg/KernSmooth/man/bkde2D.html)),
   and then smooths the bin counts with the kernel. As the Gaussian
-  kernel is separable, the smoothing is computed as two matrix products,
-  one along each axis of the grid, so the time it takes grows with the
-  number of cells times the number of rows and columns of the grid,
-  whatever the number of locations: it is much faster than the exact
-  method when there are many more locations than rows and columns, and
-  about as fast when there are about as many. Binning moves each
-  location by less than a cell, so the UD is very close to the exact one
-  when the bandwidth spans several cells. The kernel is truncated at 3.4
+  kernel is separable, the smoothing is computed along one axis of the
+  grid and then along the other, over the cells within reach of the
+  kernel only, so the time it takes grows with the number of cells times
+  the width of the kernel (in cells), whatever the number of locations:
+  it is much faster than the exact method, except for groups with only a
+  few locations, for which both are fast. Binning moves each location by
+  less than a cell, so the UD is very close to the exact one when the
+  bandwidth spans several cells. The kernel is truncated at 3.4
   bandwidths from each location, beyond which it is negligible.
 
 By default, the full UD is returned. If `levels` is set, the isopleths

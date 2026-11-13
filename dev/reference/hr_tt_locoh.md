@@ -112,8 +112,20 @@ depending on `type`:
 
 The neighbour search, the hulls, their areas and the number of hulls
 needed for each level are computed in C++ (with a k-d tree for the
-neighbour search); the union of the hulls is computed with
+neighbour search). Without a buffer, the union of the hulls is also
+computed in C++, taking advantage of the hulls being convex (with exact
+geometric predicates, and the same formula as GEOS for the points where
+the edges of two hulls cross), which is much faster than with GEOS; with
+a buffer, it is computed with
 [`sf::st_union()`](https://r-spatial.github.io/sf/reference/geos_combine.html).
+The union is also computed with
+[`sf::st_union()`](https://r-spatial.github.io/sf/reference/geos_combine.html)
+where it would take longer in C++ (with hundreds of neighbours per
+location), and in the rare cases where it cannot be computed reliably in
+C++, or where rounding makes an isopleth from C++ invalid (unless the
+isopleth from
+[`sf::st_union()`](https://r-spatial.github.io/sf/reference/geos_combine.html)
+is invalid too).
 
 The rules follow
 [`amt::hr_locoh()`](https://rdrr.io/pkg/amt/man/hrest.html): each level
@@ -163,13 +175,13 @@ example_locoh
 #> Geodetic CRS:  WGS 84
 #> # A tibble: 6 × 7
 #>   track_id method type      n level          area                       geometry
-#>   <chr>    <chr>  <chr> <dbl> <dbl>         [m^2]             <MULTIPOLYGON [°]>
-#> 1 a        locoh  k         3  0.95 122370778607. (((1.1694 3.5288, 3.6119 2.36…
-#> 2 a        locoh  k         3  0.5   52747834477. (((1.1694 3.5288, 1.371 -0.06…
-#> 3 b        locoh  k         3  0.95  19966668128. (((-3.3802 -0.7828, -1.745915…
-#> 4 b        locoh  k         3  0.5   12974478347. (((-3.3802 -0.7828, -2.4405 -…
-#> 5 c        locoh  k         3  0.95  12754847260. (((-5.5053 3.0464, -3.8075 1.…
-#> 6 c        locoh  k         3  0.5    6222600829. (((-5.5053 3.0464, -4.0496 1.…
+#> * <chr>    <chr>  <chr> <dbl> <dbl>         [m^2]             <MULTIPOLYGON [°]>
+#> 1 a        locoh  k         3  0.95 122370778607. (((3.6119 2.3638, 5.5357 -0.5…
+#> 2 a        locoh  k         3  0.5   52747834477. (((3.6119 2.3638, 1.371 -0.06…
+#> 3 b        locoh  k         3  0.95  19966668128. (((-1.745915 -1.31301, -0.270…
+#> 4 b        locoh  k         3  0.5   12974478347. (((-0.9581 -1.5686, -1.427 -1…
+#> 5 c        locoh  k         3  0.95  12754847260. (((-3.8075 1.2897, -0.7845 0.…
+#> 6 c        locoh  k         3  0.5    6222600829. (((-3.8075 1.2897, -3.4103 0.…
 library(ggplot2)
 ggplot(example_locoh) +
   geom_sf(aes(fill = track_id), alpha = 0.7)

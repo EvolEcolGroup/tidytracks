@@ -162,6 +162,18 @@
   outside `buffer_complete` (which can only happen when
   `buffer_complete` is smaller than `buffer_trip`). A trip is now only
   incomplete if the track starts or ends during it.
+- Cells with exactly the same UD value (as in symmetric UDs, e.g. of a
+  single location at the centre of a cell) are now either all within an
+  isopleth or all outside it, in
+  [`hr_tt_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md),
+  [`hr_tt_ud_iso()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_iso.md)
+  and the `cond_level` of
+  [`hr_tt_ud_overlap()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_overlap.md):
+  they share the mean of the cumulative UDs they would have in any
+  order. They were split between the inside and the outside of the
+  isopleth in the order of the cells of the grid, which made the
+  isopleths of a symmetric UD asymmetric. The UDs of real tracks, whose
+  cells hardly ever have the same value, are not affected.
 
 ### Documentation
 
