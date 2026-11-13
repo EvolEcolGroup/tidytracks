@@ -25,7 +25,7 @@ using MultiPolygon = std::vector<Polygon>;
 // union was not attempted), and the total number of vertices of the
 // polygons; and, if the union was not built, why (a code from
 // convex_union.cpp, where fail() is called: 1-12 when linking the pieces
-// into rings and polygons, 20-24 when checking the polygons, 30-31 when the
+// into rings and polygons, 20-23 when checking the polygons, 30-31 when the
 // work would exceed the budget).
 struct UnionStats {
   double estimated_work = 0.0;

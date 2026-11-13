@@ -323,13 +323,14 @@ locoh_area <- function(geometry, crs, longlat) {
 # The most work, per vertex of the hulls, that the union of the hulls in C++
 # (convex_union.cpp) may take before it is left to GEOS. Its work grows with
 # the number of hulls that overlap each hull times their number of vertices,
-# which is small for the usual LoCoH (about 40 units per vertex for k = 10),
-# but large with hundreds of neighbours (e.g. 420 for k = 500), or hulls with
-# hundreds of vertices, when GEOS is faster. On an Intel i9-13900, the union
-# in C++ takes 2-20 ns per unit of work, and GEOS 1-4 microseconds per vertex
-# of the hulls: on tracks of 500 to 25,000 locations, with k from 10 to 1000
-# and a with up to hundreds of vertices per hull, they took about as long
-# with 200 to 700 units per vertex.
+# which is small for the usual LoCoH (about 45 units per vertex for k = 10,
+# and for tracks with a dense cluster of locations), but large with hundreds
+# of neighbours (e.g. 200 for k = 500), or hulls with hundreds of vertices,
+# when GEOS is faster. On an Intel i9-13900, the union in C++ takes 2-10 ns
+# per unit of work, and GEOS 1-4 microseconds per vertex of the hulls: on
+# tracks of 10,000 to 110,000 locations, with k from 10 to 1000 and a giving
+# up to hundreds of vertices per hull, they took about as long with 175
+# (k-LoCoH) to 750 (hulls of hundreds of vertices) units per vertex.
 locoh_union_budget <- 250
 
 #' Create LoCoH home ranges at multiple levels for a given group

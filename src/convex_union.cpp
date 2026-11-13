@@ -953,6 +953,168 @@ bool assemble(const std::vector<Piece>& pieces, Nodes& nodes,
   return true;
 }
 
+// ---------------------------------------------------------------------------
+// 4b. A static R-tree of the bounding boxes of the polygons
+// ---------------------------------------------------------------------------
+//
+// To find the polygons that may overlap a given polygon, the bounding boxes
+// of the polygons are put in an R-tree packed with the Sort-Tile-Recursive
+// algorithm (Leutenegger, Lopez & Edgington 1997), as GEOS does (STRtree):
+// the boxes are sorted by the x coordinate of their centres into vertical
+// slices, each slice is sorted by the y coordinate of their centres, and
+// runs of kCapacity boxes make the leaves; the leaves are then packed in the
+// same way into the nodes above them, and so on up to a single root. Queries
+// only go down the nodes whose box overlaps the query box, so that their
+// cost grows with the logarithm of the number of polygons plus the number of
+// polygons found, however the polygons are spread (a uniform grid would put
+// a dense cluster of polygons, such as the hulls of the locations at a den,
+// in a few cells, which would then be scanned for each of its polygons).
+
+class BoxTree {
+public:
+  // `boxes` holds 4 values per item: xmin, xmax, ymin, ymax.
+  explicit BoxTree(const std::vector<double>& boxes) {
+    const int n = static_cast<int>(boxes.size() / 4);
+    // the leaves, from the items
+    std::vector<Entry> entries(n);
+    for (int i = 0; i < n; ++i) {
+      std::copy(&boxes[4 * static_cast<std::size_t>(i)],
+                &boxes[4 * static_cast<std::size_t>(i)] + 4, entries[i].box);
+      entries[i].id = i;
+    }
+    pack(entries);
+    item_.resize(n);
+    item_box_.resize(4 * static_cast<std::size_t>(n));
+    for (int i = 0; i < n; ++i) {
+      item_[i] = entries[i].id;
+      std::copy(entries[i].box, entries[i].box + 4,
+                &item_box_[4 * static_cast<std::size_t>(i)]);
+    }
+    levels_.push_back(parents(entries));
+    // the levels above, up to a single root
+    while (levels_.back().size() > 1) {
+      std::vector<Node>& below = levels_.back();
+      std::vector<Entry> nodes(below.size());
+      for (std::size_t i = 0; i < below.size(); ++i) {
+        std::copy(below[i].box, below[i].box + 4, nodes[i].box);
+        nodes[i].id = static_cast<int>(i);
+      }
+      pack(nodes);
+      // the level below, in the packed order (its children are unchanged)
+      std::vector<Node> reordered(below.size());
+      for (std::size_t i = 0; i < below.size(); ++i) {
+        reordered[i] = below[nodes[i].id];
+      }
+      below.swap(reordered);
+      levels_.push_back(parents(nodes));
+    }
+  }
+
+  // Calls f(item, box of item) for every item whose box overlaps the box q
+  // (touching counts); returns the number of nodes and items visited.
+  template <typename F>
+  double query(const double* q, F f) const {
+    double visited = 0.0;
+    if (item_.empty()) {
+      return visited;
+    }
+    stack_.clear();
+    const int top = static_cast<int>(levels_.size()) - 1;
+    for (std::size_t i = 0; i < levels_[top].size(); ++i) {
+      stack_.push_back({top, static_cast<int>(i)});
+    }
+    while (!stack_.empty()) {
+      const Visit v = stack_.back();
+      stack_.pop_back();
+      const Node& node = levels_[v.level][v.index];
+      ++visited;
+      if (!overlap(node.box, q)) {
+        continue;
+      }
+      if (v.level == 0) {
+        for (int i = node.start; i < node.end; ++i) {
+          ++visited;
+          const double* b = &item_box_[4 * static_cast<std::size_t>(i)];
+          if (overlap(b, q)) {
+            f(item_[i], b);
+          }
+        }
+      } else {
+        for (int i = node.start; i < node.end; ++i) {
+          stack_.push_back({v.level - 1, i});
+        }
+      }
+    }
+    return visited;
+  }
+
+private:
+  static constexpr int kCapacity = 16;
+  struct Entry {
+    double box[4];
+    int id;
+  };
+  struct Node {
+    double box[4];
+    int start, end;  // children: nodes of the level below, or items
+  };
+  struct Visit {
+    int level, index;
+  };
+  std::vector<std::vector<Node>> levels_;  // levels_[0]: the leaves
+  std::vector<int> item_;                  // the items, in the leaves' order
+  std::vector<double> item_box_;           // and their boxes
+  mutable std::vector<Visit> stack_;
+
+  static bool overlap(const double* b, const double* c) {
+    return c[0] <= b[1] && c[1] >= b[0] && c[2] <= b[3] && c[3] >= b[2];
+  }
+
+  // Sort the entries in the Sort-Tile-Recursive order.
+  static void pack(std::vector<Entry>& entries) {
+    const std::size_t n = entries.size();
+    const std::size_t n_nodes = (n + kCapacity - 1) / kCapacity;
+    const std::size_t n_slices = static_cast<std::size_t>(
+      std::ceil(std::sqrt(static_cast<double>(n_nodes))));
+    const std::size_t slice = n_slices * kCapacity;
+    auto centre = [](const Entry& e, int axis) {
+      return e.box[2 * axis] + e.box[2 * axis + 1];
+    };
+    std::sort(entries.begin(), entries.end(),
+              [&centre](const Entry& a, const Entry& b) {
+                return centre(a, 0) < centre(b, 0);
+              });
+    for (std::size_t start = 0; start < n; start += slice) {
+      const std::size_t end = std::min(n, start + slice);
+      std::sort(entries.begin() + static_cast<std::ptrdiff_t>(start),
+                entries.begin() + static_cast<std::ptrdiff_t>(end),
+                [&centre](const Entry& a, const Entry& b) {
+                  return centre(a, 1) < centre(b, 1);
+                });
+    }
+  }
+
+  // The nodes over runs of kCapacity entries (in their order).
+  static std::vector<Node> parents(const std::vector<Entry>& entries) {
+    std::vector<Node> nodes;
+    const int n = static_cast<int>(entries.size());
+    for (int start = 0; start < n; start += kCapacity) {
+      Node node;
+      node.start = start;
+      node.end = std::min(n, start + kCapacity);
+      std::copy(entries[start].box, entries[start].box + 4, node.box);
+      for (int i = start + 1; i < node.end; ++i) {
+        node.box[0] = std::min(node.box[0], entries[i].box[0]);
+        node.box[1] = std::max(node.box[1], entries[i].box[1]);
+        node.box[2] = std::min(node.box[2], entries[i].box[2]);
+        node.box[3] = std::max(node.box[3], entries[i].box[3]);
+      }
+      nodes.push_back(node);
+    }
+    return nodes;
+  }
+};
+
 // An interval of an edge covered by a polygon, as the positions of its ends
 // among the breakpoints of the edge.
 struct Interval {
@@ -1025,9 +1187,8 @@ bool union_impl(const std::vector<double>& x, const std::vector<double>& y,
     }
   }
 
-  // bounding boxes of the polygons
+  // bounding boxes of the polygons, and an R-tree of them
   std::vector<double> box(4 * static_cast<std::size_t>(n_used));
-  double mean_size = 0.0;
   for (int p = 0; p < n_used; ++p) {
     const int* g = vertices_of(p);
     double* b = &box[4 * static_cast<std::size_t>(p)];
@@ -1039,87 +1200,13 @@ bool union_impl(const std::vector<double>& x, const std::vector<double>& y,
       b[2] = std::min(b[2], py[g[j]]);
       b[3] = std::max(b[3], py[g[j]]);
     }
-    mean_size += ((b[1] - b[0]) + (b[3] - b[2])) / 2.0;
   }
-  mean_size /= n_used;
   // whether two bounding boxes (xmin, xmax, ymin, ymax) overlap (touching
   // counts, as polygons can share an edge along the side of a box)
   auto boxes_overlap = [](const double* b, const double* c) {
     return c[0] <= b[1] && c[1] >= b[0] && c[2] <= b[3] && c[3] >= b[2];
   };
-
-  // a uniform grid over the bounding boxes, to find the polygons that may
-  // overlap a given polygon: each polygon is listed in every cell that its
-  // bounding box overlaps. Cells are about the size of an average polygon,
-  // but not more numerous than a few times the number of polygons.
-  double x0 = box[0];
-  double x1 = box[1];
-  double y0 = box[2];
-  double y1 = box[3];
-  for (int p = 1; p < n_used; ++p) {
-    const double* b = &box[4 * static_cast<std::size_t>(p)];
-    x0 = std::min(x0, b[0]);
-    x1 = std::max(x1, b[1]);
-    y0 = std::min(y0, b[2]);
-    y1 = std::max(y1, b[3]);
-  }
-  double cell = mean_size > 0.0 ? mean_size : 1.0;
-  int nx = 1;
-  int ny = 1;
-  while (true) {
-    // (the coordinates are finite and bounded, so this always ends, but a
-    // cell size that is not finite would make it loop for ever)
-    if (!std::isfinite(cell)) {
-      return fail(24);
-    }
-    nx = static_cast<int>(std::min(1e6, (x1 - x0) / cell)) + 1;
-    ny = static_cast<int>(std::min(1e6, (y1 - y0) / cell)) + 1;
-    if (static_cast<double>(nx) * ny <= 4.0 * n_used + 16.0) {
-      break;
-    }
-    cell *= 1.5;
-  }
-  auto cell_x = [x0, cell, nx](double v) {
-    return std::min(nx - 1, std::max(0, static_cast<int>((v - x0) / cell)));
-  };
-  auto cell_y = [y0, cell, ny](double v) {
-    return std::min(ny - 1, std::max(0, static_cast<int>((v - y0) / cell)));
-  };
-  // the cells are stored in "compressed sparse row" form (as the neighbour
-  // sets in locoh.cpp): first count the polygons in each cell, then list them,
-  // with their bounding boxes (so that a cell can be scanned without looking
-  // elsewhere in memory)
-  struct CellItem {
-    double box[4];
-    int polygon;
-  };
-  std::vector<int> cell_start(static_cast<std::size_t>(nx) * ny + 1, 0);
-  for (int p = 0; p < n_used; ++p) {
-    const double* b = &box[4 * static_cast<std::size_t>(p)];
-    for (int i = cell_x(b[0]); i <= cell_x(b[1]); ++i) {
-      for (int j = cell_y(b[2]); j <= cell_y(b[3]); ++j) {
-        ++cell_start[static_cast<std::size_t>(i) * ny + j + 1];
-      }
-    }
-  }
-  for (std::size_t c = 1; c < cell_start.size(); ++c) {
-    cell_start[c] += cell_start[c - 1];
-  }
-  std::vector<CellItem> cell_items(cell_start.back());
-  {
-    std::vector<int> fill(cell_start.begin(), cell_start.end() - 1);
-    for (int p = 0; p < n_used; ++p) {
-      const double* b = &box[4 * static_cast<std::size_t>(p)];
-      for (int i = cell_x(b[0]); i <= cell_x(b[1]); ++i) {
-        for (int j = cell_y(b[2]); j <= cell_y(b[3]); ++j) {
-          const std::size_t c = static_cast<std::size_t>(i) * ny + j;
-          CellItem& item = cell_items[fill[c]++];
-          std::copy(b, b + 4, item.box);
-          item.polygon = p;
-        }
-      }
-    }
-  }
+  const BoxTree tree(box);
 
   Nodes nodes(px, py, x.size());
   std::vector<std::vector<Piece>> pieces(n_levels);
@@ -1127,8 +1214,6 @@ bool union_impl(const std::vector<double>& x, const std::vector<double>& y,
   // scratch space, reused for every polygon and edge
   std::vector<int> candidates;
   std::vector<double> candidate_box;
-  std::vector<int> seen(n_used, -1);
-  int stamp = 0;
   std::vector<int> side;
   std::vector<Breakpoint> breakpoints;
   std::vector<int> sorted;
@@ -1141,13 +1226,12 @@ bool union_impl(const std::vector<double>& x, const std::vector<double>& y,
   // and each of its edges is clipped against them. If `build` is true, the
   // pieces of the edges on the boundary of each union are added to
   // `pieces`; otherwise, the edges are only clipped, to estimate the work
-  // (see below). Returns the work done, counted as the number of items
-  // scanned in the cells of the grid, plus the number of vertices of the
-  // polygons that the edges are clipped against (the sides of all of them
-  // are computed), plus the number of breakpoints.
+  // (see below). Returns the work done, counted as the number of nodes and
+  // boxes visited in the R-tree, plus the number of vertices of the polygons
+  // that the edges are clipped against (the sides of all of them are
+  // computed), plus the number of breakpoints.
   auto process = [&](int h, bool build) {
     double work = 0.0;
-    const int this_stamp = stamp++;
     const int m = size_of(h);
     const int* hv = vertices_of(h);
     const double* hb = &box[4 * static_cast<std::size_t>(h)];
@@ -1157,22 +1241,12 @@ bool union_impl(const std::vector<double>& x, const std::vector<double>& y,
     // memory when they are scanned for each edge)
     candidates.clear();
     candidate_box.clear();
-    for (int i = cell_x(hb[0]); i <= cell_x(hb[1]); ++i) {
-      for (int j = cell_y(hb[2]); j <= cell_y(hb[3]); ++j) {
-        const std::size_t c = static_cast<std::size_t>(i) * ny + j;
-        work += cell_start[c + 1] - cell_start[c];
-        for (int k = cell_start[c]; k < cell_start[c + 1]; ++k) {
-          const CellItem& item = cell_items[k];
-          if (!boxes_overlap(item.box, hb) || item.polygon == h ||
-              seen[item.polygon] == this_stamp) {
-            continue;
-          }
-          seen[item.polygon] = this_stamp;
-          candidates.push_back(item.polygon);
-          candidate_box.insert(candidate_box.end(), item.box, item.box + 4);
-        }
+    work += tree.query(hb, [&](int g, const double* gb) {
+      if (g != h) {
+        candidates.push_back(g);
+        candidate_box.insert(candidate_box.end(), gb, gb + 4);
       }
-    }
+    });
     // the polygons that are in every union that this polygon is in: those
     // that come before the first union (by size) that contains it
     int in_all = n_used;
@@ -1182,6 +1256,8 @@ bool union_impl(const std::vector<double>& x, const std::vector<double>& y,
       }
     }
 
+    // the candidate that covered all of the last edge, if any
+    std::size_t last_cover = candidates.size();
     for (int k = 0; k < m; ++k) {
       const int a = hv[k];
       const int b = hv[(k + 1) % m];
@@ -1198,33 +1274,57 @@ bool union_impl(const std::vector<double>& x, const std::vector<double>& y,
       breakpoints.push_back(e.vertex(a));
       breakpoints.push_back(e.vertex(b));
       bool all_covered = false;
-      // the polygons that could cover the whole edge (they are in every
-      // union, and their bounding box contains the edge) are tried first,
-      // then the other polygons whose bounding box overlaps the edge
+      // Clip the edge against candidate i: returns true if it covers all of
+      // the edge and is in every union that this polygon is in (`may` is
+      // whether it can: its bounding box contains the edge); otherwise, adds
+      // the part that it covers, if any, to the intervals.
+      auto clip = [&](std::size_t i, bool may) {
+        const int g = candidates[i];
+        Breakpoint lo;
+        Breakpoint hi;
+        work += size_of(g);
+        if (!e.covered(vertices_of(g), size_of(g), g < h, side, lo, hi)) {
+          return false;
+        }
+        if (may && lo.v == a && hi.v == b) {
+          return true;
+        }
+        const int n_breakpoints = static_cast<int>(breakpoints.size());
+        intervals.push_back({n_breakpoints, n_breakpoints + 1, g});
+        breakpoints.push_back(lo);
+        breakpoints.push_back(hi);
+        return false;
+      };
+      auto may_cover_all = [&](std::size_t i) {
+        const double* gb = &candidate_box[4 * i];
+        return candidates[i] < in_all && gb[0] <= eb[0] && gb[1] >= eb[1] &&
+               gb[2] <= eb[2] && gb[3] >= eb[3];
+      };
+      // The polygon that covered all of the previous edge of this polygon is
+      // tried first (it often covers the next one too); then the polygons
+      // that could cover the whole edge (they are in every union, and their
+      // bounding box contains the edge), and then the other polygons whose
+      // bounding box overlaps the edge.
+      std::size_t tried = candidates.size();
+      if (last_cover < candidates.size() && may_cover_all(last_cover)) {
+        tried = last_cover;
+        all_covered = clip(last_cover, true);
+      }
       for (int pass = 0; pass < 2 && !all_covered; ++pass) {
         for (std::size_t i = 0; i < candidates.size(); ++i) {
-          const int g = candidates[i];
-          const double* gb = &candidate_box[4 * i];
-          const bool may_cover_all = g < in_all && gb[0] <= eb[0] &&
-                                     gb[1] >= eb[1] && gb[2] <= eb[2] &&
-                                     gb[3] >= eb[3];
-          if (may_cover_all != (pass == 0) || !boxes_overlap(gb, eb)) {
+          if (i == tried) {
             continue;
           }
-          Breakpoint lo;
-          Breakpoint hi;
-          work += size_of(g);
-          if (!e.covered(vertices_of(g), size_of(g), g < h, side, lo, hi)) {
+          const bool may = may_cover_all(i);
+          if (may != (pass == 0) ||
+              !boxes_overlap(&candidate_box[4 * i], eb)) {
             continue;
           }
-          if (may_cover_all && lo.v == a && hi.v == b) {
+          if (clip(i, may)) {
             all_covered = true;
+            last_cover = i;
             break;
           }
-          const int n_breakpoints = static_cast<int>(breakpoints.size());
-          intervals.push_back({n_breakpoints, n_breakpoints + 1, g});
-          breakpoints.push_back(lo);
-          breakpoints.push_back(hi);
         }
       }
       work += static_cast<double>(breakpoints.size());
@@ -1331,8 +1431,11 @@ bool union_impl(const std::vector<double>& x, const std::vector<double>& y,
   // (a sixteenth of the polygons, but at least 16 and at most 256, so that
   // the estimate takes a small part of the work)
   const int n_sample = std::min(n_used, std::max(16, std::min(256, n_used / 16)));
+  // (the sampling stops as soon as the work of the sample alone shows that
+  // the budget would be exceeded)
   double sample_work = 0.0;
-  for (int s = 0; s < n_sample; ++s) {
+  const double sample_budget = budget * n_sample / n_used;
+  for (int s = 0; s < n_sample && sample_work <= sample_budget; ++s) {
     const int h = static_cast<int>(
       (static_cast<double>(s) + 0.5) * n_used / n_sample);
     sample_work += process(h, false);
@@ -1342,7 +1445,7 @@ bool union_impl(const std::vector<double>& x, const std::vector<double>& y,
     stats->estimated_work = estimated_work;
     stats->n_vertices = n_vertices;
   }
-  if (estimated_work > budget) {
+  if (sample_work > sample_budget) {
     return fail(30);
   }
   double work = 0.0;
