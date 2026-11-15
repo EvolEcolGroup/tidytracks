@@ -72,7 +72,12 @@ test_that("tt_split_trips accepts one centre per track", {
   )
   expect_identical(test_mt_split$trip_id, expected_trip_id_field)
   expect_equal(length(unique(test_mt_split$trip_id)), 6)
-  expect_equal(length(unique(test_mt_split$bird_id)), 2)
+  # the original track id is moved to the metadata, as the only column in
+  # both tables is the track id
+  expect_false("bird_id" %in% names(test_mt_split))
+  expect_equal(length(unique(show_meta(test_mt_split)$bird_id)), 2)
+  # and the trips can be grouped by it
+  expect_equal(dplyr::n_groups(group_by_meta(test_mt_split, bird_id)), 2L)
 
   # the first trip is from 2 to 12
   expect_true(

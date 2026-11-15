@@ -20,6 +20,9 @@
   including `sfc` columns, which it moves to the events (#92)
 * new `colname_track_id()` and `colname_time()` return the names of the track
   id and time columns (#92)
+* `tt_split_trips()` moves the original track id column to the metadata
+  (group the trips by it with `group_by_meta()`), so that the only column in
+  both the events and the metadata is the track id (#92)
 * `tt_read_data()` no longer leaves a column of the metadata in the events
   (when the values are the same) or in both tables (when they differ, the
   version in the metadata is renamed with a `.meta` suffix) (#92)

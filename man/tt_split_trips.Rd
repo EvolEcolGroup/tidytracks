@@ -69,8 +69,9 @@ The \code{move2} object, modified: each track is split into its
 foraging trips, and each trip is treated as a separate track:
 \itemize{
 \item The events have a new column, \code{trip_id}, which becomes the track id
-column. The original track id column is kept, so trips can still be
-grouped by track.
+column. The original track id column is moved to the metadata, as the
+only column in both tables is the track id: trips can still be grouped
+by track with \code{\link[=group_by_meta]{group_by_meta()}}.
 \item The metadata has one row per trip, with the columns of its original
 track (repeated for each of its trips), and new columns \code{trip_id}
 (linking to events table \code{trip_id}), and \code{trip_type}:

@@ -70,8 +70,9 @@
 #' @returns The `move2` object, modified: each track is split into its
 #'   foraging trips, and each trip is treated as a separate track:
 #'   - The events have a new column, `trip_id`, which becomes the track id
-#'     column. The original track id column is kept, so trips can still be
-#'     grouped by track.
+#'     column. The original track id column is moved to the metadata, as the
+#'     only column in both tables is the track id: trips can still be grouped
+#'     by track with [group_by_meta()].
 #'   - The metadata has one row per trip, with the columns of its original
 #'     track (repeated for each of its trips), and new columns `trip_id`
 #'     (linking to events table `trip_id`), and `trip_type`:
@@ -279,6 +280,10 @@ tt_split_trips <- function(
   )
   # change the track_id_column to trip_id
   x <- move2::mt_set_track_id_column(x, "trip_id")
+  # the original track id column is now information about the trips, which
+  # is kept in the metadata only, as the only column in both tables is the
+  # track id
+  x <- drop_duplicated_columns(x) # nolint: object_usage_linter.
   # if complete, remove any trips that are not complete
   trip_type <- NULL # hack to avoid it being flagged as global in checks
   if (complete) {
