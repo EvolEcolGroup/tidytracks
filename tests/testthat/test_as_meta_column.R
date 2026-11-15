@@ -13,3 +13,19 @@ test_that("as_meta_column works correctly", {
   expect_true("sex" %in% colnames(show_meta(example_tt4)))
   expect_true("sex" %in% colnames(example_tt4))
 })
+
+test_that("as_meta_column does not duplicate a column in the metadata", {
+  # sex is in both tables, with the same values
+  both_tt <- as_event_column(example_tt, sex, .keep = TRUE)
+  result <- as_meta_column(both_tt, sex)
+  expect_false("sex" %in% names(result))
+  expect_equal(show_meta(result), show_meta(both_tt))
+  # with .keep, nothing changes
+  expect_equal(as_meta_column(both_tt, sex, .keep = TRUE), both_tt)
+  # with different values, an error
+  both_tt$sex <- "unknown"
+  expect_error(
+    as_meta_column(both_tt, sex),
+    "'sex' are both in the events and in the metadata, with values that differ"
+  )
+})

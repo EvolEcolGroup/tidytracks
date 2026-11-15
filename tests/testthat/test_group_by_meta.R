@@ -174,13 +174,13 @@ test_that("group_by_meta reuses a column already in the events", {
   toy_tt$species <- "species_c"
   expect_error(
     group_by_meta(toy_tt, species),
-    "already have column\\(s\\) 'species', with values that differ"
+    "'species' are both in the events and in the metadata, with values that"
   )
   # including values of incompatible types
   toy_tt$species <- 1
   expect_error(
     group_by_meta(toy_tt, species),
-    "already have column\\(s\\) 'species', with values that differ"
+    "'species' are both in the events and in the metadata, with values that"
   )
 })
 

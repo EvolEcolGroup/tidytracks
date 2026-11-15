@@ -30,6 +30,12 @@ want to include event-level information in the metadata. Note that all events
 for a given track must have the same value for the variable being moved to
 metadata.
 }
+\details{
+A column that is already in the metadata, with the same values as in the
+events (for the events of each track), is not duplicated: it is only removed
+from the events (unless \code{.keep = TRUE}); with different values, it gives an
+error, as the only column in both tables should be the track id.
+}
 \examples{
 # we first move the sex column to the event data
 example_tt2 <- as_event_column(example_tt, sex)

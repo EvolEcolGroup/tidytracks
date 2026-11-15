@@ -6,6 +6,11 @@
 #' want to include event-level information in the metadata. Note that all events
 #' for a given track must have the same value for the variable being moved to
 #' metadata.
+#'
+#' A column that is already in the metadata, with the same values as in the
+#' events (for the events of each track), is not duplicated: it is only removed
+#' from the events (unless `.keep = TRUE`); with different values, it gives an
+#' error, as the only column in both tables should be the track id.
 #' @param x A `move2` object
 #' @param ... One or more unquoted column names from the event data to move to
 #'  the metadata; it is possible to use tidyselect helpers to select multiple
@@ -24,5 +29,22 @@
 #' example_tt2 <- as_meta_column(example_tt2, sex)
 #' show_meta(example_tt2)
 as_meta_column <- function(x, ..., .keep = FALSE) {
-  move2::mt_as_track_attribute(x, ..., .keep = .keep)
+  # the columns of the events to move (selected from an empty table with the
+  # columns of the events, without its groups)
+  cols <- names(dplyr::select(as.data.frame(x)[0, , drop = FALSE], ...))
+  # columns that are already in the metadata, with the same values, are not
+  # joined again (which would duplicate them, as .x and .y), but only removed
+  # from the events (unless .keep is TRUE); with different values, they give
+  # an error
+  in_meta <- check_same_in_both(x, cols) # nolint: object_usage_linter.
+  if (length(in_meta) > 0) {
+    if (!.keep) {
+      x <- dplyr::select(x, -dplyr::all_of(in_meta))
+    }
+    cols <- setdiff(cols, in_meta)
+    if (length(cols) == 0) {
+      return(x)
+    }
+  }
+  move2::mt_as_track_attribute(x, dplyr::all_of(cols), .keep = .keep)
 }

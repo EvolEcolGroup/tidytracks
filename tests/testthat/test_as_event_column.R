@@ -31,3 +31,24 @@ test_that("as_event_column works with sf metadata", {
   # the events keep their own geometry
   expect_equal(sf::st_geometry(test_tt2), sf::st_geometry(example_tt))
 })
+
+test_that("as_event_column does not duplicate a column already in the events", {
+  # sex is in both tables, with the same values
+  both_tt <- as_event_column(example_tt, sex, .keep = TRUE)
+  result <- as_event_column(both_tt, sex)
+  expect_equal(names(result), names(both_tt))
+  expect_false("sex" %in% names(show_meta(result)))
+  expect_equal(result$sex, both_tt$sex)
+  # with .keep, nothing changes
+  expect_equal(as_event_column(both_tt, sex, .keep = TRUE), both_tt)
+  # other columns are moved as usual
+  result <- as_event_column(both_tt, sex, nest_lon)
+  expect_setequal(names(result), c(names(both_tt), "nest_lon"))
+  expect_equal(names(show_meta(result)), c("track_id", "nest_lat"))
+  # with different values, an error
+  both_tt$sex <- "unknown"
+  expect_error(
+    as_event_column(both_tt, sex),
+    "'sex' are both in the events and in the metadata, with values that differ"
+  )
+})

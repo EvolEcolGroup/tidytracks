@@ -28,6 +28,11 @@ to the event data, adding them as new columns. This is useful when you want
 to include metadata information in the event-level analysis.
 }
 \details{
+A column that is already in the events, with the same values as in the
+metadata (for the events of each track), is not duplicated: it is only
+removed from the metadata (unless \code{.keep = TRUE}); with different values, it
+gives an error, as the only column in both tables should be the track id.
+
 An \code{sf} table of metadata is turned into a plain table first, with its
 geometry kept as an \code{sfc} column, which is renamed if it has the name of
 the geometry column of the events (see \code{\link[=show_meta]{show_meta()}}).

@@ -50,3 +50,27 @@ test_that("show_meta<- rejects more than one row per track", {
     fixed = TRUE
   )
 })
+
+test_that("drop_duplicated_columns keeps the columns of each table apart", {
+  # columns in both tables: sex with the same values, nest_lon with
+  # different ones, and the time column of the events
+  x <- as_event_column(example_tt, sex, nest_lon, .keep = TRUE)
+  x$nest_lon <- 0
+  show_meta(x)$date_time <- show_meta(x)$nest_lat
+  expect_warning(
+    result <- drop_duplicated_columns(x),
+    "'date_time', 'nest_lon' are both in the events and in the metadata"
+  )
+  # sex is kept in the metadata only
+  expect_false("sex" %in% names(result))
+  expect_equal(show_meta(result)$sex, show_meta(x)$sex)
+  # the others are kept in both, renamed in the metadata
+  expect_equal(result$nest_lon, x$nest_lon)
+  expect_equal(result$date_time, x$date_time)
+  expect_equal(
+    names(show_meta(result)),
+    c("track_id", "sex", "nest_lon.meta", "nest_lat", "date_time.meta")
+  )
+  # without columns in both tables, nothing changes
+  expect_equal(drop_duplicated_columns(example_tt), example_tt)
+})

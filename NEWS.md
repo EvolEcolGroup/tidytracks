@@ -20,6 +20,8 @@
   including `sfc` columns, which it moves to the events (#92)
 * new `colname_track_id()` and `colname_time()` return the names of the track
   id and time columns (#92)
+* `as_event_column()` and `as_meta_column()` no longer duplicate a column
+  that is already in both the events and the metadata (#92)
 * the `hr_tt_*()` functions return the grouping variables with their own
   types (e.g. factors, or `sfc` columns of locations), one column each,
   rather than as text in a single `group_id` column; `hr_tt_ud_overlap()`,

@@ -5,6 +5,11 @@
 #' to the event data, adding them as new columns. This is useful when you want
 #' to include metadata information in the event-level analysis.
 #'
+#' A column that is already in the events, with the same values as in the
+#' metadata (for the events of each track), is not duplicated: it is only
+#' removed from the metadata (unless `.keep = TRUE`); with different values, it
+#' gives an error, as the only column in both tables should be the track id.
+#'
 #' An `sf` table of metadata is turned into a plain table first, with its
 #' geometry kept as an `sfc` column, which is renamed if it has the name of
 #' the geometry column of the events (see [show_meta()]).
@@ -24,5 +29,22 @@
 as_event_column <- function(x, ..., .keep = FALSE) {
   # move2 cannot join an sf table of metadata to the events
   x <- with_plain_meta(x) # nolint: object_usage_linter.
-  move2::mt_as_event_attribute(x, ..., .keep = .keep)
+  # the columns of the metadata to move
+  cols <- names(dplyr::select(show_meta(x), ...))
+  # columns that are already in the events, with the same values, are not
+  # joined again (which would duplicate them, as .x and .y), but only removed
+  # from the metadata (unless .keep is TRUE); with different values, they
+  # give an error
+  in_events <- check_same_in_both(x, cols) # nolint: object_usage_linter.
+  if (length(in_events) > 0) {
+    if (!.keep) {
+      meta <- show_meta(x)
+      x <- move2::mt_set_track_data(x, meta[setdiff(names(meta), in_events)])
+    }
+    cols <- setdiff(cols, in_events)
+    if (length(cols) == 0) {
+      return(x)
+    }
+  }
+  move2::mt_as_event_attribute(x, dplyr::all_of(cols), .keep = .keep)
 }

@@ -13,8 +13,8 @@
 #' and can be moved back with [as_meta_column()]; to group again by variables
 #' that are already in the events, use [dplyr::group_by()]. A column of the
 #' events with the name of a grouping variable is kept if it has the same
-#' values as in the metadata (e.g. the id of each animal after
-#' [tt_split_trips()]); otherwise, an error is raised.
+#' values as in the metadata (e.g. moved there by [as_event_column()] with
+#' `.keep = TRUE`); otherwise, an error is raised.
 #'
 #' The grouping variables are evaluated on the metadata, so they can also be
 #' new variables computed from its columns (e.g. `north = nest_lat > 0`), as in
@@ -98,52 +98,12 @@ group_by_meta <- function(.data, ..., .add = FALSE,
   # the track id is in both tables already; the other grouping variables are
   # moved to the events
   to_move <- setdiff(group_cols, track_id_col)
-  # grouping variables that are already columns of the events (e.g. the id of
-  # each animal after tt_split_trips()) are kept in the events, if they have
-  # the same values as in the metadata, and are only removed from the metadata
-  in_events <- intersect(to_move, names(.data))
-  if (length(in_events) > 0) {
-    # the row of the metadata of each event (using the codes of the factor of
-    # the track ids, which is much faster for many events)
-    event_ids <- move2::mt_track_id(.data)
-    if (is.factor(event_ids)) {
-      meta_rows <- match(levels(event_ids), meta[[track_id_col]])[
-        as.integer(event_ids)
-      ]
-    } else {
-      meta_rows <- match(event_ids, meta[[track_id_col]])
-    }
-    # compare the two columns (including NA patterns), after casting them to
-    # a common type (as tt_read_data() does); columns with incompatible types
-    # (e.g. character and numeric) differ
-    same_values <- vapply(
-      in_events,
-      function(col) {
-        tryCatch(
-          all(vctrs::vec_equal(
-            .data[[col]],
-            meta[[col]][meta_rows],
-            na_equal = TRUE
-          )),
-          vctrs_error_incompatible_type = function(e) FALSE
-        )
-      },
-      logical(1)
-    )
-    if (!all(same_values)) {
-      stop(
-        "The events already have column(s) ",
-        paste0("'", in_events[!same_values], "'", collapse = ", "),
-        ", with values that differ from those in the metadata; rename one of ",
-        "them before grouping",
-        call. = FALSE
-      )
-    }
-    meta <- meta[setdiff(names(meta), in_events)]
-  }
   .data <- move2::mt_set_track_data(.data, meta)
-  # move the other grouping variables from the metadata to the events
-  to_move <- setdiff(to_move, in_events)
+  # move the other grouping variables from the metadata to the events; those
+  # that are already columns of the events (e.g. the id of each animal before
+  # tt_split_trips()) are kept in the events, if they have the same values as
+  # in the metadata, and only removed from the metadata (otherwise, an error
+  # is raised)
   if (length(to_move) > 0) {
     .data <- as_event_column(.data, dplyr::all_of(to_move))
   }
