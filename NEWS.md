@@ -16,6 +16,8 @@
   the locations onto the grid and then
   smooths them with the kernel, which is much faster
   for many locations (see the article "Benchmark of home range estimators").
+* new `group_by_meta()` groups the events by variables of the metadata,
+  including `sfc` columns, which it moves to the events (#92)
 * New `track_tot_distance()` to compute the total distance travelled along each
   track, with a `units` argument to choose the output units.
 * `tt_split_trips()` gains a `boundary_events` argument, to include in each

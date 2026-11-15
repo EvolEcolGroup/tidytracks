@@ -16,6 +16,7 @@ reference:
         - as_meta_column
         - as_event_column
         - filter_by_meta
+        - group_by_meta
         - mt_as_move2.trip
         - mt_as_telemetry
         - sf_point_col

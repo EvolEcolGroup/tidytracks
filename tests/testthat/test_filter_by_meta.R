@@ -121,3 +121,12 @@ test_that("filter_by_meta returns no events if no track is kept", {
   expect_equal(nrow(show_meta(result)), 0L)
   expect_s3_class(show_meta(result)$colony_sf, "sfc")
 })
+
+test_that("filter_by_meta keeps the groups set by group_by_meta", {
+  toy_tt <- group_by_meta(create_toy_tt_geo(), species)
+  result <- filter_by_meta(toy_tt, sf::st_coordinates(colony_sf)[, "Y"] < 30)
+  expect_equal(nrow(result), 24L)
+  expect_equal(as.character(show_meta(result)$bird_id), "id_1")
+  expect_equal(dplyr::group_vars(result), "species")
+  expect_equal(dplyr::n_groups(result), 1L)
+})
