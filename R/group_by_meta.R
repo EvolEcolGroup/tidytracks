@@ -100,10 +100,10 @@ group_by_meta <- function(.data, ..., .add = FALSE,
   to_move <- setdiff(group_cols, track_id_col)
   .data <- move2::mt_set_track_data(.data, meta)
   # move the other grouping variables from the metadata to the events; those
-  # that are already columns of the events (e.g. the id of each animal before
-  # tt_split_trips()) are kept in the events, if they have the same values as
-  # in the metadata, and only removed from the metadata (otherwise, an error
-  # is raised)
+  # that are already columns of the events (e.g. moved there by
+  # as_event_column() with .keep = TRUE) are kept in the events, if they have
+  # the same values as in the metadata, and only removed from the metadata
+  # (otherwise, an error is raised)
   if (length(to_move) > 0) {
     .data <- as_event_column(.data, dplyr::all_of(to_move))
   }
