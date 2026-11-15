@@ -47,7 +47,10 @@ test_that("hr_tt_mcp returns the groups in the order of the group keys", {
   boar_tt$group <- factor(boar_tt$name, levels = rev(levels(boar_tt$name)))
   grouped_mcp <- hr_tt_mcp(dplyr::group_by(boar_tt, group))
 
-  expect_equal(unique(grouped_mcp$group), rev(levels(boar_tt$name)))
+  expect_equal(
+    unique(grouped_mcp$group),
+    factor(rev(levels(boar_tt$name)), levels = rev(levels(boar_tt$name)))
+  )
   expect_equal(
     grouped_mcp$area[grouped_mcp$group == "Jean"],
     hr_tt_mcp(boar_tt[boar_tt$name == "Jean", ])$area
@@ -61,7 +64,7 @@ test_that("hr_tt_mcp returns the tracks of ungrouped data in metadata order", {
     readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
   )
   track_mcp <- hr_tt_mcp(x)
-  expect_equal(unique(track_mcp$track_id), c("b", "a", "c"))
+  expect_equal(as.character(unique(track_mcp$track_id)), c("b", "a", "c"))
   expect_equal(
     track_mcp$area[track_mcp$track_id == "b"],
     hr_tt_mcp(x[move2::mt_track_id(x) == "b", ])$area

@@ -12,3 +12,19 @@ test_that("autoplot selects the UDs of a grouped tibble", {
     terra::values(kde_by_sex$ud[[2]])[, 1]
   )
 })
+
+test_that("autoplot identifies the UDs by all the grouping variables", {
+  # one UD per track, grouped by sex and track id: female_c, male_a, male_b
+  kde <- hr_tt_kde(group_by_meta(example_tt, sex, track_id))
+  p <- ggplot2::autoplot(kde, id_to_plot = "male_b")
+  expect_length(p, 1)
+  expect_equal(
+    ggplot2::layer_data(p[[1]])$value,
+    terra::values(kde$ud[[3]])[, 1]
+  )
+  # an id must identify a UD
+  expect_error(
+    ggplot2::autoplot(kde, id_to_plot = "male"),
+    "all id_to_plot must be ids of the UDs"
+  )
+})

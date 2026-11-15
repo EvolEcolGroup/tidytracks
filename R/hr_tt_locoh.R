@@ -80,9 +80,9 @@
 #' row per group and level (with the tracks in the order of the metadata if
 #' `x` is not grouped, or else with the groups in the order of
 #' [dplyr::group_keys()], i.e. sorted by the grouping variables), and columns:
-#' - the grouping variable (as named in `x`; if `x` is grouped by
-#'   multiple variables, this column is named `group_id`): the ids from the
-#'   grouping of `x`
+#' - the grouping variables of `x` (the track id if `x` is not grouped), one
+#'   column per variable, with the keys of the groups (with their own types,
+#'   e.g. a factor, or an `sfc` column of locations from [group_by_meta()])
 #' - `method`: the method used to estimate the home range (`"locoh"`)
 #' - `type`: the type of LoCoH (`"k"`, `"r"` or `"a"`)
 #' - `n`: the parameter of the LoCoH
@@ -150,9 +150,9 @@ hr_tt_locoh <- function(
   # or else the order of the group keys)
   group_order <- hr_group_order(x, by_track) # nolint: object_usage_linter.
   group_index <- match(dplyr::group_indices(x), group_order)
-  group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
-    dplyr::pull(1)
-  group_labels <- group_labels[group_order]
+  # the keys of the groups, returned as the first columns, and their labels
+  keys <- hr_group_keys(x, group_order) # nolint: object_usage_linter.
+  group_labels <- hr_group_labels(keys) # nolint: object_usage_linter.
   # extract coordinates
   xy <- sf::st_coordinates(x)
   # events with an empty geometry have no location to contribute to the hulls
@@ -208,32 +208,15 @@ hr_tt_locoh <- function(
 
   # create a tibble with the results of all groups in one go (creating a
   # tibble for each group and combining them takes much longer when there
-  # are many groups), and cast it to an sf object. If there is a single
-  # grouping variable, the column of the groups is named after it (renaming
-  # it before casting to sf, rather than with dplyr::rename_with() after,
-  # saves time on short tracks); otherwise it is named group_id. The columns
-  # are computed before the tibble is created: tibble() evaluates each column
-  # with the columns before it in scope, so a column of groups named, e.g.,
-  # "levels" would otherwise be used instead of the levels.
-  group_column <- if (length(dplyr::group_vars(x)) == 1) {
-    dplyr::group_vars(x)
-  } else {
-    "group_id"
-  }
-  output_columns <- c("method", "type", "n", "level", "area", "geometry")
-  if (group_column %in% output_columns) {
-    stop(
-      "the grouping variable (or the track id column) cannot be named ",
-      "like a column of the result (",
-      paste0("\"", output_columns, "\"", collapse = ", "),
-      "); rename it first"
-    )
-  }
-  group_values <- rep(group_labels, each = length(levels))
+  # are many groups), with the keys of the groups as its first columns (one
+  # per grouping variable, which cannot be named like a column of the
+  # results), and cast it to an sf object (naming its geometry, as a grouping
+  # variable may be an sfc column). The columns are computed before the
+  # tibble is created, as tibble() evaluates each column with the columns
+  # before it in scope.
   n_values <- rep(n, each = length(levels))
   level_values <- rep(levels, times = length(group_labels))
   locoh_results <- tibble::tibble(
-    group_id = group_values,
     method = "locoh",
     type = type,
     n = n_values,
@@ -241,8 +224,16 @@ hr_tt_locoh <- function(
     area = area,
     geometry = geometry
   )
-  names(locoh_results)[1] <- group_column
-  locoh_results <- sf::st_as_sf(locoh_results, crs = crs)
+  locoh_results <- hr_with_keys( # nolint: object_usage_linter.
+    keys,
+    locoh_results,
+    each = length(levels)
+  )
+  locoh_results <- sf::st_as_sf(
+    locoh_results,
+    sf_column_name = "geometry",
+    crs = crs
+  )
 
   # add a method attribute
   attr(locoh_results, "hr_tt_method") <- "locoh"

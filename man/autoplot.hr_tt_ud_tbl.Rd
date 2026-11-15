@@ -10,10 +10,11 @@
 \item{object}{A tibble of utilisation distributions created by kde of class
 \code{hr_tt_ud_tbl} as created with \code{\link[=hr_tt_kde]{hr_tt_kde()}}.}
 
-\item{id_to_plot}{Integer or character, the id of the utilisation
-distribution to plot. If \code{NULL}, all utilisation distributions in the
-tibble are plotted. The first column of the tibble is assumed to be the id
-column.}
+\item{id_to_plot}{Integer or character, the position or id of the
+utilisation distributions to plot. If \code{NULL}, all utilisation
+distributions in the tibble are plotted. The ids are the values of the
+columns that identify the UDs (separated by "_" if there are several, with
+locations written as WKT, as in \code{\link[=hr_tt_ud_overlap]{hr_tt_ud_overlap()}}).}
 
 \item{layout}{A vector of length 2, the number of rows and columns in the
 plot layout. If \code{NULL}, the layout is determined automatically.}
@@ -28,10 +29,10 @@ the result is a multi-panel plot composition.
 }
 \description{
 This autoplot function can be used to plot all or a subset of UDs from a
-tibble of UDs created by \code{\link[=hr_tt_kde]{hr_tt_kde()}}. The first column of the tibble is
-assumed to be an id column, which is used to identify the UDs to plot. The
-layout of the plots can be specified with the \code{layout} argument, and it is
-assembled with \code{patchwork}.
+tibble of UDs created by \code{\link[=hr_tt_kde]{hr_tt_kde()}}. The UDs are identified by the
+columns before \code{method} (the grouping variables used to estimate them), or
+else by the first column of the tibble. The layout of the plots can be
+specified with the \code{layout} argument, and it is assembled with \code{patchwork}.
 }
 \examples{
 example_kde <- hr_tt_kde(example_tt)

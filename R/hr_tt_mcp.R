@@ -16,9 +16,9 @@
 #' [show_meta()], if `x` is not grouped, or else with the groups in the order
 #' of [dplyr::group_keys()], i.e. sorted by the grouping variables), and
 #' columns:
-#' - the grouping variable (as named in `x`; if `x` is grouped by
-#'   multiple variables, this column is named `group_id`): the ids from the
-#'   grouping of `x`
+#' - the grouping variables of `x` (the track id if `x` is not grouped), one
+#'   column per variable, with the keys of the groups (with their own types,
+#'   e.g. a factor, or an `sfc` column of locations from [group_by_meta()])
 #' - `method`: the method used to estimate the home range (`"mcp"`)
 #' - `level`: the level of the contour line
 #' - `area`: the area of the home range (as computed by `sf::st_area()`)
@@ -59,9 +59,9 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   # or else the order of the group keys)
   group_order <- hr_group_order(x, by_track) # nolint: object_usage_linter.
   group_index <- match(dplyr::group_indices(x), group_order)
-  group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
-    dplyr::pull(1)
-  group_labels <- group_labels[group_order]
+  # the keys of the groups, returned as the first columns, and their labels
+  keys <- hr_group_keys(x, group_order) # nolint: object_usage_linter.
+  group_labels <- hr_group_labels(keys) # nolint: object_usage_linter.
   # Compute the minimum convex polygon for each group and level
   xy <- sf::st_coordinates(x)
   # events with an empty geometry have no location to contribute to the MCP
@@ -101,23 +101,24 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   # one call: sf looks up the parameters of the CRS (with PROJ) every time it
   # computes areas, which takes longer than the MCP of a short track
   mcp_results <- tibble::tibble(
-    group_id = rep(group_labels, each = length(levels)),
     method = "mcp",
     level = rep(levels, times = length(group_labels)),
     area = NA_real_,
     geometry = sf::st_sfc(unlist(geometry, recursive = FALSE))
   )
-  mcp_results <- sf::st_as_sf(mcp_results, crs = sf::st_crs(x))
+  # the keys of the groups come first, one column per grouping variable
+  mcp_results <- hr_with_keys( # nolint: object_usage_linter.
+    keys,
+    mcp_results,
+    each = length(levels)
+  )
+  # the geometry is named, as a grouping variable may be an sfc column
+  mcp_results <- sf::st_as_sf(
+    mcp_results,
+    sf_column_name = "geometry",
+    crs = sf::st_crs(x)
+  )
   mcp_results$area <- sf::st_area(mcp_results)
-
-  # if there was a single grouping variable, rename the group_id column
-  if (length(dplyr::group_vars(x)) == 1) {
-    mcp_results <- mcp_results %>%
-      dplyr::rename_with(
-        ~ dplyr::group_vars(x),
-        dplyr::all_of("group_id")
-      )
-  }
 
   # add a method attribute
   attr(mcp_results, "hr_tt_method") <- "mcp"

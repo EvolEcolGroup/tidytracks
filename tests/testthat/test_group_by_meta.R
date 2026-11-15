@@ -206,19 +206,45 @@ test_that("group_by_meta groups the home ranges of the hr_tt_* functions", {
   expect_equal(result, expected)
   expect_equal(result$species, c("species_a", "species_b"))
 
-  # group by an sfc column: one home range per colony
+  # group by an sfc column, which is kept as an sfc column of the home ranges
   grouped_tt <- group_by_meta(toy_tt, colony_sf)
   for (result in list(
     hr_tt_mcp(grouped_tt, levels = 0.95),
-    hr_tt_kde(grouped_tt, levels = 0.95)
+    hr_tt_kde(grouped_tt, levels = 0.95),
+    hr_tt_locoh(grouped_tt, n = 4, levels = 0.95)
   )) {
     expect_s3_class(result, "hr_tt_poly_tbl")
     expect_equal(nrow(result), 2L)
-    expect_true("colony_sf" %in% names(result))
+    expect_equal(names(result)[1:2], c("colony_sf", "method"))
+    expect_s3_class(result$colony_sf, "sfc")
+    expect_equal(sf::st_crs(result$colony_sf), sf::st_crs(4326))
+    expect_equal(sf::st_coordinates(result$colony_sf)[, "Y"], c(10, 50))
     # the geometry of the home ranges is still the active one
     expect_equal(attr(result, "sf_column"), "geometry")
     expect_true(all(
       sf::st_geometry_type(result) %in% c("POLYGON", "MULTIPOLYGON")
     ))
+    expect_true(sf::st_crs(result) == sf::st_crs(toy_tt))
   }
+  # the UDs are named after the colonies, written as WKT
+  kde <- hr_tt_kde(grouped_tt)
+  expect_s3_class(kde$colony_sf, "sfc")
+  expect_equal(names(kde$ud), c("POINT (0 10)", "POINT (0 50)"))
+  # and so are the rows and columns of their overlaps
+  expect_equal(
+    rownames(hr_tt_ud_overlap(kde)),
+    c("POINT (0 10)", "POINT (0 50)")
+  )
+  # the isopleths of the UDs keep the sfc column, and their own geometry
+  iso <- hr_tt_ud_iso(kde, levels = 0.95)
+  expect_s3_class(iso$colony_sf, "sfc")
+  expect_equal(attr(iso, "sf_column"), "geometry")
+
+  # with several grouping variables, one column per variable, with its type
+  grouped_tt <- group_by_meta(toy_tt, species, colony_sf)
+  result <- hr_tt_mcp(grouped_tt, levels = 0.95)
+  expect_equal(names(result)[1:3], c("species", "colony_sf", "method"))
+  expect_equal(result$species, c("species_a", "species_b"))
+  expect_s3_class(result$colony_sf, "sfc")
+  expect_equal(attr(result, "sf_column"), "geometry")
 })

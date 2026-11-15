@@ -23,9 +23,9 @@ row per group and level (with the tracks in the order of the metadata, see
 of \code{\link[dplyr:group_keys]{dplyr::group_keys()}}, i.e. sorted by the grouping variables), and
 columns:
 \itemize{
-\item the grouping variable (as named in \code{x}; if \code{x} is grouped by
-multiple variables, this column is named \code{group_id}): the ids from the
-grouping of \code{x}
+\item the grouping variables of \code{x} (the track id if \code{x} is not grouped), one
+column per variable, with the keys of the groups (with their own types,
+e.g. a factor, or an \code{sfc} column of locations from \code{\link[=group_by_meta]{group_by_meta()}})
 \item \code{method}: the method used to estimate the home range (\code{"mcp"})
 \item \code{level}: the level of the contour line
 \item \code{area}: the area of the home range (as computed by \code{sf::st_area()})

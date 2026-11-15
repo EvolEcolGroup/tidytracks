@@ -122,6 +122,25 @@ test_that("hr_tt_ud_overlap works", {
   expect_true(boar_overlap_cond < boar_overlap[1, 2])
 })
 
+test_that("hr_tt_ud_overlap identifies the UDs by all grouping variables", {
+  # one UD per track, grouped by sex and track id
+  kde <- hr_tt_kde(group_by_meta(example_tt, sex, track_id))
+  overlap <- hr_tt_ud_overlap(kde)
+  ids <- c("female_c", "male_a", "male_b")
+  expect_equal(dimnames(overlap), list(ids, ids))
+  # the same overlaps as for the UDs of the tracks
+  by_track <- hr_tt_ud_overlap(hr_tt_kde(example_tt))
+  expect_equal(
+    unname(overlap),
+    unname(by_track[c("c", "a", "b"), c("c", "a", "b")])
+  )
+  # the ids must identify the UDs
+  expect_error(
+    hr_tt_ud_overlap(kde[c(1, 1), ]),
+    "must have a unique value \\(or combination of values\\) for each UD"
+  )
+})
+
 test_that("hr_tt_ud_overlap rejects unused arguments for two UDs", {
   ud <- hr_tt_kde(example_tt)
   # method comes after ..., so a method given by position would be ignored
@@ -216,7 +235,8 @@ test_that("earth_mover_sinkhorn matches move2utils::emd", {
   names(stack) <- ud$track_id
   direct <- as.matrix(move2utils::emd(stack, method = "sinkhorn"))
   expect_equal(distances, direct)
-  expect_identical(dimnames(distances), list(ud$track_id, ud$track_id))
+  ids <- as.character(ud$track_id)
+  expect_identical(dimnames(distances), list(ids, ids))
   expect_equal(unname(diag(distances)), c(0, 0, 0))
   # the SpatRaster method gives the same distances
   expect_equal(

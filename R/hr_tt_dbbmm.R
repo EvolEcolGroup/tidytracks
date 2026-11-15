@@ -84,9 +84,10 @@
 #' @returns Either a `tibble` of class `hr_tt_ud_tbl`, or, if `levels` is not
 #'   `NULL`, an `sf` tibble of class `hr_tt_poly_tbl` (as returned by
 #'   [hr_tt_ud_iso()]), with columns:
-#' - the track id column of `x`: the ids of the tracks, in the order of the
-#'   metadata (see [show_meta()]) if `x` is not grouped, or else in the order
-#'   of [dplyr::group_keys()] (i.e. sorted by track id)
+#' - the track id column of `x`: the ids of the tracks (with their own type,
+#'   e.g. a factor), in the order of the metadata (see [show_meta()]) if `x`
+#'   is not grouped, or else in the order of [dplyr::group_keys()] (i.e.
+#'   sorted by track id)
 #' - `method`: the method used to estimate the home range (`"dbbmm"` or
 #'   `"dbgb"`)
 #' - `window_size` and `margin`: the values used for the sliding window
@@ -268,13 +269,16 @@ hr_tt_bridge <- function(
     dbgb = move2utils::mt_dbgb_ud
   )
 
-  # one row per track, in the same order (and with the same character ids) as
+  # one row per track, in the same order (and with the same ids) as
   # hr_tt_kde(): the order of the tracks in the metadata if x was not
   # grouped, or else the order of the group keys, rather than the order in
-  # which the tracks appear in x (used by move2utils)
+  # which the tracks appear in x (used by move2utils). The ids are used as
+  # characters (to name the UDs), and returned with their own type (e.g. a
+  # factor), as the keys of the other hr_tt_* functions
   x_by_track <- dplyr::group_by(x, .data[[track_col]])
   ord <- hr_group_order(x_by_track, by_track) # nolint: object_usage_linter.
-  track_ids <- as.character(dplyr::group_keys(x_by_track)[[1]][ord])
+  track_keys <- dplyr::group_keys(x_by_track)[[1]][ord]
+  track_ids <- as.character(track_keys)
 
   # the motion variance is estimated first (rather than letting the ud
   # functions of move2utils do it), as it is needed to size the grid before
@@ -411,7 +415,7 @@ hr_tt_bridge <- function(
   names(ud_list) <- track_ids
 
   res_tbl <- tibble::tibble(
-    track_id = track_ids,
+    track_id = track_keys[match(track_ids, as.character(track_keys))],
     method = method,
     window_size = window_size,
     margin = margin,

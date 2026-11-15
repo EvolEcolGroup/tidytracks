@@ -30,9 +30,10 @@ suggested package \code{move2utils} (install it with
 \code{ud} can be a single UD, used for all events, or a tibble of UDs (of class
 \code{hr_tt_ud_tbl}, as returned by e.g. \code{\link[=hr_tt_kde]{hr_tt_kde()}} or \code{\link[=hr_tt_dbbmm]{hr_tt_dbbmm()}}). With
 a tibble, the level of each event is computed in the UD of its own row,
-matching the first column of the tibble (e.g. the track id) to the column
-of \code{x} with the same name; a tibble with a single row is used for all
-events.
+matching the columns that identify the UDs (the columns before \code{method},
+i.e. the track id or the grouping variables used to estimate them, or else
+the first column of the tibble) to the columns of \code{x} with the same names;
+a tibble with a single row is used for all events.
 
 Events are reprojected to the coordinate reference system of the UD if
 needed. Events without a location, outside the grid of the UD, or without

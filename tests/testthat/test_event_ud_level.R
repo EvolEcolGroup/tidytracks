@@ -14,7 +14,7 @@ test_that("event_ud_level gives the correct errors", {
   )
   expect_error(
     event_ud_level(example_tt, ud_by_sex),
-    "the first column of ud \\('sex'\\) must be a column of x"
+    "identify the UDs of ud \\('sex'\\) must be columns of x"
   )
   two_layers <- c(ud$ud[[1]], ud$ud[[2]])
   names(two_layers) <- c("first", "second")
@@ -81,6 +81,31 @@ test_that("event_ud_level matches events to a table by an event column", {
     level[!males],
     event_ud_level(x[!males, ], ud_by_sex$ud[["female"]])
   )
+})
+
+test_that("event_ud_level matches events to a table by several columns", {
+  skip_if_not_installed("move2utils")
+  # one UD per track, grouped by sex and track id (in the order female_c,
+  # male_a, male_b, rather than that of the tracks)
+  x <- group_by_meta(example_tt, sex, track_id)
+  ud <- hr_tt_kde(x)
+  expect_equal(names(ud)[1:3], c("sex", "track_id", "method"))
+  expect_equal(event_ud_level(x, ud), event_ud_level(x, hr_tt_kde(example_tt)))
+})
+
+test_that("event_ud_level matches events to a table by an sfc column", {
+  skip_if_not_installed("move2utils")
+  # one UD per colony, each with a single track
+  x <- group_by_meta(
+    sf::st_transform(create_toy_tt_geo(), 3857),
+    colony_sf
+  )
+  ud <- hr_tt_kde(x)
+  expect_s3_class(ud$colony_sf, "sfc")
+  level <- event_ud_level(x, ud)
+  north <- sf::st_coordinates(x$colony_sf)[, "Y"] > 30
+  expect_equal(level[north], event_ud_level(x[north, ], ud$ud[[2]]))
+  expect_equal(level[!north], event_ud_level(x[!north, ], ud$ud[[1]]))
 })
 
 test_that("event_ud_level gives NA for events without a location or UD", {

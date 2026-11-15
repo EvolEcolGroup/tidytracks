@@ -78,10 +78,11 @@
 #' @returns Either a `tibble` of class `hr_tt_ud_tbl`, or, if `levels` is not
 #' NULL, an `sf` tibble of class `hr_tt_poly_tbl` (as returned by
 #' [hr_tt_ud_iso()]), with columns:
-#' - the grouping variable (as named in `x`; if `x` is grouped by
-#'   multiple variables, this column is named `group_id`): the ids from the
-#'   grouping of `x`, in the order of the tracks in the metadata if `x` is not
-#'   grouped, or else in the order of [dplyr::group_keys()]
+#' - the grouping variables of `x` (the track id if `x` is not grouped), one
+#'   column per variable, with the keys of the groups (with their own types,
+#'   e.g. a factor, or an `sfc` column of locations from [group_by_meta()]),
+#'   in the order of the tracks in the metadata if `x` is not grouped, or else
+#'   in the order of [dplyr::group_keys()]
 #' - `method`: the method used to estimate the home range (`"kde"`)
 #' - `h`: the bandwidth used for the KDE
 #' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
@@ -148,9 +149,9 @@ hr_tt_kde <- function(
   group_order <- hr_group_order(x, by_track) # nolint: object_usage_linter.
   group_index <- match(dplyr::group_indices(x), group_order)
   group_unique <- seq_along(group_order)
-  group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
-    dplyr::pull(1)
-  group_labels <- group_labels[group_order]
+  # the keys of the groups, returned as the first columns, and their labels
+  keys <- hr_group_keys(x, group_order) # nolint: object_usage_linter.
+  group_labels <- hr_group_labels(keys) # nolint: object_usage_linter.
   # extract coordinates
   xy <- sf::st_coordinates(x)
   # events with an empty geometry have no location to contribute to the KDE
@@ -321,7 +322,6 @@ hr_tt_kde <- function(
 
   # one row per group
   kde_results <- tibble::tibble(
-    group_id = group_labels[group_unique],
     method = "kde",
     h = h[group_unique],
     xmin = vapply(bbox[group_unique], function(b) b[["xmin"]], numeric(1)),
@@ -330,16 +330,8 @@ hr_tt_kde <- function(
     ymax = vapply(bbox[group_unique], function(b) b[["ymax"]], numeric(1)),
     res = res[group_unique]
   )
-  # if there was a single grouping variable, rename the group_id column (before
-  # the isopleths are added: renaming an sf table of isopleths would leave its
-  # attributes (e.g. agr) with the old names)
-  if (length(dplyr::group_vars(x)) == 1) {
-    kde_results <- kde_results %>%
-      dplyr::rename_with(
-        ~ dplyr::group_vars(x),
-        dplyr::all_of("group_id")
-      )
-  }
+  # the keys of the groups come first, one column per grouping variable
+  kde_results <- hr_with_keys(keys, kde_results) # nolint: object_usage_linter.
   if (is.null(levels)) {
     # the full UDs, as a list column of rasters
     kde_results$ud <- stats::setNames(uds, group_labels[group_unique])

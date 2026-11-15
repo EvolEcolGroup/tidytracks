@@ -18,6 +18,10 @@
   for many locations (see the article "Benchmark of home range estimators").
 * new `group_by_meta()` groups the events by variables of the metadata,
   including `sfc` columns, which it moves to the events (#92)
+* the `hr_tt_*()` functions return the grouping variables with their own
+  types (e.g. factors, or `sfc` columns of locations), one column each,
+  rather than as text in a single `group_id` column; `hr_tt_ud_overlap()`,
+  `event_ud_level()` and `autoplot()` identify the UDs by all of them (#92)
 * New `track_tot_distance()` to compute the total distance travelled along each
   track, with a `units` argument to choose the output units.
 * `tt_split_trips()` gains a `boundary_events` argument, to include in each

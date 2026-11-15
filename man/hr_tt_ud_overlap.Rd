@@ -30,7 +30,9 @@ hr_tt_ud_overlap(
 \arguments{
 \item{x}{A SpatRaster of the utilisation distribution (with a layer \code{ud}), or
 a tibble of UDs of class \code{hr_tt_ud_tbl} (e.g. as created with
-\code{\link[=hr_tt_kde]{hr_tt_kde()}}).}
+\code{\link[=hr_tt_kde]{hr_tt_kde()}}), whose rows are identified by the columns before \code{method}
+(the grouping variables used to estimate the UDs), or else by the first
+column.}
 
 \item{...}{Additional arguments (not currently used)}
 
@@ -58,7 +60,9 @@ is computed.}
 \value{
 A numeric value representing the overlap between the two UDs
 according to the specified method, or a matrix of such values if \code{x} is a
-tibble of multiple UDs.
+tibble of multiple UDs, with the ids of the UDs as row and column names
+(the values of the columns that identify them, separated by "_", with
+locations written as WKT).
 }
 \description{
 This function computes the overlap between pairs of utilisation distributions

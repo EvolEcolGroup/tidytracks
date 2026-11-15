@@ -1,17 +1,18 @@
 #' Autoplot a tibble of utilisation distributions
 #'
 #' This autoplot function can be used to plot all or a subset of UDs from a
-#' tibble of UDs created by [hr_tt_kde()]. The first column of the tibble is
-#' assumed to be an id column, which is used to identify the UDs to plot. The
-#' layout of the plots can be specified with the `layout` argument, and it is
-#' assembled with `patchwork`.
+#' tibble of UDs created by [hr_tt_kde()]. The UDs are identified by the
+#' columns before `method` (the grouping variables used to estimate them), or
+#' else by the first column of the tibble. The layout of the plots can be
+#' specified with the `layout` argument, and it is assembled with `patchwork`.
 #'
 #' @param object A tibble of utilisation distributions created by kde of class
 #'   `hr_tt_ud_tbl` as created with [hr_tt_kde()].
-#' @param id_to_plot Integer or character, the id of the utilisation
-#'   distribution to plot. If `NULL`, all utilisation distributions in the
-#'   tibble are plotted. The first column of the tibble is assumed to be the id
-#'   column.
+#' @param id_to_plot Integer or character, the position or id of the
+#'   utilisation distributions to plot. If `NULL`, all utilisation
+#'   distributions in the tibble are plotted. The ids are the values of the
+#'   columns that identify the UDs (separated by "_" if there are several, with
+#'   locations written as WKT, as in [hr_tt_ud_overlap()]).
 #' @param layout A vector of length 2, the number of rows and columns in the
 #'   plot layout. If `NULL`, the layout is determined automatically.
 #' @param ... Not used.
@@ -34,25 +35,34 @@ autoplot.hr_tt_ud_tbl <- function(
   # Work with a plain list locally while preserving a loaded object's packing.
   object <- hr_tt_ud_unwrap(object) # nolint: object_usage_linter.
   ## Get appropriate ids to plot
-  # check that the first column has unique values (which can be used as ids)
-  if (length(unique(object[[1]])) != nrow(object)) {
-    stop("the first column of the tibble must have unique id values")
+  # the ids of the UDs are the labels of their keys, i.e. of the columns
+  # before `method` (the grouping variables of the hr_tt_* functions), or of
+  # the first column of a table without them (as in hr_tt_ud_overlap())
+  key_cols <- hr_key_columns(object) # nolint: object_usage_linter.
+  ids <- hr_group_labels(object[key_cols]) # nolint: object_usage_linter.
+  # check that the ids are unique
+  if (anyDuplicated(ids) > 0) {
+    stop(
+      "the column(s) that identify the UDs (",
+      paste0("'", key_cols, "'", collapse = ", "),
+      ") must have unique id values"
+    )
   }
 
   if (!is.null(id_to_plot)) {
     # if it is numeric, get the appropriate labels
     if (is.numeric(id_to_plot)) {
-      id_to_plot <- object[[1]][id_to_plot]
+      id_to_plot <- ids[id_to_plot]
     }
-    # check that all id_to_plot are in the first column of the tibble
-    if (!all(id_to_plot %in% object[[1]])) {
-      stop("all id_to_plot must be in the first column of the tibble")
+    # check that all id_to_plot are ids of the UDs
+    if (!all(id_to_plot %in% ids)) {
+      stop("all id_to_plot must be ids of the UDs in the tibble")
     }
-    # subset the rows directly: a filter() on object[[1]] would fail on a
-    # grouped tibble (e.g. from hr_tt_ud_sum()), as it is evaluated by group
-    object <- object[object[[1]] %in% id_to_plot, ]
+    # subset the rows directly: a filter() would fail on a grouped tibble
+    # (e.g. from hr_tt_ud_sum()), as it is evaluated by group
+    object <- object[ids %in% id_to_plot, ]
   } else {
-    id_to_plot <- object[[1]]
+    id_to_plot <- ids
   }
 
   ## Sort out layout

@@ -200,7 +200,9 @@ isopleth_table <- function(x, iso) {
   # within each group of a grouped x (e.g. from hr_tt_ud_sum())
   x$iso <- iso
   res_tbl <- tidyr::unnest(x, dplyr::any_of("iso"))
-  res_tbl <- sf::st_as_sf(res_tbl)
+  # the geometry is named, as a key of the UDs may be an sfc column (e.g. from
+  # group_by_meta())
+  res_tbl <- sf::st_as_sf(res_tbl, sf_column_name = "geometry")
   if (nrow(res_tbl) > 0) {
     res_tbl$area <- sf::st_area(res_tbl)
   }
