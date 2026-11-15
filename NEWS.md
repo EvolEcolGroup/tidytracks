@@ -18,6 +18,8 @@
   for many locations (see the article "Benchmark of home range estimators").
 * new `group_by_meta()` groups the events by variables of the metadata,
   including `sfc` columns, which it moves to the events (#92)
+* new `colname_track_id()` and `colname_time()` return the names of the track
+  id and time columns (#92)
 * the `hr_tt_*()` functions return the grouping variables with their own
   types (e.g. factors, or `sfc` columns of locations), one column each,
   rather than as text in a single `group_id` column; `hr_tt_ud_overlap()`,
