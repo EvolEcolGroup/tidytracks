@@ -714,6 +714,52 @@ test_that("tt_read_data handles duplicated columns in event and meta data", {
   expect_true("location.meta" %in% names(show_meta(duplicated3_tt)))
 })
 
+test_that("tt_read_data keeps columns of the events and the metadata apart", {
+  test_event <- read.csv(test_path("testdata/test_tt_read_data_simple.csv"))
+  test_meta <- read.csv(test_path("testdata/test_tt_read_data_meta.csv"))
+  base_tt <- tt_read_data(
+    events = test_event,
+    meta = test_meta,
+    col_track_id = "track_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "date_time"
+  )
+  # a column of the events with the same values as in the metadata, not
+  # moved to the metadata (convert_meta = FALSE), is kept in the metadata
+  # only, as the only column in both tables is the track id
+  test_event$location <- base_tt |>
+    as_event_column(location) |>
+    dplyr::pull(location)
+  no_convert_tt <- tt_read_data(
+    events = test_event,
+    meta = test_meta,
+    col_track_id = "track_id",
+    col_coords = c("lon", "lat"),
+    col_date_time = "date_time",
+    convert_meta = FALSE
+  )
+  expect_false("location" %in% names(no_convert_tt))
+  expect_equal(show_meta(no_convert_tt)$location, show_meta(base_tt)$location)
+  # a column that varies within tracks is kept in the events, and the version
+  # in the metadata is renamed
+  test_event$location <- NULL
+  test_event$counter <- seq_len(nrow(test_event))
+  test_meta$counter <- seq_len(nrow(test_meta))
+  expect_warning(
+    varying_tt <- tt_read_data(
+      events = test_event,
+      meta = test_meta,
+      col_track_id = "track_id",
+      col_coords = c("lon", "lat"),
+      col_date_time = "date_time"
+    ),
+    "'counter' are both in the events and in the metadata"
+  )
+  expect_equal(varying_tt$counter, test_event$counter)
+  expect_false("counter" %in% names(show_meta(varying_tt)))
+  expect_true("counter.meta" %in% names(show_meta(varying_tt)))
+})
+
 # tests for giving the wrong type of objects
 test_that("tt_read_data gives errors for wrong input types", {
   expect_error(
