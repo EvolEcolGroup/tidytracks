@@ -6,6 +6,12 @@
 #' including the track ID column (which you can specify using the track ID
 #' column name, or the shorthand `.track_id`).
 #'
+#' Locations in the metadata (e.g. of a colony), stored as `sfc` columns (see
+#' [sf_point_col()]) or as the geometry of an `sf` table of metadata, can be
+#' used in the conditions, e.g. with the spatial predicates of `sf` (such as
+#' [sf::st_intersects()] or [sf::st_is_within_distance()]). The events keep
+#' their own geometry.
+#'
 #' @param .data A move2 object
 #' @param ... Selection criteria based on the variables of the track metadata
 #'   (logical conditions, as in [dplyr::filter()]); to select tracks by their
@@ -16,6 +22,22 @@
 #' @examples
 #' subset_tt <- example_tt %>% filter_by_meta(sex == "female")
 #' show_meta(subset_tt)
+#'
+#' # store the locations of the nests as an sfc column of the metadata
+#' nests_tt <- example_tt
+#' show_meta(nests_tt)$nest <- sf_point_col(
+#'   x = show_meta(nests_tt)$nest_lon,
+#'   y = show_meta(nests_tt)$nest_lat,
+#'   crs = 4326
+#' )
+#' # keep the tracks with a nest within 200 km of a point
+#' centre <- sf_point_col(x = 0, y = 0, crs = 4326)
+#' nests_tt %>%
+#'   filter_by_meta(sf::st_is_within_distance(
+#'     nest, centre,
+#'     dist = 200000, sparse = FALSE
+#'   )[, 1]) %>%
+#'   show_meta()
 filter_by_meta <- function(.data, ..., .track_id = NULL) {
   # at this point, .data is a move2 object with track_id_field 'trip_id'
   # metadata table may or may not have a geometry column
