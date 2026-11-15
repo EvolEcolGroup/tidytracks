@@ -17,9 +17,11 @@
 #'   joins consecutive events with a location.
 #'
 #' @param mapping Set of aesthetic mappings created by [ggplot2::aes()].
-#'   Variables from the *events* table can be used for mapping. If none is
-#'   provided a basic aesthetics for the `sf` step segments (i.e. lines) will be
-#'   used, as it is the case for `ggplot2::geom_sf()`.
+#'   Variables from the *events* table and from the metadata (other than
+#'   locations, i.e. `sfc` columns; e.g. the sex of each animal) can be used
+#'   for mapping, and to facet the plot. If none is provided a basic aesthetics
+#'   for the `sf` step segments (i.e. lines) will be used, as it is the case for
+#'   `ggplot2::geom_sf()`.
 #' @param data The `move2` object to be displayed. For this geometry, there is
 #'   no inheritance from the main `ggplot()` call, and data has to be specified.
 #' @param drop_final_point Logical, default is `TRUE`. The `move2::mt_segments`
@@ -43,6 +45,10 @@
 #' library(ggplot2)
 #' ggplot() +
 #'   geom_event_path(data = example_tt, mapping = aes(color = track_id))
+#' # columns of the metadata can be used too
+#' ggplot() +
+#'   geom_event_path(data = example_tt, mapping = aes(color = sex)) +
+#'   facet_wrap(~sex)
 geom_event_path <- function(
   mapping = ggplot2::aes(),
   data = NULL,
@@ -69,6 +75,8 @@ geom_event_path <- function(
   # dropped first: each step then joins consecutive located events
   data_steps <- data[!sf::st_is_empty(data), ]
   sf::st_geometry(data_steps) <- move2::mt_segments(data_steps)
+  # make the columns of the metadata available for mapping and facets
+  data_steps <- with_meta_columns(data_steps) # nolint: object_usage_linter.
 
   # drop all units
   data_steps <- tt_drop_units(data_steps)

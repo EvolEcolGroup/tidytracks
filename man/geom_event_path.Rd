@@ -17,9 +17,11 @@ geom_event_path(
 }
 \arguments{
 \item{mapping}{Set of aesthetic mappings created by \code{\link[ggplot2:aes]{ggplot2::aes()}}.
-Variables from the \emph{events} table can be used for mapping. If none is
-provided a basic aesthetics for the \code{sf} step segments (i.e. lines) will be
-used, as it is the case for \code{ggplot2::geom_sf()}.}
+Variables from the \emph{events} table and from the metadata (other than
+locations, i.e. \code{sfc} columns; e.g. the sex of each animal) can be used
+for mapping, and to facet the plot. If none is provided a basic aesthetics
+for the \code{sf} step segments (i.e. lines) will be used, as it is the case for
+\code{ggplot2::geom_sf()}.}
 
 \item{data}{The \code{move2} object to be displayed. For this geometry, there is
 no inheritance from the main \code{ggplot()} call, and data has to be specified.}
@@ -71,4 +73,8 @@ joins consecutive events with a location.
 library(ggplot2)
 ggplot() +
   geom_event_path(data = example_tt, mapping = aes(color = track_id))
+# columns of the metadata can be used too
+ggplot() +
+  geom_event_path(data = example_tt, mapping = aes(color = sex)) +
+  facet_wrap(~sex)
 }

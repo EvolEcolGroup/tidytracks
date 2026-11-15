@@ -20,6 +20,8 @@
   including `sfc` columns, which it moves to the events (#92)
 * new `colname_track_id()` and `colname_time()` return the names of the track
   id and time columns (#92)
+* `geom_event_point()` and `geom_event_path()` can use the columns of the
+  metadata in `aes()` and to facet the plot (e.g. `aes(color = sex)`) (#92)
 * `tt_split_trips()` moves the original track id column to the metadata
   (group the trips by it with `group_by_meta()`), so that the only column in
   both the events and the metadata is the track id (#92)

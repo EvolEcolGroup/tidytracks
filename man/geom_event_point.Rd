@@ -16,12 +16,14 @@ geom_event_point(
 }
 \arguments{
 \item{mapping}{Set of aesthetic mappings created by \code{\link[ggplot2:aes]{ggplot2::aes()}}.
-Variables from the events table can be used for mapping. If none is
+Variables from the events table and from the metadata (e.g. the sex of
+each animal) can be used for mapping, and to facet the plot. If none is
 provided a basic aesthetics for the \code{sf} points will be used, as it is the
 case for \code{ggplot2::geom_sf()}.}
 
-\item{data}{A \code{move2} object, with the columns from the events table
-available for mapping.}
+\item{data}{A \code{move2} object, with the columns from the events table and
+from the metadata (other than locations, i.e. \code{sfc} columns) available
+for mapping.}
 
 \item{stat}{The statistical transformation to use on the data for this layer.
 The default is "sf", which should normally be left unchanged.}
@@ -55,4 +57,8 @@ Events without a location (empty points) are not plotted.
 library(ggplot2)
 ggplot() +
   geom_event_point(data = example_tt, mapping = aes(color = track_id))
+# columns of the metadata can be used too
+ggplot() +
+  geom_event_point(data = example_tt, mapping = aes(color = sex)) +
+  facet_wrap(~sex)
 }

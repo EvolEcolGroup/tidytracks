@@ -7,11 +7,13 @@
 #' @details Events without a location (empty points) are not plotted.
 #'
 #' @param mapping Set of aesthetic mappings created by [ggplot2::aes()].
-#'   Variables from the events table can be used for mapping. If none is
+#'   Variables from the events table and from the metadata (e.g. the sex of
+#'   each animal) can be used for mapping, and to facet the plot. If none is
 #'   provided a basic aesthetics for the `sf` points will be used, as it is the
 #'   case for `ggplot2::geom_sf()`.
-#' @param data A `move2` object, with the columns from the events table
-#'   available for mapping.
+#' @param data A `move2` object, with the columns from the events table and
+#'   from the metadata (other than locations, i.e. `sfc` columns) available
+#'   for mapping.
 #' @param stat The statistical transformation to use on the data for this layer.
 #'   The default is "sf", which should normally be left unchanged.
 #' @param position The position adjustment to use for overlapping points on this
@@ -29,6 +31,10 @@
 #' library(ggplot2)
 #' ggplot() +
 #'   geom_event_point(data = example_tt, mapping = aes(color = track_id))
+#' # columns of the metadata can be used too
+#' ggplot() +
+#'   geom_event_point(data = example_tt, mapping = aes(color = sex)) +
+#'   facet_wrap(~sex)
 geom_event_point <- function(
   mapping = ggplot2::aes(),
   data = NULL,
@@ -52,6 +58,8 @@ geom_event_point <- function(
   # drop the events without a location: they are not drawn, and their empty
   # points break the tweening of the geometries in animate_map()
   data <- data[!sf::st_is_empty(data), ]
+  # make the columns of the metadata available for mapping and facets
+  data <- with_meta_columns(data)
   # Tag so animate_map() can identify this as a tidytracks track layer.
   attr(data, "tidytracks_geom") <- "event_point"
   attr(data, "tidytracks_data_name") <- data_name
@@ -67,4 +75,30 @@ geom_event_point <- function(
     inherit.aes = FALSE,
     ...
   )
+}
+
+#' Add the columns of the metadata to the events of a layer
+#'
+#' The columns of the metadata (e.g. the sex of each animal) are not in the
+#' events, so they could not be used in [ggplot2::aes()], nor to facet a plot,
+#' with the events of a `geom_event_*()` layer: they are added to the events of
+#' the layer (only for plotting; the `move2` object of the user is not
+#' changed). Locations (`sfc` columns) are not added, as `ggplot2` would take
+#' them for the geometry of the layer, and neither are columns that are
+#' already in the events.
+#'
+#' @param x A `move2` object.
+#' @returns `x`, with the columns of the metadata added to its events.
+#' @keywords internal
+#' @noRd
+with_meta_columns <- function(x) {
+  # move2 cannot join an sf table of metadata to the events
+  x <- with_plain_meta(x) # nolint: object_usage_linter.
+  meta <- show_meta(x)
+  is_location <- vapply(meta, inherits, logical(1), what = "sfc")
+  cols <- setdiff(names(meta)[!is_location], names(x))
+  if (length(cols) == 0) {
+    return(x)
+  }
+  move2::mt_as_event_attribute(x, dplyr::all_of(cols), .keep = TRUE)
 }
