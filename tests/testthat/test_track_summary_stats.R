@@ -94,7 +94,8 @@ test_that("track_summary_stats correctly computes track summaries", {
   )
   # check that the trip ids are correct
   expect_equal(length(unique(test_tt_split$trip_id)), 6)
-  expect_equal(length(unique(test_tt_split$bird_id)), 2)
+  # the original track id is in the metadata
+  expect_equal(length(unique(show_meta(test_tt_split)$bird_id)), 2)
 
   # compute track summaries
   test_sums <- track_summary_stats(
