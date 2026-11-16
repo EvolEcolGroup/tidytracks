@@ -37,6 +37,16 @@ A metadata column with the same name as the geometry column of the events
 (e.g. \code{geometry}, the default name of the geometry of an \code{sf} table) would
 replace it when joined to the events, so it is renamed with a \code{.meta}
 suffix (e.g. \code{geometry.meta}), with a message.
+
+The only column that the events and the metadata should share is the track
+id. When setting the metadata, a column that is also in the events is
+removed from the events if it has the same values (for the events of each
+track), as it is information about the tracks; if the events are grouped by
+it, it is removed from the metadata instead. A column with different values
+(e.g. that varies within tracks) is kept in both tables, with the version in
+the metadata renamed with a \code{.meta} suffix, with a warning. (To make
+another column the track id with \code{\link[move2:mt_set_track_id_column]{move2::mt_set_track_id_column()}}, which
+needs it in both tables, add it to the events after setting the metadata.)
 }
 \examples{
 show_meta(example_tt)

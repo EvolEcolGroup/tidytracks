@@ -346,17 +346,13 @@ tt_read_data <- function(
         }
       }
     }
-    # update the move2 object with the new meta data (which checks that the
-    # metadata has a single row per track)
+    # update the move2 object with the new meta data, which checks that the
+    # metadata has a single row per track; a column of the metadata that is
+    # also in the events (e.g. one that varies within tracks, or any column
+    # if convert_meta is FALSE) is removed from the events if it has the same
+    # values, or else renamed in the metadata with a '.meta' suffix, with a
+    # warning, as the only column in both tables should be the track id
     show_meta(move2_obj) <- updated_meta
-    # a column of the metadata that is also in the events (e.g. one that
-    # varies within tracks, or any column if convert_meta is FALSE) is
-    # removed from the events if it has the same values, or else renamed in
-    # the metadata with a '.meta' suffix, with a warning, as the only column
-    # in both tables should be the track id
-    move2_obj <- drop_duplicated_columns( # nolint: object_usage_linter.
-      move2_obj
-    )
   }
 
   return(move2_obj)

@@ -35,7 +35,7 @@ track_summary_health <- function(x) {
   }
 
   # Get the track IDs, in the same order as in the metadata
-  track_ids <- show_meta(x)[[move2::mt_track_id_column(x)]]
+  track_ids <- show_meta(x)[[colname_track_id(x)]]
 
   # Create a tibble to store the results
   results <- tibble::tibble(
@@ -131,7 +131,7 @@ track_summary_health <- function(x) {
   # rename track_id field to the "track_id_column" in the original move2 object
   colnames(results)[which(
     colnames(results) == "track_id"
-  )] <- move2::mt_track_id_column(x)
+  )] <- colname_track_id(x)
 
   return(results)
 }

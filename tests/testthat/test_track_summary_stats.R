@@ -106,7 +106,7 @@ test_that("track_summary_stats correctly computes track summaries", {
 
   # check that all the expected columns are present
   expected_cols <- c(
-    move2::mt_track_id_column(test_tt_split),
+    colname_track_id(test_tt_split),
     "tot_duration",
     "tot_distance",
     "max_latitude",
@@ -127,14 +127,12 @@ test_that("track_summary_stats correctly computes track summaries", {
   trip_ids <- unique(event_track_id(test_tt_split))
   trip_na_ids <- trip_ids[grepl("_trip_na$", trip_ids)]
   meta_no_nas <- show_meta(test_tt_split)[
-    !(show_meta(test_tt_split)[[
-                                move2::mt_track_id_column(test_tt_split)]] %in%
-      trip_na_ids
-    ),
+    !(show_meta(test_tt_split)[[colname_track_id(test_tt_split)]] %in%
+        trip_na_ids),
   ]
   expect_equal(
-    test_sums[[move2::mt_track_id_column(test_tt_split)]],
-    meta_no_nas[[move2::mt_track_id_column(test_tt_split)]]
+    test_sums[[colname_track_id(test_tt_split)]],
+    meta_no_nas[[colname_track_id(test_tt_split)]]
   )
 
   # check the units of duration are as requested (hours)

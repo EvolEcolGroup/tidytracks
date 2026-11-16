@@ -15,7 +15,7 @@ track_tot_distance <- function(x, units = as_units("m")) {
   }
   # the tracks in the order of the metadata (which can differ from the order
   # in which they appear in the events table, e.g. after tt_order_time())
-  track_order <- as.character(show_meta(x)[[move2::mt_track_id_column(x)]])
+  track_order <- as.character(show_meta(x)[[colname_track_id(x)]])
 
   # events without a location (empty geometry) have no distance to their
   # neighbours, so they are dropped and the distance is taken between the

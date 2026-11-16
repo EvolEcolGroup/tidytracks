@@ -19,7 +19,7 @@ hr_group_order <- function(x, by_track) {
     return(seq_len(n_groups))
   }
   group_order <- match(
-    show_meta(x)[[move2::mt_track_id_column(x)]],
+    show_meta(x)[[colname_track_id(x)]],
     dplyr::group_keys(x)[[1]]
   )
   # tracks of the metadata without events have no group

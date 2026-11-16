@@ -79,8 +79,8 @@ test_that("output is a move2 object", {
 test_that("time and track-id column names are preserved", {
   track <- make_track()
   out <- tt_regular_time(track, interval = s(100))
-  expect_equal(move2::mt_time_column(out), move2::mt_time_column(track))
-  expect_equal(move2::mt_track_id_column(out), move2::mt_track_id_column(track))
+  expect_equal(colname_time(out), colname_time(track))
+  expect_equal(colname_track_id(out), colname_track_id(track))
 })
 
 test_that("event attribute columns are preserved", {
@@ -405,8 +405,8 @@ test_that("column names that are not syntactic are preserved", {
     track_id_column = "track id"
   )
   out <- tt_regular_time(track, interval = s(100))
-  expect_equal(move2::mt_time_column(out), "time stamp")
-  expect_equal(move2::mt_track_id_column(out), "track id")
+  expect_equal(colname_time(out), "time stamp")
+  expect_equal(colname_track_id(out), "track id")
 })
 
 test_that("track ids keep their type", {

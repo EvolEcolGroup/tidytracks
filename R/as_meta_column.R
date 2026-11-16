@@ -10,15 +10,16 @@
 #' A column that is already in the metadata, with the same values as in the
 #' events (for the events of each track), is not duplicated: it is only removed
 #' from the events (unless `.keep = TRUE`); with different values, it gives an
-#' error, as the only column in both tables should be the track id.
+#' error, as the only column in both tables should be the track id. For the
+#' same reason, `.keep = TRUE` is deprecated.
 #' @param x A `move2` object
 #' @param ... One or more unquoted column names from the event data to move to
 #'  the metadata; it is possible to use tidyselect helpers to select multiple
 #'  columns.
-#' @param .keep A logical value indicating whether to keep the original event
-#'  data columns in the event data after moving them to the metadata. The
-#'  default is `FALSE`, which means that the original event data columns will be
-#'  removed.
+#' @param .keep Deprecated. `TRUE` keeps the columns in the events too, which
+#'  leaves them in both tables (and [`show_meta<-`][show_meta()] removes them
+#'  from the events the next time that the metadata is set). The default,
+#'  `FALSE`, removes them from the events.
 #' @returns A `move2` object with the specified event data columns added to the
 #'  metadata.
 #' @export
@@ -29,6 +30,16 @@
 #' example_tt2 <- as_meta_column(example_tt2, sex)
 #' show_meta(example_tt2)
 as_meta_column <- function(x, ..., .keep = FALSE) {
+  # the only column in both tables should be the track id
+  if (isTRUE(.keep)) {
+    lifecycle::deprecate_soft(
+      "0.3.0", "as_meta_column(.keep = 'must be FALSE')",
+      details = paste(
+        "The only column in both the events and the metadata should be the",
+        "track id; move the columns back with `as_event_column()` if needed."
+      )
+    )
+  }
   # the columns of the events to move (selected from an empty table with the
   # columns of the events, without its groups)
   cols <- names(dplyr::select(as.data.frame(x)[0, , drop = FALSE], ...))

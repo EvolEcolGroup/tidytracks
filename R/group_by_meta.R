@@ -70,7 +70,7 @@ group_by_meta <- function(.data, ..., .add = FALSE,
   # has the name of the geometry column of the events)
   .data <- with_plain_meta(.data) # nolint: object_usage_linter.
   meta <- show_meta(.data)
-  track_id_col <- move2::mt_track_id_column(.data)
+  track_id_col <- colname_track_id(.data)
   dots <- rlang::enquos(...)
   # variables given by name that are not in the metadata, but in the events
   # (e.g. moved there by an earlier call of group_by_meta()), are to be
@@ -100,8 +100,8 @@ group_by_meta <- function(.data, ..., .add = FALSE,
   to_move <- setdiff(group_cols, track_id_col)
   .data <- move2::mt_set_track_data(.data, meta)
   # move the other grouping variables from the metadata to the events; those
-  # that are already columns of the events (e.g. moved there by
-  # as_event_column() with .keep = TRUE) are kept in the events, if they have
+  # that are already columns of the events (e.g. copied there with move2) are
+  # kept in the events, if they have
   # the same values as in the metadata, and only removed from the metadata
   # (otherwise, an error is raised)
   if (length(to_move) > 0) {

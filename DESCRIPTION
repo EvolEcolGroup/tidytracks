@@ -32,6 +32,7 @@ Imports:
   geodist,
   ggplot2,
   gganimate,
+  lifecycle,
   lwgeom,
   methods,
   MASS,

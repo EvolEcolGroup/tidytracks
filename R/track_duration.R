@@ -41,7 +41,7 @@ track_duration <- function(x, units = as_units(1, "days")) {
   # are alphabetical, not by the tracks' order in the metadata (which can also
   # differ from the order in which they appear in the events table, e.g. after
   # tt_order_time()). Reorder to match the metadata.
-  track_order <- as.character(show_meta(x)[[move2::mt_track_id_column(x)]])
+  track_order <- as.character(show_meta(x)[[colname_track_id(x)]])
   tot_duration <- tot_duration[track_order]
 
   # Convert the duration (difftime) to the specified units

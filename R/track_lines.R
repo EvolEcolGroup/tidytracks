@@ -30,7 +30,7 @@ track_lines <- function(x, ...) {
   # (e.g. the levels of factor ids), which can differ from the order of the
   # tracks in the metadata (e.g. after tt_order_time()): reorder to match the
   # metadata
-  track_id_column <- move2::mt_track_id_column(x)
+  track_id_column <- colname_track_id(x)
   lines[order(match(
     as.character(lines[[track_id_column]]),
     as.character(show_meta(x)[[track_id_column]])

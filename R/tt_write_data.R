@@ -60,7 +60,7 @@ tt_write_data <- function(x, file_prefix, combined = FALSE) {
   }
 
   # Write event table
-  time_col <- move2::mt_time_column(x)
+  time_col <- colname_time(x)
   invisible(
     utils::write.csv(
       cbind(
