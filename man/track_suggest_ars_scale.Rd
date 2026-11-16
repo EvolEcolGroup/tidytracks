@@ -14,7 +14,7 @@ track_suggest_ars_scale(
 }
 \arguments{
 \item{x}{A move2 object, as for \code{\link[=track_fpt_profile]{track_fpt_profile()}}, or a tibble of class
-\code{fpt_profile_tbl}, as returned by it.}
+\code{fpt_profile_tbl}, as returned by it (its rows can be in any order).}
 
 \item{radii}{The radii, as for \code{\link[=track_fpt_profile]{track_fpt_profile()}}. Only used if \code{x} is a
 move2 object.}

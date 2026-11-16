@@ -17,7 +17,7 @@
 #' radius.
 #'
 #' @param x A move2 object, as for [track_fpt_profile()], or a tibble of class
-#'   `fpt_profile_tbl`, as returned by it.
+#'   `fpt_profile_tbl`, as returned by it (its rows can be in any order).
 #' @param radii The radii, as for [track_fpt_profile()]. Only used if `x` is a
 #'   move2 object.
 #' @param method The peak to select if there are several: "first" (the default;
@@ -67,6 +67,9 @@ track_suggest_ars_scale <- function(
   scales <- vapply(
     rows_by_id,
     function(rows) {
+      # in increasing order of radius, as the rows of the profile may have
+      # been reordered (e.g. with dplyr::arrange())
+      rows <- rows[order(as.numeric(radius[rows]))]
       peak <- fpt_peak(profile$var_log_fpt[rows], method, peak_width)
       # the radius of the peak, rather than its position among the radii
       as.numeric(radius[rows])[peak]

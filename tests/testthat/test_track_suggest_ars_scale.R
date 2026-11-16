@@ -51,6 +51,13 @@ test_that("track_suggest_ars_scale returns radii, named and in order", {
     as.numeric(track_suggest_ars_scale(profile, method = "max")),
     c(20000, 20000)
   )
+  # rows reordered by the user are taken in order of radius: the first peak
+  # is still at 10 km, not at the 20 km of the reversed rows
+  reordered <- dplyr::arrange(profile, dplyr::desc(radius))
+  expect_identical(
+    track_suggest_ars_scale(reordered),
+    track_suggest_ars_scale(profile)
+  )
   # a track without a peak gets NA
   profile$var_log_fpt[profile$id == "a"] <- seq(6, 1)
   expect_true(is.na(track_suggest_ars_scale(profile)[["a"]]))
