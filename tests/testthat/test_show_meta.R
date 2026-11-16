@@ -53,10 +53,13 @@ test_that("show_meta<- rejects more than one row per track", {
 
 test_that("drop_duplicated_columns keeps the columns of each table apart", {
   # columns in both tables: sex with the same values, nest_lon with
-  # different ones, and the time column of the events
-  x <- as_event_column(example_tt, sex, nest_lon, .keep = TRUE)
+  # different ones, and the time column of the events (set with move2, as
+  # tidytracks keeps the columns apart)
+  x <- move2::mt_as_event_attribute(example_tt, sex, nest_lon, .keep = TRUE)
   x$nest_lon <- 0
-  show_meta(x)$date_time <- show_meta(x)$nest_lat
+  meta <- show_meta(x)
+  meta$date_time <- meta$nest_lat
+  x <- move2::mt_set_track_data(x, meta)
   expect_warning(
     result <- drop_duplicated_columns(x),
     "'date_time', 'nest_lon' are both in the events and in the metadata"
@@ -71,6 +74,40 @@ test_that("drop_duplicated_columns keeps the columns of each table apart", {
     names(show_meta(result)),
     c("track_id", "sex", "nest_lon.meta", "nest_lat", "date_time.meta")
   )
+  # a column that the events are grouped by is kept in the events only
+  x <- move2::mt_as_event_attribute(example_tt, sex, .keep = TRUE)
+  x <- dplyr::group_by(x, sex)
+  expect_no_message(result <- drop_duplicated_columns(x))
+  expect_equal(dplyr::group_vars(result), "sex")
+  expect_equal(result$sex, x$sex)
+  expect_false("sex" %in% names(show_meta(result)))
   # without columns in both tables, nothing changes
   expect_equal(drop_duplicated_columns(example_tt), example_tt)
+})
+
+test_that("show_meta<- keeps the track id as the only column in both tables", {
+  # a column of the new metadata with the same values as in the events is
+  # removed from the events
+  test_tt <- as_event_column(example_tt, sex)
+  meta <- show_meta(test_tt)
+  meta$sex <- show_meta(example_tt)$sex
+  show_meta(test_tt) <- meta
+  expect_false("sex" %in% names(test_tt))
+  expect_equal(show_meta(test_tt)$sex, show_meta(example_tt)$sex)
+  expect_equal(nrow(test_tt), nrow(example_tt))
+  # with different values, the version in the metadata is renamed
+  test_tt <- as_event_column(example_tt, sex)
+  expect_warning(
+    show_meta(test_tt)$sex <- "unknown",
+    "the version(s) in the metadata are renamed 'sex.meta'",
+    fixed = TRUE
+  )
+  expect_equal(test_tt$sex, as_event_column(example_tt, sex)$sex)
+  expect_equal(show_meta(test_tt)$sex.meta, rep("unknown", 3))
+  # if the events are grouped by it, it is removed from the metadata
+  test_tt <- group_by_meta(example_tt, sex)
+  show_meta(test_tt)$sex <- show_meta(example_tt)$sex
+  expect_equal(dplyr::group_vars(test_tt), "sex")
+  expect_true("sex" %in% names(test_tt))
+  expect_false("sex" %in% names(show_meta(test_tt)))
 })

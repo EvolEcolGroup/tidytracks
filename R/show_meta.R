@@ -17,6 +17,16 @@
 #' (e.g. `geometry`, the default name of the geometry of an `sf` table) would
 #' replace it when joined to the events, so it is renamed with a `.meta`
 #' suffix (e.g. `geometry.meta`), with a message.
+#'
+#' The only column that the events and the metadata should share is the track
+#' id. When setting the metadata, a column that is also in the events is
+#' removed from the events if it has the same values (for the events of each
+#' track), as it is information about the tracks; if the events are grouped by
+#' it, it is removed from the metadata instead. A column with different values
+#' (e.g. that varies within tracks) is kept in both tables, with the version in
+#' the metadata renamed with a `.meta` suffix, with a warning. (To make
+#' another column the track id with [move2::mt_set_track_id_column()], which
+#' needs it in both tables, add it to the events after setting the metadata.)
 #' @param x A move2 object
 #' @return The metadata table from the input `move2` object (nothing is
 #' returned if using the setter function).
@@ -45,6 +55,10 @@ show_meta <- move2::mt_track_data
   }
   value <- plain_meta(value, attr(x, "sf_column"))
   x <- move2::mt_set_track_data(x, value)
+  # the only column in both the events and the metadata should be the track
+  # id: remove (or rename) the columns of the new metadata that are also in
+  # the events
+  x <- drop_duplicated_columns(x)
   return(x)
 }
 
@@ -114,7 +128,7 @@ with_plain_meta <- function(x) {
 #' @noRd
 event_meta_rows <- function(x, meta = show_meta(x)) {
   event_ids <- move2::mt_track_id(x)
-  meta_ids <- meta[[move2::mt_track_id_column(x)]]
+  meta_ids <- meta[[colname_track_id(x)]]
   if (is.factor(event_ids)) {
     # use the codes of the factor of the track ids, which is much faster for
     # many events
@@ -159,7 +173,7 @@ same_column_values <- function(x, y) {
 check_same_in_both <- function(x, cols) {
   meta <- show_meta(x)
   cols <- intersect(intersect(cols, names(x)), names(meta))
-  cols <- setdiff(cols, move2::mt_track_id_column(x))
+  cols <- setdiff(cols, colname_track_id(x))
   if (length(cols) == 0) {
     return(character(0))
   }
@@ -185,10 +199,11 @@ check_same_in_both <- function(x, cols) {
 #' The only column that the events and the metadata of a `move2` object should
 #' share is the track id. A column in both tables with the same values (for
 #' the events of each track), i.e. information about the tracks, is removed
-#' from the events and kept in the metadata. A column with different values
-#' (e.g. that varies within tracks), or with the name of the time or geometry
-#' column of the events, is kept in both tables, with the version in the
-#' metadata renamed with a `.meta` suffix, with a warning.
+#' from the events and kept in the metadata, unless the events are grouped by
+#' it, in which case it is removed from the metadata. A column with different
+#' values (e.g. that varies within tracks), or with the name of the time or
+#' geometry column of the events, is kept in both tables, with the version in
+#' the metadata renamed with a `.meta` suffix, with a warning.
 #'
 #' @param x A `move2` object.
 #' @returns `x`, without columns in both tables.
@@ -198,14 +213,14 @@ drop_duplicated_columns <- function(x) {
   meta <- show_meta(x)
   shared <- setdiff(
     intersect(names(x), names(meta)),
-    move2::mt_track_id_column(x)
+    colname_track_id(x)
   )
   if (length(shared) == 0) {
     return(x)
   }
   meta_rows <- event_meta_rows(x, meta)
   # the time and the geometry of the events stay in the events
-  in_events_only <- c(move2::mt_time_column(x), attr(x, "sf_column"))
+  in_events_only <- c(colname_time(x), attr(x, "sf_column"))
   same <- vapply(
     shared,
     function(col) {
@@ -214,10 +229,15 @@ drop_duplicated_columns <- function(x) {
     },
     logical(1)
   )
-  # information about the tracks is kept in the metadata only
-  if (any(same)) {
-    x <- dplyr::select(x, -dplyr::all_of(shared[same]))
+  # information about the tracks is kept in the metadata only, unless the
+  # events are grouped by it (dplyr::select() would keep it in the events), in
+  # which case it is kept in the events only
+  same_cols <- shared[same]
+  in_groups <- same_cols %in% dplyr::group_vars(x)
+  if (any(!in_groups)) {
+    x <- dplyr::select(x, -dplyr::all_of(same_cols[!in_groups]))
   }
+  meta <- meta[setdiff(names(meta), same_cols[in_groups])]
   # columns with different values are kept in both tables, renaming the
   # version in the metadata
   if (any(!same)) {
@@ -231,6 +251,8 @@ drop_duplicated_columns <- function(x) {
       call. = FALSE
     )
     names(meta)[match(renamed, names(meta))] <- new_names
+  }
+  if (any(in_groups) || any(!same)) {
     x <- move2::mt_set_track_data(x, meta)
   }
   x
