@@ -4,7 +4,7 @@
 \alias{track_fpt_profile}
 \title{Compute how the variance of the first passage time changes with the radius}
 \usage{
-track_fpt_profile(x, radii = NULL)
+track_fpt_profile(x, radii = NULL, min_prop_valid = 0.5)
 }
 \arguments{
 \item{x}{A move2 object in a projected coordinate reference system, ordered
@@ -20,6 +20,12 @@ locations and half the diagonal of the bounding box of its largest track,
 in the units of the projection of \code{x} (see Details). Tracks (or groups)
 for which these radii cannot be computed (e.g. with fewer than three
 locations) get a single row with missing values, and a warning.}
+
+\item{min_prop_valid}{The smallest proportion of the events of a track (or
+group) that must have an FPT at a radius for its variance to be used by
+\code{\link[=track_suggest_ars_scale]{track_suggest_ars_scale()}} and drawn as solid by \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}
+(column \code{enough_events}). The default is 0.5. Events without a location,
+or in the dummy trips of \code{\link[=tt_split_trips]{tt_split_trips()}}, are not counted.}
 }
 \value{
 A tibble of class \code{fpt_profile_tbl}, with one row per track (or
@@ -35,6 +41,8 @@ for the default radii)
 \item \code{var_log_fpt}: the variance of the log of the FPT (which does not depend
 on the units of the FPT); \code{NA} if fewer than two events have an FPT
 \item \code{n_valid}: the number of events with an FPT
+\item \code{enough_events}: whether at least \code{min_prop_valid} of the events of the
+track (or group), and at least two, have an FPT
 }
 }
 \description{
@@ -69,7 +77,10 @@ events have an FPT (see column \code{n_valid}), and those that do are the
 events far from the ends of the track. Few events have an FPT for radii
 larger than half the extent of a track. The default radii end at half the
 diagonal of the bounding box of the track (of the largest track, for a
-group).
+group). Where the number of events with an FPT falls steeply, the
+variance can jump, so a radius is only used (column \code{enough_events}, see
+\code{min_prop_valid}) if at least half of the events of the track (or group)
+have an FPT at it.
 \item Radii suited to one track can be unsuited to another (e.g. tracks with
 different sampling intervals, or an animal that left the study area), so
 each track or group gets its own default radii.

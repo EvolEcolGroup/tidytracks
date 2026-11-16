@@ -29,7 +29,10 @@
 #'   events far from the ends of the track. Few events have an FPT for radii
 #'   larger than half the extent of a track. The default radii end at half the
 #'   diagonal of the bounding box of the track (of the largest track, for a
-#'   group).
+#'   group). Where the number of events with an FPT falls steeply, the
+#'   variance can jump, so a radius is only used (column `enough_events`, see
+#'   `min_prop_valid`) if at least half of the events of the track (or group)
+#'   have an FPT at it.
 #' - Radii suited to one track can be unsuited to another (e.g. tracks with
 #'   different sampling intervals, or an animal that left the study area), so
 #'   each track or group gets its own default radii.
@@ -62,6 +65,11 @@
 #'   in the units of the projection of `x` (see Details). Tracks (or groups)
 #'   for which these radii cannot be computed (e.g. with fewer than three
 #'   locations) get a single row with missing values, and a warning.
+#' @param min_prop_valid The smallest proportion of the events of a track (or
+#'   group) that must have an FPT at a radius for its variance to be used by
+#'   [track_suggest_ars_scale()] and drawn as solid by [ggplot2::autoplot()]
+#'   (column `enough_events`). The default is 0.5. Events without a location,
+#'   or in the dummy trips of [tt_split_trips()], are not counted.
 #' @returns A tibble of class `fpt_profile_tbl`, with one row per track (or
 #'   group) and radius, and columns:
 #' - the id of the track or group (as named in `x`; if `x` is grouped by
@@ -74,6 +82,8 @@
 #' - `var_log_fpt`: the variance of the log of the FPT (which does not depend
 #'   on the units of the FPT); `NA` if fewer than two events have an FPT
 #' - `n_valid`: the number of events with an FPT
+#' - `enough_events`: whether at least `min_prop_valid` of the events of the
+#'   track (or group), and at least two, have an FPT
 #' @seealso [event_fpt()], [track_suggest_ars_scale()]
 #' @export
 #' @examples
@@ -82,8 +92,17 @@
 #' profile
 #' library(ggplot2)
 #' autoplot(profile)
-track_fpt_profile <- function(x, radii = NULL) {
+track_fpt_profile <- function(x, radii = NULL, min_prop_valid = 0.5) {
   check_fpt_x(x)
+  if (
+    !is.numeric(min_prop_valid) ||
+      length(min_prop_valid) != 1 ||
+      !is.finite(min_prop_valid) ||
+      min_prop_valid <= 0 ||
+      min_prop_valid > 1
+  ) {
+    stop("min_prop_valid must be a single number between 0 (excluded) and 1")
+  }
   crs_units <- sf::st_crs(x)$ud_unit
   if (!is.null(radii)) {
     # the same radii for all the groups, returned in the units in which they
@@ -122,12 +141,24 @@ track_fpt_profile <- function(x, radii = NULL) {
     }
     if (is.null(group_radii)) {
       # no radii: a single row with missing values
-      return(list(radii = NA_real_, variance = NA_real_, n_valid = 0))
+      return(list(
+        radii = NA_real_,
+        variance = NA_real_,
+        n_valid = 0,
+        enough_events = FALSE
+      ))
     }
     log_fpt <- log(fpt_matrix_of_rows(events, rows, group_radii))
     # e.g. a time of 0, from locations with duplicated times on both sides
     log_fpt[!is.finite(log_fpt)] <- NA_real_
-    c(list(radii = group_radii), fpt_variance(log_fpt))
+    stats <- fpt_variance(log_fpt)
+    # radii at which enough of the events of the group have an FPT
+    min_valid <- max(2, min_prop_valid * sum(events$usable[rows]))
+    c(
+      list(radii = group_radii),
+      stats,
+      list(enough_events = stats$n_valid >= min_valid)
+    )
   })
 
   # groups with usable events, but without default radii
@@ -158,7 +189,8 @@ track_fpt_profile <- function(x, radii = NULL) {
     ),
     radius = units::set_units(radius, radius_units, mode = "standard"),
     var_log_fpt = unlist(lapply(stats_by_group, `[[`, "variance")),
-    n_valid = unlist(lapply(stats_by_group, `[[`, "n_valid"))
+    n_valid = unlist(lapply(stats_by_group, `[[`, "n_valid")),
+    enough_events = unlist(lapply(stats_by_group, `[[`, "enough_events"))
   )
   if (length(dplyr::group_vars(x)) == 1) {
     names(profile)[1] <- dplyr::group_vars(x)
@@ -231,7 +263,10 @@ fpt_default_radii <- function(events, rows) {
 #' Plots the variance of the log of the first passage time against the radius,
 #' on a log scale, with one line per track (or group) and, if there is more than
 #' one and they share the same radii (e.g. set with the argument `radii` of
-#' [track_fpt_profile()]), their median at each radius.
+#' [track_fpt_profile()]), their median at each radius. Radii at which too few
+#' events have an FPT (column `enough_events`, see the argument
+#' `min_prop_valid` of [track_fpt_profile()]) are drawn with a dashed line,
+#' and left out of the median.
 #'
 #' @param object A tibble of class `fpt_profile_tbl`, as created with
 #'   [track_fpt_profile()].
@@ -248,20 +283,32 @@ autoplot.fpt_profile_tbl <- function(object, ...) {
   to_plot <- data.frame(
     id = as.character(object[[1]]),
     radius = as.numeric(object$radius),
-    variance = object$var_log_fpt
+    variance = object$var_log_fpt,
+    enough = object$enough_events
   )
   to_plot <- to_plot[!is.na(to_plot$variance), ]
+  # the variance at the radii with enough events, NA elsewhere, so that the
+  # solid lines break at the other radii
+  to_plot$solid <- ifelse(to_plot$enough, to_plot$variance, NA_real_)
+  several <- length(unique(to_plot$id)) > 1
   p <- ggplot2::ggplot(
     to_plot,
-    ggplot2::aes(x = .data$radius, y = .data$variance)
-  )
-  if (length(unique(to_plot$id)) > 1) {
-    p <- p +
-      ggplot2::geom_line(
-        ggplot2::aes(group = .data$id),
-        colour = "grey60",
-        linewidth = 0.3
-      )
+    ggplot2::aes(x = .data$radius, group = .data$id)
+  ) +
+    # all the radii, dashed, under the radii with enough events
+    ggplot2::geom_line(
+      ggplot2::aes(y = .data$variance),
+      colour = "grey70",
+      linetype = "dashed",
+      linewidth = 0.3
+    ) +
+    ggplot2::geom_line(
+      ggplot2::aes(y = .data$solid),
+      colour = if (several) "grey60" else "black",
+      linewidth = if (several) 0.3 else 1,
+      na.rm = TRUE
+    )
+  if (several) {
     # a median across groups only makes sense if they share their radii, which
     # the default radii, chosen for each group, do not
     radii_by_id <- split(as.numeric(object$radius), as.character(object[[1]]))
@@ -270,16 +317,21 @@ autoplot.fpt_profile_tbl <- function(object, ...) {
       function(r) identical(r, radii_by_id[[1]]),
       logical(1)
     ))
-    if (shared) {
+    enough_to_plot <- to_plot[to_plot$enough, ]
+    if (shared && nrow(enough_to_plot) > 0) {
       median_by_radius <- stats::aggregate(
         variance ~ radius,
-        to_plot,
+        enough_to_plot,
         stats::median
       )
-      p <- p + ggplot2::geom_line(data = median_by_radius, linewidth = 1)
+      p <- p +
+        ggplot2::geom_line(
+          data = median_by_radius,
+          ggplot2::aes(x = .data$radius, y = .data$variance),
+          inherit.aes = FALSE,
+          linewidth = 1
+        )
     }
-  } else {
-    p <- p + ggplot2::geom_line(linewidth = 1)
   }
   p +
     ggplot2::scale_x_log10() +

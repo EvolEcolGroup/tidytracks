@@ -21,7 +21,8 @@ create_fpt_profile <- function(ids = c("b", "a")) {
     id = rep(ids, each = length(radii)),
     radius = rep(radii, times = length(ids)),
     var_log_fpt = rep(c(1, 3, 2, 4, 1, 0), times = length(ids)),
-    n_valid = 10
+    n_valid = 10,
+    enough_events = TRUE
   )
   class(profile) <- c("fpt_profile_tbl", class(profile))
   profile
@@ -57,6 +58,14 @@ test_that("track_suggest_ars_scale returns radii, named and in order", {
   expect_identical(
     track_suggest_ars_scale(reordered),
     track_suggest_ars_scale(profile)
+  )
+  # radii without enough events are not used: the highest peak (20 km) of
+  # track a has too few events, so its next highest (10 km) is used
+  few <- profile
+  few$enough_events[few$id == "a" & as.numeric(few$radius) == 20] <- FALSE
+  expect_equal(
+    as.numeric(track_suggest_ars_scale(few, method = "max")),
+    c(20000, 10000)
   )
   # a track without a peak gets NA
   profile$var_log_fpt[profile$id == "a"] <- seq(6, 1)

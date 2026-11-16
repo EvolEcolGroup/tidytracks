@@ -8,7 +8,8 @@
 #' inspect the profile with [ggplot2::autoplot()], and check the suggestion
 #' against what is known about the species. Noise can produce small peaks,
 #' especially with many radii and at the largest radii, which are based on few
-#' events. Not all species use ARS.
+#' events: radii at which too few events have an FPT (column `enough_events` of
+#' the profile, see `min_prop_valid`) are not used. Not all species use ARS.
 #'
 #' To use the suggestion as the bandwidth of [hr_tt_kde()], note that the
 #' bandwidth is the standard deviation of a Gaussian kernel rather than the
@@ -18,8 +19,8 @@
 #'
 #' @param x A move2 object, as for [track_fpt_profile()], or a tibble of class
 #'   `fpt_profile_tbl`, as returned by it (its rows can be in any order).
-#' @param radii The radii, as for [track_fpt_profile()]. Only used if `x` is a
-#'   move2 object.
+#' @param radii,min_prop_valid As for [track_fpt_profile()]. Only used if `x`
+#'   is a move2 object.
 #' @param method The peak to select if there are several: "first" (the default;
 #'   the one at the smallest radius), "max" (the highest), or "steep" (the one
 #'   around which the variance changes the most).
@@ -39,6 +40,7 @@
 track_suggest_ars_scale <- function(
   x,
   radii = NULL,
+  min_prop_valid = 0.5,
   method = c("first", "max", "steep"),
   peak_width = 1,
   units = as_units("m")
@@ -59,9 +61,15 @@ track_suggest_ars_scale <- function(
   profile <- if (inherits(x, "fpt_profile_tbl")) {
     x
   } else {
-    track_fpt_profile(x, radii = radii)
+    track_fpt_profile(x, radii = radii, min_prop_valid = min_prop_valid)
   }
   radius <- units::set_units(profile$radius, units, mode = "standard")
+  # only the radii at which enough events have an FPT are used (all of them in
+  # a profile without the column, e.g. made by hand)
+  variance <- profile$var_log_fpt
+  if ("enough_events" %in% names(profile)) {
+    variance[!profile$enough_events] <- NA_real_
+  }
   # in the order of the profile, rather than sorted
   ids <- as.character(profile[[1]])
   rows_by_id <- split(seq_along(ids), factor(ids, levels = unique(ids)))
@@ -71,7 +79,7 @@ track_suggest_ars_scale <- function(
       # in increasing order of radius, as the rows of the profile may have
       # been reordered (e.g. with dplyr::arrange())
       rows <- rows[order(as.numeric(radius[rows]))]
-      peak <- fpt_peak(profile$var_log_fpt[rows], method, peak_width)
+      peak <- fpt_peak(variance[rows], method, peak_width)
       # the radius of the peak, rather than its position among the radii
       as.numeric(radius[rows])[peak]
     },

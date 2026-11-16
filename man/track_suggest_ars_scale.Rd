@@ -7,6 +7,7 @@
 track_suggest_ars_scale(
   x,
   radii = NULL,
+  min_prop_valid = 0.5,
   method = c("first", "max", "steep"),
   peak_width = 1,
   units = as_units("m")
@@ -16,8 +17,8 @@ track_suggest_ars_scale(
 \item{x}{A move2 object, as for \code{\link[=track_fpt_profile]{track_fpt_profile()}}, or a tibble of class
 \code{fpt_profile_tbl}, as returned by it (its rows can be in any order).}
 
-\item{radii}{The radii, as for \code{\link[=track_fpt_profile]{track_fpt_profile()}}. Only used if \code{x} is a
-move2 object.}
+\item{radii, min_prop_valid}{As for \code{\link[=track_fpt_profile]{track_fpt_profile()}}. Only used if \code{x}
+is a move2 object.}
 
 \item{method}{The peak to select if there are several: "first" (the default;
 the one at the smallest radius), "max" (the highest), or "steep" (the one
@@ -45,7 +46,8 @@ The suggestion is purely data-driven, and can strongly depend on \code{method}:
 inspect the profile with \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}, and check the suggestion
 against what is known about the species. Noise can produce small peaks,
 especially with many radii and at the largest radii, which are based on few
-events. Not all species use ARS.
+events: radii at which too few events have an FPT (column \code{enough_events} of
+the profile, see \code{min_prop_valid}) are not used. Not all species use ARS.
 
 To use the suggestion as the bandwidth of \code{\link[=hr_tt_kde]{hr_tt_kde()}}, note that the
 bandwidth is the standard deviation of a Gaussian kernel rather than the

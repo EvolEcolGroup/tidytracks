@@ -3,6 +3,9 @@ test_that("track_fpt_profile gives the correct errors", {
   expect_error(track_fpt_profile(example_tt), "must be in a projected")
   x <- as_ars_move2(simulate_ars_track("a", 2000, n_patches = 2))
   expect_error(track_fpt_profile(x, radii = 1000), "must be a units object")
+  for (prop in list(0, 1.5, NA, c(0.2, 0.5), "half")) {
+    expect_error(track_fpt_profile(x, min_prop_valid = prop), "min_prop_valid")
+  }
 })
 
 test_that("track_fpt_profile returns one row per track and radius", {
@@ -14,7 +17,10 @@ test_that("track_fpt_profile returns one row per track and radius", {
   radii <- as_units(c(2, 1, 5), "km")
   profile <- track_fpt_profile(x, radii = radii)
   expect_s3_class(profile, "fpt_profile_tbl")
-  expect_named(profile, c("id", "radius", "var_log_fpt", "n_valid"))
+  expect_named(
+    profile,
+    c("id", "radius", "var_log_fpt", "n_valid", "enough_events")
+  )
   expect_identical(nrow(profile), 6L)
   # in the order of the tracks in the metadata, with sorted radii in their units
   expect_identical(
@@ -42,7 +48,10 @@ test_that("groups pool the log FPT of their tracks, computed within tracks", {
   x <- as_ars_move2(df)
   radii <- as_units(c(1, 2, 5), "km")
   profile <- track_fpt_profile(dplyr::group_by(x, animal), radii = radii)
-  expect_named(profile, c("animal", "radius", "var_log_fpt", "n_valid"))
+  expect_named(
+    profile,
+    c("animal", "radius", "var_log_fpt", "n_valid", "enough_events")
+  )
   expect_identical(unique(profile$animal), c("first", "second"))
   # with a large radius, FPTs that ran across the tracks would differ
   fpt <- as.numeric(event_fpt(x, as_units(5, "km"), units = as_units("s")))
@@ -68,9 +77,10 @@ test_that("track_fpt_profile has default radii, and a plot", {
   ))
   p <- ggplot2::autoplot(track_fpt_profile(two, as_units(c(1, 2, 5), "km")))
   expect_s3_class(p, "ggplot")
-  expect_length(p$layers, 2)
-  # but not with the default radii, which differ between the tracks
-  expect_length(ggplot2::autoplot(track_fpt_profile(two))$layers, 1)
+  # all the radii (dashed), those with enough events, and the median
+  expect_length(p$layers, 3)
+  # but no median with the default radii, which differ between the tracks
+  expect_length(ggplot2::autoplot(track_fpt_profile(two))$layers, 2)
 })
 
 test_that("the default radii are chosen for each track, or group", {
@@ -119,4 +129,27 @@ test_that("the default radii are chosen for each track, or group", {
   expect_identical(sum(with_short$id == "c"), 1L)
   expect_true(is.na(with_short$var_log_fpt[with_short$id == "c"]))
   expect_identical(with_short$n_valid[with_short$id == "c"], 0)
+})
+
+test_that("radii need enough events with an FPT", {
+  df <- rbind(
+    simulate_ars_track("a", 2000, n_patches = 2),
+    simulate_ars_track("b", 2000, n_patches = 2, seed = 2)
+  )
+  x <- as_ars_move2(df)
+  radii <- as_units(c(1, 5, 10, 20, 40), "km")
+  # at least half of the events of each track, by default
+  profile <- track_fpt_profile(x, radii)
+  n_events <- as.numeric(table(df$id)[profile$id])
+  expect_identical(profile$enough_events, profile$n_valid >= 0.5 * n_events)
+  # the largest radii have too few events in this track
+  expect_true(any(profile$enough_events))
+  expect_false(all(profile$enough_events))
+  # or another proportion
+  strict <- track_fpt_profile(x, radii, min_prop_valid = 0.9)
+  expect_identical(strict$enough_events, strict$n_valid >= 0.9 * n_events)
+  expect_lt(sum(strict$enough_events), sum(profile$enough_events))
+  # the variance is still given, and the plot shows those radii dashed
+  expect_false(anyNA(profile$var_log_fpt[profile$n_valid >= 2]))
+  expect_s3_class(ggplot2::autoplot(profile), "ggplot")
 })
