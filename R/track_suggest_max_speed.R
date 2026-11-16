@@ -63,7 +63,7 @@ track_suggest_max_speed <- function(
 
   # get the track ids before removing events without a location, which could
   # remove whole tracks: these tracks then get NA
-  track_ids <- as.character(show_meta(x)[[move2::mt_track_id_column(x)]])
+  track_ids <- as.character(show_meta(x)[[colname_track_id(x)]])
   # move2utils gives an error for events without a location; once they are
   # dropped, the steps are taken between the located events on either side
   x <- x[!sf::st_is_empty(x), ]

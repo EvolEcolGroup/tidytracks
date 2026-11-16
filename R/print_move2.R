@@ -192,8 +192,8 @@ print_move2_tt <- function(
     cli::format_message(
       paste0(
         "A {.cls move2} with `track_id_column` ",
-        "{.val {move2::mt_track_id_column(x)}} and `time_column` ",
-        "{.val {move2::mt_time_column(x)}}"
+        "{.val {colname_track_id(x)}} and `time_column` ",
+        "{.val {colname_time(x)}}"
       )
     ),
     "\n",

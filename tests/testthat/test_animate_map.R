@@ -82,7 +82,7 @@ test_that("geom_event_path drops one row per track", {
       drop_final_point = TRUE
     )
   layer_data <- p$layers[[1]]$data
-  n_tracks <- length(unique(x[[move2::mt_track_id_column(x)]]))
+  n_tracks <- length(unique(x[[colname_track_id(x)]]))
   expect_equal(nrow(layer_data), nrow(x) - n_tracks)
 })
 
@@ -90,8 +90,8 @@ test_that("geom_event_path preserves track ID and time columns", {
   p <- ggplot2::ggplot() +
     geom_event_path(data = x, ggplot2::aes(colour = bird_id))
   layer_data <- p$layers[[1]]$data
-  expect_true(move2::mt_track_id_column(x) %in% names(layer_data))
-  expect_true(move2::mt_time_column(x) %in% names(layer_data))
+  expect_true(colname_track_id(x) %in% names(layer_data))
+  expect_true(colname_time(x) %in% names(layer_data))
 })
 
 # ===========================================================================
@@ -148,12 +148,12 @@ test_that("tt_detect_layer_type identifies an event point", {
 
 test_that("tt_detect_layer_type gets path time columns", {
   result <- tt_detect_layer_type(make_paths_map(x))
-  expect_equal(result$time_col, move2::mt_time_column(x))
+  expect_equal(result$time_col, colname_time(x))
 })
 
 test_that("tt_detect_layer_type gets point time columns", {
   result <- tt_detect_layer_type(make_points_map(x))
-  expect_equal(result$time_col, move2::mt_time_column(x))
+  expect_equal(result$time_col, colname_time(x))
 })
 
 test_that("tt_detect_layer_type ignores preceding static layers", {

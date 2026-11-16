@@ -128,7 +128,7 @@ hr_tt_kde <- function(
   # if x is not grouped, use the track ID column as grouping variable
   by_track <- !inherits(x, "grouped_df")
   if (by_track) {
-    x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
+    x <- dplyr::group_by(x, .data[[colname_track_id(x)]])
   }
   # per-group values (h, bbox and res) are matched to the groups by their
   # position in the order in which they are returned, so every group listed

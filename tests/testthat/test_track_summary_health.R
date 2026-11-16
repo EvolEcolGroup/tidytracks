@@ -16,7 +16,7 @@ test_that("track_summary_health returns a data frame with expected columns", {
   expect_true(inherits(result, "tbl_df"))
   # define the expected columns
   expected_columns <- c(
-    move2::mt_track_id_column(test_tt),
+    colname_track_id(test_tt),
     "median_sampling_interval",
     "track_duration",
     "expected_points",

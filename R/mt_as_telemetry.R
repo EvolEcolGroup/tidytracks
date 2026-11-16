@@ -67,7 +67,7 @@ mt_as_telemetry <- function(x, error_cols = "auto", ...) {
   # we work on the full set of events, ignoring any grouping
   x <- dplyr::ungroup(x)
   # the track ids in the order of the metadata (used to order the output)
-  meta_ids <- as.character(show_meta(x)[[move2::mt_track_id_column(x)]])
+  meta_ids <- as.character(show_meta(x)[[colname_track_id(x)]])
   # the names of the columns with information on the location error
   error_cols <- ctmm_error_cols(x, error_cols)
 

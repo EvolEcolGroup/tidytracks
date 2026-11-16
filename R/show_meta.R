@@ -33,7 +33,7 @@ show_meta <- move2::mt_track_data
 "show_meta<-" <- function(x, value) {
   # move2::mt_set_track_data() checks that the metadata has all the tracks,
   # and no others, but not that it has a single row per track
-  track_ids <- value[[move2::mt_track_id_column(x)]]
+  track_ids <- value[[colname_track_id(x)]]
   duplicated_ids <- unique(track_ids[duplicated(track_ids)])
   if (length(duplicated_ids) > 0) {
     stop(

@@ -55,7 +55,7 @@ geom_event_point <- function(
   # Tag so animate_map() can identify this as a tidytracks track layer.
   attr(data, "tidytracks_geom") <- "event_point"
   attr(data, "tidytracks_data_name") <- data_name
-  attr(data, "tidytracks_time_col") <- move2::mt_time_column(data)
+  attr(data, "tidytracks_time_col") <- colname_time(data)
 
   ggplot2::geom_sf(
     mapping = mapping,
