@@ -58,7 +58,7 @@ error. The rule and its reasons are in `dev_notes/isopleths.md`.
 Lizzie's first passage time functions (`event_fpt()`, `track_fpt_profile()`,
 `track_suggest_ars_scale()`; branch `fpt`), reviewed on 12 real datasets.
 
-**Status.** Branch `codereview_fpt` (from `fpt`, pushed 16 Nov, no PR) holds
+**Status.** Branch `codereview_fpt` (from `fpt`; PR #101 into `fpt`) holds
 the review's fixes, an exact C++ speed-up (9× faster on a 72k-fix track,
 about linear in track length), three new defaults decided by Andrea (radii per
 track, at least half of the locations per radius, the highest peak), new
@@ -68,8 +68,8 @@ tests). Report: `dev_notes/code_review_fpt_2026-11.md` on that branch.
 
 **Next steps**
 - [ ] **P1** [andrea] Send Lizzie the note (Claude doc "FPT review: note to Lizzie", private until shared), so that she reviews `codereview_fpt`: the article, then the report's list of commits.
-- [ ] **P2** [review] Merge `codereview_fpt` into `fpt`, then open a PR of `fpt` into `dev`: expect a small conflict with #99 in `.Rbuildignore`, and add the report to `dev_notes/README.md`.
-- [ ] **P3** [cleanup] Delete the local branch `codereview_fpt_speedup` (merged into `codereview_fpt`), and `codereview_fpt` once merged.
+- [ ] **P2** [review] Merge #101 into `fpt`, then open a PR of `fpt` into `dev`: expect a small conflict with #99 in `.Rbuildignore`, and add the report to `dev_notes/README.md`.
+- [ ] **P3** [cleanup] Delete `codereview_fpt` once #101 is merged.
 
 ## Developer notes
 

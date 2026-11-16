@@ -16,8 +16,7 @@ documents listed in `README.md`.
 | `dev_notes` | this `dev_notes/`, with the notes moved out of `data-raw/` | `dev` | yes | no (PR #99) |
 | `move2utilsbug` | two draft move2utils bug reports, now copied to `dev_notes/` | `main` | yes | no (no PR) |
 | `fpt` | Lizzie: first passage time; reviewed in `codereview_fpt` | `dev` | yes | no |
-| `codereview_fpt` | review of `fpt`: fixes, speed-up, new defaults, article; report in `dev_notes/code_review_fpt_2026-11.md` | `fpt` | yes | no (no PR) |
-| `codereview_fpt_speedup` | the C++ speed-up of the review | `codereview_fpt` at `9a5bede` | no (local) | into `codereview_fpt` (`411b28b`) |
+| `codereview_fpt` | review of `fpt`: fixes, speed-up, new defaults, article; report in `dev_notes/code_review_fpt_2026-11.md` | `fpt` | yes | no (PR #101) |
 | `get_data_ready_vignette` | Paul: vignette text (January 2026) | — | yes | no |
 | `tt_and_move2_diffs` | Holly: wording (September 2026) | — | yes | no |
 
@@ -60,7 +59,7 @@ The next steps of `summary.md`, in the same order and with the same labels.
 - **Done when:** Lizzie has reviewed the branch and ticked the report's boxes,
   or listed what to change.
 
-### 5. **P2** [review] Merge `codereview_fpt` into `fpt`, then `fpt` into `dev`
+### 5. **P2** [review] Merge #101 (`codereview_fpt`) into `fpt`, then `fpt` into `dev`
 
 - `codereview_fpt` is `fpt` plus the review: 28 commits (fixes, each with
   its test where one is possible, the merged speed-up and the report),
@@ -73,8 +72,8 @@ The next steps of `summary.md`, in the same order and with the same labels.
 
 ### 6. **P3** [cleanup] Branches of the FPT review
 
-- Delete the local `codereview_fpt_speedup` (merged into `codereview_fpt`),
-  and `codereview_fpt` and `fpt` once merged.
+- Delete `codereview_fpt` and `fpt` once merged (the speed-up branch is
+  already deleted).
 
 ### 7. **P2** [review] Merge #99 (`dev_notes`)
 

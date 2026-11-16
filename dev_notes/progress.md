@@ -3,6 +3,12 @@
 Log of major activity, newest first. Never rewrite old entries: add a
 correction as a new entry.
 
+## 2026-11-16 (laptopX1): PR #101 for the FPT review
+
+- **Done:** opened PR #101, `codereview_fpt` into `fpt`; deleted the local
+  `codereview_fpt_speedup` (merged into `codereview_fpt`).
+- **Notes changed:** `summary.md`, `handover.md`, `progress.md`.
+
 ## 2026-11-16 (laptopX1): review of the first passage time functions (`fpt`)
 
 - **Done:** reviewed Lizzie's `fea842f` on 12 real datasets; the FPTs equal
