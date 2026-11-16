@@ -125,17 +125,52 @@ is_trip_na <- function(track_id) {
 #' @keywords internal
 #' @noRd
 fpt_matrix <- function(x, radii) {
+  events <- fpt_events(x)
+  fpt_matrix_of_rows(events, seq_len(nrow(events$xy)), radii)
+}
+
+#' The coordinates, times and track ids of the events, for the FPT
+#'
+#' @param x A move2 object, checked with `check_fpt_x()`.
+#' @returns A list with `xy` (the matrix of coordinates), `time` (in seconds),
+#'   `ids` (the track ids, as characters) and `usable` (whether each event can
+#'   have an FPT: it has a location and is not in a dummy trip of events at the
+#'   centre).
+#' @keywords internal
+#' @noRd
+fpt_events <- function(x) {
   xy <- sf::st_coordinates(x)
-  time <- as.numeric(as.POSIXct(event_time(x)))
   ids <- as.character(event_track_id(x))
-  res <- matrix(NA_real_, nrow(xy), length(radii))
-  usable <- stats::complete.cases(xy) & !is_trip_na(ids)
-  # the events of each track, which are stored together and in time order
-  for (rows in split(which(usable), ids[usable])) {
-    res[rows, ] <- fpt_cpp( # nolint: object_usage_linter.
-      xy[rows, 1],
-      xy[rows, 2],
-      time[rows],
+  list(
+    xy = xy,
+    time = as.numeric(as.POSIXct(event_time(x))),
+    ids = ids,
+    usable = stats::complete.cases(xy) & !is_trip_na(ids)
+  )
+}
+
+#' First passage time of a set of events, for several radii
+#'
+#' @param events A list, as returned by `fpt_events()`.
+#' @param rows The rows of the events to use (e.g. those of a group), in
+#'   increasing order; the FPT is computed within each of their tracks.
+#' @param radii Numeric vector of radii in the units of the coordinates, in
+#'   increasing order.
+#' @returns A matrix with one row per event of `rows` and one column per
+#'   radius, with the FPT in seconds.
+#' @keywords internal
+#' @noRd
+fpt_matrix_of_rows <- function(events, rows, radii) {
+  res <- matrix(NA_real_, length(rows), length(radii))
+  # the positions within rows of the usable events, by track: the events of
+  # each track are stored together and in time order
+  positions <- which(events$usable[rows])
+  for (track in split(positions, events$ids[rows][positions])) {
+    event_rows <- rows[track]
+    res[track, ] <- fpt_cpp( # nolint: object_usage_linter.
+      events$xy[event_rows, 1],
+      events$xy[event_rows, 2],
+      events$time[event_rows],
       radii
     )
   }

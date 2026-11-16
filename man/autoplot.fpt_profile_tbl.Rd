@@ -18,7 +18,8 @@ A \code{ggplot} object.
 \description{
 Plots the variance of the log of the first passage time against the radius,
 on a log scale, with one line per track (or group) and, if there is more than
-one, their median at each radius.
+one and they share the same radii (e.g. set with the argument \code{radii} of
+\code{\link[=track_fpt_profile]{track_fpt_profile()}}), their median at each radius.
 }
 \examples{
 x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")

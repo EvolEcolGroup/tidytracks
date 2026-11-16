@@ -61,13 +61,62 @@ test_that("track_fpt_profile has default radii, and a plot", {
   expect_false(is.unsorted(as.numeric(profile$radius)))
   p <- ggplot2::autoplot(profile)
   expect_s3_class(p, "ggplot")
-  # with several tracks too, which adds their median
+  # with several tracks too, which adds their median if they share their radii
   two <- as_ars_move2(rbind(
     simulate_ars_track("a", 2000, n_patches = 2),
     simulate_ars_track("b", 2000, n_patches = 2, seed = 2)
   ))
-  expect_s3_class(
-    ggplot2::autoplot(track_fpt_profile(two, as_units(c(1, 2, 5), "km"))),
-    "ggplot"
+  p <- ggplot2::autoplot(track_fpt_profile(two, as_units(c(1, 2, 5), "km")))
+  expect_s3_class(p, "ggplot")
+  expect_length(p$layers, 2)
+  # but not with the default radii, which differ between the tracks
+  expect_length(ggplot2::autoplot(track_fpt_profile(two))$layers, 1)
+})
+
+test_that("the default radii are chosen for each track, or group", {
+  df <- rbind(
+    simulate_ars_track("a", 2000, n_patches = 2),
+    simulate_ars_track("b", 500, n_patches = 2, seed = 2)
   )
+  df$animal <- "first"
+  x <- as_ars_move2(df)
+  profile <- track_fpt_profile(x)
+  # from twice the median step to half the diagonal of the bounding box of
+  # each track
+  steps <- list()
+  half_diagonals <- list()
+  for (id in c("a", "b")) {
+    xy <- as.matrix(df[df$id == id, c("x", "y")])
+    steps[[id]] <- sqrt(rowSums(diff(xy)^2))
+    extent <- apply(xy, 2, function(v) diff(range(v)))
+    half_diagonals[[id]] <- sqrt(sum(extent^2)) / 2
+    radii <- as.numeric(profile$radius[profile$id == id])
+    expect_length(radii, 50)
+    expect_equal(min(radii), 2 * stats::median(steps[[id]][steps[[id]] > 0]))
+    expect_equal(max(radii), half_diagonals[[id]])
+  }
+  # a group pools the steps of its tracks (not across them), up to half the
+  # diagonal of its largest track
+  grouped <- track_fpt_profile(dplyr::group_by(x, animal))
+  pooled <- unlist(steps)
+  expect_equal(
+    min(as.numeric(grouped$radius)),
+    2 * stats::median(pooled[pooled > 0])
+  )
+  expect_equal(max(as.numeric(grouped$radius)), max(unlist(half_diagonals)))
+  # a track too short for the default radii gets a row of missing values
+  short <- data.frame(
+    id = "c",
+    x = 500000 + c(0, 100),
+    y = 5000000,
+    time = max(df$time) + c(300, 600),
+    animal = "second"
+  )
+  expect_warning(
+    with_short <- track_fpt_profile(as_ars_move2(rbind(df, short))),
+    "could not be computed for c"
+  )
+  expect_identical(sum(with_short$id == "c"), 1L)
+  expect_true(is.na(with_short$var_log_fpt[with_short$id == "c"]))
+  expect_identical(with_short$n_valid[with_short$id == "c"], 0)
 })
