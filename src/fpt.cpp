@@ -78,6 +78,13 @@ Rcpp::NumericMatrix fpt_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
   std::vector<double> after(n_radii);
   std::vector<double> before(n_radii);
   for (int i = 0; i < n; ++i) {
+    // let the user interrupt long computations: the time per location grows
+    // with the length of the track, as the search for the crossing of a large
+    // circle can run to its ends (checking every location would be wasteful,
+    // as the check itself takes time)
+    if (i % 1000 == 0) {
+      Rcpp::checkUserInterrupt();
+    }
     time_to_crossing(x.begin(), y.begin(), t.begin(), n, i, 1, radii.begin(),
                      n_radii, after.data());
     time_to_crossing(x.begin(), y.begin(), t.begin(), n, i, -1, radii.begin(),
