@@ -3,6 +3,23 @@
 Log of major activity, newest first. Never rewrite old entries: add a
 correction as a new entry.
 
+## 2026-11-16 (laptopX1): isopleths that cannot be drawn (#82)
+
+- **Done:** every isopleth that cannot be drawn is kept as a row, with an
+  empty geometry, an `NA` area, and a warning that gives the reason and a
+  remedy. This covers the KDE-based isopleths, MCP and LoCoH home ranges with
+  no area, and `hr_tt_dbbmm()` tracks too short for `window_size`. Levels
+  such as `1/3` are no longer rounded.
+- **Where:** branch `iso_empty_levels`, 7c171d6, PR #100, stacked on #98.
+- **Result:** the new tests fail on the old code. The test files of
+  `hr_tt_ud_iso`, `hr_tt_mcp`, `hr_tt_locoh` and `hr_tt_dbbmm` pass; the
+  rest is left to CI. The issue's example no longer fails with the default
+  binned KDE (#94), only with `method = "exact"`.
+- **Decisions:** the rule itself (Andrea). Area `NA` rather than 0 for empty
+  MCP and LoCoH polygons (Claude, applying the rule). The table of UDs of
+  `hr_tt_dbbmm()` still leaves out short tracks: a question for Andrea.
+- **Notes changed:** `summary.md`, `handover.md`.
+
 ## 2026-11-16 (laptopX1): Andrea's decisions on #92, and dev_notes/
 
 - **Done:**

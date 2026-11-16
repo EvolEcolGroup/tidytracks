@@ -12,6 +12,7 @@ documents listed in `README.md`.
 | `colname_functions` | #92 item 1: `colname_*()`, used across the package | `group_by_meta` | yes | no (PR #96) |
 | `no_duplicated_columns` | #92 item 2: one column per table, setter check, `.keep` deprecated | `colname_functions` (merged in) | yes | no (PR #97) |
 | `geom_meta_columns` | #92 item 4: metadata columns in the geoms, `meta_columns` | `no_duplicated_columns` (merged in) | yes | no (PR #98) |
+| `iso_empty_levels` | #82: isopleths that cannot be drawn kept as empty rows, with a warning | `geom_meta_columns` | yes | no (PR #100) |
 | `dev_notes` | this `dev_notes/`, with the notes moved out of `data-raw/` | `dev` | yes | no (PR #99) |
 | `move2utilsbug` | two draft move2utils bug reports, now copied to `dev_notes/` | `main` | yes | no (no PR) |
 | `fpt` | Lizzie: first passage time, under review in another session | `dev` | yes | no |
@@ -44,15 +45,29 @@ The next steps of `summary.md`, in the same order and with the same labels.
 ### 3. **P3** [cleanup] Branches
 
 - After the merges, delete `group_by_meta`, `colname_functions`,
-  `no_duplicated_columns`, `geom_meta_columns`, `benchmark-sizes` and
-  `inbound` on origin, and `move2utilsbug` once its reports are filed.
+  `no_duplicated_columns`, `geom_meta_columns`, `iso_empty_levels`,
+  `benchmark-sizes` and `inbound` on origin, and `move2utilsbug` once its reports are filed.
 
-### 4. **P2** [review] Merge #99 (`dev_notes`)
+### 4. **P1** [review] Merge #100 after #98
+
+- Before merging, check that its CI passes: the `hr_tt_kde`, `akde` and overlap
+  test files were not run locally.
+- The rule (one row per level; empty geometry, `NA` area and a warning with
+  the reason and remedy) is described in the docs of `hr_tt_ud_iso()`. The
+  reasons are in `isopleth_not_drawn_reason()`, in `R/hr_tt_ud_iso.R`. A new
+  case of an isopleth that cannot be drawn should add a reason there.
+
+### 5. **P3** [decide] Tracks of `hr_tt_dbbmm()` too short for `window_size`
+
+- With `levels`, they now get empty rows (#100). The table of UDs still
+  leaves them out, with move2utils' warning. See the question in #100.
+
+### 6. **P2** [review] Merge #99 (`dev_notes`)
 
 - It does not depend on #95–#98. After it is merged, update this handover on
   the branch being worked on.
 
-### 5. **P2** [andrea] File the upstream reports
+### 7. **P2** [andrea] File the upstream reports
 
 - Rerun the example in `move2_track_data_issue.md` with the latest move2, and
   update its output.
@@ -60,19 +75,19 @@ The next steps of `summary.md`, in the same order and with the same labels.
   reports (MPCDF GitLab, mirrored at `move2universe/move2utils`), unless they
   are filed already.
 
-### 6. **P2** [decide] Code review 2: open issues
+### 8. **P2** [decide] Code review 2: open issues
 
 - Read `codereview_2026-10.md`, and pick the items to fix. A fix is one
   branch from `dev` per item, with a test, and a NEWS bullet.
 
-### 7. **P3** [claude] Check the review items that #95 may have fixed
+### 9. **P3** [claude] Check the review items that #95 may have fixed
 
 - **Branch:** `dev`, after #95 is merged.
 - **Do:** try `event_ud_level()` with a one-row table of UDs and events of
   several tracks, and `hr_tt_ud_overlap()` on a table grouped by a factor.
   Mark the items as fixed in `codereview_2026-10.md`, or file issues.
 
-### 8. **P3** [decide] Later ctmm analyses
+### 10. **P3** [decide] Later ctmm analyses
 
 - See `ctmm_integration.md`, "Later: further analyses built on the model
   table".
@@ -89,4 +104,5 @@ None.
   release.
 - Documentation review (#90), which #92 was meant to precede, and the data
   cleaning vignette (#65).
-- Open issues #81 (McConnell interpolation) and #82 (isopleth levels).
+- Open issue #81 (McConnell interpolation); #82 (isopleth levels) is fixed by
+  #100.

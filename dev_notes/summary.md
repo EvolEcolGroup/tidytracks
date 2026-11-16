@@ -33,6 +33,26 @@ Andrea's decisions of 15–16 Nov are recorded in
 - [ ] **P3** [decide] Is `select_by_meta()` still wanted? Options: write it, always keeping the track id; or drop it, since `show_meta(x) <- dplyr::select(show_meta(x), ...)` does the same. Recommended: drop it, unless users ask.
 - [ ] **P3** [cleanup] Delete the four branches once merged, and the merged `benchmark-sizes` and `inbound`.
 
+## #82: isopleths that cannot be drawn (PR #100)
+
+Each UD, or group, always has one row per level. An isopleth that cannot be
+drawn gets an empty geometry, an `NA` area, and a warning that gives the
+reason and a remedy.
+
+**Status.** PR #100 (branch `iso_empty_levels`) is stacked on #98, as #95 also
+changes `hr_tt_ud_iso()`. It covers:
+- the KDE-based isopleths (`hr_tt_ud_iso()`, and `levels` in `hr_tt_kde()`,
+  `hr_tt_dbbmm()` and `hr_tt_akde()`);
+- MCP and LoCoH home ranges with no area;
+- `hr_tt_dbbmm()` tracks that are too short for `window_size`.
+
+Its test files pass locally; the KDE, akde and overlap test files are left
+to CI.
+
+**Next steps**
+- [ ] **P1** [review] Review and merge #100 after #98.
+- [ ] **P3** [decide] Should `hr_tt_dbbmm()` without `levels` keep the tracks too short for `window_size`, as rows with an empty UD? Options: keep leaving them out, with move2utils' warning; or add rows with an `NA` UD, which every UD function would then have to handle. Recommended: leave them out.
+
 ## Developer notes
 
 **Status.** `dev_notes/` was set up on 16 Nov in PR #99 (branch `dev_notes`,
@@ -68,8 +88,9 @@ Issues from the review of October 2026 (#86) that need a decision before a
 fix.
 
 **Status.** About 40 open items, by area, in `dev_notes/codereview_2026-10.md`.
-Two related problems are open as GitHub issues (#81, #82). #95 may have fixed
-two of the items, which are marked in the document.
+Two related problems were filed as GitHub issues: #81 (open) and #82 (fixed
+by #100). #95 may have fixed two of the items, which are marked in the
+document.
 
 **Next steps**
 - [ ] **P2** [decide] Go through `dev_notes/codereview_2026-10.md` and pick the items to fix, possibly together with the documentation review (#90).
