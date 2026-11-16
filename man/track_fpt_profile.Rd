@@ -21,7 +21,9 @@ a log scale between twice the median distance between its consecutive
 locations and half the diagonal of the bounding box of its largest track,
 in the units of the projection of \code{x} (see Details). Tracks (or groups)
 for which these radii cannot be computed (e.g. with fewer than three
-locations) get a single row with missing values, and a warning.}
+locations) get a single row with missing values, and a warning; so do
+tracks without events that can have an FPT (e.g. the dummy trips of
+\code{\link[=tt_split_trips]{tt_split_trips()}}), without a warning.}
 
 \item{min_prop_valid}{The smallest proportion of the events of a track (or
 group) that must have an FPT at a radius for its variance to be used by
@@ -81,8 +83,8 @@ larger than half the extent of a track. The default radii end at half the
 diagonal of the bounding box of the track (of the largest track, for a
 group). Where the number of events with an FPT falls steeply, the
 variance can jump, so a radius is only used (column \code{enough_events}, see
-\code{min_prop_valid}) if at least half of the events of the track (or group)
-have an FPT at it.
+\code{min_prop_valid}) if at least \code{min_prop_valid} (by default half) of the
+events of the track (or group) have an FPT at it.
 \item Radii suited to one track can be unsuited to another (e.g. tracks with
 different sampling intervals, or an animal that left the study area), so
 each track or group gets its own default radii.

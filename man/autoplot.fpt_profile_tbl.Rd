@@ -13,7 +13,9 @@
 \item{...}{Not used.}
 }
 \value{
-A \code{ggplot} object.
+A \code{ggplot} object. Its data have a column \code{id}, with the id of the
+track (or group), e.g. to draw one panel per track with
+\code{facet_wrap(~id)}.
 }
 \description{
 Plots the variance of the log of the first passage time against the radius,

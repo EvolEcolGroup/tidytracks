@@ -31,8 +31,8 @@
 #'   diagonal of the bounding box of the track (of the largest track, for a
 #'   group). Where the number of events with an FPT falls steeply, the
 #'   variance can jump, so a radius is only used (column `enough_events`, see
-#'   `min_prop_valid`) if at least half of the events of the track (or group)
-#'   have an FPT at it.
+#'   `min_prop_valid`) if at least `min_prop_valid` (by default half) of the
+#'   events of the track (or group) have an FPT at it.
 #' - Radii suited to one track can be unsuited to another (e.g. tracks with
 #'   different sampling intervals, or an animal that left the study area), so
 #'   each track or group gets its own default radii.
@@ -66,7 +66,9 @@
 #'   locations and half the diagonal of the bounding box of its largest track,
 #'   in the units of the projection of `x` (see Details). Tracks (or groups)
 #'   for which these radii cannot be computed (e.g. with fewer than three
-#'   locations) get a single row with missing values, and a warning.
+#'   locations) get a single row with missing values, and a warning; so do
+#'   tracks without events that can have an FPT (e.g. the dummy trips of
+#'   [tt_split_trips()]), without a warning.
 #' @param min_prop_valid The smallest proportion of the events of a track (or
 #'   group) that must have an FPT at a radius for its variance to be used by
 #'   [track_suggest_ars_scale()] and drawn as solid by [ggplot2::autoplot()]
@@ -279,7 +281,9 @@ fpt_default_radii <- function(events, rows) {
 #' @param object A tibble of class `fpt_profile_tbl`, as created with
 #'   [track_fpt_profile()].
 #' @param ... Not used.
-#' @returns A `ggplot` object.
+#' @returns A `ggplot` object. Its data have a column `id`, with the id of the
+#'   track (or group), e.g. to draw one panel per track with
+#'   `facet_wrap(~id)`.
 #' @importFrom ggplot2 autoplot
 #' @export
 #' @examplesIf rlang::is_installed("ctmm")
