@@ -1,5 +1,6 @@
 AICc
 AKDE
+ARS
 Autoplot
 Avgar
 Bartumeus
@@ -12,6 +13,9 @@ Cilla
 DMY
 EPSG
 Ecography
+FPT
+FPTs
+Fauchald
 Fedak
 Fieberg
 Fortmann
@@ -40,6 +44,7 @@ OpenBLAS
 Ornstein
 PLoS
 PackedSpatRaster
+Pinaud
 RMS
 Rall
 Reprojection
@@ -49,6 +54,7 @@ Sinkhorn
 SpatRaster
 Syncerus
 Toit
+Tveraa
 UD
 UDOI
 UDs

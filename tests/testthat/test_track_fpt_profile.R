@@ -3,6 +3,12 @@ test_that("track_fpt_profile gives the correct errors", {
   expect_error(track_fpt_profile(example_tt), "must be in a projected")
   x <- as_ars_move2(simulate_ars_track("a", 2000, n_patches = 2))
   expect_error(track_fpt_profile(x, radii = 1000), "must be a units object")
+  for (prop in list(0, 1.5, NA, c(0.2, 0.5), "half")) {
+    expect_error(
+      track_fpt_profile(x, min_prop_valid = prop),
+      "min_prop_valid must be a single number between 0 \\(excluded\\) and 1"
+    )
+  }
 })
 
 test_that("track_fpt_profile returns one row per track and radius", {
@@ -14,7 +20,10 @@ test_that("track_fpt_profile returns one row per track and radius", {
   radii <- as_units(c(2, 1, 5), "km")
   profile <- track_fpt_profile(x, radii = radii)
   expect_s3_class(profile, "fpt_profile_tbl")
-  expect_named(profile, c("id", "radius", "var_log_fpt", "n_valid"))
+  expect_named(
+    profile,
+    c("id", "radius", "var_log_fpt", "n_valid", "enough_events")
+  )
   expect_identical(nrow(profile), 6L)
   # in the order of the tracks in the metadata, with sorted radii in their units
   expect_identical(
@@ -42,7 +51,10 @@ test_that("groups pool the log FPT of their tracks, computed within tracks", {
   x <- as_ars_move2(df)
   radii <- as_units(c(1, 2, 5), "km")
   profile <- track_fpt_profile(dplyr::group_by(x, animal), radii = radii)
-  expect_named(profile, c("animal", "radius", "var_log_fpt", "n_valid"))
+  expect_named(
+    profile,
+    c("animal", "radius", "var_log_fpt", "n_valid", "enough_events")
+  )
   expect_identical(unique(profile$animal), c("first", "second"))
   # with a large radius, FPTs that ran across the tracks would differ
   fpt <- as.numeric(event_fpt(x, as_units(5, "km"), units = as_units("s")))
@@ -50,6 +62,34 @@ test_that("groups pool the log FPT of their tracks, computed within tracks", {
   expect_equal(
     profile$var_log_fpt[row],
     stats::var(log(fpt[df$animal == "first"]), na.rm = TRUE)
+  )
+})
+
+test_that("groups that split tracks use the FPT of the whole tracks", {
+  df <- simulate_ars_track("a", 2000, n_patches = 2)
+  # alternating blocks of 20 locations, e.g. day and night
+  df$block <- rep(c("odd", "even"), each = 20, length.out = nrow(df))
+  x <- as_ars_move2(df)
+  radii <- as_units(c(1, 2, 5), "km")
+  profile <- track_fpt_profile(dplyr::group_by(x, block), radii)
+  fpt <- as.numeric(event_fpt(x, as_units(2, "km"), units = as_units("s")))
+  for (b in c("odd", "even")) {
+    row <- profile$block == b & as.numeric(profile$radius) == 2
+    expect_equal(
+      profile$var_log_fpt[row],
+      stats::var(log(fpt[df$block == b]), na.rm = TRUE)
+    )
+    expect_identical(
+      profile$n_valid[row],
+      as.numeric(sum(!is.na(fpt[df$block == b])))
+    )
+  }
+  # and the default radii of the whole track
+  steps <- sqrt(rowSums(diff(as.matrix(df[, c("x", "y")]))^2))
+  grouped <- track_fpt_profile(dplyr::group_by(x, block))
+  expect_equal(
+    min(as.numeric(grouped$radius[grouped$block == "odd"])),
+    2 * stats::median(steps[steps > 0])
   )
 })
 
@@ -61,13 +101,105 @@ test_that("track_fpt_profile has default radii, and a plot", {
   expect_false(is.unsorted(as.numeric(profile$radius)))
   p <- ggplot2::autoplot(profile)
   expect_s3_class(p, "ggplot")
-  # with several tracks too, which adds their median
+  # with several tracks too, which adds their median if they share their radii
   two <- as_ars_move2(rbind(
     simulate_ars_track("a", 2000, n_patches = 2),
     simulate_ars_track("b", 2000, n_patches = 2, seed = 2)
   ))
+  p <- ggplot2::autoplot(track_fpt_profile(two, as_units(c(1, 2, 5), "km")))
+  expect_s3_class(p, "ggplot")
+  # all the radii (dashed), those with enough events, and the median
+  expect_length(p$layers, 3)
+  # but no median with the default radii, which differ between the tracks
+  expect_length(ggplot2::autoplot(track_fpt_profile(two))$layers, 2)
+})
+
+test_that("the default radii are chosen for each track, or group", {
+  df <- rbind(
+    simulate_ars_track("a", 2000, n_patches = 2),
+    simulate_ars_track("b", 500, n_patches = 2, seed = 2)
+  )
+  df$animal <- "first"
+  x <- as_ars_move2(df)
+  profile <- track_fpt_profile(x)
+  # from twice the median step to half the diagonal of the bounding box of
+  # each track
+  steps <- list()
+  half_diagonals <- list()
+  for (id in c("a", "b")) {
+    xy <- as.matrix(df[df$id == id, c("x", "y")])
+    steps[[id]] <- sqrt(rowSums(diff(xy)^2))
+    extent <- apply(xy, 2, function(v) diff(range(v)))
+    half_diagonals[[id]] <- sqrt(sum(extent^2)) / 2
+    radii <- as.numeric(profile$radius[profile$id == id])
+    expect_length(radii, 50)
+    expect_equal(min(radii), 2 * stats::median(steps[[id]][steps[[id]] > 0]))
+    expect_equal(max(radii), half_diagonals[[id]])
+  }
+  # a group pools the steps of its tracks (not across them), up to half the
+  # diagonal of its largest track
+  grouped <- track_fpt_profile(dplyr::group_by(x, animal))
+  pooled <- unlist(steps)
+  expect_equal(
+    min(as.numeric(grouped$radius)),
+    2 * stats::median(pooled[pooled > 0])
+  )
+  expect_equal(max(as.numeric(grouped$radius)), max(unlist(half_diagonals)))
+  # a track too short for the default radii gets a row of missing values
+  short <- data.frame(
+    id = "c",
+    x = 500000 + c(0, 100),
+    y = 5000000,
+    time = max(df$time) + c(300, 600),
+    animal = "second"
+  )
+  expect_warning(
+    with_short <- track_fpt_profile(as_ars_move2(rbind(df, short))),
+    "could not be computed for c"
+  )
+  expect_identical(sum(with_short$id == "c"), 1L)
+  expect_true(is.na(with_short$var_log_fpt[with_short$id == "c"]))
+  expect_identical(with_short$n_valid[with_short$id == "c"], 0)
+  # the warning lists at most 10 of them
+  shorts <- data.frame(
+    id = rep(sprintf("t%02d", 1:12), each = 2),
+    x = 500000 + c(0, 100),
+    y = 5000000,
+    time = as.POSIXct("2024-01-01", tz = "UTC") + 300 * seq_len(24)
+  )
+  expect_warning(
+    many <- track_fpt_profile(as_ars_move2(shorts)),
+    "t10 and 2 more"
+  )
+  expect_identical(nrow(many), 12L)
+})
+
+test_that("radii need enough events with an FPT", {
+  df <- rbind(
+    simulate_ars_track("a", 2000, n_patches = 2),
+    simulate_ars_track("b", 2000, n_patches = 2, seed = 2)
+  )
+  x <- as_ars_move2(df)
+  radii <- as_units(c(1, 5, 10, 20, 40), "km")
+  # at least half of the events of each track, by default
+  profile <- track_fpt_profile(x, radii)
+  n_events <- as.numeric(table(df$id)[profile$id])
+  expect_identical(profile$enough_events, profile$n_valid >= 0.5 * n_events)
+  # the largest radii have too few events in this track
+  expect_true(any(profile$enough_events))
+  expect_false(all(profile$enough_events))
+  # or another proportion
+  strict <- track_fpt_profile(x, radii, min_prop_valid = 0.9)
+  expect_identical(strict$enough_events, strict$n_valid >= 0.9 * n_events)
+  expect_lt(sum(strict$enough_events), sum(profile$enough_events))
+  # the variance is still given, and the plot shows those radii dashed
+  expect_false(anyNA(profile$var_log_fpt[profile$n_valid >= 2]))
+  expect_s3_class(ggplot2::autoplot(profile), "ggplot")
+  # a profile without the column is plotted with all its radii
+  without <- dplyr::select(profile, -"enough_events")
+  expect_s3_class(without, "fpt_profile_tbl")
   expect_s3_class(
-    ggplot2::autoplot(track_fpt_profile(two, as_units(c(1, 2, 5), "km"))),
-    "ggplot"
+    ggplot2::ggplot_build(ggplot2::autoplot(without)),
+    "ggplot_built"
   )
 })

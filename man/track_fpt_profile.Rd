@@ -4,19 +4,32 @@
 \alias{track_fpt_profile}
 \title{Compute how the variance of the first passage time changes with the radius}
 \usage{
-track_fpt_profile(x, radii = NULL)
+track_fpt_profile(x, radii = NULL, min_prop_valid = 0.5)
 }
 \arguments{
 \item{x}{A move2 object in a projected coordinate reference system, ordered
 by time within each track; if explicitly grouped, one profile is computed
-for each group, pooling the log FPT of its tracks. Otherwise, one profile
-is computed for each track.}
+for each group, pooling the log FPT of its events; otherwise, one profile
+is computed for each track. The FPT is always computed on whole tracks,
+also for a group that holds only part of a track (e.g. grouped by
+season).}
 
 \item{radii}{The radii, as a \code{units} object, e.g.
-\code{as_units(seq(1, 50), "km")}. If \code{NULL} (the default), 50 radii are used,
-evenly spaced on a log scale between the median distance between
-consecutive locations and the diagonal of the bounding box of the largest
-track, in the units of the projection of \code{x}.}
+\code{as_units(seq(1, 50), "km")}, used for all the tracks (or groups). If
+\code{NULL} (the default), each track (or group) gets 50 radii, evenly spaced on
+a log scale between twice the median distance between its consecutive
+locations and half the diagonal of the bounding box of its largest track,
+in the units of the projection of \code{x} (see Details). Tracks (or groups)
+for which these radii cannot be computed (e.g. with fewer than three
+locations) get a single row with missing values, and a warning; so do
+tracks without events that can have an FPT (e.g. the dummy trips of
+\code{\link[=tt_split_trips]{tt_split_trips()}}), without a warning.}
+
+\item{min_prop_valid}{The smallest proportion of the events of a track (or
+group) that must have an FPT at a radius for its variance to be used by
+\code{\link[=track_suggest_ars_scale]{track_suggest_ars_scale()}} and drawn as solid by \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}
+(column \code{enough_events}). The default is 0.5. Events without a location,
+or in the dummy trips of \code{\link[=tt_split_trips]{tt_split_trips()}}, are not counted.}
 }
 \value{
 A tibble of class \code{fpt_profile_tbl}, with one row per track (or
@@ -26,10 +39,14 @@ group) and radius, and columns:
 multiple variables, this column is named \code{group_id}), in the order of the
 tracks in the metadata if \code{x} is not grouped, or else in the order of
 \code{\link[dplyr:group_keys]{dplyr::group_keys()}}
-\item \code{radius}: the radius, as a \code{units} column, in increasing order
+\item \code{radius}: the radius, as a \code{units} column, in increasing order within each
+track (or group), in the units of \code{radii} (or of the projection of \code{x},
+for the default radii)
 \item \code{var_log_fpt}: the variance of the log of the FPT (which does not depend
 on the units of the FPT); \code{NA} if fewer than two events have an FPT
 \item \code{n_valid}: the number of events with an FPT
+\item \code{enough_events}: whether at least \code{min_prop_valid} of the events of the
+track (or group), and at least two, have an FPT
 }
 }
 \description{
@@ -45,13 +62,34 @@ FPT differs the most. It can be used to inform the choice of the bandwidth of
 \details{
 The profile is best inspected (with \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}) before using any
 scale derived from it. Not all species use ARS, in which case the variance
-has no clear peak. The variance at large radii is based on few events, as
-fewer circles are left in both directions (see column \code{n_valid}). Very small
-radii, within a single step between locations, are not informative: the
-crossing times are then interpolated between two locations, so the FPT just
-reflects the speed of the step. The FPT also depends on the sampling
-interval, so consider regularising the tracks (see \code{\link[=tt_regular_time]{tt_regular_time()}}) if
-it is not constant.
+has no clear peak. The FPT also depends on the sampling interval, so
+consider regularising the tracks (see \code{\link[=tt_regular_time]{tt_regular_time()}}) if it is not
+constant.
+
+Not all radii are informative, which is why the default radii are chosen
+for each track (or group) separately:
+\itemize{
+\item Radii within a single step between locations: if a circle is smaller than
+both the steps before and after a location, its crossings are interpolated
+on these steps, so the FPT is proportional to the radius and inversely
+proportional to the speed on these steps, and the variance of its log
+reflects the variation in speed, whatever the radius. The default radii
+start at twice the median distance between consecutive locations
+(ignoring locations that do not move).
+\item Large radii: an event has an FPT only if the track goes farther than the
+radius from it both before and after it, so as the radius grows, fewer
+events have an FPT (see column \code{n_valid}), and those that do are the
+events far from the ends of the track. Few events have an FPT for radii
+larger than half the extent of a track. The default radii end at half the
+diagonal of the bounding box of the track (of the largest track, for a
+group). Where the number of events with an FPT falls steeply, the
+variance can jump, so a radius is only used (column \code{enough_events}, see
+\code{min_prop_valid}) if at least \code{min_prop_valid} (by default half) of the
+events of the track (or group) have an FPT at it.
+\item Radii suited to one track can be unsuited to another (e.g. tracks with
+different sampling intervals, or an animal that left the study area), so
+each track or group gets its own default radii.
+}
 
 As the FPT only depends on the events of a track, and \code{\link[=tt_split_trips]{tt_split_trips()}}
 makes each trip a track, the FPT of central place foragers split into trips
@@ -63,11 +101,18 @@ the original track id: the FPT is still computed within each trip, and the
 log FPTs of the trips of each animal are pooled to compute the variance.
 }
 \examples{
-x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
-profile <- track_fpt_profile(x, radii = as_units(c(50, 100, 200), "km"))
+\dontshow{if (rlang::is_installed("ctmm")) withAutoprint(\{ # examplesIf}
+# two African buffalo from the package ctmm, in a projected CRS
+data(buffalo, package = "ctmm")
+buffalo_tt <- mt_as_move2(buffalo) \%>\%
+  filter_by_meta(track \%in\% c("Cilla", "Gabs"))
+profile <- track_fpt_profile(buffalo_tt)
 profile
 library(ggplot2)
-autoplot(profile)
+autoplot(profile) + facet_wrap(~id)
+# radii chosen by the user, the same for both buffalo
+track_fpt_profile(buffalo_tt, radii = as_units(c(1, 2, 3, 5, 10), "km"))
+\dontshow{\}) # examplesIf}
 }
 \references{
 Fauchald, P. & Tveraa, T. (2003) Using first-passage time in the

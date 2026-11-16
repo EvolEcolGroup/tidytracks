@@ -36,9 +36,13 @@
 #'   with the radius, and [track_suggest_ars_scale()] to find the scale of
 #'   area-restricted search from it.
 #' @export
-#' @examples
-#' x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
-#' event_fpt(x, radius = as_units(100, "km"))
+#' @examplesIf rlang::is_installed("ctmm")
+#' # two African buffalo from the package ctmm, in a projected CRS
+#' data(buffalo, package = "ctmm")
+#' buffalo_tt <- mt_as_move2(buffalo) %>%
+#'   filter_by_meta(track %in% c("Cilla", "Gabs"))
+#' fpt <- event_fpt(buffalo_tt, radius = as_units(3, "km"))
+#' summary(fpt)
 event_fpt <- function(x, radius, units = as_units("h")) {
   check_fpt_x(x)
   if (!inherits(units, "units")) {
@@ -125,19 +129,67 @@ is_trip_na <- function(track_id) {
 #' @keywords internal
 #' @noRd
 fpt_matrix <- function(x, radii) {
+  events <- fpt_events(x)
+  fpt_matrix_of_rows(events, seq_len(nrow(events$xy)), radii)
+}
+
+#' The coordinates, times and track ids of the events, for the FPT
+#'
+#' @param x A move2 object, checked with `check_fpt_x()`.
+#' @returns A list with `xy` (the matrix of coordinates), `time` (in seconds),
+#'   `ids` (the track ids, as characters), `usable` (whether each event can
+#'   have an FPT: it has a location and is not in a dummy trip of events at the
+#'   centre), `rows_by_track` (the rows of the usable events of each track)
+#'   and `track_index` (the position in `rows_by_track` of the track of each
+#'   event, `NA` for a track without usable events).
+#' @keywords internal
+#' @noRd
+fpt_events <- function(x) {
   xy <- sf::st_coordinates(x)
-  time <- as.numeric(as.POSIXct(event_time(x)))
   ids <- as.character(event_track_id(x))
-  res <- matrix(NA_real_, nrow(xy), length(radii))
   usable <- stats::complete.cases(xy) & !is_trip_na(ids)
-  # the events of each track, which are stored together and in time order
-  for (rows in split(which(usable), ids[usable])) {
-    res[rows, ] <- fpt_cpp( # nolint: object_usage_linter.
-      xy[rows, 1],
-      xy[rows, 2],
-      time[rows],
+  # the events of each track are stored together and in time order
+  rows_by_track <- split(which(usable), ids[usable])
+  list(
+    xy = xy,
+    time = as.numeric(as.POSIXct(event_time(x))),
+    ids = ids,
+    usable = usable,
+    rows_by_track = unname(rows_by_track),
+    # tracks are found by position, as a list element named "" (a track id
+    # that move2 accepts) cannot be found by its name
+    track_index = match(ids, names(rows_by_track))
+  )
+}
+
+#' First passage time of a set of events, for several radii
+#'
+#' @param events A list, as returned by `fpt_events()`.
+#' @param rows The rows of the events to use (e.g. those of a group), in
+#'   increasing order. The FPT is computed on the whole of each of their
+#'   tracks, also when `rows` holds only part of a track (e.g. a group defined
+#'   by a column that changes within tracks).
+#' @param radii Numeric vector of radii in the units of the coordinates, in
+#'   increasing order.
+#' @returns A matrix with one row per event of `rows` and one column per
+#'   radius, with the FPT in seconds.
+#' @keywords internal
+#' @noRd
+fpt_matrix_of_rows <- function(events, rows, radii) {
+  res <- matrix(NA_real_, length(rows), length(radii))
+  # the positions within rows of the usable events, by track
+  positions <- which(events$usable[rows])
+  for (track in split(positions, events$ids[rows][positions])) {
+    # the FPT of all the events of the track, as the track runs through events
+    # that may be outside rows, then those of the events in rows
+    track_rows <- events$rows_by_track[[events$track_index[rows[track[1]]]]]
+    fpt <- fpt_cpp( # nolint: object_usage_linter.
+      events$xy[track_rows, 1],
+      events$xy[track_rows, 2],
+      events$time[track_rows],
       radii
     )
+    res[track, ] <- fpt[match(rows[track], track_rows), , drop = FALSE]
   }
   res
 }

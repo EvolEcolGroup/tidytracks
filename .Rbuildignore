@@ -13,3 +13,4 @@
 ^pkgdown$
 ^bench$
 ^vignettes/articles$
+^dev_notes$

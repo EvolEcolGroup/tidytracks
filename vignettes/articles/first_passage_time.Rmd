@@ -1,0 +1,251 @@
+---
+title: "Area-restricted search with first passage time"
+output:
+  rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Area-restricted search with first passage time}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.5
+)
+```
+
+Many animals search for food by moving slowly and tortuously where they find
+it, and fast and straight between such places: area-restricted search (ARS).
+The first passage time (FPT) is the time an animal takes to cross a circle of
+a given radius centred on one of its locations (Fauchald & Tveraa 2003). It is
+long within a patch and short between patches, so its variance among locations
+is largest for circles about the size of the patches. The radius at which the
+variance of the log FPT peaks is taken as the scale of ARS.
+
+`tidytracks` provides:
+
+- `event_fpt()`: the FPT of each location, for one radius;
+- `track_fpt_profile()`: the variance of the log FPT of each track for a set
+  of radii (the profile), plotted with `autoplot()`;
+- `track_suggest_ars_scale()`: the radius of the peak of each profile.
+
+This article applies them to four African buffalo, explains the defaults, and
+lists the options to try with other data.
+
+```{r packages, message = FALSE}
+library(tidytracks)
+library(dplyr)
+library(ggplot2)
+```
+
+## Data
+
+We use the GPS tracks of four African buffalo (*Syncerus caffer*) from Kruger
+National Park, South Africa (Getz et al. 2007, Cross et al. 2016), also used in
+the article "Movement models with ctmm". Cilla, Gabs and Mvubu were located
+every hour; Pepper every hour, then every two hours, which also affects its FPT
+(see Options). The FPT is computed on the plane, so we project the tracks with
+an azimuthal equidistant projection centred on the study area:
+
+```{r load_data}
+buffalo_tt <- tt_read_data(
+  events = "data/buffalo_tracks.csv",
+  col_track_id = "buffalo_id",
+  col_coords = c("lon", "lat"),
+  col_date_time = "date_time"
+) %>%
+  sf::st_transform("+proj=aeqd +lat_0=-25 +lon_0=31.8 +units=m") %>%
+  tt_order_time()
+buffalo_tt
+```
+
+## FPT of each location
+
+`event_fpt()` returns the FPT of each location for one radius (here 3 km), in
+hours. Locations near the ends of a track get `NA`, as the track does not
+leave the circle on both sides.
+
+```{r event_fpt}
+buffalo_tt <- buffalo_tt %>%
+  mutate(fpt_3km = event_fpt(buffalo_tt, as_units(3, "km")))
+summary(as.numeric(buffalo_tt$fpt_3km))
+```
+
+A buffalo stays for days in some areas, and crosses others in hours:
+
+```{r map_fpt}
+ggplot(filter(buffalo_tt, buffalo_id == "Cilla")) +
+  geom_sf(aes(colour = as.numeric(fpt_3km)), size = 0.6) +
+  scale_colour_viridis_c(trans = "log10", na.value = "grey80") +
+  labs(colour = "FPT (h)\nat 3 km")
+```
+
+## Profiles and scale of ARS
+
+`track_fpt_profile()` computes the variance of the log FPT of each track at
+50 radii:
+
+```{r profile}
+profile <- track_fpt_profile(buffalo_tt)
+profile
+autoplot(profile) + facet_wrap(~id)
+```
+
+`track_suggest_ars_scale()` returns the radius of the highest peak of each
+profile:
+
+```{r suggest}
+scales <- track_suggest_ars_scale(profile, units = as_units("km"))
+scales
+```
+
+All four profiles have a peak, at
+`r round(min(as.numeric(scales)), 1)`–`r round(max(as.numeric(scales)), 1)`
+km; Cilla's has a second, almost as high, at about 7.5 km. The variance is also
+high at the smallest radii, which a buffalo crosses quickly when it walks and
+slowly when it rests; this end of a profile is not a peak, as a peak must be
+higher than the radii on both sides. Inspect the profiles before using a
+suggested scale: not all species use ARS, and a profile without a clear peak
+(e.g. declining steadily) has no scale of ARS, even if noise gives it small
+peaks.
+
+## Default radii
+
+Two ranges of radii are not informative:
+
+- **Radii within a step.** If a circle is smaller than the steps before and
+  after a location, the track crosses it on these steps, and the FPT is
+  proportional to the radius and inversely proportional to the speed on these
+  steps. The variance of the log FPT then measures the variation in speed,
+  whatever the radius. This matters most for long steps
+  (e.g. one location every few hours) and large location errors.
+- **Radii larger than about half the extent of a track.** A location has an
+  FPT only if the track goes farther than the radius from it both before and
+  after it. As the radius grows, fewer locations have an FPT, and these are
+  the locations far from the ends of the track.
+
+By default, each track therefore gets 50 radii, evenly spaced on a log scale,
+from twice the median distance between its consecutive locations to half the
+diagonal of its bounding box. The column `n_valid` of the profile gives the
+number of locations with an FPT. With radii up to 62 km, the diagonal of the
+bounding box of the largest track (Pepper's), the largest radii have none:
+
+```{r n_valid}
+profile_wide <- track_fpt_profile(
+  buffalo_tt,
+  radii = as_units(exp(seq(log(0.1), log(62), length.out = 50)), "km")
+)
+ggplot(profile_wide, aes(x = as.numeric(radius), y = n_valid)) +
+  geom_line(aes(colour = buffalo_id)) +
+  scale_x_log10() +
+  labs(x = "Radius (km)", y = "Locations with an FPT", colour = "Buffalo") +
+  theme_minimal()
+```
+
+## Radii with enough locations
+
+Where the number of locations with an FPT falls steeply, the variance can
+jump. A radius is therefore used only if at least half of the locations of the
+track (argument `min_prop_valid`) have an FPT at it (column `enough_events`).
+`autoplot()` draws the other radii with dashed lines, and
+`track_suggest_ars_scale()` ignores them.
+
+The profile of Mvubu has a peak at 3 km, and a spike near the end of its
+range of radii. If radii with few locations are used, the spike becomes the
+highest peak:
+
+```{r min_prop_valid}
+profile_all <- track_fpt_profile(buffalo_tt, min_prop_valid = 0.01)
+scales_all <- track_suggest_ars_scale(profile_all, units = as_units("km"))
+scales_all
+autoplot(filter(profile, buffalo_id == "Mvubu")) +
+  geom_vline(
+    xintercept = 1000 * as.numeric(c(scales["Mvubu"], scales_all["Mvubu"])),
+    linetype = c("solid", "dotted"),
+    colour = "darkred"
+  )
+```
+
+In the default profile (above), the spike (dotted line) is at the last radius
+with enough locations, so it is not a peak (a peak must be higher than the
+radii on both sides), and the peak at 3 km (solid line) is selected.
+
+## Highest or first peak
+
+A profile can have several peaks. By default, `track_suggest_ars_scale()`
+returns the highest (`method = "max"`). The first peak (`method = "first"`) can
+be a small bump before the main peak, as for Pepper:
+
+```{r method}
+scales_first <- track_suggest_ars_scale(
+  profile,
+  method = "first",
+  units = as_units("km")
+)
+scales_first
+autoplot(filter(profile, buffalo_id == "Pepper")) +
+  geom_vline(
+    xintercept = 1000 * as.numeric(c(scales_first["Pepper"], scales["Pepper"])),
+    linetype = c("dotted", "solid"),
+    colour = "darkred"
+  )
+```
+
+Animals can search at nested scales (e.g. patches within larger areas), so a
+first peak can be meaningful; the profile shows whether it is.
+
+## Options
+
+- **Radii:** `radii` sets the radii, as a `units` object (e.g. from what is
+  known of the species), for all tracks. `autoplot()` then also draws the
+  median profile. Radii evenly spaced on a log scale give the same detail at
+  all scales:
+
+  ```{r radii, eval = FALSE}
+  radii <- as_units(exp(seq(log(0.5), log(20), length.out = 40)), "km")
+  track_fpt_profile(buffalo_tt, radii = radii)
+  ```
+
+- **Locations per radius:** `min_prop_valid` (0.5 by default) is the
+  proportion of the locations of a track that must have an FPT at a radius. A
+  lower value keeps more large radii, with more noise.
+- **Peak:** `method` selects the highest peak (`"max"`, the default), the
+  first (`"first"`), or the one around which the variance changes most
+  (`"steep"`). `peak_width` (1 by default) is the number of radii on either
+  side of a peak that must not have a higher variance; larger values ignore
+  narrow peaks. The peaks of the buffalo are broad, so here the scales do not
+  change:
+
+  ```{r peak_width}
+  track_suggest_ars_scale(profile, peak_width = 3, units = as_units("km"))
+  ```
+
+- **Groups:** if the tibble is grouped by a column of its events (e.g. the
+  season), the log FPTs of each group are pooled into one profile; the FPT is
+  still computed on whole tracks. For central place foragers, split the tracks
+  into trips with `tt_split_trips()`, so that the time between trips does not
+  count, and group the trips by animal.
+- **Sampling:** the FPT depends on the sampling interval. Regularise tracks
+  with `tt_regular_time()` if it varies, and compare tracks with similar
+  sampling.
+- **Kernel bandwidth:** the scale can inform the bandwidth of `hr_tt_kde()`.
+  The bandwidth is the standard deviation of a Gaussian kernel, not a radius:
+  a kernel with a bandwidth equal to the radius has 39% of its mass within
+  it, and 95% within 2.45 times it.
+
+## References
+
+Cross, P.C., Bowers, J.A., Hay, C.T., Wolhuter, J., Buss, P., Hofmeyr, M., du
+Toit, J.T. & Getz, W.M. (2016) Data from: Nonparameteric kernel methods for
+constructing home ranges and utilization distributions. Movebank Data
+Repository. DOI: 10.5441/001/1.j900f88t
+
+Fauchald, P. & Tveraa, T. (2003) Using first-passage time in the analysis of
+area-restricted search and habitat selection. Ecology, 84, 282-288.
+
+Getz, W.M., Fortmann-Roe, S., Cross, P.C., Lyons, A.J., Ryan, S.J. & Wilmers,
+C.C. (2007) LoCoH: nonparameteric kernel methods for constructing home ranges
+and utilization distributions. PLoS ONE, 2, e207.

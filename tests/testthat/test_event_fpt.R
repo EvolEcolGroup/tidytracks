@@ -94,6 +94,24 @@ test_that("event_fpt does not run across tracks", {
   expect_equal(fpt, rep(c(NA, NA, 300, 300, NA, NA), 2))
 })
 
+test_that("a track id can be an empty string", {
+  x <- create_line_tracks()
+  empty <- x
+  empty$id <- ""
+  empty <- move2::mt_set_track_id_column(
+    move2::mt_set_track_data(empty, data.frame(id = "")),
+    "id"
+  )
+  expect_identical(
+    as.numeric(event_fpt(empty, as_units(1.5, "km"))),
+    as.numeric(event_fpt(x, as_units(1.5, "km")))
+  )
+  expect_identical(
+    track_fpt_profile(empty)$var_log_fpt,
+    track_fpt_profile(x)$var_log_fpt
+  )
+})
+
 test_that("event_fpt ignores events without a location and dummy trips", {
   x <- create_line_tracks()
   x_empty <- x
@@ -119,7 +137,9 @@ test_that("event_fpt ignores events without a location and dummy trips", {
 test_that("the FPT equals that of adehabitatLT, for any order of the radii", {
   skip_if_not_installed("adehabitatLT")
   set.seed(1)
-  n <- 200
+  # more than 256 locations, so that the search skips blocks of 16 and of 256
+  # locations (see src/fpt.cpp)
+  n <- 300
   df <- data.frame(
     x = 500000 + cumsum(stats::rnorm(n, 0, 500)),
     y = 5000000 + cumsum(stats::rnorm(n, 0, 500)),
@@ -127,7 +147,8 @@ test_that("the FPT equals that of adehabitatLT, for any order of the radii", {
       cumsum(stats::runif(n, 60, 600)),
     id = "a"
   )
-  radii <- c(100, 500, 1000, 2500, 5000)
+  # the largest circle is never left
+  radii <- c(100, 500, 1000, 2500, 5000, 50000)
   ltraj <- adehabitatLT::as.ltraj(
     df[, c("x", "y")],
     date = df$time,

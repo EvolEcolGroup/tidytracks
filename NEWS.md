@@ -7,7 +7,8 @@
   location, how its variance changes with the radius (with an `autoplot()`
   method), and the scale of area-restricted search suggested by its peak, which
   can inform the bandwidth of `hr_tt_kde()`. The first passage time is computed
-  within each track, so it does not run across trips after `tt_split_trips()`.
+  within each track, so it does not run across trips after `tt_split_trips()`
+  (see the new article "Area-restricted search with first passage time").
 
 * New interface to the package `ctmm`, to fit continuous-time movement models
   to tibbles of tracks (see the new article "Movement models with ctmm").

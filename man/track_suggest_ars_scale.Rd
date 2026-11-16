@@ -7,21 +7,23 @@
 track_suggest_ars_scale(
   x,
   radii = NULL,
-  method = c("first", "max", "steep"),
+  min_prop_valid = 0.5,
+  method = c("max", "first", "steep"),
   peak_width = 1,
   units = as_units("m")
 )
 }
 \arguments{
 \item{x}{A move2 object, as for \code{\link[=track_fpt_profile]{track_fpt_profile()}}, or a tibble of class
-\code{fpt_profile_tbl}, as returned by it.}
+\code{fpt_profile_tbl}, as returned by it (its rows can be in any order).}
 
-\item{radii}{The radii, as for \code{\link[=track_fpt_profile]{track_fpt_profile()}}. Only used if \code{x} is a
-move2 object.}
+\item{radii, min_prop_valid}{As for \code{\link[=track_fpt_profile]{track_fpt_profile()}}. Only used if \code{x}
+is a move2 object.}
 
-\item{method}{The peak to select if there are several: "first" (the default;
-the one at the smallest radius), "max" (the highest), or "steep" (the one
-around which the variance changes the most).}
+\item{method}{The peak to select if there are several: "max" (the default;
+the highest), "first" (the one at the smallest radius), or "steep" (the
+one around which the variance changes the most). "first" can select a
+small bump of the profile before its main peak.}
 
 \item{peak_width}{The number of radii on either side of a peak that must have
 a variance that is not higher than the peak. The default is 1.}
@@ -31,8 +33,9 @@ default is metres (\code{as_units("m")}).}
 }
 \value{
 A \code{units} vector with the suggested scale for each track (or group),
-named by its id and in the order of \code{\link[=track_fpt_profile]{track_fpt_profile()}}, with \code{NA} if no
-peak is found.
+named by its id, in the order in which the ids first appear in the profile
+(that of \code{\link[=track_fpt_profile]{track_fpt_profile()}}, unless its rows were reordered), with \code{NA}
+if no peak is found.
 }
 \description{
 This function suggests, for each track (or group), the spatial scale of
@@ -44,7 +47,8 @@ The suggestion is purely data-driven, and can strongly depend on \code{method}:
 inspect the profile with \code{\link[ggplot2:autoplot]{ggplot2::autoplot()}}, and check the suggestion
 against what is known about the species. Noise can produce small peaks,
 especially with many radii and at the largest radii, which are based on few
-events. Not all species use ARS.
+events: radii at which too few events have an FPT (column \code{enough_events} of
+the profile, see \code{min_prop_valid}) are not used. Not all species use ARS.
 
 To use the suggestion as the bandwidth of \code{\link[=hr_tt_kde]{hr_tt_kde()}}, note that the
 bandwidth is the standard deviation of a Gaussian kernel rather than the
@@ -53,8 +57,15 @@ its mass within that radius, and 95\% of its mass within 2.45 times that
 radius.
 }
 \examples{
-x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
-track_suggest_ars_scale(x, radii = as_units(c(50, 100, 200), "km"))
+\dontshow{if (rlang::is_installed("ctmm")) withAutoprint(\{ # examplesIf}
+# two African buffalo from the package ctmm, in a projected CRS
+data(buffalo, package = "ctmm")
+buffalo_tt <- mt_as_move2(buffalo) \%>\%
+  filter_by_meta(track \%in\% c("Cilla", "Gabs"))
+track_suggest_ars_scale(buffalo_tt, units = as_units("km"))
+# the first peak, rather than the highest
+track_suggest_ars_scale(buffalo_tt, method = "first", units = as_units("km"))
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=event_fpt]{event_fpt()}}, \code{\link[=track_fpt_profile]{track_fpt_profile()}}
