@@ -104,7 +104,7 @@ scales
 
 All four profiles have a peak, at
 `r round(min(as.numeric(scales)), 1)`–`r round(max(as.numeric(scales)), 1)`
-km; Cilla's has a second, almost as high, at about 7 km. The variance is also
+km; Cilla's has a second, almost as high, at about 7.5 km. The variance is also
 high at the smallest radii, which a buffalo crosses quickly when it walks and
 slowly when it rests; this end of a profile is not a peak, as a peak must be
 higher than the radii on both sides. Inspect the profiles before using a
@@ -118,8 +118,9 @@ Two ranges of radii are not informative:
 
 - **Radii within a step.** If a circle is smaller than the steps before and
   after a location, the track crosses it on these steps, and the FPT is
-  proportional to the radius, by a factor set by their speed. The variance of
-  the log FPT then measures the variation in speed, whatever the radius. This matters most for long steps
+  proportional to the radius and inversely proportional to the speed on these
+  steps. The variance of the log FPT then measures the variation in speed,
+  whatever the radius. This matters most for long steps
   (e.g. one location every few hours) and large location errors.
 - **Radii larger than about half the extent of a track.** A location has an
   FPT only if the track goes farther than the radius from it both before and
@@ -148,8 +149,7 @@ ggplot(profile_wide, aes(x = as.numeric(radius), y = n_valid)) +
 
 Where the number of locations with an FPT falls steeply, the variance can
 jump. A radius is therefore used only if at least half of the locations of the
-track have an FPT at it (by default; argument `min_prop_valid`, column
-`enough_events`).
+track (argument `min_prop_valid`) have an FPT at it (column `enough_events`).
 `autoplot()` draws the other radii with dashed lines, and
 `track_suggest_ars_scale()` ignores them.
 
