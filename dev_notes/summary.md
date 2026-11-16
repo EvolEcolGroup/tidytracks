@@ -10,9 +10,8 @@ The four items of #92: the only column in both the events and the metadata
 is the track id.
 
 **Status.** Four stacked PRs into `dev` are open: #95 (item 3), #96 (item 1),
-#97 (item 2) and #98 (item 4). Merge them in that order. CI passed on all
-four before the changes of 16 Nov, and the new changes pass their test files
-locally. Next tasks are in `dev_notes/handover.md`.
+#97 (item 2) and #98 (item 4). Merge them in that order. All CI jobs pass on
+all four. Next tasks are in `dev_notes/handover.md`.
 
 The PRs add:
 - `group_by_meta()`;
@@ -26,12 +25,12 @@ The PRs add:
   argument.
 
 Andrea's decisions of 15–16 Nov are recorded in
-`dev_notes/metadata_and_events.md`.
+`dev_notes/metadata_and_events.md`. There will be no `select_by_meta()`
+(Andrea, 16 Nov).
 
 **Next steps**
 - [ ] **P1** [review] Review and merge #95, #96, #97 and #98, in this order: each branch merges the previous ones.
-- [ ] **P3** [decide] Is `select_by_meta()` still wanted? Options: write it, always keeping the track id; or drop it, since `show_meta(x) <- dplyr::select(show_meta(x), ...)` does the same. Recommended: drop it, unless users ask.
-- [ ] **P3** [cleanup] Delete the four branches once merged, and the merged `benchmark-sizes` and `inbound`.
+- [ ] **P3** [cleanup] Delete the branches of #95–#98 and #100 once merged, and the merged `benchmark-sizes` and `inbound`.
 
 ## #82: isopleths that cannot be drawn (PR #100)
 
@@ -46,12 +45,13 @@ changes `hr_tt_ud_iso()`. It covers:
 - MCP and LoCoH home ranges with no area;
 - `hr_tt_dbbmm()` tracks that are too short for `window_size`.
 
-Its test files pass locally; the KDE, akde and overlap test files are left
-to CI.
+All CI jobs pass. Andrea decided on 16 Nov that the table of UDs of
+`hr_tt_dbbmm()` still leaves out the tracks too short for `window_size`,
+and that MCP and LoCoH groups with fewer than three locations still give an
+error. The rule and its reasons are in `dev_notes/isopleths.md`.
 
 **Next steps**
 - [ ] **P1** [review] Review and merge #100 after #98.
-- [ ] **P3** [decide] Should `hr_tt_dbbmm()` without `levels` keep the tracks too short for `window_size`, as rows with an empty UD? Options: keep leaving them out, with move2utils' warning; or add rows with an `NA` UD, which every UD function would then have to handle. Recommended: leave them out.
 
 ## Developer notes
 

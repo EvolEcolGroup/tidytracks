@@ -15,6 +15,8 @@ package's data stay in `data-raw/`.
 - [metadata_and_events.md](metadata_and_events.md): the rule that only the
   track id is in both the events and the metadata, and the functions that
   keep it (#92, PRs #95–#98).
+- [isopleths.md](isopleths.md): isopleths that cannot be drawn are kept as
+  empty rows with a warning (#82, PR #100).
 - [ctmm_integration.md](ctmm_integration.md): plan and decisions for the
   ctmm models (#84), and the later analyses.
 

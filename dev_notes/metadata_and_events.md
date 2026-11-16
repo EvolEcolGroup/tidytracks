@@ -23,6 +23,7 @@ of the `hr_tt_*()` functions) and `R/geom_event_point.R`
 | `.keep = TRUE` of `as_event_column()`/`as_meta_column()` is soft-deprecated (`lifecycle::deprecate_soft()`, "as of 0.3.0") | keep it; remove it | it breaks the rule, and the setter undoes it; 0.3.0 assumed to be the next release | 2026-11-16 | Andrea (version: Claude) |
 | a column that the events are grouped by stays in the events, and is removed from the metadata | the other way round | `dplyr::select()` keeps grouping columns | 2026-11-16 | Claude |
 | the geoms add all non-`sfc` metadata columns to the layer by default; `meta_columns` restricts them (`character(0)` adds none) | only the columns in `aes()` | a facet is not visible to the geom; `c()` is `NULL` in R, so "none" needs `character(0)` | 2026-11-16 | Andrea (argument), Claude (`character(0)`) |
+| no `select_by_meta()` | write it, always keeping the track id | `show_meta(x) <- dplyr::select(show_meta(x), ...)` does the same | 2026-11-16 | Andrea |
 | the four PRs are stacked and merged in order (#95, #96, #97, #98); later branches merge the earlier ones rather than being rebased | independent PRs | the items depend on each other; force pushes are blocked | 2026-11-15 | Andrea (order), Claude (merges) |
 
 ## How it works
@@ -67,8 +68,6 @@ of the `hr_tt_*()` functions) and `R/geom_event_point.R`
 
 ## Open questions
 
-- `select_by_meta()`, mentioned when #92 item 3 was planned (it is not in
-  #92), is not written. Is it still wanted?
 - The upstream move2 issue: the draft is in `move2_track_data_issue.md`, for
   Andrea to file.
 - In `hr_tt_ud_iso()` and the KDE isopleths, a grouping variable named

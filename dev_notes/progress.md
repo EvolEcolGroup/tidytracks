@@ -3,6 +3,20 @@
 Log of major activity, newest first. Never rewrite old entries: add a
 correction as a new entry.
 
+## 2026-11-16 (laptopX1): wrap-up, Andrea's last decisions
+
+- **Done:** recorded Andrea's last decisions, and wrote the design note
+  `isopleths.md` (#82). CI passes all 9 jobs on all six PRs (#95–#100). All
+  the home range test files pass locally on `iso_empty_levels`.
+- **Where:** branch `dev_notes` (PR #99).
+- **Decisions** (Andrea):
+  - no `select_by_meta()`;
+  - the table of UDs of `hr_tt_dbbmm()` still leaves out tracks too short
+    for `window_size`;
+  - MCP and LoCoH groups with too few locations still give an error.
+- **Notes changed:** `summary.md`, `handover.md`, `metadata_and_events.md`,
+  `isopleths.md` (new), `README.md`.
+
 ## 2026-11-16 (laptopX1): isopleths that cannot be drawn (#82)
 
 - **Done:** every isopleth that cannot be drawn is kept as a row, with an
