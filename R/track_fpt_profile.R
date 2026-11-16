@@ -19,9 +19,9 @@
 #' for each track (or group) separately:
 #' - Radii within a single step between locations: if a circle is smaller than
 #'   both the steps before and after a location, its crossings are interpolated
-#'   on these steps, so the FPT is the radius divided by the speed of the steps,
-#'   and the variance of its log reflects the variation in speed, whatever the
-#'   radius. The default radii start at twice the median distance between
+#'   on these steps, so the FPT is proportional to the radius and inversely
+#'   proportional to the speed on these steps, and the variance of its log
+#'   reflects the variation in speed, whatever the radius. The default radii start at twice the median distance between
 #'   consecutive locations (ignoring locations that do not move).
 #' - Large radii: an event has an FPT only if the track goes farther than the
 #'   radius from it both before and after it, so as the radius grows, fewer
@@ -55,10 +55,10 @@
 #'   of environment and tracking systems. Journal of Applied Ecology, 45, 91-99.
 #' @param x A move2 object in a projected coordinate reference system, ordered
 #'   by time within each track; if explicitly grouped, one profile is computed
-#'   for each group, pooling the log FPT of its events. The FPT is always
-#'   computed on whole tracks, also for a group that holds only part of a track
-#'   (e.g. grouped by season). Otherwise, one profile is computed for each
-#'   track.
+#'   for each group, pooling the log FPT of its events; otherwise, one profile
+#'   is computed for each track. The FPT is always computed on whole tracks,
+#'   also for a group that holds only part of a track (e.g. grouped by
+#'   season).
 #' @param radii The radii, as a `units` object, e.g.
 #'   `as_units(seq(1, 50), "km")`, used for all the tracks (or groups). If
 #'   `NULL` (the default), each track (or group) gets 50 radii, evenly spaced on
