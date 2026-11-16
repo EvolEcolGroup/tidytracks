@@ -48,8 +48,7 @@ National Park, South Africa (Getz et al. 2007, Cross et al. 2016), also used in
 the article "Movement models with ctmm". Cilla, Gabs and Mvubu were located
 every hour; Pepper every hour, then every two hours, which also affects its FPT
 (see Options). The FPT is computed on the plane, so we project the tracks with
-an azimuthal equidistant projection, which preserves distances from the centre
-of the study area:
+an azimuthal equidistant projection centred on the study area:
 
 ```{r load_data}
 buffalo_tt <- tt_read_data(
@@ -103,19 +102,24 @@ scales <- track_suggest_ars_scale(profile, units = as_units("km"))
 scales
 ```
 
-All four profiles have a clear peak, at
-`r round(min(as.numeric(scales)), 1)`-`r round(max(as.numeric(scales)), 1)` km. Inspect the profiles before using a suggested scale: not all species use
-ARS, and a profile without a clear peak (e.g. declining steadily) has no scale
-of ARS, even if noise gives it small peaks.
+All four profiles have a peak, at
+`r round(min(as.numeric(scales)), 1)`–`r round(max(as.numeric(scales)), 1)`
+km; Cilla's has a second, almost as high, at about 7 km. The variance is also
+high at the smallest radii, which a buffalo crosses quickly when it walks and
+slowly when it rests; this end of a profile is not a peak, as a peak must be
+higher than the radii on both sides. Inspect the profiles before using a
+suggested scale: not all species use ARS, and a profile without a clear peak
+(e.g. declining steadily) has no scale of ARS, even if noise gives it small
+peaks.
 
 ## Default radii
 
 Two ranges of radii are not informative:
 
 - **Radii within a step.** If a circle is smaller than the steps before and
-  after a location, the track crosses it on these steps, and the FPT is the
-  radius divided by their speed. The variance of the log FPT then measures the
-  variation in speed, whatever the radius. This matters most for long steps
+  after a location, the track crosses it on these steps, and the FPT is
+  proportional to the radius, by a factor set by their speed. The variance of
+  the log FPT then measures the variation in speed, whatever the radius. This matters most for long steps
   (e.g. one location every few hours) and large location errors.
 - **Radii larger than about half the extent of a track.** A location has an
   FPT only if the track goes farther than the radius from it both before and
@@ -125,8 +129,8 @@ Two ranges of radii are not informative:
 By default, each track therefore gets 50 radii, evenly spaced on a log scale,
 from twice the median distance between its consecutive locations to half the
 diagonal of its bounding box. The column `n_valid` of the profile gives the
-number of locations with an FPT. With radii up to the extent of the tracks,
-the largest radii have none:
+number of locations with an FPT. With radii up to 62 km, the diagonal of the
+bounding box of the largest track (Pepper's), the largest radii have none:
 
 ```{r n_valid}
 profile_wide <- track_fpt_profile(
@@ -144,7 +148,8 @@ ggplot(profile_wide, aes(x = as.numeric(radius), y = n_valid)) +
 
 Where the number of locations with an FPT falls steeply, the variance can
 jump. A radius is therefore used only if at least half of the locations of the
-track have an FPT at it (argument `min_prop_valid`; column `enough_events`).
+track have an FPT at it (by default; argument `min_prop_valid`, column
+`enough_events`).
 `autoplot()` draws the other radii with dashed lines, and
 `track_suggest_ars_scale()` ignores them.
 
@@ -210,17 +215,18 @@ first peak can be meaningful; the profile shows whether it is.
 - **Peak:** `method` selects the highest peak (`"max"`, the default), the
   first (`"first"`), or the one around which the variance changes most
   (`"steep"`). `peak_width` (1 by default) is the number of radii on either
-  side of a peak that must have a lower variance; larger values ignore narrow
-  peaks:
+  side of a peak that must not have a higher variance; larger values ignore
+  narrow peaks. The peaks of the buffalo are broad, so here the scales do not
+  change:
 
   ```{r peak_width}
   track_suggest_ars_scale(profile, peak_width = 3, units = as_units("km"))
   ```
 
-- **Groups:** for a grouped tibble (e.g. `group_by(x, sex)`), the log FPT of
-  the tracks of each group are pooled into one profile; the FPT is still
-  computed within tracks. For central place foragers, split the tracks into
-  trips with `tt_split_trips()`, so that the time between trips does not
+- **Groups:** if the tibble is grouped by a column of its events (e.g. the
+  season), the log FPTs of each group are pooled into one profile; the FPT is
+  still computed on whole tracks. For central place foragers, split the tracks
+  into trips with `tt_split_trips()`, so that the time between trips does not
   count, and group the trips by animal.
 - **Sampling:** the FPT depends on the sampling interval. Regularise tracks
   with `tt_regular_time()` if it varies, and compare tracks with similar
