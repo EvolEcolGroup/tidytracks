@@ -81,3 +81,12 @@ test_that("track_suggest_ars_scale takes a move2 object or a profile", {
     track_suggest_ars_scale(track_fpt_profile(x, radii = radii))
   )
 })
+
+test_that("a flat profile has no peak, despite rounding", {
+  # radii smaller than all the steps of example_tt (the shortest is 37 km):
+  # the FPT is proportional to the radius, so the variance of its log is the
+  # same at all radii, but for differences of about 1e-15 from rounding
+  x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
+  scales <- track_suggest_ars_scale(x, radii = as_units(seq(10, 100, 10), "m"))
+  expect_true(all(is.na(scales)))
+})

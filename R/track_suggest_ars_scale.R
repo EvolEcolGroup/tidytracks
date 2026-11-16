@@ -79,7 +79,11 @@ track_suggest_ars_scale <- function(
 #' Find the peak of a profile
 #'
 #' A peak is a value higher than the values next to it, and not lower than any
-#' value within `width` positions of it.
+#' value within `width` positions of it. Values that differ by less than their
+#' rounding error are taken to be equal, so a flat profile has no peak: e.g.
+#' for radii smaller than all the steps of a track, the FPT is proportional to
+#' the radius, so the variance of its log is the same at all radii, but for
+#' differences of about 1e-15 that are only rounding.
 #'
 #' @param variance A numeric vector, for radii in increasing order; it can have
 #'   missing values.
@@ -91,6 +95,10 @@ track_suggest_ars_scale <- function(
 #' @noRd
 fpt_peak <- function(variance, method, width) {
   n <- length(variance)
+  # the variance of the log of the FPT has no units, so an absolute tolerance
+  # of about 1e-8 is used for variances up to 1, and a relative one above
+  tolerance <- sqrt(.Machine$double.eps) *
+    max(1, abs(variance), na.rm = TRUE)
   window <- function(i, from, to) {
     seq(max(from, 1), min(to, n))
   }
@@ -98,10 +106,18 @@ fpt_peak <- function(variance, method, width) {
     if (anyNA(variance[c(i - 1, i, i + 1)])) {
       return(FALSE)
     }
-    if (variance[i] <= variance[i - 1] || variance[i] <= variance[i + 1]) {
+    # the peak must be higher than both neighbours by more than rounding
+    if (
+      variance[i] - variance[i - 1] <= tolerance ||
+        variance[i] - variance[i + 1] <= tolerance
+    ) {
       return(FALSE)
     }
-    all(variance[window(i, i - width, i + width)] <= variance[i], na.rm = TRUE)
+    # and not lower than any value in the window, beyond rounding
+    all(
+      variance[window(i, i - width, i + width)] <= variance[i] + tolerance,
+      na.rm = TRUE
+    )
   }
   candidates <- if (n >= 3) seq(2, n - 1) else integer(0)
   peaks <- candidates[vapply(candidates, is_peak, logical(1))]
