@@ -53,6 +53,24 @@ error. The rule and its reasons are in `dev_notes/isopleths.md`.
 **Next steps**
 - [ ] **P1** [review] Review and merge #100 after #98.
 
+## First passage time: review of `fpt` (branch `codereview_fpt`)
+
+Lizzie's first passage time functions (`event_fpt()`, `track_fpt_profile()`,
+`track_suggest_ars_scale()`; branch `fpt`), reviewed on 12 real datasets.
+
+**Status.** Branch `codereview_fpt` (from `fpt`, pushed 16 Nov, no PR) holds
+the review's fixes, an exact C++ speed-up (9× faster on a 72k-fix track,
+about linear in track length), three new defaults decided by Andrea (radii per
+track, at least half of the locations per radius, the highest peak), new
+examples and the article "Area-restricted search with first passage time".
+The FPTs equal `adehabitatLT::fpt()` exactly; R CMD check is OK (1,694
+tests). Report: `dev_notes/code_review_fpt_2026-11.md` on that branch.
+
+**Next steps**
+- [ ] **P1** [andrea] Send Lizzie the note (Claude doc "FPT review: note to Lizzie", private until shared), so that she reviews `codereview_fpt`: the article, then the report's list of commits.
+- [ ] **P2** [review] Merge `codereview_fpt` into `fpt`, then open a PR of `fpt` into `dev`: expect a small conflict with #99 in `.Rbuildignore`, and add the report to `dev_notes/README.md`.
+- [ ] **P3** [cleanup] Delete the local branch `codereview_fpt_speedup` (merged into `codereview_fpt`), and `codereview_fpt` once merged.
+
 ## Developer notes
 
 **Status.** `dev_notes/` was set up on 16 Nov in PR #99 (branch `dev_notes`,

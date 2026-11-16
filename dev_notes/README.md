@@ -25,6 +25,10 @@ package's data stay in `data-raw/`.
 - [codereview_2026-10.md](codereview_2026-10.md): open issues of code review
   2 (#86) that need a decision.
 
+- `code_review_fpt_2026-11.md` (on branch `codereview_fpt` until it is
+  merged): review of the first passage time functions (`fpt`), with the
+  fixes, the new defaults, the checks and the findings not fixed.
+
 ## Upstream bug reports (drafts)
 
 - [move2_track_data_issue.md](move2_track_data_issue.md): move2

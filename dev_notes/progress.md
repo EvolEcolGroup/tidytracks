@@ -3,6 +3,21 @@
 Log of major activity, newest first. Never rewrite old entries: add a
 correction as a new entry.
 
+## 2026-11-16 (laptopX1): review of the first passage time functions (`fpt`)
+
+- **Done:** reviewed Lizzie's `fea842f` on 12 real datasets; the FPTs equal
+  `adehabitatLT::fpt()` exactly. Fixed 5 bugs, sped up the C++ search (9× on
+  72k fixes, about linear in track length), set three new defaults, rewrote
+  the examples, and added the article "Area-restricted search with first
+  passage time". Three verifying agents checked every commit; the second and
+  third found two bugs introduced by the review, both fixed.
+- **Where:** branch `codereview_fpt` (pushed, no PR); report
+  `dev_notes/code_review_fpt_2026-11.md` there. R CMD check OK (1,694 tests).
+- **Decisions** (Andrea): merge the speed-up; default radii per track or
+  group; a radius needs half of the locations (`min_prop_valid = 0.5`, rather
+  than 30 events); the highest peak as default method.
+- **Notes changed:** `summary.md`, `handover.md`, `progress.md`, `README.md`.
+
 ## 2026-11-16 (laptopX1): wrap-up, Andrea's last decisions
 
 - **Done:** recorded Andrea's last decisions, and wrote the design note

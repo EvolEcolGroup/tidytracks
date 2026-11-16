@@ -15,8 +15,9 @@ documents listed in `README.md`.
 | `iso_empty_levels` | #82: isopleths that cannot be drawn kept as empty rows, with a warning | `geom_meta_columns` | yes | no (PR #100) |
 | `dev_notes` | this `dev_notes/`, with the notes moved out of `data-raw/` | `dev` | yes | no (PR #99) |
 | `move2utilsbug` | two draft move2utils bug reports, now copied to `dev_notes/` | `main` | yes | no (no PR) |
-| `fpt` | Lizzie: first passage time, under review in another session | `dev` | yes | no |
-| `codereview_fpt`, `codereview_fpt_speedup` | another session's review of `fpt`: report in `dev_notes/code_review_fpt_2026-11.md`, and a speed-up | `fpt` | no (local) | no |
+| `fpt` | Lizzie: first passage time; reviewed in `codereview_fpt` | `dev` | yes | no |
+| `codereview_fpt` | review of `fpt`: fixes, speed-up, new defaults, article; report in `dev_notes/code_review_fpt_2026-11.md` | `fpt` | yes | no (no PR) |
+| `codereview_fpt_speedup` | the C++ speed-up of the review | `codereview_fpt` at `9a5bede` | no (local) | into `codereview_fpt` (`411b28b`) |
 | `get_data_ready_vignette` | Paul: vignette text (January 2026) | — | yes | no |
 | `tt_and_move2_diffs` | Holly: wording (September 2026) | — | yes | no |
 
@@ -50,12 +51,37 @@ The next steps of `summary.md`, in the same order and with the same labels.
   isopleth that cannot be drawn should add a reason to
   `isopleth_not_drawn_reason()`, in `R/hr_tt_ud_iso.R`.
 
-### 4. **P2** [review] Merge #99 (`dev_notes`)
+### 4. **P1** [andrea] Send Lizzie the note on the FPT review
+
+- The note is the Claude doc "FPT review: note to Lizzie" (private: share it
+  first). It points her to the article
+  (`vignettes/articles/first_passage_time.Rmd`) and to the report
+  (`dev_notes/code_review_fpt_2026-11.md`), both on `codereview_fpt`.
+- **Done when:** Lizzie has reviewed the branch and ticked the report's boxes,
+  or listed what to change.
+
+### 5. **P2** [review] Merge `codereview_fpt` into `fpt`, then `fpt` into `dev`
+
+- `codereview_fpt` is `fpt` plus the review: 28 commits (fixes, each with
+  its test where one is possible, the merged speed-up and the report),
+  verified by separate agents (the report lists them, and how each was
+  checked). R CMD check was OK at `a27a29b` (1,694 tests, 0 lints).
+- Conflicts to expect with #99: `.Rbuildignore` (both add `^dev_notes$`), and
+  the report must be added to `dev_notes/README.md`.
+- The article renders in about 6 s, so it is not precompiled.
+- **Done when:** `fpt` is merged into `dev`.
+
+### 6. **P3** [cleanup] Branches of the FPT review
+
+- Delete the local `codereview_fpt_speedup` (merged into `codereview_fpt`),
+  and `codereview_fpt` and `fpt` once merged.
+
+### 7. **P2** [review] Merge #99 (`dev_notes`)
 
 - It does not depend on #95–#98. After it is merged, update this handover on
   the branch being worked on.
 
-### 5. **P2** [andrea] File the upstream reports
+### 8. **P2** [andrea] File the upstream reports
 
 - Rerun the example in `move2_track_data_issue.md` with the latest move2, and
   update its output.
@@ -63,19 +89,19 @@ The next steps of `summary.md`, in the same order and with the same labels.
   reports (MPCDF GitLab, mirrored at `move2universe/move2utils`), unless they
   are filed already.
 
-### 6. **P2** [decide] Code review 2: open issues
+### 9. **P2** [decide] Code review 2: open issues
 
 - Read `codereview_2026-10.md`, and pick the items to fix. A fix is one
   branch from `dev` per item, with a test, and a NEWS bullet.
 
-### 7. **P3** [claude] Check the review items that #95 may have fixed
+### 10. **P3** [claude] Check the review items that #95 may have fixed
 
 - **Branch:** `dev`, after #95 is merged.
 - **Do:** try `event_ud_level()` with a one-row table of UDs and events of
   several tracks, and `hr_tt_ud_overlap()` on a table grouped by a factor.
   Mark the items as fixed in `codereview_2026-10.md`, or file issues.
 
-### 8. **P3** [decide] Later ctmm analyses
+### 11. **P3** [decide] Later ctmm analyses
 
 - See `ctmm_integration.md`, "Later: further analyses built on the model
   table".
@@ -86,9 +112,11 @@ None.
 
 ## Backlog
 
-- `codereview_fpt` also adds `^dev_notes$` to `.Rbuildignore`, and a report
-  in `dev_notes/`. Expect a small conflict with #99 in `.Rbuildignore`, and
-  add the report to `dev_notes/README.md` when it is merged.
+- The FPT review leaves 5 minor findings (report, "Findings not fixed"):
+  repeated FPTs for groups that split tracks often, memory for tracks of
+  millions of locations, the `trip_na` events after
+  `tt_split_trips(complete = FALSE)`, numeric and `units` time columns, and
+  two small test and type points.
 
 - `hr_tt_ud_iso()` and the KDE isopleths: a grouping variable named `level`,
   `area` or `geometry` clashes with the result columns (predates #92).
