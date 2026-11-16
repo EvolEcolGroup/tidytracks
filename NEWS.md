@@ -31,6 +31,8 @@
 * `show_meta<-` removes from the events a column of the new metadata with the
   same values, and renames the metadata version `.meta` (with a warning) when
   the values differ (#92)
+* `.keep = TRUE` in `as_event_column()` and `as_meta_column()` is deprecated,
+  as it leaves the columns in both the events and the metadata (#92)
 * the `hr_tt_*()` functions return the grouping variables with their own
   types (e.g. factors, or `sfc` columns of locations), one column each,
   rather than as text in a single `group_id` column; `hr_tt_ud_overlap()`,

@@ -5,8 +5,10 @@ test_that("as_event_column works correctly", {
   expect_true("sex" %in% colnames(example_tt2))
   expect_false("sex" %in% colnames(show_meta(example_tt2)))
 
-  # now use the .keep option
-  example_tt3 <- as_event_column(example_tt, sex, .keep = TRUE)
+  # now use the .keep option, which is deprecated
+  lifecycle::expect_deprecated(
+    example_tt3 <- as_event_column(example_tt, sex, .keep = TRUE)
+  )
   expect_true("sex" %in% colnames(example_tt3))
   expect_true("sex" %in% colnames(show_meta(example_tt3)))
 })
@@ -33,14 +35,16 @@ test_that("as_event_column works with sf metadata", {
 })
 
 test_that("as_event_column does not duplicate a column already in the events", {
-  # sex is in both tables, with the same values
-  both_tt <- as_event_column(example_tt, sex, .keep = TRUE)
+  # sex is in both tables, with the same values (copied with move2)
+  both_tt <- move2::mt_as_event_attribute(example_tt, sex, .keep = TRUE)
   result <- as_event_column(both_tt, sex)
   expect_equal(names(result), names(both_tt))
   expect_false("sex" %in% names(show_meta(result)))
   expect_equal(result$sex, both_tt$sex)
   # with .keep, nothing changes
-  expect_equal(as_event_column(both_tt, sex, .keep = TRUE), both_tt)
+  lifecycle::expect_deprecated(
+    expect_equal(as_event_column(both_tt, sex, .keep = TRUE), both_tt)
+  )
   # other columns are moved as usual
   result <- as_event_column(both_tt, sex, nest_lon)
   expect_setequal(names(result), c(names(both_tt), "nest_lon"))

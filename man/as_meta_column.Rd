@@ -14,10 +14,10 @@ as_meta_column(x, ..., .keep = FALSE)
 the metadata; it is possible to use tidyselect helpers to select multiple
 columns.}
 
-\item{.keep}{A logical value indicating whether to keep the original event
-data columns in the event data after moving them to the metadata. The
-default is \code{FALSE}, which means that the original event data columns will be
-removed.}
+\item{.keep}{Deprecated. \code{TRUE} keeps the columns in the events too, which
+leaves them in both tables (and \code{\link[=show_meta]{show_meta<-}} removes them
+from the events the next time that the metadata is set). The default,
+\code{FALSE}, removes them from the events.}
 }
 \value{
 A \code{move2} object with the specified event data columns added to the
@@ -34,7 +34,8 @@ metadata.
 A column that is already in the metadata, with the same values as in the
 events (for the events of each track), is not duplicated: it is only removed
 from the events (unless \code{.keep = TRUE}); with different values, it gives an
-error, as the only column in both tables should be the track id.
+error, as the only column in both tables should be the track id. For the
+same reason, \code{.keep = TRUE} is deprecated.
 }
 \examples{
 # we first move the sex column to the event data

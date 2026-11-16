@@ -154,8 +154,8 @@ test_that("group_by_meta groups by the track id without moving it", {
 })
 
 test_that("group_by_meta reuses a column already in the events", {
-  # species is in both tables, with the same values
-  toy_tt <- as_event_column(create_toy_tt(), species, .keep = TRUE)
+  # species is in both tables, with the same values (copied with move2)
+  toy_tt <- move2::mt_as_event_attribute(create_toy_tt(), species, .keep = TRUE)
   result <- group_by_meta(toy_tt, species)
   expect_equal(dplyr::group_vars(result), "species")
   expect_equal(dplyr::group_size(result), c(24L, 6L))
@@ -163,7 +163,9 @@ test_that("group_by_meta reuses a column already in the events", {
   expect_equal(names(result), names(toy_tt))
   expect_false("species" %in% names(show_meta(result)))
   # the same for an sfc column
-  toy_tt <- as_event_column(create_toy_tt_geo(), colony_sf, .keep = TRUE)
+  toy_tt <- move2::mt_as_event_attribute(
+    create_toy_tt_geo(), colony_sf, .keep = TRUE
+  )
   result <- group_by_meta(toy_tt, colony_sf)
   expect_equal(dplyr::n_groups(result), 2L)
   expect_equal(names(result), names(toy_tt))
