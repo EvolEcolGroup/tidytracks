@@ -50,6 +50,7 @@ Imports:
   vctrs
 Suggests:
     adehabitatHR,
+    adehabitatLT,
     amt,
     av,
     basemaps,
