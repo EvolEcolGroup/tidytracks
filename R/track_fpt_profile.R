@@ -94,8 +94,15 @@ track_fpt_profile <- function(x, radii = NULL) {
   log_fpt <- log(fpt)
   # e.g. a time of 0, from locations with duplicated times on both sides
   log_fpt[!is.finite(log_fpt)] <- NA_real_
-  stats_by_group <- lapply(seq_along(group_order), function(group) {
-    fpt_variance(log_fpt[group_index == group, , drop = FALSE])
+  # the rows of each group, found in a single pass: comparing all the rows
+  # with each group in turn takes time proportional to the number of groups
+  # times the number of events, e.g. with the many trips of tt_split_trips()
+  rows_by_group <- unname(split(
+    seq_along(group_index),
+    factor(group_index, levels = seq_along(group_order))
+  ))
+  stats_by_group <- lapply(rows_by_group, function(rows) {
+    fpt_variance(log_fpt[rows, , drop = FALSE])
   })
 
   n_radii <- length(radii_crs)
