@@ -252,7 +252,9 @@ fpt_default_radii <- function(events, rows) {
   # the whole tracks of the group (the FPT is computed on whole tracks, also
   # when the group holds only part of a track)
   usable_rows <- rows[events$usable[rows]]
-  rows_by_track <- events$rows_by_track[unique(events$ids[usable_rows])]
+  rows_by_track <- events$rows_by_track[
+    unique(events$track_index[usable_rows])
+  ]
   steps <- unlist(lapply(rows_by_track, function(track_rows) {
     sqrt(diff(xy[track_rows, 1])^2 + diff(xy[track_rows, 2])^2)
   }))
