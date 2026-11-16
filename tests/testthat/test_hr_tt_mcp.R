@@ -63,7 +63,12 @@ test_that("hr_tt_mcp returns the tracks of ungrouped data in metadata order", {
   x <- tt_order_time(
     readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
   )
-  track_mcp <- hr_tt_mcp(x)
+  # (the 50% MCP of track c has no area)
+  expect_warning(
+    track_mcp <- hr_tt_mcp(x),
+    "* 'c', 50%: the locations within it",
+    fixed = TRUE
+  )
   expect_equal(as.character(unique(track_mcp$track_id)), c("b", "a", "c"))
   expect_equal(
     track_mcp$area[track_mcp$track_id == "b"],
@@ -133,7 +138,8 @@ test_that("hr_tt_mcp requires at least 3 locations per group", {
 
 test_that("hr_tt_mcp gives empty polygons for levels with no area", {
   # with 4 locations, the 50% MCP is the hull of the 2 locations closest to
-  # the centroid: a segment, which has no area
+  # the centroid: a segment, which has no area, so it is returned with an
+  # empty geometry and an NA area, with a warning
   coords <- data.frame(id = "a", x = c(0, 1, 3, 0), y = c(0, 0, 1, 4))
   coords$time <- as.POSIXct("2024-01-01", tz = "UTC") + seq_len(4) * 60
   for (crs in c(32630, 4326)) {
@@ -142,9 +148,14 @@ test_that("hr_tt_mcp gives empty polygons for levels with no area", {
       time_column = "time",
       track_id_column = "id"
     )
-    track_mcp <- hr_tt_mcp(track)
+    expect_warning(
+      track_mcp <- hr_tt_mcp(track),
+      "* 'a', 50%: the locations within it",
+      fixed = TRUE
+    )
     expect_equal(sf::st_is_empty(track_mcp), c(FALSE, TRUE))
-    expect_equal(as.numeric(track_mcp$area) > 0, c(TRUE, FALSE))
+    expect_equal(is.na(track_mcp$area), c(FALSE, TRUE))
+    expect_gt(as.numeric(track_mcp$area[1]), 0)
     expect_true(all(sf::st_is_valid(track_mcp)))
   }
 })

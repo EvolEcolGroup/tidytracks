@@ -54,7 +54,10 @@ e.g. a factor, or an \code{sfc} column of locations from \code{\link[=group_by_m
 \item \code{n}: the parameter of the LoCoH
 \item \code{level}: the level of the home range
 \item \code{area}: the area of the home range (as computed by \code{sf::st_area()})
-\item \code{geometry}: the geometry of the home range as sf multipolygons
+\item \code{geometry}: the geometry of the home range as sf multipolygons; the
+multipolygon is empty, and its area is \code{NA} (with a warning), if the
+hulls within the level have no area (their locations are at the same
+place or on a line), without a buffer
 }
 }
 \description{

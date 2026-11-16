@@ -30,7 +30,8 @@ Default is 0.95.}
 \value{
 If \code{x} is a \code{SpatRaster}, an \code{sf} object with one row per level and
 columns \code{level}, \code{area} (the area of the isopleth) and \code{geometry} (a
-\code{MULTIPOLYGON} for the isopleth). If \code{x} is a tibble, an \code{sf} tibble of
+\code{MULTIPOLYGON} for the isopleth, empty if it cannot be drawn on the grid,
+see Details). If \code{x} is a tibble, an \code{sf} tibble of
 class \code{hr_tt_poly_tbl} with the columns of \code{x} (except \code{ud} and
 \code{ud_ctmm}) and, for each UD, one row per level with these three columns.
 For the UDs estimated with \code{ctmm}, the columns \code{area_low} and \code{area_high}
@@ -40,6 +41,20 @@ them with other UDs, e.g. from \code{\link[=hr_tt_kde]{hr_tt_kde()}}, the other 
 }
 \description{
 This method can be applied to a whole tibble of UDs, or to an individual UD.
+}
+\details{
+Each UD has one row per level: an isopleth that cannot be drawn is
+returned with an empty geometry and an \code{NA} area, with a warning that says
+why, and what to do about it. The most common case is an isopleth at a
+level that is smaller than the share of the UD held by the cells with its
+highest value (e.g. a 50\% isopleth of a UD with 90\% of it in a single
+cell), which has no cell within it. This happens for UDs estimated on
+grids that are coarse relative to the UD (e.g. a kernel bandwidth that is
+small relative to the cells, or an animal that spends most of its time at
+one place): use a finer grid. More generally, the isopleths are drawn
+between the centres of the cells, so they are only accurate on grids that
+are fine relative to the UD. Other cases are a 0\% isopleth, and UDs
+without values (e.g. all \code{NA}) or with infinite values.
 }
 \examples{
 example_kde <- hr_tt_kde(example_tt)

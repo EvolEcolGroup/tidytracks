@@ -227,9 +227,13 @@ test_that("hr_tt_locoh works with unprojected data", {
 test_that("hulls with no area are only kept with a buffer", {
   # locations on a line: all hulls are segments
   line_tt <- make_locoh_tt(cbind(1:10, 2 * (1:10)))
-  no_buffer <- hr_tt_locoh(line_tt, n = 3, levels = 0.9)
+  expect_warning(
+    no_buffer <- hr_tt_locoh(line_tt, n = 3, levels = 0.9),
+    "* 'a', 90%: its hulls have no area",
+    fixed = TRUE
+  )
   expect_true(sf::st_is_empty(no_buffer$geometry))
-  expect_equal(as.numeric(no_buffer$area), 0)
+  expect_true(is.na(no_buffer$area))
 
   # with a buffer, (part of) the line becomes a thin polygon, whose area is
   # at most that of the whole line buffered by 0.1

@@ -118,6 +118,12 @@ duplicated track ids in the metadata.
 
 ## Bug fixes
 
+* fix isopleths that could not be drawn (e.g. a 50% isopleth when one cell
+  holds most of the UD) being dropped silently; the `hr_tt_*()` functions now
+  return them with an empty geometry and an `NA` area, with a warning that
+  says why and what to do, and skipped `hr_tt_dbbmm()` tracks get such rows
+  with `levels` (#82)
+* `hr_tt_ud_iso()`: fix levels such as `1/3` being returned rounded
 * `lwgeom` is now imported rather than suggested. `event_azimuth()` always
   needs it (through `move2::mt_azimuth()`), and `event_distance()`,
   `track_tot_distance()`, `event_speed()` and `track_summary_stats()` need it

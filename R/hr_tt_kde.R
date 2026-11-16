@@ -70,7 +70,9 @@
 #'   numbers between 0 and 1. If set to NULL (the default), the full utilisation
 #'   distribution is returned; otherwise just the isopleths are returned. It is
 #'   possible to specify more than two levels, e.g.  `c(0.5, 0.95)` corresponds
-#'   to the 50% and 95% home ranges.
+#'   to the 50% and 95% home ranges. An isopleth that cannot be drawn (e.g.
+#'   on a grid that is coarse relative to the UD) is returned with an empty
+#'   geometry and an `NA` area, with a warning (see [hr_tt_ud_iso()]).
 #' @param method The method used to estimate the UD on the grid: `"binned"`
 #'   (the default), which bins the locations onto the grid before smoothing
 #'   them, or `"exact"`, which evaluates the kernel of every location at every
@@ -316,7 +318,7 @@ hr_tt_kde <- function(
           )
         }
       )
-      iso_sf(iso, grid$iso_crs) # nolint: object_usage_linter.
+      iso_sf(iso, iso_levels, grid$iso_crs) # nolint: object_usage_linter.
     }
   }
 
