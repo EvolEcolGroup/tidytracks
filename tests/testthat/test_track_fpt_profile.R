@@ -180,4 +180,11 @@ test_that("radii need enough events with an FPT", {
   # the variance is still given, and the plot shows those radii dashed
   expect_false(anyNA(profile$var_log_fpt[profile$n_valid >= 2]))
   expect_s3_class(ggplot2::autoplot(profile), "ggplot")
+  # a profile without the column is plotted with all its radii
+  without <- dplyr::select(profile, -"enough_events")
+  expect_s3_class(without, "fpt_profile_tbl")
+  expect_s3_class(
+    ggplot2::ggplot_build(ggplot2::autoplot(without)),
+    "ggplot_built"
+  )
 })

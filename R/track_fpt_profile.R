@@ -295,7 +295,13 @@ autoplot.fpt_profile_tbl <- function(object, ...) {
     id = as.character(object[[1]]),
     radius = as.numeric(object$radius),
     variance = object$var_log_fpt,
-    enough = object$enough_events
+    # a profile without the column (e.g. made by hand) has all its radii
+    # used, as by track_suggest_ars_scale() for its peaks
+    enough = if ("enough_events" %in% names(object)) {
+      object$enough_events
+    } else {
+      TRUE
+    }
   )
   to_plot <- to_plot[!is.na(to_plot$variance), ]
   # the variance at the radii with enough events, NA elsewhere, so that the
