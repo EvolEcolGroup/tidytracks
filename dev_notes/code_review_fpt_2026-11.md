@@ -14,12 +14,18 @@
   and about linear rather than quadratic in the length of a track, with
   identical results and no slowdown elsewhere. Merged into `codereview_fpt`
   (`411b28b`) on Andrea's decision, 16 November 2026.
-- **Findings not fixed:** 8, of which 3 need a decision.
+- **New defaults:** 3 commits, decided by Andrea on 16 November 2026 after
+  the review: radii chosen per track or group, a minimum proportion of
+  locations per radius, and the highest peak as the default; plus new
+  examples and an article ("Area-restricted search with first passage
+  time"). A second verifying agent then found a bug in the grouped profiles
+  introduced by the first of these commits, and smaller issues: 6 follow-up
+  commits, and a third agent 3 more.
+- **Findings not fixed:** 5, none needing a decision.
 - **Headline:** the FPTs are right. They equal `adehabitatLT::fpt()` exactly
   (same values, same missing values) on 11 real datasets, 1,655,175
   event × radius values. The problems were in the scale suggestion, in the
-  speed on long tracks or many tracks, and in the defaults (not fixed:
-  decision needed).
+  speed on long tracks or many tracks, and in the defaults.
 - Nothing is pushed.
 
 ## Verification
@@ -28,6 +34,12 @@ All on the laptop (laptopX1), 16 November 2026.
 
 | Check | Where | Result |
 |---|---|---|
+| R CMD check (options as below) | `codereview_fpt` at `a27a29b` (later commits change only documentation and `dev_notes/`), built from a clean copy | Status: OK; 1,694 tests passed, 0 failed, 0 warnings, 0 skipped; examples and spelling OK. `lint_package()` found one long line, rewrapped in `45edbf2` (documentation only): 0 lints at `45edbf2` |
+| R CMD check (options as below) | `codereview_fpt` at `3a89c76`, built from a clean copy | Status: OK; 1,692 tests passed, 0 failed, 0 warnings, 0 skipped; examples and spelling OK |
+| R CMD check (options as below) | `codereview_fpt` at `115fce9` | Status: OK; 1,683 tests passed, 0 failed, 0 warnings, 0 skipped; examples and spelling OK |
+| Article rendered (`rmarkdown::render()`) | `a27a29b` | renders in about 6 s; text matches the output |
+| New defaults verified by a separate agent | `fae2f72` to `115fce9` | the tests of `fae2f72`, `df5e770` and `c5f4e4f` fail before and pass after; found the grouping bug of `fae2f72` and the issues fixed in `4863bf7` to `3a89c76` |
+| Follow-ups verified by a separate agent | `4863bf7` to `3a89c76` | the tests of `4863bf7`, `49009e8` and `74ae17c` fail before and pass after; grouped profiles of the 6 ctmm buffalo (by season, by blocks of 37 locations) equal `var(log(event_fpt()))` per group (largest difference 9e-14); profiles of whole tracks identical to `115fce9`; found the issue fixed in `79a4be6` and the wording fixed in `f5ec019` and `a27a29b` |
 | R CMD check (options as in the next row) | `codereview_fpt` at `411b28b` (after merging the speed-up), built from a clean copy | Status: OK; 1,656 tests passed, 0 failed, 0 warnings, 0 skipped |
 | R CMD check (`--no-manual`, `NOT_CRAN=true`, all Suggests installed): tests, examples, vignette, dependencies of the tests | `codereview_fpt` at `308a6c4`, built from a clean copy | Status: OK (examples, vignette, spelling and dependencies of the tests OK) |
 | Full test suite | same | 1,655 passed, 0 failed, 0 warnings, 0 skipped |
@@ -130,6 +142,13 @@ and 2.86 s for 9k, 18k and 36k fixes for one never-left radius, under load).
 - `track_suggest_ars_scale()` sorts the rows of each track of a profile by
   radius (`24e9118`): only profiles reordered by the user give different
   results.
+- New defaults (`fae2f72`, `df5e770`, `c5f4e4f`, with `4863bf7`): the default radii differ
+  between tracks (or groups); profiles gain the column `enough_events`; tracks
+  without default radii get one row of missing values and a warning, instead
+  of an error for the whole object; `track_suggest_ars_scale()` ignores radii
+  with fewer than half of the locations of the track, and returns the highest
+  peak. Profiles with radii given by the user are unchanged, except for the
+  new column.
 - No NEWS entries: the fixes are to functions that are new in this
   development version, whose NEWS item still describes them correctly.
 
@@ -181,13 +200,74 @@ and 2.86 s for 9k, 18k and 36k fixes for one never-left radius, under load).
   and blocks are tried from the smallest up: no slowdown, 9× faster on the
   72k-fix track *[speed]*
 
-## Findings not fixed
+### New defaults (decided by Andrea, 16 November 2026)
 
-### Decision needed: default radii and suggested scale
+- [ ] `fae2f72` · `track_fpt_profile()` — the default radii ran from the
+  median step to the diagonal of the largest track, pooled over tracks: the
+  lower end was within a step for a third of the locations (the FPT is then
+  the radius over the speed of the steps), giving first peaks at the scale of
+  the steps (33-47 m for fishers with 2-minute fixes); the upper end was
+  never left (2-35 of 50 radii without a variance per track); and one track
+  set the range of all. Now 50 radii per track or group, from twice the
+  median non-zero step to half the diagonal of its largest track
+  *[wrong suggestions]*
+- [ ] `df5e770` · `track_fpt_profile()`, `track_suggest_ars_scale()`,
+  `autoplot()` — no minimum number of locations behind a radius: `"steep"`
+  picked peaks backed by 2-27 locations, and `"max"` a spike at 15 km for
+  buffalo Mvubu (peak at 3 km), where the locations with an FPT fall from
+  1,998 to 772. New `min_prop_valid` (default 0.5) and column
+  `enough_events`; radii below it are ignored, and drawn dashed. A proportion
+  rather than a count (30), decided by Andrea: on 34 real tracks it removed
+  the end-of-range spikes and changed nothing else *[wrong suggestions]*
+- [ ] `c5f4e4f` · `track_suggest_ars_scale()` — the default `"first"` picked
+  small bumps before the main peak (buffalo Pepper: 0.96 km, peak at 7.4 km);
+  the default is now `"max"` *[wrong suggestions]*
+- [ ] `64bddb3` · examples — `example_tt` (5 locations per track) gave `NA`
+  suggestions and flat profiles; the examples now use two buffalo of `ctmm`
+  *[documentation]*
+- [ ] `115fce9` · new article "Area-restricted search with first passage
+  time", on the four buffalo of the ctmm article: the FPT, the profiles, the
+  default radii, `min_prop_valid`, the choice of peak, and the options
+  *[documentation]*
 
-- **Decision needed:** the default radii (`fpt_default_radii()`) run from the
-  median non-zero step to the diagonal of the bounding box of the largest
-  track, pooled over all tracks.
+### Follow-ups found by the verifying agent
+
+- [ ] `4863bf7` · `track_fpt_profile()` — `fae2f72` computed the FPT of a
+  group from its own events of each track, so a group holding part of a track
+  (e.g. grouped by season) joined its pieces as if consecutive: the variance
+  changed by 19% on average for the buffalo grouped by season. The FPT is
+  again computed on whole tracks *[wrong results, introduced by `fae2f72`]*
+- [ ] `49009e8` · `autoplot()` — failed on a profile without the column
+  `enough_events` *[error]*
+- [ ] `01688ac` · test of `min_prop_valid` — matched an error of the old code
+  too *[test]*
+- [ ] `fd53d22` · documentation of `min_prop_valid`, of tracks without usable
+  events, and of the column `id` of the plot data *[documentation]*
+- [ ] `74ae17c` · `track_fpt_profile()` — the warning about tracks without
+  default radii lists at most 10 of them *[usability]*
+- [ ] `3a89c76` · article — a `group_by(x, sex)` example that fails on these
+  data, an overstated "clear peak", the `peak_width` example, and wording
+  *[documentation]*
+- [ ] `79a4be6` · `fpt_matrix_of_rows()` — `4863bf7` found tracks by name, so
+  a track with id `""` got no FPT at all, silently; now by position
+  *[wrong results, introduced by `4863bf7`]*
+- [ ] `f5ec019` · documentation of the FPT within a step, and of `x`
+  *[documentation]*
+- [ ] `a27a29b` · article wording *[documentation]*
+- [ ] `45edbf2` · a line of documentation longer than 80 characters (from
+  `f5ec019`), reported by `lint_package()` *[lint]*
+
+Correction to the message of `df5e770`: the spike of Mvubu at 15.1 km has
+1,376 of 2,572 locations with an FPT; 772 is the number at the next radius
+(16.4 km), whose exclusion leaves the spike as the last usable radius, which
+cannot be a peak.
+
+## Analysis behind the new defaults
+
+On the real data of the review, with the defaults before `fae2f72`:
+
+- The default radii ran from the median non-zero step to the diagonal of the
+  bounding box of the largest track, pooled over all tracks.
   - The lower end lies where the documentation itself says the radii are not
     informative (within a step, the FPT reflects the speed of the step). With
     the default `method = "first"`, the suggestion is one of the first 5 of
@@ -218,30 +298,30 @@ and 2.86 s for 9k, 18k and 36k fixes for one never-left radius, under load).
     wandering albatrosses. It does not remove the early peaks of the Argos
     albatrosses (24-63 km) or of the unsplit shags (20-80 m for most), and an
     outlier still sets the range of its own track (raw shags).
-  - Options: start at a few median steps; end at about half the diagonal;
-    compute the range per track or group. Recommendation: per group, from 2
-    median steps to half the diagonal of its bounding box, together with a
-    minimum number of events per radius and a more robust default method
-    (below), as the range alone does not stop "first" from picking small
-    early peaks.
-- **Decision needed:** no minimum number of events behind a peak. The variance
+  - The range alone did not stop "first" from picking small early peaks,
+    hence the two other changes.
+- No minimum number of events behind a peak. The variance
   at a radius left by few events is noise, and `method = "steep"` picks it:
   peaks backed by 2-27 events for all 4 wild boar, a coati, a jaguar and a
   wandering albatross, and 7.6-30 km for the buffalo, whose median profile has
   a clear peak at about 3 km, near which "first" (1.5-3.6 km) and "max"
-  (2.8-7.6 km) fall. Options: a
-  `min_valid` argument (e.g. 30 events, or a fraction of the events), with the
-  radii below it drawn in grey by `autoplot()`.
-- **Decision needed:** the default `method = "first"`, which, with the
-  default radii, returns the step-length artefacts above. "max" picked the
-  visible peak of the buffalo and is less sensitive to the lower end; the
-  choice depends on the decision on the radii.
+  (2.8-7.6 km) fall.
+- The default `method = "first"` returned the step-length artefacts above.
 
-### Memory
+## Findings not fixed
 
-- `track_fpt_profile()` keeps the whole events × radii matrix of FPTs and two
-  copies of it (log, squares): 10 million events × 50 radii is 4 GB per copy.
-  The variances could be accumulated per track in C++ instead.
+### Speed and memory
+
+- Since `4863bf7`, a group runs `fpt_cpp()` on every whole track it touches,
+  so grouping by a column that changes often within tracks (e.g. by day)
+  repeats the FPT of each track once per group it touches. With radii given
+  by the user, the FPT of each track could be computed once for all groups;
+  not timed.
+
+- `track_fpt_profile()` keeps the events × radii matrix of FPTs of a group,
+  and two copies of it (log, squares): 10 million events × 50 radii is 4 GB
+  per copy for a single track or group (since `fae2f72`, only one group at a
+  time). The variances could be accumulated per track in C++ instead.
 
 ### Usability and documentation
 
@@ -254,12 +334,6 @@ and 2.86 s for 9k, 18k and 36k fixes for one never-left radius, under load).
 - A numeric time column is taken to be in seconds without warning, and a
   `units` time column (which `move2` accepts) fails with "cannot convert h
   into seconds since 1970-01-01".
-- The examples use `example_tt` (5 locations per track, steps of 37 km and
-  more): `track_suggest_ars_scale()` returns `NA` for every track, and the
-  profile is flat at 50 and 100 km. An example (or an article) on the shags or
-  the buffalo would show a real profile and peak.
-- Minor: "the median distance between consecutive locations" is the median of
-  the non-zero steps (71% of the steps of the 4-second albatross are zero);
-  the test title "for any order of the radii" is not tested (and
+- Minor: the test title "for any order of the radii" is not tested (and
   `fpt_matrix()` needs increasing radii); `n_valid` is a double rather than an
   integer.
