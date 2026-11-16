@@ -9,12 +9,12 @@
   method), `track_suggest_ars_scale()` and `src/fpt.cpp`.
 - **Fixes:** 7 commits on the local branch `codereview_fpt`, from `fea842f`
   (5 bugs, 1 documentation fix, 1 R CMD check NOTE), plus this report.
-- **Optional branch:** `codereview_fpt_speedup`, from `9a5bede` (on
-  `codereview_fpt`), 2 commits: an exact speed-up of the search in
-  `fpt_cpp()`, 9× faster on a 72k-fix track and about linear rather than
-  quadratic in the length of a track, with identical results and no slowdown
-  elsewhere.
-- **Findings not fixed:** 9, of which 4 need a decision.
+- **Speed-up:** `codereview_fpt_speedup`, from `9a5bede`, 2 commits: an
+  exact speed-up of the search in `fpt_cpp()`, 9× faster on a 72k-fix track
+  and about linear rather than quadratic in the length of a track, with
+  identical results and no slowdown elsewhere. Merged into `codereview_fpt`
+  (`411b28b`) on Andrea's decision, 16 November 2026.
+- **Findings not fixed:** 8, of which 3 need a decision.
 - **Headline:** the FPTs are right. They equal `adehabitatLT::fpt()` exactly
   (same values, same missing values) on 11 real datasets, 1,655,175
   event × radius values. The problems were in the scale suggestion, in the
@@ -28,6 +28,7 @@ All on the laptop (laptopX1), 16 November 2026.
 
 | Check | Where | Result |
 |---|---|---|
+| R CMD check (options as in the next row) | `codereview_fpt` at `411b28b` (after merging the speed-up), built from a clean copy | Status: OK; 1,656 tests passed, 0 failed, 0 warnings, 0 skipped |
 | R CMD check (`--no-manual`, `NOT_CRAN=true`, all Suggests installed): tests, examples, vignette, dependencies of the tests | `codereview_fpt` at `308a6c4`, built from a clean copy | Status: OK (examples, vignette, spelling and dependencies of the tests OK) |
 | Full test suite | same | 1,655 passed, 0 failed, 0 warnings, 0 skipped |
 | `lintr::lint_package()` | `codereview_fpt` at `1607f5a`, with that build first in `.libPaths()` | 0 lints |
@@ -167,7 +168,7 @@ and 2.86 s for 9k, 18k and 36k fixes for one never-left radius, under load).
   events: 5× faster with 2,280 tracks (3.30 → 0.65 s), unchanged with few
   groups *[speed]*
 
-### Optional branch `codereview_fpt_speedup`
+### Speed-up (branch `codereview_fpt_speedup`, merged in `411b28b`)
 
 - [ ] `1045a66` · `fpt_cpp()` — the search for the crossing of a circle
   checked every location until the track left the circle, so the run time
@@ -197,14 +198,32 @@ and 2.86 s for 9k, 18k and 36k fixes for one never-left radius, under load).
   - The upper end is never left: no event has an FPT at the largest radius,
     and up to 35 of the 50 radii have no variance per track (e.g. 3 for the
     pelican, 3-10 for the buffalo, 21-35 for 4 of the 9 raw shag tracks).
-    Without the optional speed-up, it also makes every event scan the whole
-    track.
+    Before the speed-up (now merged), it also made every event scan the
+    whole track.
   - Pooling over tracks lets one track set the range for all: in the raw shag
     data (before cleaning), outliers 9,000 km away gave radii up to 9,098 km
     for birds that forage within 60 km.
+  - At the first default radius, about a third of the events (33-36% for
+    fishers, buffalo, shags and both albatross datasets) have both their
+    steps longer than the radius, so their FPT is the radius divided by the
+    speed of the steps, and the variance of its log does not depend on the
+    radius; a fifth still do at the fifth radius.
+  - Tried (not in the package): 50 radii per track, from 2 median non-zero
+    steps to half the diagonal of the track's bounding box. Radii without a
+    variance drop to none for the buffalo, fishers, jaguars, coatis and both
+    albatross datasets (0-8 for the cleaned shags, whose unsplit tracks
+    include the colony); the "first" suggestion moves from 33-47 m to
+    1.8-1.9 km for two fishers, to no peak for the fisher whose profile
+    declines steadily, and from 270-290 km to 610-1,100 km for five 12-hourly
+    wandering albatrosses. It does not remove the early peaks of the Argos
+    albatrosses (24-63 km) or of the unsplit shags (20-80 m for most), and an
+    outlier still sets the range of its own track (raw shags).
   - Options: start at a few median steps; end at about half the diagonal;
     compute the range per track or group. Recommendation: per group, from 2
-    median steps to half the diagonal of its bounding box.
+    median steps to half the diagonal of its bounding box, together with a
+    minimum number of events per radius and a more robust default method
+    (below), as the range alone does not stop "first" from picking small
+    early peaks.
 - **Decision needed:** no minimum number of events behind a peak. The variance
   at a radius left by few events is noise, and `method = "steep"` picks it:
   peaks backed by 2-27 events for all 4 wild boar, a coati, a jaguar and a
@@ -217,7 +236,6 @@ and 2.86 s for 9k, 18k and 36k fixes for one never-left radius, under load).
   default radii, returns the step-length artefacts above. "max" picked the
   visible peak of the buffalo and is less sensitive to the lower end; the
   choice depends on the decision on the radii.
-- **Decision needed:** whether to merge `codereview_fpt_speedup` (above).
 
 ### Memory
 
