@@ -119,7 +119,9 @@ test_that("event_fpt ignores events without a location and dummy trips", {
 test_that("the FPT equals that of adehabitatLT, for any order of the radii", {
   skip_if_not_installed("adehabitatLT")
   set.seed(1)
-  n <- 200
+  # more than 256 locations, so that the search skips blocks of 16 and of 256
+  # locations (see src/fpt.cpp)
+  n <- 300
   df <- data.frame(
     x = 500000 + cumsum(stats::rnorm(n, 0, 500)),
     y = 5000000 + cumsum(stats::rnorm(n, 0, 500)),
@@ -127,7 +129,8 @@ test_that("the FPT equals that of adehabitatLT, for any order of the radii", {
       cumsum(stats::runif(n, 60, 600)),
     id = "a"
   )
-  radii <- c(100, 500, 1000, 2500, 5000)
+  # the largest circle is never left
+  radii <- c(100, 500, 1000, 2500, 5000, 50000)
   ltraj <- adehabitatLT::as.ltraj(
     df[, c("x", "y")],
     date = df$time,
