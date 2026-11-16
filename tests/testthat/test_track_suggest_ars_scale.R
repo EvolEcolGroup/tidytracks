@@ -42,22 +42,24 @@ test_that("track_suggest_ars_scale gives the correct errors", {
 
 test_that("track_suggest_ars_scale returns radii, named and in order", {
   profile <- create_fpt_profile()
-  scales <- track_suggest_ars_scale(profile, units = as_units("km"))
+  scales <- track_suggest_ars_scale(
+    profile,
+    method = "first",
+    units = as_units("km")
+  )
   expect_s3_class(scales, "units")
   expect_identical(units::deparse_unit(scales), "km")
   expect_identical(names(scales), c("b", "a"))
   # the radius of the first peak (10 km), which is at the second position
   expect_equal(as.numeric(scales), c(10, 10))
-  expect_equal(
-    as.numeric(track_suggest_ars_scale(profile, method = "max")),
-    c(20000, 20000)
-  )
+  # by default, the highest peak (20 km)
+  expect_equal(as.numeric(track_suggest_ars_scale(profile)), c(20000, 20000))
   # rows reordered by the user are taken in order of radius: the first peak
   # is still at 10 km, not at the 20 km of the reversed rows
   reordered <- dplyr::arrange(profile, dplyr::desc(radius))
   expect_identical(
-    track_suggest_ars_scale(reordered),
-    track_suggest_ars_scale(profile)
+    track_suggest_ars_scale(reordered, method = "first"),
+    track_suggest_ars_scale(profile, method = "first")
   )
   # radii without enough events are not used: the highest peak (20 km) of
   # track a has too few events, so its next highest (10 km) is used

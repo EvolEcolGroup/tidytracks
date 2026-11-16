@@ -21,9 +21,10 @@
 #'   `fpt_profile_tbl`, as returned by it (its rows can be in any order).
 #' @param radii,min_prop_valid As for [track_fpt_profile()]. Only used if `x`
 #'   is a move2 object.
-#' @param method The peak to select if there are several: "first" (the default;
-#'   the one at the smallest radius), "max" (the highest), or "steep" (the one
-#'   around which the variance changes the most).
+#' @param method The peak to select if there are several: "max" (the default;
+#'   the highest), "first" (the one at the smallest radius), or "steep" (the
+#'   one around which the variance changes the most). "first" can select a
+#'   small bump of the profile before its main peak.
 #' @param peak_width The number of radii on either side of a peak that must have
 #'   a variance that is not higher than the peak. The default is 1.
 #' @param units The units of the returned scales, as a `units` object. The
@@ -41,7 +42,7 @@ track_suggest_ars_scale <- function(
   x,
   radii = NULL,
   min_prop_valid = 0.5,
-  method = c("first", "max", "steep"),
+  method = c("max", "first", "steep"),
   peak_width = 1,
   units = as_units("m")
 ) {
