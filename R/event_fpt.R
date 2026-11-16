@@ -36,9 +36,13 @@
 #'   with the radius, and [track_suggest_ars_scale()] to find the scale of
 #'   area-restricted search from it.
 #' @export
-#' @examples
-#' x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
-#' event_fpt(x, radius = as_units(100, "km"))
+#' @examplesIf rlang::is_installed("ctmm")
+#' # two African buffalo from the package ctmm, in a projected CRS
+#' data(buffalo, package = "ctmm")
+#' buffalo_tt <- mt_as_move2(buffalo) %>%
+#'   filter_by_meta(track %in% c("Cilla", "Gabs"))
+#' fpt <- event_fpt(buffalo_tt, radius = as_units(3, "km"))
+#' summary(fpt)
 event_fpt <- function(x, radius, units = as_units("h")) {
   check_fpt_x(x)
   if (!inherits(units, "units")) {

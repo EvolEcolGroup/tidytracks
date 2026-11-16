@@ -44,8 +44,14 @@ trips, and therefore does not include the time at the centre between them.
 ordered by time within each track (see \code{\link[=tt_order_time]{tt_order_time()}}).
 }
 \examples{
-x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
-event_fpt(x, radius = as_units(100, "km"))
+\dontshow{if (rlang::is_installed("ctmm")) withAutoprint(\{ # examplesIf}
+# two African buffalo from the package ctmm, in a projected CRS
+data(buffalo, package = "ctmm")
+buffalo_tt <- mt_as_move2(buffalo) \%>\%
+  filter_by_meta(track \%in\% c("Cilla", "Gabs"))
+fpt <- event_fpt(buffalo_tt, radius = as_units(3, "km"))
+summary(fpt)
+\dontshow{\}) # examplesIf}
 }
 \references{
 Fauchald, P. & Tveraa, T. (2003) Using first-passage time in the

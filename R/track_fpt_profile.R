@@ -86,12 +86,17 @@
 #'   track (or group), and at least two, have an FPT
 #' @seealso [event_fpt()], [track_suggest_ars_scale()]
 #' @export
-#' @examples
-#' x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
-#' profile <- track_fpt_profile(x, radii = as_units(c(50, 100, 200), "km"))
+#' @examplesIf rlang::is_installed("ctmm")
+#' # two African buffalo from the package ctmm, in a projected CRS
+#' data(buffalo, package = "ctmm")
+#' buffalo_tt <- mt_as_move2(buffalo) %>%
+#'   filter_by_meta(track %in% c("Cilla", "Gabs"))
+#' profile <- track_fpt_profile(buffalo_tt)
 #' profile
 #' library(ggplot2)
-#' autoplot(profile)
+#' autoplot(profile) + facet_wrap(~id)
+#' # radii chosen by the user, the same for both buffalo
+#' track_fpt_profile(buffalo_tt, radii = as_units(c(1, 2, 3, 5, 10), "km"))
 track_fpt_profile <- function(x, radii = NULL, min_prop_valid = 0.5) {
   check_fpt_x(x)
   if (
@@ -274,10 +279,13 @@ fpt_default_radii <- function(events, rows) {
 #' @returns A `ggplot` object.
 #' @importFrom ggplot2 autoplot
 #' @export
-#' @examples
-#' x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
+#' @examplesIf rlang::is_installed("ctmm")
+#' # two African buffalo from the package ctmm, in a projected CRS
+#' data(buffalo, package = "ctmm")
+#' buffalo_tt <- mt_as_move2(buffalo) %>%
+#'   filter_by_meta(track %in% c("Cilla", "Gabs"))
 #' library(ggplot2)
-#' autoplot(track_fpt_profile(x, radii = as_units(c(50, 100, 200), "km")))
+#' autoplot(track_fpt_profile(buffalo_tt))
 autoplot.fpt_profile_tbl <- function(object, ...) {
   radius_units <- units::deparse_unit(object$radius)
   to_plot <- data.frame(

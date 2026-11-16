@@ -96,11 +96,18 @@ the original track id: the FPT is still computed within each trip, and the
 log FPTs of the trips of each animal are pooled to compute the variance.
 }
 \examples{
-x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
-profile <- track_fpt_profile(x, radii = as_units(c(50, 100, 200), "km"))
+\dontshow{if (rlang::is_installed("ctmm")) withAutoprint(\{ # examplesIf}
+# two African buffalo from the package ctmm, in a projected CRS
+data(buffalo, package = "ctmm")
+buffalo_tt <- mt_as_move2(buffalo) \%>\%
+  filter_by_meta(track \%in\% c("Cilla", "Gabs"))
+profile <- track_fpt_profile(buffalo_tt)
 profile
 library(ggplot2)
-autoplot(profile)
+autoplot(profile) + facet_wrap(~id)
+# radii chosen by the user, the same for both buffalo
+track_fpt_profile(buffalo_tt, radii = as_units(c(1, 2, 3, 5, 10), "km"))
+\dontshow{\}) # examplesIf}
 }
 \references{
 Fauchald, P. & Tveraa, T. (2003) Using first-passage time in the

@@ -57,8 +57,15 @@ its mass within that radius, and 95\% of its mass within 2.45 times that
 radius.
 }
 \examples{
-x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
-track_suggest_ars_scale(x, radii = as_units(c(50, 100, 200), "km"))
+\dontshow{if (rlang::is_installed("ctmm")) withAutoprint(\{ # examplesIf}
+# two African buffalo from the package ctmm, in a projected CRS
+data(buffalo, package = "ctmm")
+buffalo_tt <- mt_as_move2(buffalo) \%>\%
+  filter_by_meta(track \%in\% c("Cilla", "Gabs"))
+track_suggest_ars_scale(buffalo_tt, units = as_units("km"))
+# the first peak, rather than the highest
+track_suggest_ars_scale(buffalo_tt, method = "first", units = as_units("km"))
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=event_fpt]{event_fpt()}}, \code{\link[=track_fpt_profile]{track_fpt_profile()}}

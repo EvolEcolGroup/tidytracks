@@ -35,9 +35,14 @@
 #'   if no peak is found.
 #' @seealso [event_fpt()], [track_fpt_profile()]
 #' @export
-#' @examples
-#' x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
-#' track_suggest_ars_scale(x, radii = as_units(c(50, 100, 200), "km"))
+#' @examplesIf rlang::is_installed("ctmm")
+#' # two African buffalo from the package ctmm, in a projected CRS
+#' data(buffalo, package = "ctmm")
+#' buffalo_tt <- mt_as_move2(buffalo) %>%
+#'   filter_by_meta(track %in% c("Cilla", "Gabs"))
+#' track_suggest_ars_scale(buffalo_tt, units = as_units("km"))
+#' # the first peak, rather than the highest
+#' track_suggest_ars_scale(buffalo_tt, method = "first", units = as_units("km"))
 track_suggest_ars_scale <- function(
   x,
   radii = NULL,

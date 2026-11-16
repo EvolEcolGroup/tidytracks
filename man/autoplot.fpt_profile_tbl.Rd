@@ -25,7 +25,12 @@ events have an FPT (column \code{enough_events}, see the argument
 and left out of the median.
 }
 \examples{
-x <- sf::st_transform(example_tt, "+proj=laea +lat_0=0.75 +lon_0=0")
+\dontshow{if (rlang::is_installed("ctmm")) withAutoprint(\{ # examplesIf}
+# two African buffalo from the package ctmm, in a projected CRS
+data(buffalo, package = "ctmm")
+buffalo_tt <- mt_as_move2(buffalo) \%>\%
+  filter_by_meta(track \%in\% c("Cilla", "Gabs"))
 library(ggplot2)
-autoplot(track_fpt_profile(x, radii = as_units(c(50, 100, 200), "km")))
+autoplot(track_fpt_profile(buffalo_tt))
+\dontshow{\}) # examplesIf}
 }
