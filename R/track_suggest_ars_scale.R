@@ -28,8 +28,9 @@
 #' @param units The units of the returned scales, as a `units` object. The
 #'   default is metres (`as_units("m")`).
 #' @returns A `units` vector with the suggested scale for each track (or group),
-#'   named by its id and in the order of [track_fpt_profile()], with `NA` if no
-#'   peak is found.
+#'   named by its id, in the order in which the ids first appear in the profile
+#'   (that of [track_fpt_profile()], unless its rows were reordered), with `NA`
+#'   if no peak is found.
 #' @seealso [event_fpt()], [track_fpt_profile()]
 #' @export
 #' @examples

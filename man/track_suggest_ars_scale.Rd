@@ -31,8 +31,9 @@ default is metres (\code{as_units("m")}).}
 }
 \value{
 A \code{units} vector with the suggested scale for each track (or group),
-named by its id and in the order of \code{\link[=track_fpt_profile]{track_fpt_profile()}}, with \code{NA} if no
-peak is found.
+named by its id, in the order in which the ids first appear in the profile
+(that of \code{\link[=track_fpt_profile]{track_fpt_profile()}}, unless its rows were reordered), with \code{NA}
+if no peak is found.
 }
 \description{
 This function suggests, for each track (or group), the spatial scale of
