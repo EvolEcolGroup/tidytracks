@@ -160,6 +160,18 @@ test_that("the default radii are chosen for each track, or group", {
   expect_identical(sum(with_short$id == "c"), 1L)
   expect_true(is.na(with_short$var_log_fpt[with_short$id == "c"]))
   expect_identical(with_short$n_valid[with_short$id == "c"], 0)
+  # the warning lists at most 10 of them
+  shorts <- data.frame(
+    id = rep(sprintf("t%02d", 1:12), each = 2),
+    x = 500000 + c(0, 100),
+    y = 5000000,
+    time = as.POSIXct("2024-01-01", tz = "UTC") + 300 * seq_len(24)
+  )
+  expect_warning(
+    many <- track_fpt_profile(as_ars_move2(shorts)),
+    "t10 and 2 more"
+  )
+  expect_identical(nrow(many), 12L)
 })
 
 test_that("radii need enough events with an FPT", {

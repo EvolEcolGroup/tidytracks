@@ -178,9 +178,15 @@ track_fpt_profile <- function(x, radii = NULL, min_prop_valid = 0.5) {
     logical(1)
   )
   if (any(no_radii & has_usable)) {
+    without <- group_labels[no_radii & has_usable]
+    # at most 10 ids, as tt_split_trips() can make hundreds of short trips
+    listed <- paste(without[seq_len(min(10, length(without)))], collapse = ", ")
+    if (length(without) > 10) {
+      listed <- paste0(listed, " and ", length(without) - 10, " more")
+    }
     warning(
       "the default radii could not be computed for ",
-      paste(group_labels[no_radii & has_usable], collapse = ", "),
+      listed,
       " (too few locations, or locations too close together); set radii",
       call. = FALSE
     )
