@@ -80,3 +80,53 @@ test_that("the geom_event_* functions work with an sf table of metadata", {
   )
   expect_true("sex" %in% names(p$layers[[1]]$data))
 })
+
+test_that("meta_columns restricts the columns of the metadata that are added", {
+  x <- example_tt
+  show_meta(x)$nest <- sf_point_col(
+    x = show_meta(x)$nest_lon,
+    y = show_meta(x)$nest_lat,
+    crs = 4326
+  )
+  # only the columns that are asked for (the track id is in the events
+  # already)
+  p <- ggplot2::ggplot() +
+    geom_event_point(
+      data = x, ggplot2::aes(color = sex), meta_columns = c("track_id", "sex")
+    )
+  layer_data <- p$layers[[1]]$data
+  expect_true("sex" %in% names(layer_data))
+  expect_false(any(c("nest_lon", "nest_lat") %in% names(layer_data)))
+  expect_equal(length(unique(ggplot2::layer_data(p)$colour)), 2L)
+  p <- ggplot2::ggplot() +
+    geom_event_path(data = x, meta_columns = "nest_lat")
+  expect_equal(setdiff(names(p$layers[[1]]$data), names(x)), "nest_lat")
+  # none, with an empty vector
+  p <- ggplot2::ggplot() +
+    geom_event_point(data = x, meta_columns = character(0))
+  expect_equal(names(p$layers[[1]]$data), names(x))
+  p <- ggplot2::ggplot() +
+    geom_event_path(data = x, meta_columns = character(0))
+  expect_length(setdiff(names(p$layers[[1]]$data), names(x)), 0)
+  # which leaves an sf table of metadata alone
+  meta_sf <- sf::st_as_sf(
+    show_meta(example_tt),
+    coords = c("nest_lon", "nest_lat"),
+    crs = 4326
+  )
+  x_sf <- move2::mt_set_track_data(example_tt, meta_sf)
+  expect_no_message(geom_event_point(data = x_sf, meta_columns = character(0)))
+  # columns that are not in the metadata, or are locations, give an error
+  expect_error(
+    geom_event_point(data = x, meta_columns = c("sex", "colour")),
+    "must be columns of the metadata, which 'colour' are not"
+  )
+  expect_error(
+    geom_event_path(data = x, meta_columns = "nest"),
+    "cannot be locations \\(sfc columns\\).*'nest'"
+  )
+  expect_error(
+    geom_event_point(data = x, meta_columns = 1),
+    "must be NULL or the names of columns of the metadata"
+  )
+})

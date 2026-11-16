@@ -12,14 +12,15 @@ geom_event_path(
   position = "identity",
   na.rm = FALSE,
   show.legend = NA,
+  meta_columns = NULL,
   ...
 )
 }
 \arguments{
 \item{mapping}{Set of aesthetic mappings created by \code{\link[ggplot2:aes]{ggplot2::aes()}}.
-Variables from the \emph{events} table and from the metadata (other than
-locations, i.e. \code{sfc} columns; e.g. the sex of each animal) can be used
-for mapping, and to facet the plot. If none is provided a basic aesthetics
+Variables from the \emph{events} table and from the metadata (e.g. the sex of
+each animal; see \code{meta_columns}) can be used for mapping, and to facet the
+plot. If none is provided a basic aesthetics
 for the \code{sf} step segments (i.e. lines) will be used, as it is the case for
 \code{ggplot2::geom_sf()}.}
 
@@ -44,6 +45,12 @@ warning. If TRUE, missing values are silently removed.}
 \item{show.legend}{logical. Should this layer be included in the legends? The
 default is NA, which includes if any aesthetics are mapped. It can also be
 a named logical vector to finely select the aesthetics to display.}
+
+\item{meta_columns}{The names of the columns of the metadata to add to the
+events of the layer, for mapping and facets. \code{NULL}, the default, adds all
+of them (other than locations, i.e. \code{sfc} columns); an empty vector,
+\code{character(0)}, adds none, which saves memory with many events (note that
+\code{c()} is \code{NULL} in R, and so adds all of them).}
 
 \item{...}{Other arguments passed on to \code{\link[ggplot2:layer]{ggplot2::layer()}}.}
 }
