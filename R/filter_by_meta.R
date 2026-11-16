@@ -50,7 +50,7 @@ filter_by_meta <- function(.data, ..., .track_id = NULL) {
     track_ids_to_keep <- .track_id
     new_id_data <- new_id_data |>
       dplyr::filter(
-        !!rlang::sym(move2::mt_track_id_column(.data)) %in% !!track_ids_to_keep
+        !!rlang::sym(colname_track_id(.data)) %in% !!track_ids_to_keep
       )
   }
   # Get a vector of the track IDs that we're keeping.
@@ -58,7 +58,7 @@ filter_by_meta <- function(.data, ..., .track_id = NULL) {
     # in case there is geometry in metadata, drop it here
     sf::st_drop_geometry() |>
     # track_id_column is "trip_id"
-    dplyr::select(!!rlang::sym(move2::mt_track_id_column(.data))) |>
+    dplyr::select(!!rlang::sym(colname_track_id(.data))) |>
     dplyr::pull()
   # Now we apply the filtering to the EVENTS DATA
   # Keep the events whose track ID is in the vector of track IDs we want to
@@ -68,7 +68,7 @@ filter_by_meta <- function(.data, ..., .track_id = NULL) {
   # within the groups of a grouped object)
   .data <- .data |>
     dplyr::filter(
-      !!rlang::sym(move2::mt_track_id_column(.data)) %in% !!new_tracks
+      !!rlang::sym(colname_track_id(.data)) %in% !!new_tracks
     )
   # Finally, reset the metadata of the newly filtered events table
   .data <- move2::mt_set_track_data(.data, new_id_data)

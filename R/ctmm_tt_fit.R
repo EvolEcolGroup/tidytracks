@@ -134,7 +134,7 @@ ctmm_tt_fit <- function(
   if (!inherits(x, "move2")) {
     stop("x must be a move2 object")
   }
-  id_col <- move2::mt_track_id_column(x)
+  id_col <- colname_track_id(x)
   # models are fitted to each track, so x can only be grouped by track (in
   # which case the grouping adds nothing, and we drop it)
   if (inherits(x, "grouped_df")) {

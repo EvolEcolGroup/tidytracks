@@ -224,7 +224,7 @@ hr_tt_bridge <- function(
   }
   # bridges only make sense between consecutive events of the same track, so
   # any grouping other than by track would be silently ignored by move2utils
-  track_col <- move2::mt_track_id_column(x)
+  track_col <- colname_track_id(x)
   by_track <- !inherits(x, "grouped_df")
   if (!by_track) {
     if (!identical(dplyr::group_vars(x), track_col)) {

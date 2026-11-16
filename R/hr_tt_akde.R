@@ -146,7 +146,7 @@ hr_tt_akde <- function(
   }
   stopifnot_ctmm_tt_fit_tbl(models)
   # the models are matched to the tracks by track id
-  id_col <- move2::mt_track_id_column(x)
+  id_col <- colname_track_id(x)
   if (!identical(attr(models, "track_id_column"), id_col)) {
     stop(
       "the track id column of x ('", id_col, "') is not the one used to ",
