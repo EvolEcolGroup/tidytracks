@@ -4,7 +4,10 @@ test_that("track_fpt_profile gives the correct errors", {
   x <- as_ars_move2(simulate_ars_track("a", 2000, n_patches = 2))
   expect_error(track_fpt_profile(x, radii = 1000), "must be a units object")
   for (prop in list(0, 1.5, NA, c(0.2, 0.5), "half")) {
-    expect_error(track_fpt_profile(x, min_prop_valid = prop), "min_prop_valid")
+    expect_error(
+      track_fpt_profile(x, min_prop_valid = prop),
+      "min_prop_valid must be a single number between 0 \\(excluded\\) and 1"
+    )
   }
 })
 
