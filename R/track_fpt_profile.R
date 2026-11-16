@@ -21,8 +21,9 @@
 #'   both the steps before and after a location, its crossings are interpolated
 #'   on these steps, so the FPT is proportional to the radius and inversely
 #'   proportional to the speed on these steps, and the variance of its log
-#'   reflects the variation in speed, whatever the radius. The default radii start at twice the median distance between
-#'   consecutive locations (ignoring locations that do not move).
+#'   reflects the variation in speed, whatever the radius. The default radii
+#'   start at twice the median distance between consecutive locations
+#'   (ignoring locations that do not move).
 #' - Large radii: an event has an FPT only if the track goes farther than the
 #'   radius from it both before and after it, so as the radius grows, fewer
 #'   events have an FPT (see column `n_valid`), and those that do are the
