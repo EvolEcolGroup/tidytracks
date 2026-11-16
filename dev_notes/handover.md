@@ -16,6 +16,7 @@ documents listed in `README.md`.
 | `dev_notes` | this `dev_notes/`, with the notes moved out of `data-raw/` | `dev` | yes | no (PR #99) |
 | `move2utilsbug` | two draft move2utils bug reports, now copied to `dev_notes/` | `main` | yes | no (no PR) |
 | `fpt` | Lizzie: first passage time, under review in another session | `dev` | yes | no |
+| `codereview_fpt`, `codereview_fpt_speedup` | another session's review of `fpt`: report in `dev_notes/code_review_fpt_2026-11.md`, and a speed-up | `fpt` | no (local) | no |
 | `get_data_ready_vignette` | Paul: vignette text (January 2026) | — | yes | no |
 | `tt_and_move2_diffs` | Holly: wording (September 2026) | — | yes | no |
 
@@ -97,6 +98,10 @@ The next steps of `summary.md`, in the same order and with the same labels.
 None.
 
 ## Backlog
+
+- `codereview_fpt` also adds `^dev_notes$` to `.Rbuildignore`, and a report
+  in `dev_notes/`. Expect a small conflict with #99 in `.Rbuildignore`, and
+  add the report to `dev_notes/README.md` when it is merged.
 
 - `hr_tt_ud_iso()` and the KDE isopleths: a grouping variable named `level`,
   `area` or `geometry` clashes with the result columns (predates #92).
