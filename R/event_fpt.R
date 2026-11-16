@@ -137,19 +137,23 @@ fpt_matrix <- function(x, radii) {
 #'
 #' @param x A move2 object, checked with `check_fpt_x()`.
 #' @returns A list with `xy` (the matrix of coordinates), `time` (in seconds),
-#'   `ids` (the track ids, as characters) and `usable` (whether each event can
+#'   `ids` (the track ids, as characters), `usable` (whether each event can
 #'   have an FPT: it has a location and is not in a dummy trip of events at the
-#'   centre).
+#'   centre) and `rows_by_track` (the rows of the usable events of each track,
+#'   named by track id).
 #' @keywords internal
 #' @noRd
 fpt_events <- function(x) {
   xy <- sf::st_coordinates(x)
   ids <- as.character(event_track_id(x))
+  usable <- stats::complete.cases(xy) & !is_trip_na(ids)
   list(
     xy = xy,
     time = as.numeric(as.POSIXct(event_time(x))),
     ids = ids,
-    usable = stats::complete.cases(xy) & !is_trip_na(ids)
+    usable = usable,
+    # the events of each track are stored together and in time order
+    rows_by_track = split(which(usable), ids[usable])
   )
 }
 
@@ -157,7 +161,9 @@ fpt_events <- function(x) {
 #'
 #' @param events A list, as returned by `fpt_events()`.
 #' @param rows The rows of the events to use (e.g. those of a group), in
-#'   increasing order; the FPT is computed within each of their tracks.
+#'   increasing order. The FPT is computed on the whole of each of their
+#'   tracks, also when `rows` holds only part of a track (e.g. a group defined
+#'   by a column that changes within tracks).
 #' @param radii Numeric vector of radii in the units of the coordinates, in
 #'   increasing order.
 #' @returns A matrix with one row per event of `rows` and one column per
@@ -166,17 +172,19 @@ fpt_events <- function(x) {
 #' @noRd
 fpt_matrix_of_rows <- function(events, rows, radii) {
   res <- matrix(NA_real_, length(rows), length(radii))
-  # the positions within rows of the usable events, by track: the events of
-  # each track are stored together and in time order
+  # the positions within rows of the usable events, by track
   positions <- which(events$usable[rows])
   for (track in split(positions, events$ids[rows][positions])) {
-    event_rows <- rows[track]
-    res[track, ] <- fpt_cpp( # nolint: object_usage_linter.
-      events$xy[event_rows, 1],
-      events$xy[event_rows, 2],
-      events$time[event_rows],
+    # the FPT of all the events of the track, as the track runs through events
+    # that may be outside rows, then those of the events in rows
+    track_rows <- events$rows_by_track[[events$ids[rows[track[1]]]]]
+    fpt <- fpt_cpp( # nolint: object_usage_linter.
+      events$xy[track_rows, 1],
+      events$xy[track_rows, 2],
+      events$time[track_rows],
       radii
     )
+    res[track, ] <- fpt[match(rows[track], track_rows), , drop = FALSE]
   }
   res
 }

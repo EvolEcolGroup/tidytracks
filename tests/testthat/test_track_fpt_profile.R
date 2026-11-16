@@ -62,6 +62,34 @@ test_that("groups pool the log FPT of their tracks, computed within tracks", {
   )
 })
 
+test_that("groups that split tracks use the FPT of the whole tracks", {
+  df <- simulate_ars_track("a", 2000, n_patches = 2)
+  # alternating blocks of 20 locations, e.g. day and night
+  df$block <- rep(c("odd", "even"), each = 20, length.out = nrow(df))
+  x <- as_ars_move2(df)
+  radii <- as_units(c(1, 2, 5), "km")
+  profile <- track_fpt_profile(dplyr::group_by(x, block), radii)
+  fpt <- as.numeric(event_fpt(x, as_units(2, "km"), units = as_units("s")))
+  for (b in c("odd", "even")) {
+    row <- profile$block == b & as.numeric(profile$radius) == 2
+    expect_equal(
+      profile$var_log_fpt[row],
+      stats::var(log(fpt[df$block == b]), na.rm = TRUE)
+    )
+    expect_identical(
+      profile$n_valid[row],
+      as.numeric(sum(!is.na(fpt[df$block == b])))
+    )
+  }
+  # and the default radii of the whole track
+  steps <- sqrt(rowSums(diff(as.matrix(df[, c("x", "y")]))^2))
+  grouped <- track_fpt_profile(dplyr::group_by(x, block))
+  expect_equal(
+    min(as.numeric(grouped$radius[grouped$block == "odd"])),
+    2 * stats::median(steps[steps > 0])
+  )
+})
+
 test_that("track_fpt_profile has default radii, and a plot", {
   x <- as_ars_move2(simulate_ars_track("a", 2000, n_patches = 2))
   profile <- track_fpt_profile(x)

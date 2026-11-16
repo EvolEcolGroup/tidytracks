@@ -9,8 +9,10 @@ track_fpt_profile(x, radii = NULL, min_prop_valid = 0.5)
 \arguments{
 \item{x}{A move2 object in a projected coordinate reference system, ordered
 by time within each track; if explicitly grouped, one profile is computed
-for each group, pooling the log FPT of its tracks. Otherwise, one profile
-is computed for each track.}
+for each group, pooling the log FPT of its events. The FPT is always
+computed on whole tracks, also for a group that holds only part of a track
+(e.g. grouped by season). Otherwise, one profile is computed for each
+track.}
 
 \item{radii}{The radii, as a \code{units} object, e.g.
 \code{as_units(seq(1, 50), "km")}, used for all the tracks (or groups). If

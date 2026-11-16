@@ -55,8 +55,10 @@
 #'   of environment and tracking systems. Journal of Applied Ecology, 45, 91-99.
 #' @param x A move2 object in a projected coordinate reference system, ordered
 #'   by time within each track; if explicitly grouped, one profile is computed
-#'   for each group, pooling the log FPT of its tracks. Otherwise, one profile
-#'   is computed for each track.
+#'   for each group, pooling the log FPT of its events. The FPT is always
+#'   computed on whole tracks, also for a group that holds only part of a track
+#'   (e.g. grouped by season). Otherwise, one profile is computed for each
+#'   track.
 #' @param radii The radii, as a `units` object, e.g.
 #'   `as_units(seq(1, 50), "km")`, used for all the tracks (or groups). If
 #'   `NULL` (the default), each track (or group) gets 50 radii, evenly spaced on
@@ -226,9 +228,9 @@ fpt_variance <- function(m) {
 #' Default radii for the FPT of a track or group
 #'
 #' 50 radii, evenly spaced on a log scale between twice the median distance
-#' between consecutive locations of the tracks (ignoring the steps of length 0)
-#' and half the diagonal of the bounding box of the largest track (see the
-#' details of [track_fpt_profile()]).
+#' between consecutive locations of the tracks of the group, whole (ignoring
+#' the steps of length 0), and half the diagonal of the bounding box of the
+#' largest of them (see the details of [track_fpt_profile()]).
 #'
 #' @param events A list, as returned by `fpt_events()`.
 #' @param rows The rows of the events of the track or group.
@@ -239,9 +241,10 @@ fpt_variance <- function(m) {
 #' @noRd
 fpt_default_radii <- function(events, rows) {
   xy <- events$xy
-  # the usable events of each track of the group
+  # the whole tracks of the group (the FPT is computed on whole tracks, also
+  # when the group holds only part of a track)
   usable_rows <- rows[events$usable[rows]]
-  rows_by_track <- split(usable_rows, events$ids[usable_rows])
+  rows_by_track <- events$rows_by_track[unique(events$ids[usable_rows])]
   steps <- unlist(lapply(rows_by_track, function(track_rows) {
     sqrt(diff(xy[track_rows, 1])^2 + diff(xy[track_rows, 2])^2)
   }))
