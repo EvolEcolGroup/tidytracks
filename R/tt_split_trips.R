@@ -105,7 +105,7 @@
 #'   complete = FALSE
 #' )
 #' # Now the unit of tracking is `trip_id` column
-#' move2::mt_track_id_column(example_tt_split)
+#' colname_track_id(example_tt_split)
 #' # Three incomplete trips were identified
 #' show_meta(example_tt_split) %>%
 #'   dplyr::group_by(track_id, trip_id, trip_type) %>%
@@ -228,7 +228,7 @@ tt_split_trips <- function(
   times <- event_time(x)
   # the centres are in the same order as the tracks in the metadata, which can
   # differ from the order of the tracks in the events table
-  meta_ids <- show_meta(x)[[move2::mt_track_id_column(x)]]
+  meta_ids <- show_meta(x)[[colname_track_id(x)]]
   # the events of each track (splitting the rows once is much faster, with
   # many tracks, than finding the rows of each track among all the rows)
   rows_by_track <- split(
@@ -269,13 +269,13 @@ tt_split_trips <- function(
   # replace the track_id col name with the appropriate name for x
   trip_meta <- trip_meta %>%
     dplyr::rename_with(
-      ~ move2::mt_track_id_column(x),
+      ~ colname_track_id(x),
       dplyr::all_of("track_id")
     )
   # join it to the metadata
   x <- move2::mt_set_track_data(
     x,
-    dplyr::full_join(show_meta(x), trip_meta, by = move2::mt_track_id_column(x))
+    dplyr::full_join(show_meta(x), trip_meta, by = colname_track_id(x))
   )
   # change the track_id_column to trip_id
   x <- move2::mt_set_track_id_column(x, "trip_id")

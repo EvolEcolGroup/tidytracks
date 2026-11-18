@@ -13,6 +13,8 @@ reference:
         - tt_write_data
         - as.data.frame.move2
         - show_meta
+        - colname_track_id
+        - colname_time
         - as_meta_column
         - as_event_column
         - filter_by_meta

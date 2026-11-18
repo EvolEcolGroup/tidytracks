@@ -150,8 +150,8 @@ tt_regular_time <- function(
   # Collect move2 metadata
   input_crs <- sf::st_crs(x)
   has_crs <- !is.na(input_crs)
-  time_col <- move2::mt_time_column(x)
-  track_col <- move2::mt_track_id_column(x)
+  time_col <- colname_time(x)
+  track_col <- colname_track_id(x)
   geom_col <- attr(x, "sf_column")
   track_ids <- unique(move2::mt_track_id(x))
   track_data <- move2::mt_track_data(x)

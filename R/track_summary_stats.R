@@ -68,7 +68,7 @@ track_summary_stats <- function(
     # remove these trip_na events from x
     x <- x[!event_track_id(x) %in% trip_na_ids, ]
   }
-  .group_var <- move2::mt_track_id_column(x)
+  .group_var <- colname_track_id(x)
   # the track ids in the order of the metadata, and the index of the track of
   # each event among them; all the statistics are computed for all the
   # tracks at once, in the order of the metadata
@@ -188,7 +188,7 @@ track_summary_stats <- function(
 
   # check that sum_stats has the right number of rows (number of unique track
   # IDs) This is a sanity check, it should never happen.
-  if (nrow(sum_stats) != length(unique(x[[move2::mt_track_id_column(x)]]))) {
+  if (nrow(sum_stats) != length(unique(x[[colname_track_id(x)]]))) {
     stop(
       "There is a problem with the summary statistics. ",
       "The number of rows in the summary statistics does not match ",
@@ -200,7 +200,7 @@ track_summary_stats <- function(
   # object
   colnames(sum_stats)[which(
     colnames(sum_stats) == "track_id"
-  )] <- move2::mt_track_id_column(x)
+  )] <- colname_track_id(x)
 
   return(sum_stats)
 }

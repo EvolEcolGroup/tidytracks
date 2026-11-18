@@ -37,7 +37,7 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   # if x is not grouped, use the track ID column as grouping variable
   by_track <- !inherits(x, "grouped_df")
   if (by_track) {
-    x <- dplyr::group_by(x, .data[[move2::mt_track_id_column(x)]])
+    x <- dplyr::group_by(x, .data[[colname_track_id(x)]])
   }
   # as in hr_tt_kde(), every group listed in the group keys must have events
   check_no_empty_groups(x) # nolint: object_usage_linter.
