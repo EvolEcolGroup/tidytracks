@@ -3,9 +3,12 @@
 # Copyright (c) 2023 gganimate authors (Thomas Lin Pedersen and David
 # Robinson), distributed under the MIT licence, whose notice is reproduced in
 # inst/COPYRIGHTS. The documentation below is also taken from gganimate. The
-# changes are described in the documentation: the wake is built from the first
-# frame, and its fade is rescaled to the frames available; in addition, the
-# fill (rather than the colour) is faded to `fill`.
+# changes: the wake is built from the first frame, and its fade is rescaled to
+# the frames available (as described in the documentation); `wrap` defaults to
+# FALSE (TRUE in gganimate); prepare_shadow() skips the excluded layers; the
+# fill (rather than the colour) is faded to `fill`; and the alpha is faded
+# with the positions of the elements whose alpha changes only (gganimate
+# passes those of all the elements).
 
 #' CUSTOM VERSION of Show preceding frames with gradual falloff
 #'
