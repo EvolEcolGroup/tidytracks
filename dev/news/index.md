@@ -35,6 +35,12 @@
   groups the events by variables of the metadata, including `sfc`
   columns, which it moves to the events
   ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
+- new
+  [`colname_track_id()`](https://evolecolgroup.github.io/tidytracks/dev/reference/colname_track_id.md)
+  and
+  [`colname_time()`](https://evolecolgroup.github.io/tidytracks/dev/reference/colname_time.md)
+  return the names of the track id and time columns
+  ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
 - the `hr_tt_*()` functions return the grouping variables with their own
   types (e.g. factors, or `sfc` columns of locations), one column each,
   rather than as text in a single `group_id` column;

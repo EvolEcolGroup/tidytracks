@@ -65,6 +65,12 @@ Functions for loading, saving and displaying tibbles of tracks.
 
   Show or set the track metadata of a `move2` object
 
+- [`colname_track_id()`](https://evolecolgroup.github.io/tidytracks/dev/reference/colname_track_id.md)
+  : Return the name of the track id column
+
+- [`colname_time()`](https://evolecolgroup.github.io/tidytracks/dev/reference/colname_time.md)
+  : Return the name of the time column
+
 - [`as_meta_column()`](https://evolecolgroup.github.io/tidytracks/dev/reference/as_meta_column.md)
   : Move one (or more) variable(s) from the event data to the metadata
   as a new column(s).

@@ -155,7 +155,7 @@ example_tt_split <- tt_split_trips(
   complete = FALSE
 )
 # Now the unit of tracking is `trip_id` column
-move2::mt_track_id_column(example_tt_split)
+colname_track_id(example_tt_split)
 #> [1] "trip_id"
 # Three incomplete trips were identified
 show_meta(example_tt_split) %>%
