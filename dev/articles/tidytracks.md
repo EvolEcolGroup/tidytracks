@@ -755,8 +755,9 @@ We can now plot the trips:
 
 ggplot() +
   geom_event_path(
-    # bird_id is in the metadata, so we move it to the events to plot it
-    data = as_event_column(shags_females, bird_id),
+    # bird_id is in the metadata, whose columns can be used for mapping and
+    # facets
+    data = shags_females,
     aes(color = bird_id)
   ) +
   facet_wrap(~bird_id) +

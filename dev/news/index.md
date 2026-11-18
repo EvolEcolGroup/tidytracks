@@ -41,6 +41,14 @@
   [`colname_time()`](https://evolecolgroup.github.io/tidytracks/dev/reference/colname_time.md)
   return the names of the track id and time columns
   ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
+- [`geom_event_point()`](https://evolecolgroup.github.io/tidytracks/dev/reference/geom_event_point.md)
+  and
+  [`geom_event_path()`](https://evolecolgroup.github.io/tidytracks/dev/reference/geom_event_path.md)
+  can use the columns of the metadata in
+  [`aes()`](https://ggplot2.tidyverse.org/reference/aes.html) and to
+  facet the plot (e.g. `aes(color = sex)`); their new `meta_columns`
+  argument restricts which columns are added
+  ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
 - [`tt_split_trips()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_split_trips.md)
   moves the original track id column to the metadata (group the trips by
   it with

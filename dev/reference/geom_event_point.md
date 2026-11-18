@@ -18,6 +18,7 @@ geom_event_point(
   position = "identity",
   na.rm = FALSE,
   show.legend = NA,
+  meta_columns = NULL,
   ...
 )
 ```
@@ -28,15 +29,16 @@ geom_event_point(
 
   Set of aesthetic mappings created by
   [`ggplot2::aes()`](https://ggplot2.tidyverse.org/reference/aes.html).
-  Variables from the events table can be used for mapping. If none is
-  provided a basic aesthetics for the `sf` points will be used, as it is
-  the case for
+  Variables from the events table and from the metadata (e.g. the sex of
+  each animal; see `meta_columns`) can be used for mapping, and to facet
+  the plot. If none is provided a basic aesthetics for the `sf` points
+  will be used, as it is the case for
   [`ggplot2::geom_sf()`](https://ggplot2.tidyverse.org/reference/ggsf.html).
 
 - data:
 
-  A `move2` object, with the columns from the events table available for
-  mapping.
+  A `move2` object, with the columns from the events table and from the
+  metadata (see `meta_columns`) available for mapping.
 
 - stat:
 
@@ -60,6 +62,15 @@ geom_event_point(
   NA, which includes if any aesthetics are mapped. It can also be a
   named logical vector to finely select the aesthetics to display.
 
+- meta_columns:
+
+  The names of the columns of the metadata to add to the events of the
+  layer, for mapping and facets. `NULL`, the default, adds all of them
+  (other than locations, i.e. `sfc` columns); an empty vector,
+  `character(0)`, adds none, which saves memory with many events (note
+  that [`c()`](https://rdrr.io/r/base/c.html) is `NULL` in R, and so
+  adds all of them).
+
 - ...:
 
   Other arguments passed on to
@@ -79,4 +90,15 @@ Events without a location (empty points) are not plotted.
 library(ggplot2)
 ggplot() +
   geom_event_point(data = example_tt, mapping = aes(color = track_id))
+
+# columns of the metadata can be used too
+ggplot() +
+  geom_event_point(data = example_tt, mapping = aes(color = sex)) +
+  facet_wrap(~sex)
+
+# only add the columns of the metadata that are needed
+ggplot() +
+  geom_event_point(
+    data = example_tt, mapping = aes(color = sex), meta_columns = "sex"
+  )
 ```
