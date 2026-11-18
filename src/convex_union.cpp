@@ -404,6 +404,17 @@ struct CrossingKeyHash {
 // two segments, to reduce rounding errors), and replaced by the nearest end
 // of a segment if rounding puts it outside the bounding boxes of the
 // segments (as in GEOS's LineIntersector).
+//
+// The computation of the intersection (up to `iy` below) is adapted from
+// GEOS 3.12, src/algorithm/Intersection.cpp (https://libgeos.org),
+// Copyright (C) 2019 Paul Ramsey, distributed under the GNU Lesser General
+// Public Licence 2.1, and distributed here under the GNU General Public
+// License (version 3 or later), as section 3 of the LGPL 2.1 allows. The GEOS
+// function is itself a port of JTS, Intersection.java
+// (https://github.com/locationtech/jts), Copyright (c) 2019 Martin Davis,
+// under the Eclipse Public License 2.0 and the Eclipse Distribution License
+// 1.0. See inst/COPYRIGHTS. The fallback to the nearest end of a segment is
+// our own code.
 void intersection(double p1x, double p1y, double p2x, double p2y, double q1x,
                   double q1y, double q2x, double q2y, double& ix,
                   double& iy) {

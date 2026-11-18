@@ -68,3 +68,32 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+========================================================================
+src/convex_union.cpp: intersection()
+========================================================================
+
+The computation of the intersection of two lines in intersection() is
+adapted from GEOS 3.12 (https://libgeos.org), src/algorithm/Intersection.cpp:
+
+  Copyright (C) 2019 Paul Ramsey <pramsey@cleverlephant.ca>
+
+  This is free software; you can redistribute and/or modify it under the
+  terms of the GNU Lesser General Public Licence as published by the Free
+  Software Foundation. See the COPYING file for more information.
+
+GEOS is distributed under the GNU Lesser General Public License, version
+2.1; as section 3 of that licence allows, this code is distributed in
+tidytracks under the GNU General Public License, version 3 or later.
+
+The GEOS function is a port of Intersection.java of JTS, the JTS Topology
+Suite (https://github.com/locationtech/jts):
+
+  Copyright (c) 2019 Martin Davis
+
+  All rights reserved. This program and the accompanying materials are made
+  available under the terms of the Eclipse Public License 2.0 and Eclipse
+  Distribution License v. 1.0 which accompanies this distribution. The
+  Eclipse Public License is available at
+  http://www.eclipse.org/legal/epl-v20.html and the Eclipse Distribution
+  License is available at http://www.eclipse.org/org/documents/edl-v10.php.

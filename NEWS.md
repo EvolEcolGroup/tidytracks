@@ -177,6 +177,8 @@ duplicated track ids in the metadata.
   new file `inst/COPYRIGHTS`), and its author is credited in `DESCRIPTION`
 * the point-in-polygon test used by `hr_tt_locoh()` (W. R. Franklin's PNPOLY)
   now keeps its copyright notice and licence
+* the intersection of two segments in `hr_tt_locoh()`, adapted from GEOS (and
+  JTS), now gives their copyright notices and licences
 
 # tidytracks 0.2.1
 
