@@ -5,8 +5,11 @@ Authors@R: c(
     person("Lizzie", "Pearmain", role = c("aut")),
     person("Paul","Whitelaw", role = c("aut")),
     person("Holly", "Pickett", role = c("aut")),
-    person("Andrea", "Manica", , "am315@cam.ac.uk", role = c("aut", "cre"))
+    person("Andrea", "Manica", , "am315@cam.ac.uk", role = c("aut", "cre")),
+    person("Thomas Lin", "Pedersen", role = "ctb",
+           comment = "code adapted from gganimate in shadow_wake_build()")
     )
+Copyright: see file COPYRIGHTS
 Description: A grammar for animal tracking data analysis based on
     'move2' objects. The package provides a consistent and expressive set
     of tools for manipulating tracks and associated metadata, allowing

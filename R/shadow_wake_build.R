@@ -1,3 +1,12 @@
+# shadow_wake_build() and ShadowWakeBuild are adapted from shadow_wake() and
+# ShadowWake (R/shadow-wake.R) of the gganimate package, version 1.0.11,
+# Copyright (c) 2023 gganimate authors (Thomas Lin Pedersen and David
+# Robinson), distributed under the MIT licence, whose notice is reproduced in
+# inst/COPYRIGHTS. The documentation below is also taken from gganimate. The
+# changes are described in the documentation: the wake is built from the first
+# frame, and its fade is rescaled to the frames available; in addition, the
+# fill (rather than the colour) is faded to `fill`.
+
 #' CUSTOM VERSION of Show preceding frames with gradual falloff
 #'
 #' This shadow is meant to draw a small wake after data by showing the latest

@@ -172,6 +172,9 @@ duplicated track ids in the metadata.
   taken from `amt::hr_mcp()`, GPL-3 only), 15% faster on many tracks and
   with the same results; its documentation now describes the rule for the
   levels, with a reference
+* the code adapted from `gganimate::shadow_wake()` (MIT licence) for the
+  animations now keeps gganimate's copyright and permission notice (in the
+  new file `inst/COPYRIGHTS`), and its author is credited in `DESCRIPTION`
 
 # tidytracks 0.2.1
 
