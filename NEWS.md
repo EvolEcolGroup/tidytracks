@@ -118,6 +118,7 @@ duplicated track ids in the metadata.
 
 ## Bug fixes
 
+* `hr_tt_mcp()`: give a clear error for infinite coordinates
 * fix isopleths that could not be drawn (e.g. a 50% isopleth when one cell
   holds most of the UD) being dropped silently; the `hr_tt_*()` functions now
   return them with an empty geometry and an `NA` area, with a warning that

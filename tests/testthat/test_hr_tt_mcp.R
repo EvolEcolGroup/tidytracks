@@ -114,6 +114,17 @@ test_that("hr_tt_mcp ignores events without a location", {
   expect_equal(hr_tt_mcp(boar_tt_empty), hr_tt_mcp(boar_tt[-5, ]))
 })
 
+test_that("hr_tt_mcp rejects infinite coordinates", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  geometry <- sf::st_geometry(boar_tt)
+  geometry[[1]] <- sf::st_point(c(Inf, 1))
+  sf::st_geometry(boar_tt) <- geometry
+  expect_error(
+    hr_tt_mcp(boar_tt),
+    "the coordinates of the locations must be finite"
+  )
+})
+
 test_that("hr_tt_mcp requires at least 3 locations per group", {
   set.seed(3)
   coords <- data.frame(

@@ -80,6 +80,10 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   located <- stats::complete.cases(xy)
   xy <- xy[located, , drop = FALSE]
   group_index <- group_index[located]
+  # an infinite coordinate makes the distances from the centroid undefined
+  if (!all(is.finite(xy))) {
+    stop("the coordinates of the locations must be finite")
+  }
   # a polygon needs at least 3 locations
   n_locations <- tabulate(group_index, nbins = length(group_labels))
   if (any(n_locations < 3)) {
