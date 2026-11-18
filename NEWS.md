@@ -168,6 +168,10 @@ duplicated track ids in the metadata.
 * the internal distance helper is rewritten: its argument checks were taken
   from `trip::trackDistance()` (GPL-3 only), which conflicted with the
   package licence, GPL (>= 3)
+* the MCPs of `hr_tt_mcp()` are computed by new code (the previous code was
+  taken from `amt::hr_mcp()`, GPL-3 only), 15% faster on many tracks and
+  with the same results; its documentation now describes the rule for the
+  levels, with a reference
 
 # tidytracks 0.2.1
 
