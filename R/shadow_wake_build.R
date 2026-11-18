@@ -6,9 +6,12 @@
 # changes: the wake is built from the first frame, and its fade is rescaled to
 # the frames available (as described in the documentation); `wrap` defaults to
 # FALSE (TRUE in gganimate); prepare_shadow() skips the excluded layers; the
-# fill (rather than the colour) is faded to `fill`; and the alpha is faded
-# with the positions of the elements whose alpha changes only (gganimate
-# passes those of all the elements).
+# fill (rather than the colour) is faded to `fill`; the alpha is faded with
+# the positions of the elements whose alpha changes only (gganimate passes
+# those of all the elements); and gganimate's internal helpers are replaced:
+# vec_rbind0() by vctrs::vec_rbind() (without its handling of ordered factors
+# with different levels), unique0() by unique(), and mod_alpha() by inline
+# code.
 
 #' CUSTOM VERSION of Show preceding frames with gradual falloff
 #'
