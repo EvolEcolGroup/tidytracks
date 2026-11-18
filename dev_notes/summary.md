@@ -1,57 +1,47 @@
 # tidytracks: summary
 
-Updated 2026-11-16 (laptopX1). tidytracks has no jobs in
+Updated 2026-11-18 (manica01). tidytracks has no jobs in
 dramanica/claude_jobs: its work is tracked in its own GitHub issues, so the
 sections below are by line of work, not by job.
 
-## #92: metadata and events (PRs #95–#98)
+## Attribution and licences (branch `attribution`)
 
-The four items of #92: the only column in both the events and the metadata
-is the track id.
+An audit of code borrowed from other packages, and of licences (18 Nov).
 
-**Status.** Four stacked PRs into `dev` are open: #95 (item 3), #96 (item 1),
-#97 (item 2) and #98 (item 4). Merge them in that order. All CI jobs pass on
-all four. Next tasks are in `dev_notes/handover.md`.
+**Status.** The branch `attribution` (local, from `dev`) has 14 commits:
 
-The PRs add:
-- `group_by_meta()`;
-- typed group keys in the `hr_tt_*()` results: one column per grouping
-  variable, and no `group_id`, which changes existing results;
-- `colname_track_id()` and `colname_time()`, now used across the package;
-- the duplicate check in `tt_read_data()`, `tt_split_trips()`, the column
-  movers and `show_meta<-`;
-- the soft deprecation of `.keep = TRUE`;
-- metadata columns in the `geom_event_*()` layers, with a `meta_columns`
-  argument.
+- **Rewrites:** the code copied from GPL-3-only packages (`dist_fast()` from
+  trip; the MCP helpers from amt), which conflicted with `GPL (>= 3)`, and
+  the LoCoH convex hulls adapted from Wikibooks (CC BY-SA). The rewrites
+  give identical results; MCP is 15% faster and LoCoH needs up to 8x less
+  memory.
+- **Notices and credits:** the copyright notices of gganimate, PNPOLY and
+  GEOS/JTS (new `inst/COPYRIGHTS`), and the gganimate and move2 authors as
+  `ctb`.
+- **Removed:** `dev_notes/explorations/temp/`.
 
-Andrea's decisions of 15–16 Nov are recorded in
-`dev_notes/metadata_and_events.md`. There will be no `select_by_meta()`
-(Andrea, 16 Nov).
+R CMD check gives 0 errors and 0 warnings; an independent agent verified
+every commit. The report, `dev_notes/code_review_attribution_2026-11.md`,
+lists the findings not fixed: the data (left for later by Andrea), method
+citations, four bugs also on `dev`, and three possible speed-ups.
 
 **Next steps**
-- [ ] **P1** [review] Review and merge #95, #96, #97 and #98, in this order: each branch merges the previous ones.
-- [ ] **P3** [cleanup] Delete the branches of #95–#98 and #100 once merged, and the merged `benchmark-sizes` and `inbound`.
+- [ ] **P1** [review] Review `attribution` (the report's list of commits), then push it and open a PR into `dev`.
+- [ ] **P1** [collab] Record the owner, permission and licence of the shag data (`inst/extdata/shags_example.csv`, `data-raw/raw_csv/`) and of the wandering albatross data (animations article); remove the two unused files in `inst/extdata/csv_files/`.
+- [ ] **P2** [decide] Fix the s2 error of `hr_tt_mcp()` on some lon/lat data (repeated hull vertex)? Recommended: yes, by dropping repeated vertices.
+- [ ] **P3** [decide] MCP in C++ (about 10x faster on many tracks, but different vertices in nearly collinear sets)? Recommended: no, unless MCP on many tracks becomes a bottleneck.
+- [ ] **P3** [claude] Add the missing method citations and the Esri credit (report, "Findings not fixed").
 
-## #82: isopleths that cannot be drawn (PR #100)
+## Merged on 16-18 Nov: #92 and #82 (PRs #95–#100), developer notes (#99)
 
-Each UD, or group, always has one row per level. An isopleth that cannot be
-drawn gets an empty geometry, an `NA` area, and a warning that gives the
-reason and a remedy.
-
-**Status.** PR #100 (branch `iso_empty_levels`) is stacked on #98, as #95 also
-changes `hr_tt_ud_iso()`. It covers:
-- the KDE-based isopleths (`hr_tt_ud_iso()`, and `levels` in `hr_tt_kde()`,
-  `hr_tt_dbbmm()` and `hr_tt_akde()`);
-- MCP and LoCoH home ranges with no area;
-- `hr_tt_dbbmm()` tracks that are too short for `window_size`.
-
-All CI jobs pass. Andrea decided on 16 Nov that the table of UDs of
-`hr_tt_dbbmm()` still leaves out the tracks too short for `window_size`,
-and that MCP and LoCoH groups with fewer than three locations still give an
-error. The rule and its reasons are in `dev_notes/isopleths.md`.
+PRs #95–#98 (#92: the only column in both the events and the metadata is
+the track id) and #100 (#82: isopleths that cannot be drawn are kept as empty
+rows with a warning) are merged into `dev`, and so is #99 (`dev_notes/`).
+#92 is closed. The designs are in `metadata_and_events.md` and
+`isopleths.md`.
 
 **Next steps**
-- [ ] **P1** [review] Review and merge #100 after #98.
+- [ ] **P3** [cleanup] Close #82 (fixed by #100); delete `inbound` on origin; check, then delete, the local branches that were squash-merged (`kde_locoh_fast` by #94, whose content is all in `dev`; `kde_fast`, `locoh`, `locoh_fast`, `benchmark-sizes`).
 
 ## First passage time: review of `fpt` (branch `codereview_fpt`)
 
@@ -68,17 +58,8 @@ tests). Report: `dev_notes/code_review_fpt_2026-11.md` on that branch.
 
 **Next steps**
 - [ ] **P1** [andrea] Send Lizzie the note (Claude doc "FPT review: note to Lizzie", private until shared), so that she reviews `codereview_fpt`: the article, then the report's list of commits.
-- [ ] **P2** [review] Merge #101 into `fpt`, then open a PR of `fpt` into `dev`: expect a small conflict with #99 in `.Rbuildignore`, and add the report to `dev_notes/README.md`.
+- [ ] **P2** [review] Merge #101 into `fpt`, then open a PR of `fpt` into `dev`: expect a small conflict in `.Rbuildignore` (#99 is merged), and add the report to `dev_notes/README.md`.
 - [ ] **P3** [cleanup] Delete `codereview_fpt` once #101 is merged.
-
-## Developer notes
-
-**Status.** `dev_notes/` was set up on 16 Nov in PR #99 (branch `dev_notes`,
-from `dev`), with the notes and explorations moved out of `data-raw/`. It can
-be merged at any time, independently of #95–#98.
-
-**Next steps**
-- [ ] **P2** [review] Review and merge #99.
 
 ## Upstream bug reports
 
@@ -112,7 +93,7 @@ document.
 
 **Next steps**
 - [ ] **P2** [decide] Go through `dev_notes/codereview_2026-10.md` and pick the items to fix, possibly together with the documentation review (#90).
-- [ ] **P3** [claude] Check the two items that #95 may have fixed (`event_ud_level()` with a one-row table of UDs; factor ids in `hr_tt_ud_overlap()`), and update the document.
+- [ ] **P3** [claude] Now that #95 is merged, check the two items that it may have fixed (`event_ud_level()` with a one-row table of UDs; factor ids in `hr_tt_ud_overlap()`), and update the document.
 
 ## ctmm integration
 

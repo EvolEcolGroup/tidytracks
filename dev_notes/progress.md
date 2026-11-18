@@ -3,6 +3,26 @@
 Log of major activity, newest first. Never rewrite old entries: add a
 correction as a new entry.
 
+## 2026-11-18 (manica01): code attribution and licence audit
+
+- **Done:** audited the package and the repository for borrowed code and
+  licence problems (scan against 18 upstream packages, three comparing
+  agents, history), then fixed what Andrea approved. Rewrote `dist_fast()`
+  (from trip, GPL-3 only), the MCP helpers (from amt, GPL-3 only) and the
+  LoCoH convex hulls (from Wikibooks, CC BY-SA). Added notices and credits:
+  gganimate (MIT), PNPOLY, GEOS/JTS, and the move2 authors. Removed
+  `dev_notes/explorations/temp/`. An independent agent verified every commit.
+- **Where:** branch `attribution` (local), `8b2960b`..`23780f7`; report
+  `dev_notes/code_review_attribution_2026-11.md`.
+- **Result:** identical results. MCP is 15% faster on many tracks; LoCoH
+  needs up to 8x less memory (`"r"` on 1 M locations now runs, in 32.6 GB;
+  `dev` was killed above 94 GB). R CMD check: 0 errors and 0 warnings.
+- **Decisions** (Andrea): rewrite the GPL-3 and CC BY-SA code with credit to
+  the methods; add `inst/COPYRIGHTS` and `ctb` credits; remove `temp/`; the
+  data later.
+- **Notes changed:** `code_review_attribution_2026-11.md` (new),
+  `README.md`, `summary.md`, `handover.md`.
+
 ## 2026-11-16 (laptopX1): PR #101 for the FPT review
 
 - **Done:** opened PR #101, `codereview_fpt` into `fpt`; deleted the local
