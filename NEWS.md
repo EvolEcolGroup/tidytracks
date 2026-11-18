@@ -179,6 +179,8 @@ duplicated track ids in the metadata.
   now keeps its copyright notice and licence
 * the intersection of two segments in `hr_tt_locoh()`, adapted from GEOS (and
   JTS), now gives their copyright notices and licences
+* the authors of `move2`, from which `filter_by_meta()` and the tidytracks
+  printing of `move2` objects are adapted, are credited in `DESCRIPTION`
 
 # tidytracks 0.2.1
 

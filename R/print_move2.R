@@ -164,6 +164,12 @@ tidytracks_printing <- function(value = NULL, sticky = TRUE) {
 #'
 #' @return `x`, invisibly.
 #'
+#' @details The header (the names of the track id and time columns, the number
+#'   of tracks and their average duration) is adapted from the print method of
+#'   `move2` (`print.move2()`, by Bart Kranstauber, Kamran Safi and Anne K.
+#'   Scharf, GPL (>= 3)); the table of track data that it prints is replaced
+#'   here by a pointer to [show_meta()].
+#'
 #' @keywords internal
 print_move2_tt <- function(
   x,
