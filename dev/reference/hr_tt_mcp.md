@@ -47,9 +47,9 @@ i.e. sorted by the grouping variables), and columns:
   [`sf::st_area()`](https://r-spatial.github.io/sf/reference/geos_measures.html))
 
 - `geometry`: the geometry of the home range as sf polygons; the polygon
-  is empty (and its area is 0) if the locations within the level are all
-  at the same place or on a line (e.g. for small levels or groups with
-  few locations)
+  is empty, and its area is `NA` (with a warning), if the locations
+  within the level are fewer than three, or are on a line (e.g. for
+  small levels or groups with few locations)
 
 ## Examples
 

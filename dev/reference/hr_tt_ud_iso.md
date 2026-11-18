@@ -44,15 +44,32 @@ hr_tt_ud_iso(x, levels = c(0.5, 0.95), ci_level = 0.95)
 
 If `x` is a `SpatRaster`, an `sf` object with one row per level and
 columns `level`, `area` (the area of the isopleth) and `geometry` (a
-`MULTIPOLYGON` for the isopleth). If `x` is a tibble, an `sf` tibble of
-class `hr_tt_poly_tbl` with the columns of `x` (except `ud` and
-`ud_ctmm`) and, for each UD, one row per level with these three columns.
-For the UDs estimated with `ctmm`, the columns `area_low` and
-`area_high` (the confidence interval of the home range area at each
-level, as estimated by `ctmm`) are added after `area` (in a table that
-combines them with other UDs, e.g. from
+`MULTIPOLYGON` for the isopleth, empty if it cannot be drawn on the
+grid, see Details). If `x` is a tibble, an `sf` tibble of class
+`hr_tt_poly_tbl` with the columns of `x` (except `ud` and `ud_ctmm`)
+and, for each UD, one row per level with these three columns. For the
+UDs estimated with `ctmm`, the columns `area_low` and `area_high` (the
+confidence interval of the home range area at each level, as estimated
+by `ctmm`) are added after `area` (in a table that combines them with
+other UDs, e.g. from
 [`hr_tt_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md),
 the other UDs get `NA`).
+
+## Details
+
+Each UD has one row per level: an isopleth that cannot be drawn is
+returned with an empty geometry and an `NA` area, with a warning that
+says why, and what to do about it. The most common case is an isopleth
+at a level that is smaller than the share of the UD held by the cells
+with its highest value (e.g. a 50% isopleth of a UD with 90% of it in a
+single cell), which has no cell within it. This happens for UDs
+estimated on grids that are coarse relative to the UD (e.g. a kernel
+bandwidth that is small relative to the cells, or an animal that spends
+most of its time at one place): use a finer grid. More generally, the
+isopleths are drawn between the centres of the cells, so they are only
+accurate on grids that are fine relative to the UD. Other cases are a 0%
+isopleth, and UDs without values (e.g. all `NA`) or with infinite
+values.
 
 ## See also
 

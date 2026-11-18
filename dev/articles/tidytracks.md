@@ -912,6 +912,8 @@ track id, `trip_id`):
 shags_females_kde <- shags_females_proj %>%
   group_by_meta(bird_id) %>%
   hr_tt_kde(levels = c(0.5, 0.95))
+#> Warning: Some isopleths cannot be drawn, so they are returned with an empty geometry and an NA area:
+#> * 'kb_43', 50%: the cells with the highest value of the UD hold more of it than the level (the smallest level that can be drawn is 52%), so no cell is within the isopleth; use a UD estimated on a finer grid (for hr_tt_kde(), a smaller res or a larger h)
 ```
 
 If you get a warning here, it may be because one of the datasets is
@@ -928,7 +930,7 @@ class(shags_females_kde)
 #> [1] "hr_tt_poly_tbl" "sf"             "tbl_df"         "tbl"           
 #> [5] "data.frame"
 shags_females_kde
-#> Simple feature collection with 7 features and 10 fields
+#> Simple feature collection with 8 features and 10 fields (with 1 geometry empty)
 #> Geometry type: MULTIPOLYGON
 #> Dimension:     XY
 #> Bounding box:  xmin: -13168.23 ymin: -66382.19 xmax: 17715.83 ymax: -30782.79
@@ -965,16 +967,17 @@ shags_females_kde
 #>             ORDER[2],
 #>             LENGTHUNIT["metre",1,
 #>                 ID["EPSG",9001]]]]
-#> # A tibble: 7 × 11
+#> # A tibble: 8 × 11
 #>   bird_id method     h    xmin    ymin   xmax   ymax   res level       area
 #> * <fct>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <dbl>      [m^2]
 #> 1 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5    3061168.
 #> 2 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95  81214737.
 #> 3 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5    3127135.
 #> 4 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95  54845334.
-#> 5 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95  49596057.
-#> 6 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5   11262205.
-#> 7 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95 175160296.
+#> 5 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5         NA 
+#> 6 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95  49596057.
+#> 7 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5   11262205.
+#> 8 kb_45   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95 175160296.
 #> # ℹ 1 more variable: geometry <MULTIPOLYGON [m]>
 ```
 
@@ -990,7 +993,7 @@ We could easily change the units of the area with
 shags_females_kde %>%
   mutate(area = set_units(area, "km^2")) %>%
   select(bird_id, level, area)
-#> Simple feature collection with 7 features and 3 fields
+#> Simple feature collection with 8 features and 3 fields (with 1 geometry empty)
 #> Geometry type: MULTIPOLYGON
 #> Dimension:     XY
 #> Bounding box:  xmin: -13168.23 ymin: -66382.19 xmax: 17715.83 ymax: -30782.79
@@ -1027,16 +1030,17 @@ shags_females_kde %>%
 #>             ORDER[2],
 #>             LENGTHUNIT["metre",1,
 #>                 ID["EPSG",9001]]]]
-#> # A tibble: 7 × 4
+#> # A tibble: 8 × 4
 #>   bird_id level   area                                                  geometry
 #>   <fct>   <dbl> [km^2]                                        <MULTIPOLYGON [m]>
 #> 1 kb_27    0.5    3.06 (((8650.566 -62056.02, 7656.484 -60725.04, 8650.566 -597…
 #> 2 kb_27    0.95  81.2  (((3894.128 -64163.58, 1679.644 -63103.26, 3894.128 -612…
 #> 3 kb_42    0.5    3.13 (((-10375.19 -61079.42, -10642.43 -60725.04, -10375.19 -…
 #> 4 kb_42    0.95  54.8  (((-12753.41 -61170.03, -13168.23 -60725.04, -12753.41 -…
-#> 5 kb_43    0.95  49.6  (((3894.128 -63953.93, 2601.81 -63103.26, 3894.128 -6078…
-#> 6 kb_45    0.5   11.3  (((11028.78 -38461.67, 10203.89 -36942.85, 11028.78 -358…
-#> 7 kb_45    0.95 175.   (((-3240.529 -59910.46, -4264.69 -58346.82, -3249.08 -55…
+#> 5 kb_43    0.5   NA                                                        EMPTY
+#> 6 kb_43    0.95  49.6  (((3894.128 -63953.93, 2601.81 -63103.26, 3894.128 -6078…
+#> 7 kb_45    0.5   11.3  (((11028.78 -38461.67, 10203.89 -36942.85, 11028.78 -358…
+#> 8 kb_45    0.95 175.   (((-3240.529 -59910.46, -4264.69 -58346.82, -3249.08 -55…
 ```
 
 We can plot the home ranges:

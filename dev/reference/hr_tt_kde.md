@@ -68,7 +68,10 @@ hr_tt_kde(
   between 0 and 1. If set to NULL (the default), the full utilisation
   distribution is returned; otherwise just the isopleths are returned.
   It is possible to specify more than two levels, e.g. `c(0.5, 0.95)`
-  corresponds to the 50% and 95% home ranges.
+  corresponds to the 50% and 95% home ranges. An isopleth that cannot be
+  drawn (e.g. on a grid that is coarse relative to the UD) is returned
+  with an empty geometry and an `NA` area, with a warning (see
+  [`hr_tt_ud_iso()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_iso.md)).
 
 - method:
 

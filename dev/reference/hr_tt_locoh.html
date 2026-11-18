@@ -132,7 +132,10 @@ e.g. a factor, or an <code>sfc</code> column of locations from <code><a href="gr
 <li><p><code>n</code>: the parameter of the LoCoH</p></li>
 <li><p><code>level</code>: the level of the home range</p></li>
 <li><p><code>area</code>: the area of the home range (as computed by <code><a href="https://r-spatial.github.io/sf/reference/geos_measures.html" class="external-link">sf::st_area()</a></code>)</p></li>
-<li><p><code>geometry</code>: the geometry of the home range as sf multipolygons</p></li>
+<li><p><code>geometry</code>: the geometry of the home range as sf multipolygons; the
+multipolygon is empty, and its area is <code>NA</code> (with a warning), if the
+hulls within the level have no area (their locations are at the same
+place or on a line), without a buffer</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

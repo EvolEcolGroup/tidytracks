@@ -198,6 +198,15 @@
 
 ### Bug fixes
 
+- fix isopleths that could not be drawn (e.g. a 50% isopleth when one
+  cell holds most of the UD) being dropped silently; the `hr_tt_*()`
+  functions now return them with an empty geometry and an `NA` area,
+  with a warning that says why and what to do, and skipped
+  [`hr_tt_dbbmm()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_dbbmm.md)
+  tracks get such rows with `levels`
+  ([\#82](https://github.com/EvolEcolGroup/tidytracks/issues/82))
+- [`hr_tt_ud_iso()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_iso.md):
+  fix levels such as `1/3` being returned rounded
 - `lwgeom` is now imported rather than suggested.
   [`event_azimuth()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_azimuth.md)
   always needs it (through

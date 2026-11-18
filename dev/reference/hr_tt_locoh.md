@@ -89,7 +89,10 @@ i.e. sorted by the grouping variables), and columns:
 - `area`: the area of the home range (as computed by
   [`sf::st_area()`](https://r-spatial.github.io/sf/reference/geos_measures.html))
 
-- `geometry`: the geometry of the home range as sf multipolygons
+- `geometry`: the geometry of the home range as sf multipolygons; the
+  multipolygon is empty, and its area is `NA` (with a warning), if the
+  hulls within the level have no area (their locations are at the same
+  place or on a line), without a buffer
 
 ## Details
 

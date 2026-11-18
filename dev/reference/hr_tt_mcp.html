@@ -87,9 +87,9 @@ e.g. a factor, or an <code>sfc</code> column of locations from <code><a href="gr
 <li><p><code>level</code>: the level of the contour line</p></li>
 <li><p><code>area</code>: the area of the home range (as computed by <code><a href="https://r-spatial.github.io/sf/reference/geos_measures.html" class="external-link">sf::st_area()</a></code>)</p></li>
 <li><p><code>geometry</code>: the geometry of the home range as sf polygons; the polygon
-is empty (and its area is 0) if the locations within the level are all
-at the same place or on a line (e.g. for small levels or groups with few
-locations)</p></li>
+is empty, and its area is <code>NA</code> (with a warning), if the locations within
+the level are fewer than three, or are on a line (e.g. for small levels
+or groups with few locations)</p></li>
 </ul></div>
 
     <div class="section level2">

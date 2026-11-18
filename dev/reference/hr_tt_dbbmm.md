@@ -137,7 +137,10 @@ with columns:
 
 - `level`, `area` and `geometry` (if `levels` is set): the isopleths,
   see
-  [`hr_tt_ud_iso()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_iso.md)
+  [`hr_tt_ud_iso()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_iso.md).
+  The tracks with fewer locations than `window_size`, which have no UD,
+  are left out of the UDs (with a warning); with `levels`, they get an
+  empty geometry and an `NA` area for each level (with a warning).
 
 ## Details
 

@@ -184,7 +184,10 @@ the grid (in metres)</p></li>
 <li><p><code>ud</code> (if <code>levels</code> is <code>NULL</code>): the UDs, as a list of <code><a href="https://rspatial.github.io/terra/reference/SpatRaster-class.html" class="external-link">terra::SpatRaster</a></code>
 objects with a layer named <code>ud</code> whose values sum to 1</p></li>
 <li><p><code>level</code>, <code>area</code> and <code>geometry</code> (if <code>levels</code> is set): the isopleths, see
-<code><a href="hr_tt_ud_iso.html">hr_tt_ud_iso()</a></code></p></li>
+<code><a href="hr_tt_ud_iso.html">hr_tt_ud_iso()</a></code>. The tracks with fewer locations than <code>window_size</code>,
+which have no UD, are left out of the UDs (with a warning); with
+<code>levels</code>, they get an empty geometry and an <code>NA</code> area for each level
+(with a warning).</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

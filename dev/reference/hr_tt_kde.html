@@ -119,7 +119,9 @@ order in which the groups appear in <code>x</code>.</p></dd>
 numbers between 0 and 1. If set to NULL (the default), the full utilisation
 distribution is returned; otherwise just the isopleths are returned. It is
 possible to specify more than two levels, e.g.  <code>c(0.5, 0.95)</code> corresponds
-to the 50% and 95% home ranges.</p></dd>
+to the 50% and 95% home ranges. An isopleth that cannot be drawn (e.g.
+on a grid that is coarse relative to the UD) is returned with an empty
+geometry and an <code>NA</code> area, with a warning (see <code><a href="hr_tt_ud_iso.html">hr_tt_ud_iso()</a></code>).</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
