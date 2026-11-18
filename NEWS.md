@@ -163,6 +163,12 @@ duplicated track ids in the metadata.
   duplicated records and outliers, interpolating missing locations, and
   resampling tracks to a regular interval.
 
+## Attribution and licences
+
+* the internal distance helper is rewritten: its argument checks were taken
+  from `trip::trackDistance()` (GPL-3 only), which conflicted with the
+  package licence, GPL (>= 3)
+
 # tidytracks 0.2.1
 
 ## Bug fixes
