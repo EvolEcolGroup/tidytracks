@@ -72,9 +72,10 @@ Either a \code{tibble} of class \code{hr_tt_ud_tbl}, or, if \code{levels} is not
 \code{NULL}, an \code{sf} tibble of class \code{hr_tt_poly_tbl} (as returned by
 \code{\link[=hr_tt_ud_iso]{hr_tt_ud_iso()}}), with columns:
 \itemize{
-\item the track id column of \code{x}: the ids of the tracks, in the order of the
-metadata (see \code{\link[=show_meta]{show_meta()}}) if \code{x} is not grouped, or else in the order
-of \code{\link[dplyr:group_keys]{dplyr::group_keys()}} (i.e. sorted by track id)
+\item the track id column of \code{x}: the ids of the tracks (with their own type,
+e.g. a factor), in the order of the metadata (see \code{\link[=show_meta]{show_meta()}}) if \code{x}
+is not grouped, or else in the order of \code{\link[dplyr:group_keys]{dplyr::group_keys()}} (i.e.
+sorted by track id)
 \item \code{method}: the method used to estimate the home range (\code{"dbbmm"} or
 \code{"dbgb"})
 \item \code{window_size} and \code{margin}: the values used for the sliding window

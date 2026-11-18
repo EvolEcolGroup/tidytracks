@@ -12,7 +12,7 @@ test_that("hr_tt_kde works with multiple tracks", {
   # UDs are stored as live SpatRasters during analysis
   expect_false(inherits(boar_kde$ud, "PackedSpatRaster_list"))
   expect_true(all(vapply(boar_kde$ud, inherits, logical(1), "SpatRaster")))
-  # the group_id column should have been renamed to "name"
+  # the track id column comes first, with the ids of the tracks
   expect_true("name" %in% names(boar_kde))
   expect_equal(length(unique(boar_kde$xmin)), 1)
   expect_equal(length(unique(boar_kde$ymin)), 1)
@@ -120,7 +120,7 @@ test_that("hr_tt_kde returns the groups in the order of the group keys", {
   boar_tt$animal <- factor(as.character(boar_tt$name), levels = animals)
   boar_grouped <- dplyr::group_by(boar_tt, animal)
   kde <- hr_tt_kde(boar_grouped, res = 50)
-  expect_equal(kde$animal, animals)
+  expect_equal(kde$animal, factor(animals, levels = animals))
   expect_equal(names(kde$ud), animals)
   # each with its own UD
   kde_by_name <- hr_tt_kde(boar_tt, res = 50)
@@ -130,7 +130,7 @@ test_that("hr_tt_kde returns the groups in the order of the group keys", {
   )
   # and so are the isopleths
   iso <- hr_tt_kde(boar_grouped, res = 50, levels = 0.5)
-  expect_equal(iso$animal, animals)
+  expect_equal(iso$animal, factor(animals, levels = animals))
 })
 
 test_that("hr_tt_kde rejects grids beyond the reach of a group's kernels", {
@@ -204,7 +204,8 @@ test_that("hr_tt_kde returns the tracks of ungrouped data in metadata order", {
     readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
   )
   kde <- hr_tt_kde(x, h = c(1, 2, 3))
-  expect_equal(kde$track_id, c("b", "a", "c"))
+  expect_s3_class(kde$track_id, "factor")
+  expect_equal(as.character(kde$track_id), c("b", "a", "c"))
   expect_equal(names(kde$ud), c("b", "a", "c"))
   # per-track values are matched in the same order
   expect_equal(kde$h, c(1, 2, 3))
@@ -213,14 +214,14 @@ test_that("hr_tt_kde returns the tracks of ungrouped data in metadata order", {
     dplyr::group_by(x, track_id),
     h = c(2, 1, 3)
   )
-  expect_equal(kde_by_key$track_id, c("a", "b", "c"))
+  expect_equal(as.character(kde_by_key$track_id), c("a", "b", "c"))
   expect_equal(
     lapply(kde$ud, terra::values),
     lapply(kde_by_key$ud, terra::values)[c("b", "a", "c")]
   )
   # and so are the isopleths
   iso <- hr_tt_kde(x, h = c(1, 2, 3), levels = 0.5)
-  expect_equal(iso$track_id, c("b", "a", "c"))
+  expect_equal(as.character(iso$track_id), c("b", "a", "c"))
 })
 
 test_that("hr_tt_kde ignores events without a location", {

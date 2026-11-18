@@ -60,10 +60,11 @@ Either a \code{tibble} of class \code{hr_tt_ud_tbl}, or, if \code{levels} is not
 NULL, an \code{sf} tibble of class \code{hr_tt_poly_tbl} (as returned by
 \code{\link[=hr_tt_ud_iso]{hr_tt_ud_iso()}}), with columns:
 \itemize{
-\item the grouping variable (as named in \code{x}; if \code{x} is grouped by
-multiple variables, this column is named \code{group_id}): the ids from the
-grouping of \code{x}, in the order of the tracks in the metadata if \code{x} is not
-grouped, or else in the order of \code{\link[dplyr:group_keys]{dplyr::group_keys()}}
+\item the grouping variables of \code{x} (the track id if \code{x} is not grouped), one
+column per variable, with the keys of the groups (with their own types,
+e.g. a factor, or an \code{sfc} column of locations from \code{\link[=group_by_meta]{group_by_meta()}}),
+in the order of the tracks in the metadata if \code{x} is not grouped, or else
+in the order of \code{\link[dplyr:group_keys]{dplyr::group_keys()}}
 \item \code{method}: the method used to estimate the home range (\code{"kde"})
 \item \code{h}: the bandwidth used for the KDE
 \item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}: the bounding box used for the KDE

@@ -172,8 +172,7 @@ hr_tt_akde_pop <- function(
   if (inherits(x, "grouped_df")) {
     keys <- dplyr::group_keys(x)
     rows_list <- dplyr::group_rows(x)
-    group_labels <- tidyr::unite(keys, col = "group_labels") %>%
-      dplyr::pull(1)
+    group_labels <- hr_group_labels(keys) # nolint: object_usage_linter.
   } else {
     keys <- NULL
     rows_list <- list(seq_len(nrow(x)))

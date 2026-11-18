@@ -81,10 +81,11 @@
 #' @returns Either a `tibble` of class `hr_tt_ud_tbl`, or, if `levels` is not
 #' NULL, an `sf` tibble of class `hr_tt_poly_tbl` (as returned by
 #' [hr_tt_ud_iso()]), with columns:
-#' - the grouping variable (as named in `x`; if `x` is grouped by
-#'   multiple variables, this column is named `group_id`): the ids from the
-#'   grouping of `x`, in the order of the tracks in the metadata if `x` is not
-#'   grouped, or else in the order of [dplyr::group_keys()]
+#' - the grouping variables of `x` (the track id if `x` is not grouped), one
+#'   column per variable, with the keys of the groups (with their own types,
+#'   e.g. a factor, or an `sfc` column of locations from [group_by_meta()]),
+#'   in the order of the tracks in the metadata if `x` is not grouped, or else
+#'   in the order of [dplyr::group_keys()]
 #' - `method`: the method used to estimate the home range (`"akde"`)
 #' - `model_name`: the name of the movement model used
 #' - `dof_area`: the effective number of degrees of freedom of the home range
@@ -183,9 +184,9 @@ hr_tt_akde <- function(
   # the groups are estimated (and returned) in the order of the tracks in the
   # metadata if x was not grouped, or else in the order of their keys
   group_order <- hr_group_order(x, by_track) # nolint: object_usage_linter.
-  group_labels <- tidyr::unite(dplyr::group_keys(x), col = "group_labels") %>%
-    dplyr::pull(1)
-  group_labels <- group_labels[group_order]
+  # the keys of the groups, returned as the first columns, and their labels
+  keys <- hr_group_keys(x, group_order) # nolint: object_usage_linter.
+  group_labels <- hr_group_labels(keys) # nolint: object_usage_linter.
   # the models are fitted to each track, so each group must be a single track
   group_tracks <- akde_group_tracks(x)[group_order]
 
@@ -244,7 +245,6 @@ hr_tt_akde <- function(
       tolerance = tolerance
     )
     group_row <- tibble::tibble(
-      group_id = group_labels[i],
       method = "akde",
       model_name = model_name,
       dof_area = summary(ud_ctmm, units = FALSE)$DOF[["area"]],
@@ -263,14 +263,11 @@ hr_tt_akde <- function(
   })
   akde_results <- do.call(rbind, akde_results)
 
-  # if there was a single grouping variable, rename the group_id column
-  if (length(dplyr::group_vars(x)) == 1) {
-    akde_results <- akde_results %>%
-      dplyr::rename_with(
-        ~ dplyr::group_vars(x),
-        dplyr::all_of("group_id")
-      )
-  }
+  # the keys of the groups come first, one column per grouping variable
+  akde_results <- hr_with_keys( # nolint: object_usage_linter.
+    keys,
+    akde_results
+  )
   class(akde_results) <- c("hr_tt_ud_tbl", class(akde_results))
 
   # the isopleths are computed from the table of UDs, so that they are the

@@ -14,7 +14,9 @@ test_that("hr_tt_akde returns a table of UDs on a shared grid", {
       "ymax", "res", "ud", "ud_ctmm"
     )
   )
-  expect_equal(akde$track, c("Cilla", "Gabs"))
+  # the track ids keep their type
+  expect_s3_class(akde$track, "factor")
+  expect_equal(as.character(akde$track), c("Cilla", "Gabs"))
   expect_equal(akde$method, c("akde", "akde"))
   expect_equal(akde$model_name, fits$model_name)
   expect_true(all(vapply(akde$ud, inherits, logical(1), "SpatRaster")))
@@ -39,7 +41,7 @@ test_that("hr_tt_akde returns the tracks of ungrouped data in metadata order", {
   x_meta <- x
   show_meta(x_meta) <- show_meta(x)[2:1, , drop = FALSE]
   akde <- hr_tt_akde(x_meta, fits, res = c(500, 1000))
-  expect_equal(akde$track, c("Gabs", "Cilla"))
+  expect_equal(as.character(akde$track), c("Gabs", "Cilla"))
   expect_equal(names(akde$ud), c("Gabs", "Cilla"))
   # per-track values are matched in the same order
   expect_equal(akde$res, c(500, 1000))
@@ -195,7 +197,7 @@ test_that("hr_tt_akde matches the models to the tracks", {
   akde <- suppressMessages(
     hr_tt_akde(filter_by_meta(x, track == "Gabs"), fits)
   )
-  expect_equal(akde$track, "Gabs")
+  expect_equal(as.character(akde$track), "Gabs")
   # the models must include all tracks
   expect_error(
     hr_tt_akde(x, dplyr::filter(fits, track == "Gabs")),
@@ -270,5 +272,9 @@ test_that("hr_tt_akde checks its inputs", {
   akde <- suppressMessages(
     hr_tt_akde(dplyr::group_by(x, track, herd), fits)
   )
-  expect_equal(akde$group_id, c("Cilla_a", "Gabs_a"))
+  # with one column per grouping variable, and the labels of the groups as
+  # the names of the UDs
+  expect_equal(as.character(akde$track), c("Cilla", "Gabs"))
+  expect_equal(akde$herd, c("a", "a"))
+  expect_equal(names(akde$ud), c("Cilla_a", "Gabs_a"))
 })

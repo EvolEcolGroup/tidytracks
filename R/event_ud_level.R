@@ -13,9 +13,10 @@
 #' `ud` can be a single UD, used for all events, or a tibble of UDs (of class
 #' `hr_tt_ud_tbl`, as returned by e.g. [hr_tt_kde()] or [hr_tt_dbbmm()]). With
 #' a tibble, the level of each event is computed in the UD of its own row,
-#' matching the first column of the tibble (e.g. the track id) to the column
-#' of `x` with the same name; a tibble with a single row is used for all
-#' events.
+#' matching the columns that identify the UDs (the columns before `method`,
+#' i.e. the track id or the grouping variables used to estimate them, or else
+#' the first column of the tibble) to the columns of `x` with the same names;
+#' a tibble with a single row is used for all events.
 #'
 #' Events are reprojected to the coordinate reference system of the UD if
 #' needed. Events without a location, outside the grid of the UD, or without
@@ -52,23 +53,31 @@ event_ud_level <- function(x, ud) {
       # hr_tt_ud_sum(), whose first column is not an id
       level[located] <- ud_level_one(x[located, ], ud$ud[[1]])
     } else {
-      # the first column of a UD table identifies its rows (the track id for
-      # hr_tt_kde() and hr_tt_dbbmm(), or the grouping variable)
-      id_col <- names(ud)[1]
-      if (!id_col %in% names(x)) {
+      # the rows of a UD table are identified by its keys, i.e. the columns
+      # before `method` (the track id for hr_tt_kde() and hr_tt_dbbmm(), or
+      # the grouping variables), or by its first column if it has no keys
+      key_cols <- hr_key_columns(ud) # nolint: object_usage_linter.
+      missing_cols <- setdiff(key_cols, names(x))
+      if (length(missing_cols) > 0) {
         stop(
-          "the first column of ud ('", id_col, "') must be a column of x, ",
-          "to match each event to its UD; use as_event_column() to move it ",
-          "from the metadata"
+          "the column(s) that identify the UDs of ud (",
+          paste0("'", missing_cols, "'", collapse = ", "),
+          ") must be columns of x, to match each event to its UD; use ",
+          "as_event_column() or group_by_meta() to move them from the metadata"
         )
       }
-      # ids are compared as characters, as UD tables store them, whatever the
-      # type of the column in x (e.g. a factor track id)
-      event_ids <- as.character(x[[id_col]])
+      # ids are compared as their labels (as characters, with locations as
+      # WKT), whatever the types of the columns in x (e.g. a factor track id)
+      event_keys <- tibble::as_tibble(lapply(
+        stats::setNames(key_cols, key_cols),
+        function(col) x[[col]]
+      ))
+      event_ids <- hr_group_labels(event_keys) # nolint: object_usage_linter.
+      ud_ids <- hr_group_labels(ud[key_cols]) # nolint: object_usage_linter.
       for (i in seq_len(nrow(ud))) {
         # %in% rather than ==, so that events with a missing id are not
         # selected
-        events <- located & event_ids %in% as.character(ud[[1]][i])
+        events <- located & event_ids %in% ud_ids[i]
         # each UD is used only for its own events, whose levels are computed
         # in one call (move2utils computes the volume of the UD each time)
         if (any(events)) {

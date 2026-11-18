@@ -95,13 +95,15 @@ test_that("hr_tt_locoh respects explicit grouping", {
 
   expect_equal(grouped_locoh, default_locoh)
 
-  # with several grouping variables, the groups are in a group_id column
+  # with several grouping variables, one column per variable, with its type
   boar_tt$period <- rep(c("a", "b"), length.out = nrow(boar_tt))
   multi_locoh <- boar_tt |>
     dplyr::group_by(name, period) |>
     hr_tt_locoh(n = 5, levels = 0.9)
+  expect_equal(names(multi_locoh)[1:3], c("name", "period", "method"))
+  expect_s3_class(multi_locoh$name, "factor")
   expect_setequal(
-    multi_locoh$group_id,
+    paste(multi_locoh$name, multi_locoh$period, sep = "_"),
     paste(boar_tt$name, boar_tt$period, sep = "_")
   )
 })
@@ -134,7 +136,10 @@ test_that("hr_tt_locoh returns the groups in the order of the group keys", {
     levels = 0.9
   )
 
-  expect_equal(grouped_locoh$group, rev(levels(boar_tt$name)))
+  expect_equal(
+    grouped_locoh$group,
+    factor(rev(levels(boar_tt$name)), levels = rev(levels(boar_tt$name)))
+  )
   expect_equal(grouped_locoh$n, n)
   expect_equal(
     grouped_locoh$area[grouped_locoh$group == "Jean"],
@@ -151,7 +156,7 @@ test_that("hr_tt_locoh returns ungrouped tracks in metadata order", {
   n <- c(3, 4, 2)
   track_locoh <- hr_tt_locoh(x, n = n, levels = 0.9)
 
-  expect_equal(track_locoh$track_id, c("b", "a", "c"))
+  expect_equal(as.character(track_locoh$track_id), c("b", "a", "c"))
   # per-track values of n are matched in the same order
   expect_equal(track_locoh$n, n)
   expect_equal(

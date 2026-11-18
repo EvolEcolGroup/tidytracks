@@ -1,26 +1,3 @@
-# Helper with distinct colony coordinates per bird (for geometry-filter test)
-create_toy_tt_geo <- function() {
-  coords_df <- create_toy_df() # nolint: object_usage_linter.
-  meta_df <- data.frame(
-    bird_id = unique(coords_df$bird_id),
-    species = c("species_a", "species_b"),
-    geometry = sf::st_sfc(
-      sf::st_point(c(0, 10)), # id_1: colony latitude 10
-      sf::st_point(c(0, 50)), # id_2: colony latitude 50
-      crs = 4326
-    )
-  )
-  colnames(meta_df)[which(colnames(meta_df) == "geometry")] <- "colony_sf"
-  sf::st_geometry(meta_df) <- "colony_sf"
-  tt_read_data(
-    events = coords_df,
-    col_track_id = "bird_id",
-    col_coords = c("longitude", "latitude"),
-    col_date_time = "date_time",
-    meta = meta_df
-  )
-}
-
 test_that("filter_by_meta works when metadata has a geometry column", {
   toy_tt <- create_toy_tt()
   result <- filter_by_meta(toy_tt, species == "species_a")
@@ -73,5 +50,83 @@ test_that("filter_by_meta works on grouped objects", {
 
   result <- filter_by_meta(toy_tt, .track_id = "id_2")
   expect_equal(nrow(result), 6L)
+  expect_equal(dplyr::n_groups(result), 1L)
+})
+
+test_that("filter_by_meta works when the metadata is an sf table", {
+  # the geometry of the metadata has the name of the geometry of the events
+  toy_tt <- create_toy_tt_sf_meta("geometry")
+  result <- filter_by_meta(toy_tt, species == "species_b")
+  expect_equal(nrow(result), 6L)
+  expect_equal(as.character(show_meta(result)$bird_id), "id_2")
+  # filter on the geometry of the metadata (id_1 has its colony at latitude 10)
+  result <- filter_by_meta(toy_tt, sf::st_coordinates(geometry)[, "Y"] < 30)
+  expect_equal(nrow(result), 24L)
+  expect_equal(as.character(show_meta(result)$bird_id), "id_1")
+  expect_s3_class(show_meta(result)$geometry, "sfc")
+  # the events keep their own geometry
+  expect_equal(
+    sf::st_coordinates(result),
+    sf::st_coordinates(toy_tt)[1:24, ]
+  )
+
+  # the geometry of the metadata has another name
+  toy_tt <- create_toy_tt_sf_meta("colony_sf")
+  result <- filter_by_meta(toy_tt, sf::st_coordinates(colony_sf)[, "Y"] > 30)
+  expect_equal(nrow(result), 6L)
+  expect_equal(as.character(show_meta(result)$bird_id), "id_2")
+  expect_equal(
+    sf::st_coordinates(result),
+    sf::st_coordinates(toy_tt)[25:30, ]
+  )
+})
+
+test_that("filter_by_meta works with spatial predicates on sfc columns", {
+  toy_tt <- create_toy_tt_geo()
+  # a box around the colony of id_1 (latitude 10), but not that of id_2
+  box <- sf::st_as_sfc(
+    sf::st_bbox(c(xmin = -5, ymin = 5, xmax = 5, ymax = 15), crs = 4326)
+  )
+  result <- filter_by_meta(
+    toy_tt,
+    lengths(sf::st_intersects(colony_sf, box)) > 0
+  )
+  expect_equal(nrow(result), 24L)
+  expect_equal(as.character(show_meta(result)$bird_id), "id_1")
+  # the sfc column of the metadata is kept, with its crs
+  expect_s3_class(show_meta(result)$colony_sf, "sfc")
+  expect_equal(sf::st_crs(show_meta(result)$colony_sf), sf::st_crs(4326))
+})
+
+test_that("filter_by_meta combines conditions with .track_id", {
+  toy_tt <- create_toy_tt_geo()
+  # both tracks meet the condition, and .track_id keeps one of them
+  result <- filter_by_meta(
+    toy_tt,
+    sf::st_coordinates(colony_sf)[, "Y"] > 0,
+    .track_id = "id_2"
+  )
+  expect_equal(nrow(result), 6L)
+  expect_equal(as.character(show_meta(result)$bird_id), "id_2")
+  # the condition and .track_id keep different tracks
+  result <- filter_by_meta(toy_tt, species == "species_a", .track_id = "id_2")
+  expect_equal(nrow(result), 0L)
+  expect_equal(nrow(show_meta(result)), 0L)
+})
+
+test_that("filter_by_meta returns no events if no track is kept", {
+  result <- filter_by_meta(create_toy_tt_geo(), species == "species_c")
+  expect_s3_class(result, "move2")
+  expect_equal(nrow(result), 0L)
+  expect_equal(nrow(show_meta(result)), 0L)
+  expect_s3_class(show_meta(result)$colony_sf, "sfc")
+})
+
+test_that("filter_by_meta keeps the groups set by group_by_meta", {
+  toy_tt <- group_by_meta(create_toy_tt_geo(), species)
+  result <- filter_by_meta(toy_tt, sf::st_coordinates(colony_sf)[, "Y"] < 30)
+  expect_equal(nrow(result), 24L)
+  expect_equal(as.character(show_meta(result)$bird_id), "id_1")
+  expect_equal(dplyr::group_vars(result), "species")
   expect_equal(dplyr::n_groups(result), 1L)
 })

@@ -34,7 +34,9 @@
 #'   Wildlife Management, 69, 1346-1359.
 #' @param x A SpatRaster of the utilisation distribution (with a layer `ud`), or
 #'   a tibble of UDs of class `hr_tt_ud_tbl` (e.g. as created with
-#'   [hr_tt_kde()]).
+#'   [hr_tt_kde()]), whose rows are identified by the columns before `method`
+#'   (the grouping variables used to estimate the UDs), or else by the first
+#'   column.
 #' @param method A character string specifying the method to use for overlap
 #'   calculation. Options are `"ba"` (Bhattacharyya's Affinity), `"vi"` (Volume
 #'   of Intersection), `"udoi"` (Utilisation Distribution Overlap Index, see
@@ -54,7 +56,9 @@
 #' @param ... Additional arguments (not currently used)
 #' @return A numeric value representing the overlap between the two UDs
 #'   according to the specified method, or a matrix of such values if `x` is a
-#'   tibble of multiple UDs.
+#'   tibble of multiple UDs, with the ids of the UDs as row and column names
+#'   (the values of the columns that identify them, separated by "_", with
+#'   locations written as WKT).
 #' @export
 #' @examples
 #' example_kde <- hr_tt_kde(example_tt)
@@ -138,12 +142,18 @@ hr_tt_ud_overlap.hr_tt_ud_tbl <- function(
   check_earth_mover_available(method)
   check_cond_level(cond_level)
   n <- nrow(x)
-  # assume that the first column of x is an id column (check that it is
-  # character and unique)
-  if (is.character(x[[1]]) && length(unique(x[[1]])) == n) {
-    ids <- x[[1]]
-  } else {
-    stop("the first column of x must be a character vector with unique values")
+  # the ids of the UDs are the labels of their keys, i.e. of the columns
+  # before `method` (the grouping variables of the hr_tt_* functions, with
+  # their own types, e.g. a factor or an sfc column), or of the first column
+  # of a table without them; they must identify the UDs
+  key_cols <- hr_key_columns(x) # nolint: object_usage_linter.
+  ids <- hr_group_labels(x[key_cols]) # nolint: object_usage_linter.
+  if (anyDuplicated(ids) > 0) {
+    stop(
+      "the column(s) that identify the UDs of x (",
+      paste0("'", key_cols, "'", collapse = ", "),
+      ") must have a unique value (or combination of values) for each UD"
+    )
   }
 
   if (n == 0L) {

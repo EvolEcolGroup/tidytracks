@@ -82,3 +82,37 @@ create_toy_tt <- function() {
   )
   return(test_tt)
 }
+
+# toy move2 object with distinct colony coordinates per bird, in a metadata
+# column 'colony_sf' (id_1 at latitude 10, id_2 at latitude 50)
+create_toy_tt_geo <- function() {
+  coords_df <- create_toy_df()
+  meta_df <- data.frame(
+    bird_id = unique(coords_df$bird_id),
+    species = c("species_a", "species_b"),
+    geometry = sf::st_sfc(
+      sf::st_point(c(0, 10)), # id_1: colony latitude 10
+      sf::st_point(c(0, 50)), # id_2: colony latitude 50
+      crs = 4326
+    )
+  )
+  colnames(meta_df)[which(colnames(meta_df) == "geometry")] <- "colony_sf"
+  sf::st_geometry(meta_df) <- "colony_sf"
+  tt_read_data(
+    events = coords_df,
+    col_track_id = "bird_id",
+    col_coords = c("longitude", "latitude"),
+    col_date_time = "date_time",
+    meta = meta_df
+  )
+}
+
+# toy move2 object whose metadata is an sf table (set with move2, as
+# show_meta<- would turn it into a plain table), with the colonies of
+# create_toy_tt_geo() as its geometry, named `geometry_name`
+create_toy_tt_sf_meta <- function(geometry_name = "geometry") {
+  toy_tt <- create_toy_tt_geo()
+  meta <- sf::st_as_sf(show_meta(toy_tt), sf_column_name = "colony_sf")
+  sf::st_geometry(meta) <- geometry_name
+  move2::mt_set_track_data(toy_tt, meta)
+}
