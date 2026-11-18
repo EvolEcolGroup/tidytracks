@@ -173,8 +173,9 @@ duplicated track ids in the metadata.
   with the same results; its documentation now describes the rule for the
   levels, with a reference
 * the code adapted from `gganimate::shadow_wake()` (MIT licence) for the
-  animations now keeps gganimate's copyright and permission notice (in the
-  new file `inst/COPYRIGHTS`), and its author is credited in `DESCRIPTION`
+  animations now keeps the copyright and permission notice of gganimate (in
+  the new file `inst/COPYRIGHTS`), and its author is credited in
+  `DESCRIPTION`
 * the point-in-polygon test used by `hr_tt_locoh()` (W. R. Franklin's PNPOLY)
   now keeps its copyright notice and licence
 * the intersection of two segments in `hr_tt_locoh()`, adapted from GEOS (and
