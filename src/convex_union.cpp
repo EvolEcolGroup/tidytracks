@@ -411,7 +411,7 @@ struct CrossingKeyHash {
 // Public Licence 2.1, and distributed here under the GNU General Public
 // License (version 3 or later), as section 3 of the LGPL 2.1 allows. The GEOS
 // function is itself a port of JTS, Intersection.java
-// (https://github.com/locationtech/jts), Copyright (c) 2019 Martin Davis,
+// (https://github.com/locationtech/jts), by Martin Davis (2019),
 // under the Eclipse Public License 2.0 and the Eclipse Distribution License
 // 1.0. See inst/COPYRIGHTS. The fallback to the nearest end of a segment is
 // our own code.
