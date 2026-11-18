@@ -60,9 +60,6 @@ longer run against the current code.
   `tt_regular_time()` and `hr_tt_ud_overlap()`.
 - [explorations/old/](explorations/old/): early notebooks on UDs, kernels and
   reading data.
-- [explorations/temp/](explorations/temp/): scratch scripts and notebooks
-  (kernels, speed filters, units, move2 and trip tests, a wandering albatross
-  data set).
 
 ## Helper scripts
 
