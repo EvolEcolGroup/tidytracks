@@ -85,6 +85,14 @@ ids, use <code>.track_id</code></p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A move2 object with only the selected tracks</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Locations in the metadata (e.g. of a colony), stored as <code>sfc</code> columns (see
+<code><a href="sf_point_col.html">sf_point_col()</a></code>) or as the geometry of an <code>sf</code> table of metadata, can be
+used in the conditions, e.g. with the spatial predicates of <code>sf</code> (such as
+<code><a href="https://r-spatial.github.io/sf/reference/geos_binary_pred.html" class="external-link">sf::st_intersects()</a></code> or <code><a href="https://r-spatial.github.io/sf/reference/geos_binary_pred.html" class="external-link">sf::st_is_within_distance()</a></code>). The events keep
+their own geometry.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -92,6 +100,25 @@ ids, use <code>.track_id</code></p></dd>
 <span class="r-in"><span><span class="fu"><a href="show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">subset_tt</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   track_id    sex nest_lon nest_lat</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1        c female    -0.78     0.43</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># store the locations of the nests as an sfc column of the metadata</span></span></span>
+<span class="r-in"><span><span class="va">nests_tt</span> <span class="op">&lt;-</span> <span class="va">example_tt</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">nests_tt</span><span class="op">)</span><span class="op">$</span><span class="va">nest</span> <span class="op">&lt;-</span> <span class="fu"><a href="sf_point_col.html">sf_point_col</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  x <span class="op">=</span> <span class="fu"><a href="show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">nests_tt</span><span class="op">)</span><span class="op">$</span><span class="va">nest_lon</span>,</span></span>
+<span class="r-in"><span>  y <span class="op">=</span> <span class="fu"><a href="show_meta.html">show_meta</a></span><span class="op">(</span><span class="va">nests_tt</span><span class="op">)</span><span class="op">$</span><span class="va">nest_lat</span>,</span></span>
+<span class="r-in"><span>  crs <span class="op">=</span> <span class="fl">4326</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># keep the tracks with a nest within 200 km of a point</span></span></span>
+<span class="r-in"><span><span class="va">centre</span> <span class="op">&lt;-</span> <span class="fu"><a href="sf_point_col.html">sf_point_col</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fl">0</span>, y <span class="op">=</span> <span class="fl">0</span>, crs <span class="op">=</span> <span class="fl">4326</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">nests_tt</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="fu">filter_by_meta</span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/geos_binary_pred.html" class="external-link">st_is_within_distance</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="va">nest</span>, <span class="va">centre</span>,</span></span>
+<span class="r-in"><span>    dist <span class="op">=</span> <span class="fl">200000</span>, sparse <span class="op">=</span> <span class="cn">FALSE</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span> <span class="op"><a href="pipe.html">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="show_meta.html">show_meta</a></span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   track_id    sex nest_lon nest_lat               nest</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1        a   male     1.37     0.06  POINT (1.37 0.06)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2        c female    -0.78     0.43 POINT (-0.78 0.43)</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

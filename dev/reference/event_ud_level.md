@@ -42,9 +42,10 @@ class `hr_tt_ud_tbl`, as returned by e.g.
 or
 [`hr_tt_dbbmm()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_dbbmm.md)).
 With a tibble, the level of each event is computed in the UD of its own
-row, matching the first column of the tibble (e.g. the track id) to the
-column of `x` with the same name; a tibble with a single row is used for
-all events.
+row, matching the columns that identify the UDs (the columns before
+`method`, i.e. the track id or the grouping variables used to estimate
+them, or else the first column of the tibble) to the columns of `x` with
+the same names; a tibble with a single row is used for all events.
 
 Events are reprojected to the coordinate reference system of the UD if
 needed. Events without a location, outside the grid of the UD, or

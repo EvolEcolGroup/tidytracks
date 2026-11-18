@@ -73,9 +73,10 @@ not grouped, or else with the groups in the order of
 [`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html),
 i.e. sorted by the grouping variables), and columns:
 
-- the grouping variable (as named in `x`; if `x` is grouped by multiple
-  variables, this column is named `group_id`): the ids from the grouping
-  of `x`
+- the grouping variables of `x` (the track id if `x` is not grouped),
+  one column per variable, with the keys of the groups (with their own
+  types, e.g. a factor, or an `sfc` column of locations from
+  [`group_by_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/group_by_meta.md))
 
 - `method`: the method used to estimate the home range (`"locoh"`)
 
@@ -175,7 +176,7 @@ example_locoh
 #> Geodetic CRS:  WGS 84
 #> # A tibble: 6 × 7
 #>   track_id method type      n level          area                       geometry
-#> * <chr>    <chr>  <chr> <dbl> <dbl>         [m^2]             <MULTIPOLYGON [°]>
+#> * <fct>    <chr>  <chr> <dbl> <dbl>         [m^2]             <MULTIPOLYGON [°]>
 #> 1 a        locoh  k         3  0.95 122370778607. (((3.6119 2.3638, 5.5357 -0.5…
 #> 2 a        locoh  k         3  0.5   52747834477. (((3.6119 2.3638, 1.371 -0.06…
 #> 3 b        locoh  k         3  0.95  19966668128. (((-1.745915 -1.31301, -0.270…

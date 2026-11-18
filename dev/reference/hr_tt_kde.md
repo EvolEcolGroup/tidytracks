@@ -84,10 +84,12 @@ an `sf` tibble of class `hr_tt_poly_tbl` (as returned by
 [`hr_tt_ud_iso()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_iso.md)),
 with columns:
 
-- the grouping variable (as named in `x`; if `x` is grouped by multiple
-  variables, this column is named `group_id`): the ids from the grouping
-  of `x`, in the order of the tracks in the metadata if `x` is not
-  grouped, or else in the order of
+- the grouping variables of `x` (the track id if `x` is not grouped),
+  one column per variable, with the keys of the groups (with their own
+  types, e.g. a factor, or an `sfc` column of locations from
+  [`group_by_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/group_by_meta.md)),
+  in the order of the tracks in the metadata if `x` is not grouped, or
+  else in the order of
   [`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html)
 
 - `method`: the method used to estimate the home range (`"kde"`)
@@ -162,7 +164,7 @@ example_kde <- hr_tt_kde(example_tt)
 example_kde
 #> # A tibble: 3 × 9
 #>   track_id method     h  xmin  ymin  xmax  ymax   res ud               
-#>   <chr>    <chr>  <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <named list>     
+#>   <fct>    <chr>  <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <named list>     
 #> 1 a        kde     1.06 -16.5 -7.42  16.6  9.54 0.737 <SpatRstr[,45,1]>
 #> 2 b        kde     1.06 -16.5 -7.42  16.6  9.54 0.737 <SpatRstr[,45,1]>
 #> 3 c        kde     1.06 -16.5 -7.42  16.6  9.54 0.737 <SpatRstr[,45,1]>

@@ -105,10 +105,12 @@ an `sf` tibble of class `hr_tt_poly_tbl` (as returned by
 [`hr_tt_ud_iso()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_iso.md)),
 with columns:
 
-- the grouping variable (as named in `x`; if `x` is grouped by multiple
-  variables, this column is named `group_id`): the ids from the grouping
-  of `x`, in the order of the tracks in the metadata if `x` is not
-  grouped, or else in the order of
+- the grouping variables of `x` (the track id if `x` is not grouped),
+  one column per variable, with the keys of the groups (with their own
+  types, e.g. a factor, or an `sfc` column of locations from
+  [`group_by_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/group_by_meta.md)),
+  in the order of the tracks in the metadata if `x` is not grouped, or
+  else in the order of
   [`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html)
 
 - `method`: the method used to estimate the home range (`"akde"`)
@@ -218,7 +220,7 @@ buffalo_akde <- hr_tt_akde(buffalo_sub, buffalo_fit)
 buffalo_akde
 #> # A tibble: 2 × 11
 #>   track method model_name     dof_area   xmin    ymin   xmax   ymax   res
-#>   <chr> <chr>  <chr>             <dbl>  <dbl>   <dbl>  <dbl>  <dbl> <dbl>
+#>   <fct> <chr>  <chr>             <dbl>  <dbl>   <dbl>  <dbl>  <dbl> <dbl>
 #> 1 Cilla akde   OU anisotropic     3.29 22253. -12568. 55239. 14083.  218.
 #> 2 Gabs  akde   OU anisotropic     1.68 22253. -12568. 55239. 14083.  218.
 #> # ℹ 2 more variables: ud <named list>, ud_ctmm <named list>
@@ -230,7 +232,7 @@ hr_tt_akde(buffalo_sub, buffalo_fit, levels = c(0.5, 0.95))
 #> Simple feature collection with 4 features and 13 fields
 #> Geometry type: MULTIPOLYGON
 #> Dimension:     XY
-#> Bounding box:  xmin: 30598.58 ymin: -6594.997 xmax: 48214.79 ymax: 7132.411
+#> Bounding box:  xmin: 30598.58 ymin: -6594.996 xmax: 48214.79 ymax: 7132.411
 #> Projected CRS: PROJCRS["unknown",
 #>     BASEGEOGCRS["unknown",
 #>         DATUM["World Geodetic System 1984",
@@ -271,7 +273,7 @@ hr_tt_akde(buffalo_sub, buffalo_fit, levels = c(0.5, 0.95))
 #>                 ID["EPSG",9001]]]]
 #> # A tibble: 4 × 14
 #>   track method model_name     dof_area   xmin    ymin   xmax   ymax   res level
-#> * <chr> <chr>  <chr>             <dbl>  <dbl>   <dbl>  <dbl>  <dbl> <dbl> <dbl>
+#> * <fct> <chr>  <chr>             <dbl>  <dbl>   <dbl>  <dbl>  <dbl> <dbl> <dbl>
 #> 1 Cilla akde   OU anisotropic     3.29 22253. -12568. 55239. 14083.  218.  0.5 
 #> 2 Cilla akde   OU anisotropic     3.29 22253. -12568. 55239. 14083.  218.  0.95
 #> 3 Gabs  akde   OU anisotropic     1.68 22253. -12568. 55239. 14083.  218.  0.5 

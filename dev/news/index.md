@@ -30,6 +30,20 @@
   locations onto the grid and then smooths them with the kernel, which
   is much faster for many locations (see the article “Benchmark of home
   range estimators”).
+- new
+  [`group_by_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/group_by_meta.md)
+  groups the events by variables of the metadata, including `sfc`
+  columns, which it moves to the events
+  ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
+- the `hr_tt_*()` functions return the grouping variables with their own
+  types (e.g. factors, or `sfc` columns of locations), one column each,
+  rather than as text in a single `group_id` column;
+  [`hr_tt_ud_overlap()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_overlap.md),
+  [`event_ud_level()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_ud_level.md)
+  and
+  [`autoplot()`](https://ggplot2.tidyverse.org/reference/autoplot.html)
+  identify the UDs by all of them
+  ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
 - New
   [`track_tot_distance()`](https://evolecolgroup.github.io/tidytracks/dev/reference/track_tot_distance.md)
   to compute the total distance travelled along each track, with a

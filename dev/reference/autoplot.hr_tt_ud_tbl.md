@@ -3,10 +3,10 @@
 This autoplot function can be used to plot all or a subset of UDs from a
 tibble of UDs created by
 [`hr_tt_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md).
-The first column of the tibble is assumed to be an id column, which is
-used to identify the UDs to plot. The layout of the plots can be
-specified with the `layout` argument, and it is assembled with
-`patchwork`.
+The UDs are identified by the columns before `method` (the grouping
+variables used to estimate them), or else by the first column of the
+tibble. The layout of the plots can be specified with the `layout`
+argument, and it is assembled with `patchwork`.
 
 ## Usage
 
@@ -25,9 +25,12 @@ autoplot(object, id_to_plot = NULL, layout = NULL, ...)
 
 - id_to_plot:
 
-  Integer or character, the id of the utilisation distribution to plot.
-  If `NULL`, all utilisation distributions in the tibble are plotted.
-  The first column of the tibble is assumed to be the id column.
+  Integer or character, the position or id of the utilisation
+  distributions to plot. If `NULL`, all utilisation distributions in the
+  tibble are plotted. The ids are the values of the columns that
+  identify the UDs (separated by "\_" if there are several, with
+  locations written as WKT, as in
+  [`hr_tt_ud_overlap()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_overlap.md)).
 
 - layout:
 

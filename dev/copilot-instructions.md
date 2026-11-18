@@ -53,7 +53,9 @@ ecosystem.
 - Linter excludes `return_linter` by default
 - Some ggplot2 wrapper functions have `object_name_linter` disabled to
   match ggplot2 conventions
-- Run `lintr::lint_package()` before committing changes
+- Run
+  [`lintr::lint_package()`](https://lintr.r-lib.org/reference/lint.html)
+  before committing changes
 
 ### Error Handling
 

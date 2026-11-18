@@ -960,7 +960,7 @@ shags_females_kde
 #>                 ID["EPSG",9001]]]]
 #> # A tibble: 7 × 11
 #>   bird_id method     h    xmin    ymin   xmax   ymax   res level       area
-#> * <chr>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <dbl>      [m^2]
+#> * <fct>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <dbl>      [m^2]
 #> 1 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5    3061168.
 #> 2 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.95  81214737.
 #> 3 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378.  0.5    3127135.
@@ -1022,7 +1022,7 @@ shags_females_kde %>%
 #>                 ID["EPSG",9001]]]]
 #> # A tibble: 7 × 4
 #>   bird_id level   area                                                  geometry
-#>   <chr>   <dbl> [km^2]                                        <MULTIPOLYGON [m]>
+#>   <fct>   <dbl> [km^2]                                        <MULTIPOLYGON [m]>
 #> 1 kb_27    0.5    3.06 (((8650.566 -62056.02, 7656.484 -60725.04, 8650.566 -597…
 #> 2 kb_27    0.95  81.2  (((3894.128 -64163.58, 1679.644 -63103.26, 3894.128 -612…
 #> 3 kb_42    0.5    3.13 (((-10375.19 -61079.42, -10642.43 -60725.04, -10375.19 -…
@@ -1078,7 +1078,7 @@ shags_females_ud <- shags_females_proj %>%
 shags_females_ud
 #> # A tibble: 4 × 9
 #>   bird_id method     h    xmin    ymin   xmax   ymax   res ud               
-#>   <chr>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <named list>     
+#>   <fct>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <named list>     
 #> 1 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
 #> 2 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
 #> 3 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
@@ -1121,7 +1121,7 @@ shags_females_ud <- readRDS(ud_file)
 shags_females_ud
 #> # A tibble: 4 × 9
 #>   bird_id method     h    xmin    ymin   xmax   ymax   res ud               
-#>   <chr>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <PckdSpR_>       
+#>   <fct>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <PckdSpR_>       
 #> 1 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
 #> 2 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
 #> 3 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
@@ -1138,7 +1138,7 @@ shags_females_ud <- hr_tt_ud_unwrap(shags_females_ud)
 shags_females_ud
 #> # A tibble: 4 × 9
 #>   bird_id method     h    xmin    ymin   xmax   ymax   res ud               
-#>   <chr>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <named list>     
+#>   <fct>   <chr>  <dbl>   <dbl>   <dbl>  <dbl>  <dbl> <dbl> <named list>     
 #> 1 kb_27   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
 #> 2 kb_42   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
 #> 3 kb_43   kde    1117. -32968. -90453. 38378. -7215. 2378. <SpatRstr[,30,1]>
@@ -1209,7 +1209,7 @@ shags_females_locoh
 #> Projected CRS: +proj=aeqd +lon_0=-68 +lat_0=-67 +units=m +datum=WGS84 +no_defs
 #> # A tibble: 8 × 7
 #>   bird_id method type      n level      area                            geometry
-#> * <chr>   <chr>  <chr> <dbl> <dbl>     [m^2]                  <MULTIPOLYGON [m]>
+#> * <fct>   <chr>  <chr> <dbl> <dbl>     [m^2]                  <MULTIPOLYGON [m]>
 #> 1 kb_27   locoh  k        10  0.95   916673. (((13176.61 -61034.05, 13158.93 -6…
 #> 2 kb_27   locoh  k        10  0.5      6277. (((13176.61 -61034.05, 13158.93 -6…
 #> 3 kb_42   locoh  k        10  0.95  1100060. (((-9283.633 -61415.72, -9895.828 …

@@ -100,7 +100,9 @@ areas of the UDs.</p>
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>A SpatRaster of the utilisation distribution (with a layer <code>ud</code>), or
 a tibble of UDs of class <code>hr_tt_ud_tbl</code> (e.g. as created with
-<code><a href="hr_tt_kde.html">hr_tt_kde()</a></code>).</p></dd>
+<code><a href="hr_tt_kde.html">hr_tt_kde()</a></code>), whose rows are identified by the columns before <code>method</code>
+(the grouping variables used to estimate the UDs), or else by the first
+column.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -138,7 +140,9 @@ is computed.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A numeric value representing the overlap between the two UDs
 according to the specified method, or a matrix of such values if <code>x</code> is a
-tibble of multiple UDs.</p>
+tibble of multiple UDs, with the ids of the UDs as row and column names
+(the values of the columns that identify them, separated by "_", with
+locations written as WKT).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

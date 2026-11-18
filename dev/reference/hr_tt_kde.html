@@ -133,10 +133,11 @@ cell. See Details.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Either a <code>tibble</code> of class <code>hr_tt_ud_tbl</code>, or, if <code>levels</code> is not
 NULL, an <code>sf</code> tibble of class <code>hr_tt_poly_tbl</code> (as returned by
-<code><a href="hr_tt_ud_iso.html">hr_tt_ud_iso()</a></code>), with columns:</p><ul><li><p>the grouping variable (as named in <code>x</code>; if <code>x</code> is grouped by
-multiple variables, this column is named <code>group_id</code>): the ids from the
-grouping of <code>x</code>, in the order of the tracks in the metadata if <code>x</code> is not
-grouped, or else in the order of <code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">dplyr::group_keys()</a></code></p></li>
+<code><a href="hr_tt_ud_iso.html">hr_tt_ud_iso()</a></code>), with columns:</p><ul><li><p>the grouping variables of <code>x</code> (the track id if <code>x</code> is not grouped), one
+column per variable, with the keys of the groups (with their own types,
+e.g. a factor, or an <code>sfc</code> column of locations from <code><a href="group_by_meta.html">group_by_meta()</a></code>),
+in the order of the tracks in the metadata if <code>x</code> is not grouped, or else
+in the order of <code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">dplyr::group_keys()</a></code></p></li>
 <li><p><code>method</code>: the method used to estimate the home range (<code>"kde"</code>)</p></li>
 <li><p><code>h</code>: the bandwidth used for the KDE</p></li>
 <li><p><code>xmin</code>, <code>ymin</code>, <code>xmax</code>, <code>ymax</code>: the bounding box used for the KDE</p></li>
@@ -192,7 +193,7 @@ to project <code>x</code> to an appropriate projection before using this functio
 <span class="r-in"><span><span class="va">example_kde</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 3 × 9</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   track_id method     h  xmin  ymin  xmax  ymax   res ud               </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;named list&gt;</span>     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;named list&gt;</span>     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> a        kde     1.06 -<span style="color: #BB0000;">16.5</span> -<span style="color: #BB0000;">7.42</span>  16.6  9.54 0.737 <span style="color: #949494;">&lt;SpatRstr[,45,1]&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> b        kde     1.06 -<span style="color: #BB0000;">16.5</span> -<span style="color: #BB0000;">7.42</span>  16.6  9.54 0.737 <span style="color: #949494;">&lt;SpatRstr[,45,1]&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> c        kde     1.06 -<span style="color: #BB0000;">16.5</span> -<span style="color: #BB0000;">7.42</span>  16.6  9.54 0.737 <span style="color: #949494;">&lt;SpatRstr[,45,1]&gt;</span></span>

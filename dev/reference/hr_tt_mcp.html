@@ -80,9 +80,9 @@ levels with <code>.drop = FALSE</code>) give an error.</p></dd>
 row per group and level (with the tracks in the order of the metadata, see
 <code><a href="show_meta.html">show_meta()</a></code>, if <code>x</code> is not grouped, or else with the groups in the order
 of <code><a href="https://dplyr.tidyverse.org/reference/group_data.html" class="external-link">dplyr::group_keys()</a></code>, i.e. sorted by the grouping variables), and
-columns:</p><ul><li><p>the grouping variable (as named in <code>x</code>; if <code>x</code> is grouped by
-multiple variables, this column is named <code>group_id</code>): the ids from the
-grouping of <code>x</code></p></li>
+columns:</p><ul><li><p>the grouping variables of <code>x</code> (the track id if <code>x</code> is not grouped), one
+column per variable, with the keys of the groups (with their own types,
+e.g. a factor, or an <code>sfc</code> column of locations from <code><a href="group_by_meta.html">group_by_meta()</a></code>)</p></li>
 <li><p><code>method</code>: the method used to estimate the home range (<code>"mcp"</code>)</p></li>
 <li><p><code>level</code>: the level of the contour line</p></li>
 <li><p><code>area</code>: the area of the home range (as computed by <code><a href="https://r-spatial.github.io/sf/reference/geos_measures.html" class="external-link">sf::st_area()</a></code>)</p></li>
@@ -103,7 +103,7 @@ locations)</p></li>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Geodetic CRS:  WGS 84</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 5</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   track_id method level         area                                    geometry</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494;">[m^2]</span>                               <span style="color: #949494; font-style: italic;">&lt;POLYGON [°]&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">*</span> <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>        <span style="color: #949494;">[m^2]</span>                               <span style="color: #949494; font-style: italic;">&lt;POLYGON [°]&gt;</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> a        mcp     0.95 <span style="text-decoration: underline;">52</span>747<span style="text-decoration: underline;">834</span>477. ((1.371 -0.0627, 1.1694 3.5288, 3.6119 2.3…</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> a        mcp     0.5  <span style="text-decoration: underline;">14</span>105<span style="text-decoration: underline;">533</span>708. ((1.371 -0.0627, 2.2065 1.8612, 3.6119 2.3…</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> b        mcp     0.95 <span style="text-decoration: underline;">13</span>139<span style="text-decoration: underline;">194</span>429. ((-0.9581 -1.5686, -1.427 -1.9431, -2.4405…</span>

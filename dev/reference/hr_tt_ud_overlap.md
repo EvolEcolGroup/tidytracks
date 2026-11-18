@@ -42,7 +42,9 @@ hr_tt_ud_overlap(
 
   A SpatRaster of the utilisation distribution (with a layer `ud`), or a
   tibble of UDs of class `hr_tt_ud_tbl` (e.g. as created with
-  [`hr_tt_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md)).
+  [`hr_tt_kde()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_kde.md)),
+  whose rows are identified by the columns before `method` (the grouping
+  variables used to estimate the UDs), or else by the first column.
 
 - ...:
 
@@ -80,7 +82,9 @@ hr_tt_ud_overlap(
 
 A numeric value representing the overlap between the two UDs according
 to the specified method, or a matrix of such values if `x` is a tibble
-of multiple UDs.
+of multiple UDs, with the ids of the UDs as row and column names (the
+values of the columns that identify them, separated by "\_", with
+locations written as WKT).
 
 ## Details
 

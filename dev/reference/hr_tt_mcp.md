@@ -34,9 +34,10 @@ if `x` is not grouped, or else with the groups in the order of
 [`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html),
 i.e. sorted by the grouping variables), and columns:
 
-- the grouping variable (as named in `x`; if `x` is grouped by multiple
-  variables, this column is named `group_id`): the ids from the grouping
-  of `x`
+- the grouping variables of `x` (the track id if `x` is not grouped),
+  one column per variable, with the keys of the groups (with their own
+  types, e.g. a factor, or an `sfc` column of locations from
+  [`group_by_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/group_by_meta.md))
 
 - `method`: the method used to estimate the home range (`"mcp"`)
 
@@ -62,7 +63,7 @@ example_mcp
 #> Geodetic CRS:  WGS 84
 #> # A tibble: 6 × 5
 #>   track_id method level         area                                    geometry
-#>   <chr>    <chr>  <dbl>        [m^2]                               <POLYGON [°]>
+#> * <fct>    <chr>  <dbl>        [m^2]                               <POLYGON [°]>
 #> 1 a        mcp     0.95 52747834477. ((1.371 -0.0627, 1.1694 3.5288, 3.6119 2.3…
 #> 2 a        mcp     0.5  14105533708. ((1.371 -0.0627, 2.2065 1.8612, 3.6119 2.3…
 #> 3 b        mcp     0.95 13139194429. ((-0.9581 -1.5686, -1.427 -1.9431, -2.4405…

@@ -34,6 +34,9 @@ Functions for loading, saving and displaying tibbles of tracks.
 - [`filter_by_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/filter_by_meta.md)
   : Filter the tracks based on variables from the metadata
 
+- [`group_by_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/group_by_meta.md)
+  : Group the events by variables from the metadata
+
 - [`mt_as_move2(`*`<trip>`*`)`](https://evolecolgroup.github.io/tidytracks/dev/reference/mt_as_move2.trip.md)
   :
 

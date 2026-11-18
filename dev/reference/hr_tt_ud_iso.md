@@ -72,7 +72,7 @@ example_iso
 #> Geodetic CRS:  WGS 84
 #> # A tibble: 6 × 11
 #>   track_id method     h  xmin  ymin  xmax  ymax   res level          area
-#> * <chr>    <chr>  <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>         [m^2]
+#> * <fct>    <chr>  <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>         [m^2]
 #> 1 a        kde     1.06 -16.5 -7.42  16.6  9.54 0.737  0.5  169367467153.
 #> 2 a        kde     1.06 -16.5 -7.42  16.6  9.54 0.737  0.95 686843555092.
 #> 3 b        kde     1.06 -16.5 -7.42  16.6  9.54 0.737  0.5   99573159553.

@@ -97,9 +97,10 @@ a single layer), or as a tibble of class <code>hr_tt_ud_tbl</code>.</p></dd>
     <p><code>ud</code> can be a single UD, used for all events, or a tibble of UDs (of class
 <code>hr_tt_ud_tbl</code>, as returned by e.g. <code><a href="hr_tt_kde.html">hr_tt_kde()</a></code> or <code><a href="hr_tt_dbbmm.html">hr_tt_dbbmm()</a></code>). With
 a tibble, the level of each event is computed in the UD of its own row,
-matching the first column of the tibble (e.g. the track id) to the column
-of <code>x</code> with the same name; a tibble with a single row is used for all
-events.</p>
+matching the columns that identify the UDs (the columns before <code>method</code>,
+i.e. the track id or the grouping variables used to estimate them, or else
+the first column of the tibble) to the columns of <code>x</code> with the same names;
+a tibble with a single row is used for all events.</p>
 <p>Events are reprojected to the coordinate reference system of the UD if
 needed. Events without a location, outside the grid of the UD, or without
 a matching UD get <code>NA</code>.</p>

@@ -116,8 +116,8 @@ Either a `tibble` of class `hr_tt_ud_tbl`, or, if `levels` is not
 [`hr_tt_ud_iso()`](https://evolecolgroup.github.io/tidytracks/dev/reference/hr_tt_ud_iso.md)),
 with columns:
 
-- the track id column of `x`: the ids of the tracks, in the order of the
-  metadata (see
+- the track id column of `x`: the ids of the tracks (with their own
+  type, e.g. a factor), in the order of the metadata (see
   [`show_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md))
   if `x` is not grouped, or else in the order of
   [`dplyr::group_keys()`](https://dplyr.tidyverse.org/reference/group_data.html)
@@ -216,7 +216,7 @@ ud_dbbmm <- hr_tt_dbbmm(
 ud_dbbmm
 #> # A tibble: 3 × 10
 #>   track_id method window_size margin      xmin      ymin     xmax    ymax    res
-#>   <chr>    <chr>        <dbl>  <dbl>     <dbl>     <dbl>    <dbl>   <dbl>  <dbl>
+#>   <fct>    <chr>        <dbl>  <dbl>     <dbl>     <dbl>    <dbl>   <dbl>  <dbl>
 #> 1 a        dbbmm            3      1 -1546354. -1361159. 1626768.  1.81e6 99160.
 #> 2 b        dbbmm            3      1 -1546354. -1361159. 1626768.  1.81e6 99160.
 #> 3 c        dbbmm            3      1 -1546354. -1361159. 1626768.  1.81e6 99160.
