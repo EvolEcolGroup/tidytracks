@@ -7,6 +7,10 @@ Here we are running through the functions for making and comparing utilization
 distributions (UDs) in the R package `adehabitatHR` (Calenge 2006) so that we can
 sort out the logic of the UD functions in `tidytracks` and compare the outputs.
 
+Source: much of the code below follows the examples of the `adehabitatHR`
+vignette (Calenge, C., "Home Range Estimation in R: the adehabitatHR Package";
+`adehabitatHR` is distributed under the GPL (>= 2)).
+
 ## load packages
 
 ```{r load_packages}
