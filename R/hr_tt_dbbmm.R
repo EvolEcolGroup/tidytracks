@@ -96,7 +96,10 @@
 #' - `ud` (if `levels` is `NULL`): the UDs, as a list of `terra::SpatRaster`
 #'   objects with a layer named `ud` whose values sum to 1
 #' - `level`, `area` and `geometry` (if `levels` is set): the isopleths, see
-#'   [hr_tt_ud_iso()]
+#'   [hr_tt_ud_iso()]. The tracks with fewer locations than `window_size`,
+#'   which have no UD, are left out of the UDs (with a warning); with
+#'   `levels`, they get an empty geometry and an `NA` area for each level
+#'   (with a warning).
 #' @references Kranstauber, B., Kays, R., LaPoint, S. D., Wikelski, M. & Safi,
 #'   K. (2012). A dynamic Brownian bridge movement model to estimate
 #'   utilization distributions for heterogeneous animal movement. *Journal of
@@ -297,8 +300,11 @@ hr_tt_bridge <- function(
     variance <- stats::setNames(list(variance), track_ids)
   }
   # move2utils skips tracks with fewer events than window_size (with a
-  # warning), so they have no variance and are left out of the output; it
-  # gives an error itself if no track is left
+  # warning), so they have no variance and are left out of the UDs (but not
+  # of the isopleths, see below); it gives an error itself if no track is
+  # left
+  all_track_keys <- track_keys
+  all_track_ids <- track_ids
   track_ids <- intersect(track_ids, names(variance))
   variance <- variance[track_ids]
 
@@ -433,8 +439,63 @@ hr_tt_bridge <- function(
 
   if (!is.null(levels)) {
     res_tbl <- hr_tt_ud_iso(res_tbl, levels) # nolint: object_usage_linter.
+    res_tbl <- with_skipped_tracks(
+      res_tbl,
+      track_col,
+      all_track_keys,
+      all_track_ids
+    )
   }
   res_tbl
+}
+
+#' Add the isopleths of the tracks without a UD
+#'
+#' The tracks skipped by move2utils (with fewer locations than
+#' `window_size`) have no UD, but, as the isopleths that cannot be drawn for
+#' the other tracks, they get one row per level, with an empty geometry and
+#' an `NA` area, with a warning.
+#'
+#' @param iso the isopleths of the tracks with a UD, from [hr_tt_ud_iso()].
+#' @param track_col the name of the column with the track ids.
+#' @param track_keys,track_ids the ids of all the tracks, with their type and
+#'   as characters, in the order in which they are returned.
+#' @returns `iso`, with the rows of the skipped tracks, in the order of
+#'   `track_ids`.
+#' @keywords internal
+#' @noRd
+with_skipped_tracks <- function(iso, track_col, track_keys, track_ids) {
+  iso_ids <- as.character(iso[[track_col]])
+  skipped <- setdiff(track_ids, iso_ids)
+  if (length(skipped) == 0) {
+    return(iso)
+  }
+  levels <- unique(iso$level)
+  # nolint start: object_usage_linter.
+  warn_isopleths_not_drawn(
+    lapply(skipped, function(id) {
+      isopleths_not_drawn(levels, "dbbmm_few_locations")
+    }),
+    labels = skipped
+  )
+  # nolint end
+  # the rows of the skipped tracks, made from the first rows of iso (to keep
+  # the types of its columns), with their ids, an empty geometry and no area
+  extra <- iso[rep(seq_along(levels), times = length(skipped)), ]
+  extra[[track_col]] <- rep(
+    track_keys[match(skipped, track_ids)],
+    each = length(levels)
+  )
+  extra$level <- rep(levels, times = length(skipped))
+  extra$area[] <- NA
+  sf::st_geometry(extra) <- sf::st_sfc(
+    rep(list(sf::st_multipolygon()), nrow(extra)),
+    crs = sf::st_crs(iso)
+  )
+  out <- rbind(iso, extra)
+  out <- out[order(match(as.character(out[[track_col]]), track_ids)), ]
+  class(out) <- class(iso)
+  out
 }
 
 #' Get the location error of each event, in metres

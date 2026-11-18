@@ -84,7 +84,10 @@ the grid (in metres)
 \item \code{ud} (if \code{levels} is \code{NULL}): the UDs, as a list of \code{terra::SpatRaster}
 objects with a layer named \code{ud} whose values sum to 1
 \item \code{level}, \code{area} and \code{geometry} (if \code{levels} is set): the isopleths, see
-\code{\link[=hr_tt_ud_iso]{hr_tt_ud_iso()}}
+\code{\link[=hr_tt_ud_iso]{hr_tt_ud_iso()}}. The tracks with fewer locations than \code{window_size},
+which have no UD, are left out of the UDs (with a warning); with
+\code{levels}, they get an empty geometry and an \code{NA} area for each level
+(with a warning).
 }
 }
 \description{

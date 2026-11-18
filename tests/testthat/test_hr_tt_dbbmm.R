@@ -400,6 +400,27 @@ test_that("hr_tt_dbbmm leaves out tracks skipped by move2utils", {
   )
   expect_identical(ud$id, "a")
   expect_identical(names(ud$ud), "a")
+  # with levels, the skipped track gets one row per level, with an empty
+  # geometry and an NA area, with a warning
+  warnings <- testthat::capture_warnings(
+    iso <- hr_tt_dbbmm(
+      x_short,
+      location_error = as_units(20, "m"),
+      levels = c(0.5, 0.95)
+    )
+  )
+  expect_match(
+    warnings,
+    "* 'b', 50%, 95%: the track has fewer locations than window_size",
+    fixed = TRUE,
+    all = FALSE
+  )
+  expect_s3_class(iso, "hr_tt_poly_tbl")
+  expect_identical(iso$id, c("b", "b", "a", "a"))
+  expect_identical(iso$level, c(0.5, 0.95, 0.5, 0.95))
+  expect_equal(sf::st_is_empty(iso), c(TRUE, TRUE, FALSE, FALSE))
+  expect_equal(is.na(iso$area), c(TRUE, TRUE, FALSE, FALSE))
+  expect_true(all(iso$method == "dbbmm"))
 })
 
 test_that("hr_tt_dbbmm returns isopleths when levels are set", {

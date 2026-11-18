@@ -88,7 +88,10 @@
 #' - `n`: the parameter of the LoCoH
 #' - `level`: the level of the home range
 #' - `area`: the area of the home range (as computed by `sf::st_area()`)
-#' - `geometry`: the geometry of the home range as sf multipolygons
+#' - `geometry`: the geometry of the home range as sf multipolygons; the
+#'   multipolygon is empty, and its area is `NA` (with a warning), if the
+#'   hulls within the level have no area (their locations are at the same
+#'   place or on a line), without a buffer
 #' @references Getz, W. M., & Wilmers, C. C. (2004). A local nearest-neighbor
 #'   convex-hull construction of home ranges and utilization distributions.
 #'   Ecography, 27(4), 489-505.
@@ -205,6 +208,23 @@ hr_tt_locoh <- function(
   # the isopleths of all groups, and their areas, computed in one call
   geometry <- sf::st_sfc(unlist(geometry, recursive = FALSE))
   area <- locoh_area(geometry, crs = crs, longlat = longlat)
+  # an isopleth whose hulls have no area (without a buffer) is returned with
+  # an empty geometry and an NA area, with a warning that says why
+  empty <- sf::st_is_empty(geometry)
+  if (any(empty)) {
+    area[empty] <- NA
+    group_of_row <- rep(seq_along(group_labels), each = length(levels))
+    level_of_row <- rep(levels, times = length(group_labels))
+    warn_isopleths_not_drawn( # nolint: object_usage_linter.
+      lapply(seq_along(group_labels), function(g) {
+        isopleths_not_drawn( # nolint: object_usage_linter.
+          level_of_row[empty & group_of_row == g],
+          "locoh_no_area"
+        )
+      }),
+      labels = group_labels
+    )
+  }
 
   # create a tibble with the results of all groups in one go (creating a
   # tibble for each group and combining them takes much longer when there

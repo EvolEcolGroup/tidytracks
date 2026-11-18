@@ -99,17 +99,142 @@ test_that("hr_tt_ud_iso validates input tables, raster layers, and levels", {
   )
 })
 
-test_that("hr_tt_ud_iso returns empty sf when contours are unavailable", {
+test_that("hr_tt_ud_iso returns empty isopleths without contours", {
+  # a uniform UD: every cell is above the 50% level
   uniform_ud <- terra::rast(nrows = 2, ncols = 2, vals = rep(1, 4))
   names(uniform_ud) <- "ud"
 
   expect_warning(
     result <- hr_tt_ud_iso(uniform_ud, levels = 0.5),
-    "No isopleths could be computed"
+    "Some isopleths cannot be drawn"
   )
   expect_s3_class(result, "sf")
-  expect_equal(nrow(result), 0)
+  expect_equal(nrow(result), 1)
   expect_equal(names(result), c("level", "area", "geometry"))
+  expect_true(sf::st_is_empty(result))
+  expect_true(is.na(result$area))
+})
+
+test_that("hr_tt_ud_iso keeps the levels that cannot be drawn on the grid", {
+  # a UD with 90% of it in a single cell: its 50% isopleth contains no cell
+  ud <- terra::rast(
+    nrows = 3, ncols = 3, xmin = 0, xmax = 300, ymin = 0, ymax = 300,
+    crs = "EPSG:32630"
+  )
+  terra::values(ud) <- c(rep(0.1 / 8, 4), 0.9, rep(0.1 / 8, 4))
+  names(ud) <- "ud"
+  expect_warning(
+    iso <- hr_tt_ud_iso(ud, levels = c(0.5, 0.95)),
+    paste(
+      "* 50%: the cells with the highest value of the UD hold more of it",
+      "than the level (the smallest level that can be drawn is 90%)"
+    ),
+    fixed = TRUE
+  )
+  # one row per level, with an empty geometry and no area for the 50%
+  expect_equal(iso$level, c(0.5, 0.95))
+  expect_equal(sf::st_is_empty(iso), c(TRUE, FALSE))
+  expect_true(is.na(iso$area[1]))
+  expect_gt(as.numeric(iso$area[2]), 0)
+  expect_true(all(sf::st_geometry_type(iso) == "MULTIPOLYGON"))
+  # the empty isopleth does not stop the isopleths from being plotted
+  p <- ggplot2::ggplot(iso) +
+    ggplot2::geom_sf(ggplot2::aes(fill = factor(level)))
+  expect_no_error(ggplot2::ggplot_build(p))
+  # if no level can be drawn, there is one row per level, and no other
+  # warning
+  warnings <- testthat::capture_warnings(
+    iso <- hr_tt_ud_iso(ud, levels = c(0.25, 0.5))
+  )
+  expect_length(warnings, 1)
+  expect_match(warnings, "* 25%, 50%: the cells with", fixed = TRUE)
+  expect_equal(iso$level, c(0.25, 0.5))
+  expect_true(all(sf::st_is_empty(iso)))
+
+  # in a table of UDs, the warning names the UDs (here, the 50% isopleth of
+  # track a, which stays at one place for most of its events, with a
+  # bandwidth that is small relative to the cells; track b has a larger
+  # bandwidth)
+  set.seed(1)
+  df <- data.frame(
+    id = rep(c("a", "b"), c(60, 20)),
+    x = c(
+      rnorm(40, 0, 5),
+      seq(500, 5000, length.out = 20),
+      seq(500, 5000, length.out = 20)
+    ),
+    y = c(
+      rnorm(40, 0, 5),
+      seq(500, 3000, length.out = 20),
+      seq(3000, 500, length.out = 20)
+    ),
+    time = as.POSIXct("2024-01-01", tz = "UTC") +
+      c(seq_len(60), seq_len(20)) * 600
+  )
+  x <- move2::mt_as_move2(
+    sf::st_as_sf(df, coords = c("x", "y"), crs = 32630),
+    time_column = "time",
+    track_id_column = "id"
+  )
+  kde <- hr_tt_kde(x, h = c(50, 2000), res = 1000, method = "exact")
+  warnings <- testthat::capture_warnings(
+    iso <- hr_tt_ud_iso(kde, levels = c(0.5, 0.95))
+  )
+  expect_length(warnings, 1)
+  expect_match(warnings, "* 'a', 50%: the cells with", fixed = TRUE)
+  expect_no_match(warnings, "'b'", fixed = TRUE)
+  expect_equal(iso$id, c("a", "a", "b", "b"))
+  expect_equal(iso$level, c(0.5, 0.95, 0.5, 0.95))
+  expect_equal(sf::st_is_empty(iso), c(TRUE, FALSE, FALSE, FALSE))
+  expect_equal(is.na(iso$area), c(TRUE, FALSE, FALSE, FALSE))
+  # and so does hr_tt_kde() with levels, which gives the same isopleths
+  expect_warning(
+    direct <- hr_tt_kde(
+      x,
+      h = c(50, 2000), res = 1000, method = "exact", levels = c(0.5, 0.95)
+    ),
+    "* 'a', 50%: the cells with", fixed = TRUE
+  )
+  expect_equal(direct, iso)
+})
+
+test_that("hr_tt_ud_iso says why an isopleth cannot be drawn", {
+  ud <- terra::rast(
+    nrows = 3, ncols = 3, xmin = 0, xmax = 300, ymin = 0, ymax = 300,
+    crs = "EPSG:32630"
+  )
+  terra::values(ud) <- c(1, 2, 3, 2, 8, 2, 3, 2, 1) / 24
+  names(ud) <- "ud"
+  # a 0% isopleth
+  expect_warning(
+    iso <- hr_tt_ud_iso(ud, levels = c(0, 0.5)),
+    "* 0%: a 0% isopleth encloses none of the UD; use a level above 0",
+    fixed = TRUE
+  )
+  expect_equal(sf::st_is_empty(iso), c(TRUE, FALSE))
+  # a UD without values (and no other warning, e.g. from the contours)
+  terra::values(ud) <- NA
+  warnings <- testthat::capture_warnings(
+    iso <- hr_tt_ud_iso(ud, levels = c(0.5, 0.95))
+  )
+  expect_length(warnings, 1)
+  expect_match(warnings, "* 50%, 95%: the UD has no values", fixed = TRUE)
+  expect_true(all(sf::st_is_empty(iso)))
+  expect_true(all(is.na(iso$area)))
+  # with many UDs, the list in the warning is cut short
+  not_drawn <- rep(list(isopleths_not_drawn(0.5, "zero_level")), 12)
+  expect_warning(
+    warn_isopleths_not_drawn(not_drawn, labels = letters[1:12]),
+    "\\* 'j', 50%: a 0% isopleth[^*]*\\* \\.\\.\\. and 2 more$"
+  )
+})
+
+test_that("hr_tt_ud_iso keeps the levels as they are given", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  # levels that are not written exactly as decimals
+  iso <- hr_tt_ud_iso(boar_kde, levels = c(1 / 3, 2 / 3))
+  expect_identical(unique(iso$level), c(1 / 3, 2 / 3))
 })
 
 test_that("hr_tt_ud_iso keeps holes in isopleths", {

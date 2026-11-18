@@ -30,9 +30,9 @@ e.g. a factor, or an \code{sfc} column of locations from \code{\link[=group_by_m
 \item \code{level}: the level of the contour line
 \item \code{area}: the area of the home range (as computed by \code{sf::st_area()})
 \item \code{geometry}: the geometry of the home range as sf polygons; the polygon
-is empty (and its area is 0) if the locations within the level are all
-at the same place or on a line (e.g. for small levels or groups with few
-locations)
+is empty, and its area is \code{NA} (with a warning), if the locations within
+the level are fewer than three, or are on a line (e.g. for small levels
+or groups with few locations)
 }
 }
 \description{

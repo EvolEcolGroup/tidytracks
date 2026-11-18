@@ -23,9 +23,9 @@
 #' - `level`: the level of the contour line
 #' - `area`: the area of the home range (as computed by `sf::st_area()`)
 #' - `geometry`: the geometry of the home range as sf polygons; the polygon
-#'   is empty (and its area is 0) if the locations within the level are all
-#'   at the same place or on a line (e.g. for small levels or groups with few
-#'   locations)
+#'   is empty, and its area is `NA` (with a warning), if the locations within
+#'   the level are fewer than three, or are on a line (e.g. for small levels
+#'   or groups with few locations)
 #' @export
 #' @examples
 #' example_mcp <- hr_tt_mcp(example_tt)
@@ -119,6 +119,22 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
     crs = sf::st_crs(x)
   )
   mcp_results$area <- sf::st_area(mcp_results)
+  # an MCP with no area (see chull_mcp()) is returned with an empty geometry
+  # and an NA area, with a warning that says why
+  empty <- sf::st_is_empty(mcp_results)
+  if (any(empty)) {
+    mcp_results$area[empty] <- NA
+    group_of_row <- rep(seq_along(group_labels), each = length(levels))
+    warn_isopleths_not_drawn( # nolint: object_usage_linter.
+      lapply(seq_along(group_labels), function(g) {
+        isopleths_not_drawn( # nolint: object_usage_linter.
+          mcp_results$level[empty & group_of_row == g],
+          "mcp_no_area"
+        )
+      }),
+      labels = group_labels
+    )
+  }
 
   # add a method attribute
   attr(mcp_results, "hr_tt_method") <- "mcp"
