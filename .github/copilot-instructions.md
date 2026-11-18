@@ -11,6 +11,7 @@
 - **man/**: Auto-generated documentation (DO NOT EDIT manually)
 - **data/**: Package data
 - **data-raw/**: Scripts to generate package data
+- **dev_notes/**: Developer notes (status, handover, progress log, design documents), explorations and helper scripts; not part of the built package
 - **vignettes/**: Package vignettes and long-form documentation
 - **inst/**: Additional files to be installed with the package
 

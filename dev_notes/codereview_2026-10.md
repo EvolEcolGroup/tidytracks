@@ -1,8 +1,11 @@
 # Code review 2: open issues
 
-Issues found in the review of the package at `move2utils` (91cc6f3) that
-were not fixed, as they need a decision. They were moved here from
-[codereview2.md](codereview2.md), for later checks and thinking.
+Issues found in the second code review (October 2026, PR #86), of the
+package at `move2utils` (91cc6f3), that were not fixed, as they need a
+decision. They were moved here from the review report (`codereview2.md`,
+which was not kept in the repository), for later checks and thinking. Two
+related problems were filed as GitHub issues (#81, #82); #95 (#92 item 3)
+changed some of the code involved (marked below).
 
 ## I/O
 
@@ -41,7 +44,8 @@ were not fixed, as they need a decision. They were moved here from
 - Upstream, `mt_clean_track()` ignores the entropy, gap and persistence
   thresholds on multi-track input.
 - `flag_action = "interpolate"` also interpolates events that had no location
-  before cleaning, while the docs say only flagged events are replaced.
+  before cleaning, while the docs say only flagged events are replaced
+  (GitHub #81).
 - Numeric (non date-time) time columns are read as seconds.
 
 ## KDE
@@ -68,8 +72,10 @@ were not fixed, as they need a decision. They were moved here from
 - `cond_level` rescales the masked UDs, unlike the conditional overlaps of
   adehabitatHR.
 - event_ud_level() uses a single-row UD table for all events, whatever their
-  id.
-- The table method of hr_tt_ud_overlap() rejects factor ids.
+  id. (#95 now matches the events to the UDs by all the key columns: check
+  whether this still applies.)
+- The table method of hr_tt_ud_overlap() rejects factor ids. (#95 names the
+  UDs by the labels of their keys, of any type: check whether this is fixed.)
 - Earth mover's distances have no units.
 - Upstream, the dBGB C code puts mass beyond the grid in the wrong cells. The
   2-cell margin of hr_tt_dbbmm() avoids this, so it must not be reduced.

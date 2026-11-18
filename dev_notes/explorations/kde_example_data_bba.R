@@ -5,7 +5,7 @@ library(rnaturalearth)
 library(tidytracks)
 
 # read in rds
-ten_tracks <- readRDS("data-raw/kde_example_data_bba.rds")
+ten_tracks <- readRDS("dev_notes/explorations/kde_example_data_bba.rds")
 
 # Reproject to equal area for KDEs
 
