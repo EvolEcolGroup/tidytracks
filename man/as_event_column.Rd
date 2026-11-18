@@ -14,9 +14,10 @@ as_event_column(x, ..., .keep = FALSE)
 event data; it is possible to use tidyselect helpers to select multiple
 columns.}
 
-\item{.keep}{A logical value indicating whether to keep the original metadata
-columns in the metadata after moving them to the event data. The default is
-\code{FALSE}, which means that the original metadata columns will be removed.}
+\item{.keep}{Deprecated. \code{TRUE} keeps the columns in the metadata too,
+which leaves them in both tables (and \code{\link[=show_meta]{show_meta<-}} removes
+them from the events the next time that the metadata is set). The default,
+\code{FALSE}, removes them from the metadata.}
 }
 \value{
 A \code{move2} object with the specified metadata columns added to the
@@ -28,6 +29,12 @@ to the event data, adding them as new columns. This is useful when you want
 to include metadata information in the event-level analysis.
 }
 \details{
+A column that is already in the events, with the same values as in the
+metadata (for the events of each track), is not duplicated: it is only
+removed from the metadata (unless \code{.keep = TRUE}); with different values, it
+gives an error, as the only column in both tables should be the track id.
+For the same reason, \code{.keep = TRUE} is deprecated.
+
 An \code{sf} table of metadata is turned into a plain table first, with its
 geometry kept as an \code{sfc} column, which is renamed if it has the name of
 the geometry column of the events (see \code{\link[=show_meta]{show_meta()}}).

@@ -20,6 +20,19 @@
   including `sfc` columns, which it moves to the events (#92)
 * new `colname_track_id()` and `colname_time()` return the names of the track
   id and time columns (#92)
+* `tt_split_trips()` moves the original track id column to the metadata
+  (group the trips by it with `group_by_meta()`), so that the only column in
+  both the events and the metadata is the track id (#92)
+* `tt_read_data()` no longer leaves a column of the metadata in the events
+  (when the values are the same) or in both tables (when they differ, the
+  version in the metadata is renamed with a `.meta` suffix) (#92)
+* `as_event_column()` and `as_meta_column()` no longer duplicate a column
+  that is already in both the events and the metadata (#92)
+* `show_meta<-` removes from the events a column of the new metadata with the
+  same values, and renames the metadata version `.meta` (with a warning) when
+  the values differ (#92)
+* `.keep = TRUE` in `as_event_column()` and `as_meta_column()` is deprecated,
+  as it leaves the columns in both the events and the metadata (#92)
 * the `hr_tt_*()` functions return the grouping variables with their own
   types (e.g. factors, or `sfc` columns of locations), one column each,
   rather than as text in a single `group_id` column; `hr_tt_ud_overlap()`,

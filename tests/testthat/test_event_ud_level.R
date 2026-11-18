@@ -10,7 +10,7 @@ test_that("event_ud_level gives the correct errors", {
     "ud must be a SpatRaster or an hr_tt_ud_tbl"
   )
   ud_by_sex <- hr_tt_kde(
-    dplyr::group_by(as_event_column(example_tt, "sex", .keep = TRUE), sex)
+    dplyr::group_by(as_event_column(example_tt, "sex"), sex)
   )
   expect_error(
     event_ud_level(example_tt, ud_by_sex),
@@ -69,7 +69,7 @@ test_that("event_ud_level uses a table with a single row for all events", {
 
 test_that("event_ud_level matches events to a table by an event column", {
   skip_if_not_installed("move2utils")
-  x <- as_event_column(example_tt, "sex", .keep = TRUE)
+  x <- as_event_column(example_tt, "sex")
   ud_by_sex <- hr_tt_kde(dplyr::group_by(x, sex))
   level <- event_ud_level(x, ud_by_sex)
   males <- x$sex == "male"

@@ -326,13 +326,9 @@ tt_read_data <- function(
           # different types (e.g. integer and double, or character and
           # factor); columns with incompatible types (e.g. character and
           # numeric) conflict
-          same_values <- tryCatch(
-            all(vctrs::vec_equal(
-              updated_meta[[base_col]],
-              updated_meta[[col]],
-              na_equal = TRUE
-            )),
-            vctrs_error_incompatible_type = function(e) FALSE
+          same_values <- same_column_values( # nolint: object_usage_linter.
+            updated_meta[[base_col]],
+            updated_meta[[col]]
           )
           if (same_values) {
             # if identical, remove the .meta column
@@ -350,8 +346,12 @@ tt_read_data <- function(
         }
       }
     }
-    # update the move2 object with the new meta data (which checks that the
-    # metadata has a single row per track)
+    # update the move2 object with the new meta data, which checks that the
+    # metadata has a single row per track; a column of the metadata that is
+    # also in the events (e.g. one that varies within tracks, or any column
+    # if convert_meta is FALSE) is removed from the events if it has the same
+    # values, or else renamed in the metadata with a '.meta' suffix, with a
+    # warning, as the only column in both tables should be the track id
     show_meta(move2_obj) <- updated_meta
   }
 

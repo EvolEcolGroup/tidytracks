@@ -42,8 +42,8 @@ tables is the track id. They stay in the events after \code{\link[dplyr:ungroup]
 and can be moved back with \code{\link[=as_meta_column]{as_meta_column()}}; to group again by variables
 that are already in the events, use \code{\link[dplyr:group_by]{dplyr::group_by()}}. A column of the
 events with the name of a grouping variable is kept if it has the same
-values as in the metadata (e.g. the id of each animal after
-\code{\link[=tt_split_trips]{tt_split_trips()}}); otherwise, an error is raised.
+values as in the metadata (e.g. moved there by \code{\link[=as_event_column]{as_event_column()}} with
+\code{.keep = TRUE}); otherwise, an error is raised.
 
 The grouping variables are evaluated on the metadata, so they can also be
 new variables computed from its columns (e.g. \code{north = nest_lat > 0}), as in

@@ -502,8 +502,9 @@ We can now plot the trips:
 ```{r plot_females, fig.width=6, fig.height=4}
 ggplot() +
   geom_event_path(
-    data = shags_females,
-    aes(color = bird_id) # can't use trip_id here because not trip splitted data
+    # bird_id is in the metadata, so we move it to the events to plot it
+    data = as_event_column(shags_females, bird_id),
+    aes(color = bird_id)
   ) +
   facet_wrap(~bird_id) +
   theme(
@@ -575,12 +576,15 @@ as we can see when we print the object:
 A <move2> with `track_id_column` "trip_id" and `time_column` "date_time"
 ```
 
-To override this behaviour, use `dplyr::group_by()` to group by a different
-variable. Here, we want to estimate the home range for each bird (rather than
-each central-place foraging trip), so we will group by `bird_id`:
+To override this behaviour, group the events by a different variable: with
+`dplyr::group_by()` for a column of the events, or with `group_by_meta()` for a
+column of the metadata. Here, we want to estimate the home range for each bird
+(rather than each central-place foraging trip), so we will group by `bird_id`,
+which is in the metadata (after splitting the tracks into trips, the only
+column in both the events and the metadata is the track id, `trip_id`):
 ```{r}
 shags_females_kde <- shags_females_proj %>%
-  group_by(bird_id) %>%
+  group_by_meta(bird_id) %>%
   hr_tt_kde(levels = c(0.5, 0.95))
 ```
 
@@ -639,7 +643,7 @@ ggplot() +
 To retain the full utilisation distributions instead, omit `levels`:
 ```{r full_ud}
 shags_females_ud <- shags_females_proj %>%
-  group_by(bird_id) %>%
+  group_by_meta(bird_id) %>%
   hr_tt_kde()
 shags_females_ud
 ```
@@ -686,7 +690,7 @@ website).
 To get a minimum convex polygon covering 95% of the data, we can use:
 ```{r compute_mcp}
 shags_females_mcp <- shags_females_proj %>%
-  group_by(bird_id) %>%
+  group_by_meta(bird_id) %>%
   hr_tt_mcp(levels = c(0.95))
 ```
 
@@ -718,7 +722,7 @@ visited. Here we use each location and its 10 nearest neighbours (`type = "k"`,
 the default; see `?hr_tt_locoh` for the other types):
 ```{r compute_locoh}
 shags_females_locoh <- shags_females_proj %>%
-  group_by(bird_id) %>%
+  group_by_meta(bird_id) %>%
   hr_tt_locoh(n = 10, levels = c(0.5, 0.95))
 shags_females_locoh
 ```
