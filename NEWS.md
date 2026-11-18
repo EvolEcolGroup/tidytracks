@@ -181,6 +181,10 @@ duplicated track ids in the metadata.
   JTS), now gives their copyright notices and licences
 * the authors of `move2`, from which `filter_by_meta()` and the tidytracks
   printing of `move2` objects are adapted, are credited in `DESCRIPTION`
+* the convex hulls of `hr_tt_locoh()` are computed by new code (the previous
+  code was adapted from Wikibooks, under CC BY-SA), which also uses much less
+  memory, e.g. 0.8 GB instead of 7.1 GB for a radius LoCoH of 100,000
+  locations, with the same results
 
 # tidytracks 0.2.1
 
