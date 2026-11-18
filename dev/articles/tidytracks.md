@@ -574,34 +574,34 @@ If we now inspect the object, we can see that there is a new column,
 shags_tt_split
 #> A <move2> with `track_id_column` "trip_id" and `time_column` "date_time"
 #> Containing 12 tracks lasting on average 15410 secs in a
-#> Simple feature collection with 565 features and 4 fields
+#> Simple feature collection with 565 features and 3 fields
 #> Geometry type: POINT
 #> Dimension:     XY
 #> Bounding box:  xmin: -68.23206 ymin: -67.56682 xmax: -67.60288 ymax: -67.28459
 #> Geodetic CRS:  WGS 84
 #> First 10 features:
-#>    bird_id           date_time             speed                    geometry
-#> 1    kb_17 2022-01-04 10:26:41  8.9664714 [km/h] POINT (-68.05746 -67.54373)
-#> 2    kb_17 2022-01-04 10:36:39  0.7707836 [km/h] POINT (-68.03354 -67.53401)
-#> 3    kb_17 2022-01-04 10:46:33  5.1435552 [km/h] POINT (-68.03125 -67.53328)
-#> 4    kb_17 2022-01-04 10:56:41 11.5193175 [km/h] POINT (-68.03423 -67.52557)
-#> 5    kb_17 2022-01-04 11:06:32  2.8492170 [km/h] POINT (-68.02001 -67.50951)
-#> 6    kb_17 2022-01-04 11:16:27  1.3453614 [km/h] POINT (-68.00905 -67.50906)
-#> 7    kb_17 2022-01-04 11:27:31 11.7768735 [km/h]  POINT (-68.00369 -67.5082)
-#> 8    kb_17 2022-01-04 11:37:30 64.8821529 [km/h] POINT (-67.98762 -67.49174)
-#> 9    kb_17 2022-01-04 11:47:24 68.3477219 [km/h] POINT (-67.86887 -67.40727)
-#> 10   kb_17 2022-01-04 11:57:23 15.6500440 [km/h] POINT (-67.81108 -67.30776)
-#>         trip_id
-#> 1  kb_17_trip_1
-#> 2  kb_17_trip_1
-#> 3  kb_17_trip_1
-#> 4  kb_17_trip_1
-#> 5  kb_17_trip_1
-#> 6  kb_17_trip_1
-#> 7  kb_17_trip_1
-#> 8  kb_17_trip_1
-#> 9  kb_17_trip_1
-#> 10 kb_17_trip_1
+#>              date_time             speed      trip_id
+#> 1  2022-01-04 10:26:41  8.9664714 [km/h] kb_17_trip_1
+#> 2  2022-01-04 10:36:39  0.7707836 [km/h] kb_17_trip_1
+#> 3  2022-01-04 10:46:33  5.1435552 [km/h] kb_17_trip_1
+#> 4  2022-01-04 10:56:41 11.5193175 [km/h] kb_17_trip_1
+#> 5  2022-01-04 11:06:32  2.8492170 [km/h] kb_17_trip_1
+#> 6  2022-01-04 11:16:27  1.3453614 [km/h] kb_17_trip_1
+#> 7  2022-01-04 11:27:31 11.7768735 [km/h] kb_17_trip_1
+#> 8  2022-01-04 11:37:30 64.8821529 [km/h] kb_17_trip_1
+#> 9  2022-01-04 11:47:24 68.3477219 [km/h] kb_17_trip_1
+#> 10 2022-01-04 11:57:23 15.6500440 [km/h] kb_17_trip_1
+#>                       geometry
+#> 1  POINT (-68.05746 -67.54373)
+#> 2  POINT (-68.03354 -67.53401)
+#> 3  POINT (-68.03125 -67.53328)
+#> 4  POINT (-68.03423 -67.52557)
+#> 5  POINT (-68.02001 -67.50951)
+#> 6  POINT (-68.00905 -67.50906)
+#> 7   POINT (-68.00369 -67.5082)
+#> 8  POINT (-67.98762 -67.49174)
+#> 9  POINT (-67.86887 -67.40727)
+#> 10 POINT (-67.81108 -67.30776)
 #> To see track metadata, use `show_meta()`
 
 unique(shags_tt_split$trip_id)
@@ -755,8 +755,9 @@ We can now plot the trips:
 
 ggplot() +
   geom_event_path(
-    data = shags_females,
-    aes(color = bird_id) # can't use trip_id here because not trip splitted data
+    # bird_id is in the metadata, so we move it to the events to plot it
+    data = as_event_column(shags_females, bird_id),
+    aes(color = bird_id)
   ) +
   facet_wrap(~bird_id) +
   theme(
@@ -894,16 +895,21 @@ that is `trip_id`, as we can see when we print the object:
 
     A <move2> with `track_id_column` "trip_id" and `time_column` "date_time"
 
-To override this behaviour, use
+To override this behaviour, group the events by a different variable:
+with
 [`dplyr::group_by()`](https://dplyr.tidyverse.org/reference/group_by.html)
-to group by a different variable. Here, we want to estimate the home
-range for each bird (rather than each central-place foraging trip), so
-we will group by `bird_id`:
+for a column of the events, or with
+[`group_by_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/group_by_meta.md)
+for a column of the metadata. Here, we want to estimate the home range
+for each bird (rather than each central-place foraging trip), so we will
+group by `bird_id`, which is in the metadata (after splitting the tracks
+into trips, the only column in both the events and the metadata is the
+track id, `trip_id`):
 
 ``` r
 
 shags_females_kde <- shags_females_proj %>%
-  group_by(bird_id) %>%
+  group_by_meta(bird_id) %>%
   hr_tt_kde(levels = c(0.5, 0.95))
 ```
 
@@ -1073,7 +1079,7 @@ To retain the full utilisation distributions instead, omit `levels`:
 ``` r
 
 shags_females_ud <- shags_females_proj %>%
-  group_by(bird_id) %>%
+  group_by_meta(bird_id) %>%
   hr_tt_kde()
 shags_females_ud
 #> # A tibble: 4 × 9
@@ -1159,7 +1165,7 @@ To get a minimum convex polygon covering 95% of the data, we can use:
 ``` r
 
 shags_females_mcp <- shags_females_proj %>%
-  group_by(bird_id) %>%
+  group_by_meta(bird_id) %>%
   hr_tt_mcp(levels = c(0.95))
 ```
 
@@ -1199,7 +1205,7 @@ for the other types):
 ``` r
 
 shags_females_locoh <- shags_females_proj %>%
-  group_by(bird_id) %>%
+  group_by_meta(bird_id) %>%
   hr_tt_locoh(n = 10, levels = c(0.5, 0.95))
 shags_females_locoh
 #> Simple feature collection with 8 features and 6 fields

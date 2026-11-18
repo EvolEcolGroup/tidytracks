@@ -78,16 +78,24 @@ columns.</p></dd>
 
 
 <dt id="arg--keep">.keep<a class="anchor" aria-label="anchor" href="#arg--keep"></a></dt>
-<dd><p>A logical value indicating whether to keep the original event
-data columns in the event data after moving them to the metadata. The
-default is <code>FALSE</code>, which means that the original event data columns will be
-removed.</p></dd>
+<dd><p>Deprecated. <code>TRUE</code> keeps the columns in the events too, which
+leaves them in both tables (and <code><a href="show_meta.html">show_meta&lt;-</a></code> removes them
+from the events the next time that the metadata is set). The default,
+<code>FALSE</code>, removes them from the events.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code>move2</code> object with the specified event data columns added to the
 metadata.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>A column that is already in the metadata, with the same values as in the
+events (for the events of each track), is not duplicated: it is only removed
+from the events (unless <code>.keep = TRUE</code>); with different values, it gives an
+error, as the only column in both tables should be the track id. For the
+same reason, <code>.keep = TRUE</code> is deprecated.</p>
     </div>
 
     <div class="section level2">

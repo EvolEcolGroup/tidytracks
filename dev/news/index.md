@@ -41,6 +41,35 @@
   [`colname_time()`](https://evolecolgroup.github.io/tidytracks/dev/reference/colname_time.md)
   return the names of the track id and time columns
   ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
+- [`tt_split_trips()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_split_trips.md)
+  moves the original track id column to the metadata (group the trips by
+  it with
+  [`group_by_meta()`](https://evolecolgroup.github.io/tidytracks/dev/reference/group_by_meta.md)),
+  so that the only column in both the events and the metadata is the
+  track id
+  ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
+- [`tt_read_data()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_read_data.md)
+  no longer leaves a column of the metadata in the events (when the
+  values are the same) or in both tables (when they differ, the version
+  in the metadata is renamed with a `.meta` suffix)
+  ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
+- [`as_event_column()`](https://evolecolgroup.github.io/tidytracks/dev/reference/as_event_column.md)
+  and
+  [`as_meta_column()`](https://evolecolgroup.github.io/tidytracks/dev/reference/as_meta_column.md)
+  no longer duplicate a column that is already in both the events and
+  the metadata
+  ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
+- `show_meta<-` removes from the events a column of the new metadata
+  with the same values, and renames the metadata version `.meta` (with a
+  warning) when the values differ
+  ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
+- `.keep = TRUE` in
+  [`as_event_column()`](https://evolecolgroup.github.io/tidytracks/dev/reference/as_event_column.md)
+  and
+  [`as_meta_column()`](https://evolecolgroup.github.io/tidytracks/dev/reference/as_meta_column.md)
+  is deprecated, as it leaves the columns in both the events and the
+  metadata
+  ([\#92](https://github.com/EvolEcolGroup/tidytracks/issues/92))
 - the `hr_tt_*()` functions return the grouping variables with their own
   types (e.g. factors, or `sfc` columns of locations), one column each,
   rather than as text in a single `group_id` column;

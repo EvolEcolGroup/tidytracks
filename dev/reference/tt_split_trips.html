@@ -177,8 +177,9 @@ be removed in a future release.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The <code>move2</code> object, modified: each track is split into its
 foraging trips, and each trip is treated as a separate track:</p><ul><li><p>The events have a new column, <code>trip_id</code>, which becomes the track id
-column. The original track id column is kept, so trips can still be
-grouped by track.</p></li>
+column. The original track id column is moved to the metadata, as the
+only column in both tables is the track id: trips can still be grouped
+by track with <code><a href="group_by_meta.html">group_by_meta()</a></code>.</p></li>
 <li><p>The metadata has one row per trip, with the columns of its original
 track (repeated for each of its trips), and new columns <code>trip_id</code>
 (linking to events table <code>trip_id</code>), and <code>trip_type</code>:</p><ul><li><p><code>"complete"</code>: the whole trip was recorded.</p></li>

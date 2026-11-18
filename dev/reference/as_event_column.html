@@ -72,9 +72,10 @@ columns.</p></dd>
 
 
 <dt id="arg--keep">.keep<a class="anchor" aria-label="anchor" href="#arg--keep"></a></dt>
-<dd><p>A logical value indicating whether to keep the original metadata
-columns in the metadata after moving them to the event data. The default is
-<code>FALSE</code>, which means that the original metadata columns will be removed.</p></dd>
+<dd><p>Deprecated. <code>TRUE</code> keeps the columns in the metadata too,
+which leaves them in both tables (and <code><a href="show_meta.html">show_meta&lt;-</a></code> removes
+them from the events the next time that the metadata is set). The default,
+<code>FALSE</code>, removes them from the metadata.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -84,7 +85,12 @@ event data.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>An <code>sf</code> table of metadata is turned into a plain table first, with its
+    <p>A column that is already in the events, with the same values as in the
+metadata (for the events of each track), is not duplicated: it is only
+removed from the metadata (unless <code>.keep = TRUE</code>); with different values, it
+gives an error, as the only column in both tables should be the track id.
+For the same reason, <code>.keep = TRUE</code> is deprecated.</p>
+<p>An <code>sf</code> table of metadata is turned into a plain table first, with its
 geometry kept as an <code>sfc</code> column, which is renamed if it has the name of
 the geometry column of the events (see <code><a href="show_meta.html">show_meta()</a></code>).</p>
     </div>

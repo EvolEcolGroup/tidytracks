@@ -65,10 +65,9 @@ and can be moved back with
 to group again by variables that are already in the events, use
 [`dplyr::group_by()`](https://dplyr.tidyverse.org/reference/group_by.html).
 A column of the events with the name of a grouping variable is kept if
-it has the same values as in the metadata (e.g. the id of each animal
-after
-[`tt_split_trips()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_split_trips.md));
-otherwise, an error is raised.
+it has the same values as in the metadata (e.g. moved there by
+[`as_event_column()`](https://evolecolgroup.github.io/tidytracks/dev/reference/as_event_column.md)
+with `.keep = TRUE`); otherwise, an error is raised.
 
 The grouping variables are evaluated on the metadata, so they can also
 be new variables computed from its columns (e.g.

@@ -47,6 +47,18 @@ events (e.g. `geometry`, the default name of the geometry of an `sf`
 table) would replace it when joined to the events, so it is renamed with
 a `.meta` suffix (e.g. `geometry.meta`), with a message.
 
+The only column that the events and the metadata should share is the
+track id. When setting the metadata, a column that is also in the events
+is removed from the events if it has the same values (for the events of
+each track), as it is information about the tracks; if the events are
+grouped by it, it is removed from the metadata instead. A column with
+different values (e.g. that varies within tracks) is kept in both
+tables, with the version in the metadata renamed with a `.meta` suffix,
+with a warning. (To make another column the track id with
+[`move2::mt_set_track_id_column()`](https://bartk.gitlab.io/move2/reference/column_name.html),
+which needs it in both tables, add it to the events after setting the
+metadata.)
+
 ## Examples
 
 ``` r

@@ -107,8 +107,8 @@ tables is the track id. They stay in the events after <code><a href="https://dpl
 and can be moved back with <code><a href="as_meta_column.html">as_meta_column()</a></code>; to group again by variables
 that are already in the events, use <code><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">dplyr::group_by()</a></code>. A column of the
 events with the name of a grouping variable is kept if it has the same
-values as in the metadata (e.g. the id of each animal after
-<code><a href="tt_split_trips.html">tt_split_trips()</a></code>); otherwise, an error is raised.</p>
+values as in the metadata (e.g. moved there by <code><a href="as_event_column.html">as_event_column()</a></code> with
+<code>.keep = TRUE</code>); otherwise, an error is raised.</p>
 <p>The grouping variables are evaluated on the metadata, so they can also be
 new variables computed from its columns (e.g. <code>north = nest_lat &gt; 0</code>), as in
 <code><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">dplyr::group_by()</a></code>; the columns used to compute them stay in the metadata.</p>

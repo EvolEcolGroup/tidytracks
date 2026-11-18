@@ -543,34 +543,34 @@ locations, and the likely movements of your birds.</p>
 <code class="sourceCode R"><span><span class="va">shags_tt_split</span></span>
 <span><span class="co">#&gt; A <span style="color: #0000BB;">&lt;move2&gt;</span> with `track_id_column` <span style="color: #0000BB;">"trip_id"</span> and `time_column` <span style="color: #0000BB;">"date_time"</span></span></span>
 <span><span class="co">#&gt; Containing 12 tracks lasting on average 15410 secs in a</span></span>
-<span><span class="co">#&gt; Simple feature collection with 565 features and 4 fields</span></span>
+<span><span class="co">#&gt; Simple feature collection with 565 features and 3 fields</span></span>
 <span><span class="co">#&gt; Geometry type: POINT</span></span>
 <span><span class="co">#&gt; Dimension:     XY</span></span>
 <span><span class="co">#&gt; Bounding box:  xmin: -68.23206 ymin: -67.56682 xmax: -67.60288 ymax: -67.28459</span></span>
 <span><span class="co">#&gt; Geodetic CRS:  WGS 84</span></span>
 <span><span class="co">#&gt; First 10 features:</span></span>
-<span><span class="co">#&gt;    bird_id           date_time             speed                    geometry</span></span>
-<span><span class="co">#&gt; 1    kb_17 2022-01-04 10:26:41  8.9664714 [km/h] POINT (-68.05746 -67.54373)</span></span>
-<span><span class="co">#&gt; 2    kb_17 2022-01-04 10:36:39  0.7707836 [km/h] POINT (-68.03354 -67.53401)</span></span>
-<span><span class="co">#&gt; 3    kb_17 2022-01-04 10:46:33  5.1435552 [km/h] POINT (-68.03125 -67.53328)</span></span>
-<span><span class="co">#&gt; 4    kb_17 2022-01-04 10:56:41 11.5193175 [km/h] POINT (-68.03423 -67.52557)</span></span>
-<span><span class="co">#&gt; 5    kb_17 2022-01-04 11:06:32  2.8492170 [km/h] POINT (-68.02001 -67.50951)</span></span>
-<span><span class="co">#&gt; 6    kb_17 2022-01-04 11:16:27  1.3453614 [km/h] POINT (-68.00905 -67.50906)</span></span>
-<span><span class="co">#&gt; 7    kb_17 2022-01-04 11:27:31 11.7768735 [km/h]  POINT (-68.00369 -67.5082)</span></span>
-<span><span class="co">#&gt; 8    kb_17 2022-01-04 11:37:30 64.8821529 [km/h] POINT (-67.98762 -67.49174)</span></span>
-<span><span class="co">#&gt; 9    kb_17 2022-01-04 11:47:24 68.3477219 [km/h] POINT (-67.86887 -67.40727)</span></span>
-<span><span class="co">#&gt; 10   kb_17 2022-01-04 11:57:23 15.6500440 [km/h] POINT (-67.81108 -67.30776)</span></span>
-<span><span class="co">#&gt;         trip_id</span></span>
-<span><span class="co">#&gt; 1  kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 2  kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 3  kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 4  kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 5  kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 6  kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 7  kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 8  kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 9  kb_17_trip_1</span></span>
-<span><span class="co">#&gt; 10 kb_17_trip_1</span></span>
+<span><span class="co">#&gt;              date_time             speed      trip_id</span></span>
+<span><span class="co">#&gt; 1  2022-01-04 10:26:41  8.9664714 [km/h] kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 2  2022-01-04 10:36:39  0.7707836 [km/h] kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 3  2022-01-04 10:46:33  5.1435552 [km/h] kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 4  2022-01-04 10:56:41 11.5193175 [km/h] kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 5  2022-01-04 11:06:32  2.8492170 [km/h] kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 6  2022-01-04 11:16:27  1.3453614 [km/h] kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 7  2022-01-04 11:27:31 11.7768735 [km/h] kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 8  2022-01-04 11:37:30 64.8821529 [km/h] kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 9  2022-01-04 11:47:24 68.3477219 [km/h] kb_17_trip_1</span></span>
+<span><span class="co">#&gt; 10 2022-01-04 11:57:23 15.6500440 [km/h] kb_17_trip_1</span></span>
+<span><span class="co">#&gt;                       geometry</span></span>
+<span><span class="co">#&gt; 1  POINT (-68.05746 -67.54373)</span></span>
+<span><span class="co">#&gt; 2  POINT (-68.03354 -67.53401)</span></span>
+<span><span class="co">#&gt; 3  POINT (-68.03125 -67.53328)</span></span>
+<span><span class="co">#&gt; 4  POINT (-68.03423 -67.52557)</span></span>
+<span><span class="co">#&gt; 5  POINT (-68.02001 -67.50951)</span></span>
+<span><span class="co">#&gt; 6  POINT (-68.00905 -67.50906)</span></span>
+<span><span class="co">#&gt; 7   POINT (-68.00369 -67.5082)</span></span>
+<span><span class="co">#&gt; 8  POINT (-67.98762 -67.49174)</span></span>
+<span><span class="co">#&gt; 9  POINT (-67.86887 -67.40727)</span></span>
+<span><span class="co">#&gt; 10 POINT (-67.81108 -67.30776)</span></span>
 <span><span class="co">#&gt; To see track metadata, use `show_meta()`</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">shags_tt_split</span><span class="op">$</span><span class="va">trip_id</span><span class="op">)</span></span>
@@ -697,8 +697,9 @@ so we will use <code><a href="../reference/filter_by_meta.html">filter_by_meta()
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="../reference/geom_event_path.html">geom_event_path</a></span><span class="op">(</span></span>
-<span>    data <span class="op">=</span> <span class="va">shags_females</span>,</span>
-<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span> <span class="co"># can't use trip_id here because not trip splitted data</span></span>
+<span>    <span class="co"># bird_id is in the metadata, so we move it to the events to plot it</span></span>
+<span>    data <span class="op">=</span> <span class="fu"><a href="../reference/as_event_column.html">as_event_column</a></span><span class="op">(</span><span class="va">shags_females</span>, <span class="va">bird_id</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>color <span class="op">=</span> <span class="va">bird_id</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/facet_wrap.html" class="external-link">facet_wrap</a></span><span class="op">(</span><span class="op">~</span><span class="va">bird_id</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span></span>
@@ -821,13 +822,17 @@ tracking, as given by the <code>track_id_column</code> in the
 <code>move2</code> object. In this case, that is <code>trip_id</code>,
 as we can see when we print the object:</p>
 <pre><code>A &lt;move2&gt; with `track_id_column` "trip_id" and `time_column` "date_time"</code></pre>
-<p>To override this behaviour, use <code><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">dplyr::group_by()</a></code> to
-group by a different variable. Here, we want to estimate the home range
-for each bird (rather than each central-place foraging trip), so we will
-group by <code>bird_id</code>:</p>
+<p>To override this behaviour, group the events by a different variable:
+with <code><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">dplyr::group_by()</a></code> for a column of the events, or with
+<code><a href="../reference/group_by_meta.html">group_by_meta()</a></code> for a column of the metadata. Here, we want
+to estimate the home range for each bird (rather than each central-place
+foraging trip), so we will group by <code>bird_id</code>, which is in
+the metadata (after splitting the tracks into trips, the only column in
+both the events and the metadata is the track id,
+<code>trip_id</code>):</p>
 <div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_females_kde</span> <span class="op">&lt;-</span> <span class="va">shags_females_proj</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">bird_id</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="../reference/group_by_meta.html">group_by_meta</a></span><span class="op">(</span><span class="va">bird_id</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/hr_tt_kde.html">hr_tt_kde</a></span><span class="op">(</span>levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>If you get a warning here, it may be because one of the datasets is
 small, and so the 0.50 isopleth could not be computed. This is because
@@ -975,7 +980,7 @@ ignore this, and focus on the <code>tibble</code> printed below it.</p>
 <code>levels</code>:</p>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_females_ud</span> <span class="op">&lt;-</span> <span class="va">shags_females_proj</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">bird_id</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="../reference/group_by_meta.html">group_by_meta</a></span><span class="op">(</span><span class="va">bird_id</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/hr_tt_kde.html">hr_tt_kde</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">shags_females_ud</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 9</span></span></span>
@@ -1036,7 +1041,7 @@ require the suggested package <code>move2utils</code> (see the article
 use:</p>
 <div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_females_mcp</span> <span class="op">&lt;-</span> <span class="va">shags_females_proj</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">bird_id</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="../reference/group_by_meta.html">group_by_meta</a></span><span class="op">(</span><span class="va">bird_id</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/hr_tt_mcp.html">hr_tt_mcp</a></span><span class="op">(</span>levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>We can plot the MCPs with:</p>
 <div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
@@ -1068,7 +1073,7 @@ its 10 nearest neighbours (<code>type = "k"</code>, the default; see
 <code><a href="../reference/hr_tt_locoh.html">?hr_tt_locoh</a></code> for the other types):</p>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shags_females_locoh</span> <span class="op">&lt;-</span> <span class="va">shags_females_proj</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">bird_id</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="../reference/group_by_meta.html">group_by_meta</a></span><span class="op">(</span><span class="va">bird_id</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="../reference/hr_tt_locoh.html">hr_tt_locoh</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">10</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">shags_females_locoh</span></span>
 <span><span class="co">#&gt; Simple feature collection with 8 features and 6 fields</span></span>

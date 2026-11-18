@@ -25,10 +25,11 @@ as_event_column(x, ..., .keep = FALSE)
 
 - .keep:
 
-  A logical value indicating whether to keep the original metadata
-  columns in the metadata after moving them to the event data. The
-  default is `FALSE`, which means that the original metadata columns
-  will be removed.
+  Deprecated. `TRUE` keeps the columns in the metadata too, which leaves
+  them in both tables (and
+  [`show_meta<-`](https://evolecolgroup.github.io/tidytracks/dev/reference/show_meta.md)
+  removes them from the events the next time that the metadata is set).
+  The default, `FALSE`, removes them from the metadata.
 
 ## Value
 
@@ -36,6 +37,12 @@ A `move2` object with the specified metadata columns added to the event
 data.
 
 ## Details
+
+A column that is already in the events, with the same values as in the
+metadata (for the events of each track), is not duplicated: it is only
+removed from the metadata (unless `.keep = TRUE`); with different
+values, it gives an error, as the only column in both tables should be
+the track id. For the same reason, `.keep = TRUE` is deprecated.
 
 An `sf` table of metadata is turned into a plain table first, with its
 geometry kept as an `sfc` column, which is renamed if it has the name of
