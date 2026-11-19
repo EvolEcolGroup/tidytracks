@@ -55,11 +55,11 @@ code had no conflicts). The decisions are in `dev_notes/units.md`.
 PRs #95–#98 (#92: the only column in both the events and the metadata is
 the track id) and #100 (#82: isopleths that cannot be drawn are kept as empty
 rows with a warning) are merged into `dev`, and so is #99 (`dev_notes/`).
-#92 is closed. The designs are in `metadata_and_events.md` and
+#92 is closed, and so is #82 (19 Nov). The designs are in `metadata_and_events.md` and
 `isopleths.md`.
 
 **Next steps**
-- [ ] **P3** [cleanup] Close #82 (fixed by #100); delete `inbound` on origin; check, then delete, the local branches that were squash-merged (`attribution` by #102, deleted on origin; `kde_locoh_fast` by #94, whose content is all in `dev`; `kde_fast`, `locoh`, `locoh_fast`, `benchmark-sizes`).
+- [ ] **P3** [cleanup] Delete `inbound` on origin; check, then delete, the local branches that were squash-merged (`attribution` by #102, deleted on origin; `kde_locoh_fast` by #94, whose content is all in `dev`; `kde_fast`, `locoh`, `locoh_fast`, `benchmark-sizes`).
 
 ## First passage time: review of `fpt` (branch `codereview_fpt`)
 

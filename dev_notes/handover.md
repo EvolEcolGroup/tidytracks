@@ -85,9 +85,8 @@ The next steps of `summary.md`, in the same order and with the same labels.
   deprecated `hr_kde()` still takes plain numbers.
 - **Done when:** PR #103 is merged into `dev`; then delete `kde_units`.
 
-### 5. **P3** [cleanup] Close #82 and delete merged branches
+### 5. **P3** [cleanup] Delete merged branches
 
-- Close #82 (fixed by #100).
 - Delete the local branch `attribution` (squash-merged by #102).
 - Delete `inbound` on origin.
 - Check, then delete, the local squash-merged branches (see "Branches").
