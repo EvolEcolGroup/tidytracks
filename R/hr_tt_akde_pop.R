@@ -229,13 +229,8 @@ hr_tt_akde_pop <- function(
     }
     list(
       bbox = unlist(grid[1, c("xmin", "ymin", "xmax", "ymax")]),
-      # the resolution as a plain number, in the units of the coordinates (a
-      # table from an earlier version of tidytracks has it without units)
-      res = if (inherits(grid$res, "units")) {
-        to_crs_units(grid$res, "res", crs) # nolint: object_usage_linter.
-      } else {
-        grid$res
-      }
+      # the resolution as a plain number, in the units of the coordinates
+      res = to_crs_units(grid$res, "res", crs) # nolint: object_usage_linter.
     )
   })
 
@@ -391,6 +386,13 @@ stopifnot_akde_ud_table <- function(x) {
   }
   if (!all(vapply(x$ud_ctmm, inherits, logical(1), "UD"))) {
     stop("column ud_ctmm of x must contain ctmm UD objects")
+  }
+  # the resolution is a distance, with units (as returned by hr_tt_akde())
+  if (!inherits(x$res, "units")) {
+    stop(
+      "column res of x must be a distance with units, as returned by ",
+      "hr_tt_akde()"
+    )
   }
   invisible(NULL)
 }

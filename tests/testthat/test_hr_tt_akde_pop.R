@@ -208,6 +208,13 @@ test_that("hr_tt_akde_pop only uses weights from a column with 'mean'", {
 test_that("hr_tt_akde_pop checks its inputs", {
   # pkde needs the tracks and the models
   expect_error(hr_tt_akde_pop(akde_south), "provide the tracks")
+  # the resolution is a distance with units, as returned by hr_tt_akde()
+  akde_plain <- akde_south
+  akde_plain$res <- as.numeric(akde_plain$res)
+  expect_error(
+    hr_tt_akde_pop(akde_plain, method = "mean"),
+    "column res of x must be a distance with units"
+  )
   expect_error(
     hr_tt_akde_pop(akde_south, tracks = x[-1, ], models = fits),
     "Cilla have changed since the models were fitted"
