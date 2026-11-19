@@ -3,20 +3,22 @@
 ## Summary
 
 - **Branch:** `attribution`, from `dev` at `6b3d855` (local, not pushed).
-- **Fix commits:** 14, one per fix:
+- **Fix commits:** 15, one per fix:
   - 2 rewrites of code copied from GPL-3-only packages;
   - 1 rewrite of code adapted from Wikibooks (CC BY-SA), which also cuts
     the memory of `hr_tt_locoh()` by up to 8x;
   - 4 commits that add copyright notices and credits;
   - 1 removal of scratch files;
   - 1 commit that adds source notes to two notebooks;
-  - 5 follow-ups to the findings of R CMD check and of the verifier.
+  - 5 follow-ups to the findings of R CMD check and of the verifier;
+  - 1 fix of a bug found by the verifier, also on `dev` (Andrea, 19 Nov).
 - **Findings not fixed:**
   - 4 data and figure items (Andrea: "we will deal with data later");
   - a few small attribution items;
   - method citations;
   - three possible speed-ups;
-  - four bugs that the verifier found, which are also on `dev`.
+  - three bugs that the verifier found, which are also on `dev` (a fourth
+    is fixed).
 - **Scope:** all of `R/`, `src/` and `tests/`, the vignettes and articles,
   README and logo, `inst/extdata`, `data/`, `data-raw/` and `dev_notes/`. The
   GitHub repository is public, so every tracked file counts, not only the
@@ -29,6 +31,12 @@
   - remove `dev_notes/explorations/temp/`;
   - leave the data for later;
   - think about speed-ups while rewriting.
+- **Decisions** (Andrea, 19 Nov):
+  - open the PR;
+  - fix the s2 error of `hr_tt_mcp()` (`ae5ffa6`);
+  - park the C++ MCP (written up in `mcp_cpp.md`);
+  - no `cph` roles, as the `Copyright:` field covers them;
+  - the data questions go to Lizzie (`note_for_Lizzie.md`).
 
 ## Verification
 
@@ -41,6 +49,7 @@
 | `R CMD check` on `1d2cd34` (manica01, R 4.5.2) | 0 errors, 0 warnings, 2 NOTEs: move2utils is not installed (Rd cross-references), and the spelling test. The spelling NOTE flagged "PNPOLY", "JTS" and "gganimate's" from this branch, fixed in `cf5d2f8`; "WKT" and "multipolygon" come from `dev`. Examples and vignette OK |
 | Full test suite on the tip `4828646` (installed, `NOT_CRAN=true`) | 51 files, 483 tests: 1,713 passed, 0 failed, 70 skipped (all for move2utils, not installed on manica01) |
 | Independent verifier (every commit) | every commit checked, the follow-ups included. Identity confirmed independently: MCP, 2,972 polygons in 128 cases; LoCoH, 3,676 direct calls and 339 end-to-end cases. The hull code is clean in an ASan/UBSan build. Its findings: the stale Rd of `a78fb56` (fixed in `99e0d68`) and the follow-ups `9db4709`, `e7f0427` and `4828646`; three bugs on `dev` (below) |
+| `ae5ffa6` (repeated vertices), 19 Nov | Verifier: of 21,147 polygons (1,007 sets, 21 levels), 62 differ from `23780f7`/`dev`. Each is the old ring without its repeated vertex (9 became empty), and s2 now accepts all of them (it rejected 44 before). `hr_tt_mcp()` is identical in 139 of 144 cases; the 5 others were the old s2 errors. The test files that use `hr_tt_mcp()` (`test_hr_tt_mcp`, `test_hr_tt_locoh`, `test_group_by_meta`) pass. The full suite was not rerun after `4828646` (another session was timing); CI runs it on the PR |
 | Cited DOIs | Karney (2013), Mohr (1947) and Andrew (1979) resolve to the right papers (Crossref) |
 
 ### Exceptions to "each test fails before the fix"
@@ -183,6 +192,23 @@ Only A and B raise copyright questions.
 
   *[error message]*
 
+### Bug found by the verifier (also on `dev`)
+
+- [ ] `ae5ffa6` · `hr_tt_mcp()` (`mcp_polygon()`) — `grDevices::chull()` can
+  return a location and its duplicate as two vertices.
+  - **Consequence:** with lon/lat, s2 rejected the polygon ("duplicate
+    vertex"): 15 of 400 random tracks rounded to 3 decimals failed. With
+    projected coordinates, the polygon kept a repeated vertex, or had no
+    area without being empty.
+  - **Fix:** repeated vertices are dropped, so a hull of two places is an
+    empty polygon with a warning, as documented.
+  - **Test:** fails on the old code and passes on the fix.
+  - **Effect on results:** of 10,998 polygons, the 379 that differ from
+    `dev` all had a repeated vertex.
+  - **Cost:** +0.8% instructions on 10,000 tracks (wall time within noise).
+
+  *[bug; lon/lat data]*
+
 ### Notes and scratch files
 
 - [ ] `b50596c` · `dev_notes/explorations/temp/` removed. It held:
@@ -197,6 +223,8 @@ Only A and B raise copyright questions.
 ## Findings not fixed
 
 ### Decision needed: data (left for later, Andrea 18 Nov)
+
+The questions for the data owners are in `note_for_Lizzie.md`.
 
 - [ ] **Antarctic shag tracks.**
   - **Where:** `inst/extdata/shags_example.csv` (in the package; main
@@ -285,15 +313,6 @@ Only A and B raise copyright questions.
 
 ### Bugs found by the verifier (also on `dev`, not caused by this branch)
 
-- [ ] **`hr_tt_mcp()` on some lon/lat data.**
-  - **Error:** s2 rejects an MCP ring with "Loop 0 is not valid: Edge 9 is
-    degenerate (duplicate vertex)". The verifier's case: lon/lat rounded to 3
-    decimals, track t3 at level 0.9, vertex (9.995, 45.007) twice.
-  - **Cause:** `grDevices::chull()` returned two vertices that s2 treats as
-    the same point.
-  - **Possible fix:** drop repeated vertices from the ring before building
-    the polygon. This changes the output only in the cases that fail now.
-  - **Decision needed:** fix it, with a test?
 - [ ] **`hr_tt_locoh()` on rounded lon/lat.** s2 rejects an isopleth with
   "Loop 14 edge 22 crosses loop 20 edge 10". This happens on the union of
   the hulls for lon/lat data.
@@ -312,7 +331,8 @@ Only A and B raise copyright questions.
   are covered by `Copyright:` and `inst/COPYRIGHTS` only.
 - CRAN prefers `ctb` (or `cph`) for the authors of copied code, but accepts
   the `Copyright` field.
-- **Decision needed:** add them as `cph`?
+- **Decision** (Andrea, 19 Nov): no `cph` roles; the `Copyright:` field is
+  enough.
 
 ### Speed-ups not done
 
@@ -330,8 +350,8 @@ Only A and B raise copyright questions.
     slope-intercept line in floating point, so a few nearly collinear sets
     give different vertex sets. There were none in 2,535 hulls of real and
     simulated tracks, but 607 in 20,000 deliberately degenerate sets.
-  - **Decision needed:** accept these differences (polygons that differ by
-    vertices within rounding of an edge) for the speed?
+  - **Decision** (Andrea, 19 Nov): parked. The design and the numbers are
+    in `mcp_cpp.md`.
 - [ ] **LoCoH neighbour sets.** For `"r"` with large radii, the stored
   neighbour sets (one integer per neighbour per location) are now most of
   the memory (32.6 GB for 1 M locations). Computing each hull from its

@@ -19,6 +19,8 @@ package's data stay in `data-raw/`.
   empty rows with a warning (#82, PR #100).
 - [ctmm_integration.md](ctmm_integration.md): plan and decisions for the
   ctmm models (#84), and the later analyses.
+- [mcp_cpp.md](mcp_cpp.md): a parked design for computing the MCPs in C++
+  (about 10x faster on many tracks), and why it was parked.
 
 ## Reviews
 
@@ -32,6 +34,12 @@ package's data stay in `data-raw/`.
 - `code_review_fpt_2026-11.md` (on branch `codereview_fpt` until it is
   merged): review of the first passage time functions (`fpt`), with the
   fixes, the new defaults, the checks and the findings not fixed.
+
+## Notes for collaborators
+
+- [note_for_Lizzie.md](note_for_Lizzie.md): the owners, permissions and
+  licences needed for the shag and wandering albatross data, and the unused
+  data files in `inst/extdata/csv_files/`.
 
 ## Upstream bug reports (drafts)
 
