@@ -285,7 +285,7 @@ test_that("duplicated records do not stop a later spike being removed", {
   expect_identical(out, seq_len(12) != 7)
 })
 
-test_that("empty locations are ignored by the filter", {
+test_that("empty locations are ignored by the filter, and flagged (#81)", {
   x <- make_test_move2(
     x = c(0, 100, 200, 300, 400, 50000, 600, 700, 800, 900),
     y = rep(0, 10),
@@ -297,9 +297,11 @@ test_that("empty locations are ignored by the filter", {
   out <- with_time_limit(
     event_flag_mcconnell(x, max_speed = units::as_units(10, "km/h"))
   )
-  # the spike is removed, the empty location is kept
-  expect_identical(out, seq_len(10) != 6)
+  # the filter, which ignores the empty location, flags the spike; the empty
+  # location is flagged too
+  expect_identical(out, !seq_len(10) %in% c(3, 6))
 
+  # both are removed
   cleaned <- with_time_limit(
     tt_clean_mcconnell(
       x,
@@ -307,8 +309,27 @@ test_that("empty locations are ignored by the filter", {
       flag_action = "remove"
     )
   )
-  expect_equal(nrow(cleaned), 9)
-  expect_true(sf::st_is_empty(sf::st_geometry(cleaned)[3]))
+  expect_equal(nrow(cleaned), 8)
+  expect_false(any(sf::st_is_empty(cleaned)))
+
+  # or both are interpolated between the valid locations before and after
+  # them (not compared with exact coordinates: mt_interpolate() goes through
+  # longitudes and latitudes, which do not transform back exactly to these
+  # coordinates, at the false origin of EPSG:27700)
+  interpolated <- with_time_limit(
+    tt_clean_mcconnell(
+      x,
+      max_speed = units::as_units(10, "km/h"),
+      flag_action = "interpolate"
+    )
+  )
+  expect_false(any(sf::st_is_empty(interpolated)))
+  expect_true(all(abs(sf::st_coordinates(interpolated)[, 1]) < 1000))
+
+  # a single event without a location is not valid either
+  expect_false(
+    event_flag_mcconnell(x[3, ], max_speed = units::as_units(10, "km/h"))
+  )
 })
 
 test_that("outliers late in a long track are removed in later passes", {

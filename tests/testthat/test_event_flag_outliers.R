@@ -194,13 +194,13 @@ test_that("event_flag_outliers requires location errors with units", {
   expect_identical(valid, !direct$is_outlier)
 })
 
-test_that("event_flag_outliers returns events without a location as valid", {
+test_that("event_flag_outliers flags events without a location (#81)", {
   skip_if_not_installed("move2utils")
   x <- create_spiky_tracks()
   x_empty <- x
   sf::st_geometry(x_empty)[c(10, 20)] <- sf::st_point()
   valid <- event_flag_outliers(x_empty, method = "detour")
-  expect_true(all(valid[c(10, 20)]))
+  expect_false(any(valid[c(10, 20)]))
   expect_identical(
     valid[-c(10, 20)],
     event_flag_outliers(x[-c(10, 20), ], method = "detour")
@@ -212,7 +212,7 @@ test_that("event_flag_outliers returns events without a location as valid", {
     method = "bridge",
     location_error = errors
   )
-  expect_true(all(valid[c(10, 20)]))
+  expect_false(any(valid[c(10, 20)]))
   expect_identical(
     valid[-c(10, 20)],
     event_flag_outliers(
@@ -232,7 +232,7 @@ test_that("event_flag_outliers matches a state per event to the events", {
   # the event without a location is not passed to move2utils, nor is its
   # state
   valid <- event_flag_outliers(x_empty, state = state)
-  expect_true(valid[10])
+  expect_false(valid[10])
   expect_identical(
     valid[-10],
     event_flag_outliers(x[-10, ], state = state[-10])
@@ -264,11 +264,14 @@ test_that("event_flag_outliers returns the events of short tracks as valid", {
   # flags, but cannot combine them with longer tracks
   ids[(nrow(x) - 4):nrow(x)] <- "c"
   x_short <- move2::mt_set_track_id(x, ids)
+  # an event without a location in a track that is not checked is still
+  # flagged
+  sf::st_geometry(x_short)[nrow(x)] <- sf::st_point()
   expect_warning(
     valid <- event_flag_outliers(x_short),
     "1 track\\(s\\) with fewer than 10 events with a location"
   )
-  expect_true(all(valid[ids == "c"]))
+  expect_identical(valid[ids == "c"], c(TRUE, TRUE, TRUE, TRUE, FALSE))
   expect_identical(
     valid[ids != "c"],
     event_flag_outliers(x_short[ids != "c", ])

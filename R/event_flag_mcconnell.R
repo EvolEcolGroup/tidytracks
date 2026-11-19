@@ -15,8 +15,10 @@
 #'
 #' Speeds are computed between consecutive events of each track in time order,
 #' whatever the order in which the events are stored in `x`. Events with an
-#' empty geometry (i.e. no location) are ignored by the filter
-#' and returned as valid. Consecutive events at the same location are treated
+#' empty geometry (i.e. no location, e.g. failed fixes) are left out of the
+#' filter, and flagged as not valid (`FALSE`): [tt_clean_mcconnell()] then
+#' removes them, or interpolates their location, together with the events
+#' flagged by the filter. Consecutive events at the same location are treated
 #' as having zero speed, even when they share the same timestamp (e.g.
 #' duplicated records).
 #'
@@ -29,7 +31,8 @@
 #'   track until the result is stable. It defaults to `FALSE` to maintain the
 #'   original behaviour of the McConnell algorithm.
 #' @return A logical vector of the same length as the number of events in `x`,
-#'   indicating which points are valid.
+#'   indicating which points are valid (`TRUE`), and which are flagged by the
+#'   filter or have no location (`FALSE`).
 #' @export
 #' @examples
 #' event_flag_mcconnell(example_tt, max_speed = as_units(50, "m/s"))
@@ -69,9 +72,9 @@ event_flag_mcconnell <- function(
   projected <- !sf::st_is_longlat(x)
 
   # If there are fewer than 2 events, no speed can be computed; nothing to
-  # filter.
+  # filter (an event without a location is still not valid).
   if (nrow(x) < 2) {
-    return(rep(TRUE, nrow(x)))
+    return(!sf::st_is_empty(x))
   }
 
   # Create a reference unit matching the coordinate system currently
@@ -115,10 +118,11 @@ event_flag_mcconnell <- function(
   # Order the located events by track and time
   # ---------------------------------------------------------------------------
   # Events with an empty geometry have no location; they are left out of the
-  # filter (and returned as valid). Speeds are computed between consecutive
-  # events of each track in time order, whatever the order in which the events
-  # are stored in x (order() keeps events with the same time in the order in
-  # which they are stored). All the tracks are then filtered together.
+  # filter (and flagged as not valid, below). Speeds are computed between
+  # consecutive events of each track in time order, whatever the order in
+  # which the events are stored in x (order() keeps events with the same time
+  # in the order in which they are stored). All the tracks are then filtered
+  # together.
   located <- which(!is.na(coords[, 1]) & !is.na(coords[, 2]))
   track <- as.integer(id)
   rows <- located[order(track[located], time[located])]
@@ -140,7 +144,10 @@ event_flag_mcconnell <- function(
   } else {
     mcconnell_filter
   }
-  valid_all <- rep(TRUE, nrow(coords))
+  # Events without a location are not valid, so that tt_clean_mcconnell()
+  # removes them, or interpolates their location, like the flagged events;
+  # the located events take the flags of the filter.
+  valid_all <- rep(FALSE, nrow(coords))
   valid_all[rows] <- filter(
     xy = coords[rows, , drop = FALSE],
     time = time[rows],

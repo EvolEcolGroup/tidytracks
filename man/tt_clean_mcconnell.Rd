@@ -39,6 +39,11 @@ algorithm, by McConnell et al. 1992). This function
 returns a clean \code{move2} object; to generate a column that flags events to
 remove but does not remove them, use \code{event_flag_mcconnell()}.
 }
+\details{
+Events without a location (e.g. failed fixes) are flagged too (see
+\code{\link[=event_flag_mcconnell]{event_flag_mcconnell()}}), so they are removed, or their location is
+interpolated, together with the events flagged by the algorithm.
+}
 \examples{
 # this removes 3 events from the example dataset
 tt_clean_mcconnell(example_tt,
