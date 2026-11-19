@@ -54,7 +54,9 @@ The next steps of `summary.md`, in the same order and with the same labels.
     (`inst/extdata/shags_example.csv`, `data-raw/raw_csv/shag_*.csv`,
     `vignettes/articles/data/shags_*.csv`) and of the wandering albatross
     data (`vignettes/articles/data/wanderer_example_tracks.csv`);
-  - whether to delete the two unused files in `inst/extdata/csv_files/`;
+  - whether to delete the two unused files in `inst/extdata/csv_files/`
+    (done: removed, Nov 2026; the raw shag files too, archived outside the
+    repo);
   - whether the raw albatross files in the git history must go (that would
     need a history rewrite).
 - **Then (a Claude session):** record the answers (e.g. in

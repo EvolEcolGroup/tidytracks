@@ -17,7 +17,7 @@ modified".
 |---|---|---|
 | `inst/extdata/shags_example.csv` | the main vignette, and the examples of `tt_read_data()` | yes |
 | `vignettes/articles/data/shags_*.csv` | the article "Reading and cleaning data" (derived from the file above) | no (website only) |
-| `data-raw/raw_csv/shag_tidytrack_sample.csv`, `shag_tidytrack_meta.csv` | `data-raw/make_shags_tt.R`, which builds `shags_example.csv` | no, but public on GitHub |
+| `data-raw/raw_csv/shag_*.csv`, `data-raw/make_shags_tt.R` | built `shags_example.csv` | removed (Nov 2026), archived outside the repo; still in the git history |
 
 We need to know:
 
@@ -62,7 +62,7 @@ nothing uses them (no code, test, example or vignette):
   dataset 1387 (wandering albatross, Bird Island, 2009);
 - `shag_tidytrack_sample_subset_old.csv`: an older version of the shag data.
 
-We propose to delete both. Is there any reason to keep them?
+**Done (Nov 2026):** both removed; the shag file is archived outside the repo.
 
 ## Already sorted (nothing to do)
 

@@ -233,6 +233,8 @@ The questions for the data owners are in `note_for_Lizzie.md`.
   - **Missing:** no owner, permission or licence is recorded.
   - **Decision needed:** who owns them, on what terms they may be published,
     and how to cite them.
+  - **Done (Nov 2026):** `data-raw/raw_csv/shag_*.csv` and `make_shags_tt.R`
+    removed, archived outside the repo (still in the git history).
 - [ ] **Wandering albatross tracks.**
   - **Where:** `vignettes/articles/data/wanderer_example_tracks.csv`, used by
     the animations article on the pkgdown site.
@@ -240,12 +242,13 @@ The questions for the data owners are in `note_for_Lizzie.md`.
     the data owners' permission to redistribute.
   - **Decision needed:** permission and citation, or other data. The raw
     files in `temp/` are removed from the tree, but remain in the history.
-- [ ] **Unused files in `inst/extdata/csv_files/`.**
+- [x] **Unused files in `inst/extdata/csv_files/`.**
   - `dataset_example_birdlife.csv` is an extract of Seabird Tracking
     Database dataset 1387.
   - `shag_tidytrack_sample_subset_old.csv` is an old copy of the shag data.
   - Nothing uses either file.
-  - **Decision needed:** remove them (recommended).
+  - **Done (Nov 2026):** both removed; the shag file is archived outside
+    the repo.
 - [ ] **Esri basemap.** `vignettes/articles/animations.Rmd:313` uses Esri
   World Ocean Base tiles with no credit. It needs a caption: "Esri, Garmin,
   GEBCO, NOAA NGDC, and other contributors", and "Powered by Esri".
