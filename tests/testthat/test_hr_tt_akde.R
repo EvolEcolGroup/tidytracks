@@ -240,7 +240,11 @@ test_that("hr_tt_akde calibrates the location error as when fitting", {
   # data rather than in the model, so the tracks must be calibrated again
   x_cilla <- ctmm_example_tt(n = 60, tracks = "Cilla")
   fits_uere <- suppressMessages(
-    ctmm_tt_fit(x_cilla, model = ctmm::ctmm(isotropic = TRUE), uere = 1000)
+    ctmm_tt_fit(
+      x_cilla,
+      model = ctmm::ctmm(isotropic = TRUE),
+      uere = as_units(1000, "m")
+    )
   )
   akde <- hr_tt_akde(x_cilla, fits_uere)
   tel <- suppressMessages(mt_as_telemetry(x_cilla))$Cilla

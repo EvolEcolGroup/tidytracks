@@ -78,12 +78,22 @@ test_that("ctmm_tt_fit adds the error model to templates", {
   # with a uere (the buffalo have no DOP, which ctmm then assumes to be 1),
   # the error model is added to the template, which gives the same fit as a
   # template with an error model
-  with_uere <- fit_model(model = iso_iid, uere = 10)
+  with_uere <- fit_model(model = iso_iid, uere = as_units(10, "m"))
   expect_true(any(with_uere$error > 0))
   iso_iid_error <- ctmm::ctmm(isotropic = TRUE, error = TRUE)
+  # (the UERE is a distance, here given in km)
   expect_equal(
     with_uere$loglike,
-    fit_model(model = iso_iid_error, uere = 10)$loglike
+    fit_model(model = iso_iid_error, uere = as_units(0.01, "km"))$loglike
+  )
+  # the UERE must be a distance with units
+  expect_error(
+    ctmm_tt_fit(x, model = iso_iid, uere = 10),
+    "uere must be a distance with units"
+  )
+  expect_error(
+    ctmm_tt_fit(x, model = iso_iid, uere = as_units(10, "s")),
+    "uere must have units of length"
   )
 })
 

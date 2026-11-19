@@ -123,6 +123,8 @@ duplicated track ids in the metadata.
   column of types `"r"` and `"a"` has units
 * `tt_split_trips()` gives an error for buffers without units (they were
   taken in the units of the CRS, or in metres for longitude/latitude)
+* `ctmm_tt_fit()` takes `uere` as a distance with units (or a UERE object
+  from `ctmm::uere.fit()`)
 * Speed improvements (same results) for `hr_tt_mcp()`, `hr_tt_kde()` and
   `hr_tt_ud_iso()`.
 

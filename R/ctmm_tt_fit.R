@@ -61,10 +61,12 @@
 #'   template, `error = TRUE` adds the error model to the template, unless the
 #'   template already has one (e.g. `ctmm::ctmm(error = TRUE)`); with
 #'   `error = FALSE`, the error model of the template (if any) is kept.
-#' @param uere A User Equivalent Range Error (in metres) used to calibrate the
-#'   location error (see [ctmm::uere()]), or an object created with
-#'   [ctmm::uere.fit()] from calibration data. If set, the error model is fitted
-#'   (i.e. `error` is set to `TRUE`), also for model templates.
+#' @param uere A User Equivalent Range Error used to calibrate the location
+#'   error (see [ctmm::uere()]): either a distance with units (e.g.
+#'   `as_units(10, "m")`), which is converted to metres for `ctmm`, or an
+#'   object created with [ctmm::uere.fit()] from calibration data. If set, the
+#'   error model is fitted (i.e. `error` is set to `TRUE`), also for model
+#'   templates.
 #' @param ic The information criterion used to select the best model when
 #'   `model = "auto"` (see [ctmm::ctmm.select()]). Default is `"AICc"`.
 #' @param candidates Logical; if `TRUE` and `model = "auto"`, all the candidate
@@ -117,6 +119,9 @@
 #' buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 #' buffalo_fit
 #' }
+#' # to fit a model of the location error calibrated with a known UERE, give
+#' # it as a distance with units (this takes longer to fit):
+#' # ctmm_tt_fit(buffalo_sub, model = "ou", uere = as_units(10, "m"))
 ctmm_tt_fit <- function(
   x,
   model = "auto",
@@ -154,6 +159,9 @@ ctmm_tt_fit <- function(
   if (!is.logical(candidates) || length(candidates) != 1 || is.na(candidates)) {
     stop("candidates must be TRUE or FALSE")
   }
+  # a UERE value, as a plain number in metres for ctmm (a UERE object from
+  # ctmm::uere.fit() is used as it is)
+  uere <- check_uere(uere)
 
   # the track ids, in the order of the metadata (the order of the output);
   # the labels (as character) are used to match tracks and models by name
@@ -556,4 +564,46 @@ stopifnot_ctmm_tt_fit_tbl <- function(x) {
     stop("the models must be a table of models created with ctmm_tt_fit()")
   }
   invisible(NULL)
+}
+
+#' Check the UERE given to `ctmm_tt_fit()`
+#'
+#' A UERE value is a distance, which must be given with units, and is
+#' converted to the metres expected by `ctmm`; a UERE object from
+#' [ctmm::uere.fit()] (or `NULL`) is returned as it is.
+#'
+#' @param uere The `uere` argument of [ctmm_tt_fit()].
+#' @returns `uere`, as a plain number (or numbers) in metres, or unchanged if
+#'   it is `NULL` or a UERE object.
+#' @keywords internal
+#' @noRd
+check_uere <- function(uere) {
+  if (is.null(uere) || inherits(uere, "UERE")) {
+    return(uere)
+  }
+  # plain numbers are rejected rather than assumed to be in metres, as
+  # physical quantities must carry their units
+  if (!inherits(uere, "units")) {
+    stop(
+      "uere must be a distance with units (e.g. as_units(10, 'm')), or a ",
+      "UERE object from ctmm::uere.fit()",
+      call. = FALSE
+    )
+  }
+  # drop_units() rather than as.numeric() keeps the names of values given per
+  # class of location
+  value <- tryCatch(
+    units::drop_units(units::set_units(uere, "m", mode = "standard")),
+    error = function(e) {
+      stop(
+        "uere must have units of length; got '", units::deparse_unit(uere),
+        "'",
+        call. = FALSE
+      )
+    }
+  )
+  if (length(value) == 0 || any(!is.finite(value) | value <= 0)) {
+    stop("uere must be a positive distance", call. = FALSE)
+  }
+  value
 }
