@@ -21,14 +21,16 @@ correction as a new entry.
   (types `"r"`, `"a"`) and `buffer` of `hr_tt_locoh()`, the buffers of
   `tt_split_trips()` and `uere` of `ctmm_tt_fit()` must be `units` objects;
   the `h`, `res` and `n` columns have units. Re-knitted the ctmm article.
-- **Where:** branch `kde_units` (from `dev`), `d26498f`..`0a5e131`; PR #103.
+- **Where:** branch `kde_units` (from `dev`), `d26498f`..`0a5e131`, then
+  `dev` merged in (`3ebd6be`, after #102 was merged); PR #103.
 - **Result:** full suite passes with move2utils (now installed on manica01,
-  0.4.6); R CMD check 0 errors, 0 warnings. After #102 was merged, `dev`
-  was merged into the branch (Andrea's choice; no conflicts in the code).
+  0.4.6), also after the merge; R CMD check 0 errors, 0 warnings.
 - **Decisions** (Andrea): `h` has units (the maths); enforce units in every
-  function, with no backward compatibility for `hr_tt_akde_pop()` tables.
+  function, with no backward compatibility for `hr_tt_akde_pop()` tables;
+  merge `dev` into the branch (no rebase) to resolve the notes conflict.
 - **Notes changed:** `units.md` (new), `codereview_2026-10.md` (3 items
-  fixed), `README.md`, `summary.md`, `handover.md`.
+  fixed, #81), `README.md`, `summary.md`, `handover.md`; also recorded #102
+  merged, #82 closed and PR #104 (for session tidytracks-7a).
 
 ## 2026-11-19 (manica01): PR #102, an MCP fix, and the data note
 
