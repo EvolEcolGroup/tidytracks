@@ -1,14 +1,15 @@
 # tidytracks: summary
 
-Updated 2026-11-18 (manica01). tidytracks has no jobs in
+Updated 2026-11-19 (manica01). tidytracks has no jobs in
 dramanica/claude_jobs: its work is tracked in its own GitHub issues, so the
 sections below are by line of work, not by job.
 
-## Attribution and licences (branch `attribution`)
+## Attribution and licences (PR #102)
 
-An audit of code borrowed from other packages, and of licences (18 Nov).
+An audit of code borrowed from other packages, and of licences (18-19 Nov).
 
-**Status.** The branch `attribution` (local, from `dev`) has 14 commits:
+**Status.** PR #102 (`attribution` into `dev`) has 15 fix commits, plus the
+notes:
 
 - **Rewrites:** the code copied from GPL-3-only packages (`dist_fast()` from
   trip; the MCP helpers from amt), which conflicted with `GPL (>= 3)`, and
@@ -18,19 +19,19 @@ An audit of code borrowed from other packages, and of licences (18 Nov).
 - **Notices and credits:** the copyright notices of gganimate, PNPOLY and
   GEOS/JTS (new `inst/COPYRIGHTS`), and the gganimate and move2 authors as
   `ctb`.
-- **Removed:** `dev_notes/explorations/temp/`.
+- **Fix:** an s2 error of `hr_tt_mcp()` with duplicated lon/lat locations (a
+  bug also on `dev`).
 
 R CMD check gives 0 errors and 0 warnings; an independent agent verified
 every commit. The report, `dev_notes/code_review_attribution_2026-11.md`,
-lists the findings not fixed: the data (left for later by Andrea), method
-citations, four bugs also on `dev`, and three possible speed-ups.
+lists the findings not fixed. The questions on the data are in
+`dev_notes/note_for_Lizzie.md`; the C++ MCP is parked in
+`dev_notes/mcp_cpp.md` (Andrea, 19 Nov).
 
 **Next steps**
-- [ ] **P1** [review] Review `attribution` (the report's list of commits), then push it and open a PR into `dev`.
-- [ ] **P1** [collab] Record the owner, permission and licence of the shag data (`inst/extdata/shags_example.csv`, `data-raw/raw_csv/`) and of the wandering albatross data (animations article); remove the two unused files in `inst/extdata/csv_files/`.
-- [ ] **P2** [decide] Fix the s2 error of `hr_tt_mcp()` on some lon/lat data (repeated hull vertex)? Recommended: yes, by dropping repeated vertices.
-- [ ] **P3** [decide] MCP in C++ (about 10x faster on many tracks, but different vertices in nearly collinear sets)? Recommended: no, unless MCP on many tracks becomes a bottleneck.
-- [ ] **P3** [claude] Add the missing method citations and the Esri credit (report, "Findings not fixed").
+- [ ] **P1** [review] Review and merge PR #102 (the report's list of commits); check that CI passes.
+- [ ] **P1** [andrea] Send Lizzie `dev_notes/note_for_Lizzie.md` (owners, permissions and licences of the shag and albatross data; the unused files in `inst/extdata/csv_files/`); then a session records the answers, or replaces or removes the data.
+- [ ] **P3** [claude] Add the missing method citations, the Esri credit and the wild boar note (report, "Findings not fixed").
 
 ## Merged on 16-18 Nov: #92 and #82 (PRs #95–#100), developer notes (#99)
 

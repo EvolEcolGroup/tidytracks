@@ -3,6 +3,24 @@
 Log of major activity, newest first. Never rewrite old entries: add a
 correction as a new entry.
 
+## 2026-11-19 (manica01): PR #102, an MCP fix, and the data note
+
+- **Done:**
+  - fixed the s2 error of `hr_tt_mcp()` with duplicated lon/lat locations:
+    `grDevices::chull()` can return a location and its duplicate as two
+    vertices, and 15 of 400 rounded tracks failed;
+  - wrote up the parked C++ MCP (`mcp_cpp.md`) and the questions on the
+    data for Lizzie (`note_for_Lizzie.md`);
+  - opened PR #102.
+- **Where:** branch `attribution`, `ae5ffa6` (fix), `7ae85bb` (notes); PR
+  #102 into `dev`.
+- **Result:** of 21,147 polygons, the 62 that changed are the hulls with a
+  repeated vertex; +0.8% instructions on 10,000 tracks.
+- **Decisions** (Andrea): open the PR; do the fix; park the C++ MCP; no `cph`
+  roles; the data questions go to Lizzie.
+- **Notes changed:** `mcp_cpp.md` and `note_for_Lizzie.md` (new), the report,
+  `README.md`, `summary.md`, `handover.md`.
+
 ## 2026-11-18 (manica01): code attribution and licence audit
 
 - **Done:** audited the package and the repository for borrowed code and
