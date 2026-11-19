@@ -1,0 +1,291 @@
+---
+title: "hr_tt_kde() on unprojected (longitude/latitude) data"
+output: html_document
+---
+
+Branch `kde_units` (PR #103): `h` and `res` of `hr_tt_kde()` must now be
+`units` objects. What happens on unprojected data?
+
+Questions:
+
+1. What happens if you run a KDE on unprojected long/lat data? Are the units
+   in degrees?
+2. Should it refuse to run on unprojected data, or at least warn?
+3. If you give distance units (e.g. km) on long/lat data, does it give an
+   error saying long/lat is a bad idea for kernels and to use an equal-area
+   projection?
+
+```{r setup, message = FALSE}
+devtools::load_all(here::here(), quiet = TRUE)
+library(units)
+library(ggplot2)
+```
+
+`example_tt` is unprojected (EPSG:4326), and is what the examples, tests and
+vignettes use.
+
+```{r}
+sf::st_crs(example_tt)$input
+sf::st_is_longlat(example_tt)
+sf::st_crs(example_tt)$ud_unit
+```
+
+# 1. Default KDE on long/lat data
+
+Runs with no warning; `h` (the reference bandwidth) and `res` are computed
+in degrees and returned with units of degrees.
+
+```{r}
+withCallingHandlers(
+  k_default <- hr_tt_kde(example_tt),
+  warning = function(w) message("WARNING: ", conditionMessage(w))
+)
+k_default[, c("track_id", "h", "res")]
+```
+
+Angles are accepted too, and converted to degrees (6 arcmin = 0.1°):
+
+```{r}
+k_angle <- hr_tt_kde(
+  example_tt,
+  h = as_units(0.5, "degree"),
+  res = as_units(6, "arcmin")
+)
+k_angle[, c("track_id", "h", "res")]
+```
+
+With `levels`, the isopleths are drawn in degrees, but their areas are
+computed on the ellipsoid by `sf::st_area()`, so they are returned in m^2:
+
+```{r}
+iso <- hr_tt_kde(example_tt, levels = 0.95)
+iso[, c("track_id", "level", "area")]
+```
+
+So: yes, the units are degrees, and nothing tells the user.
+
+# 2. Distance units on long/lat data
+
+Already an error (from `to_crs_units()`), which names the argument and
+suggests projecting `x`:
+
+```{r, error = TRUE}
+hr_tt_kde(example_tt, h = as_units(50, "km"))
+```
+
+```{r, error = TRUE}
+hr_tt_kde(example_tt, res = as_units(10, "km"))
+```
+
+But the message presents an angle as the first fix ("h must be an angle"),
+and does not say why long/lat is a problem or recommend an equal-area
+projection.
+
+For completeness, the other mismatches and missing CRS:
+
+```{r, error = TRUE}
+# an angle on projected data
+hr_tt_kde(sf::st_transform(example_tt, "+proj=eqearth"), h = as_units(0.5, "degree"))
+# no CRS
+hr_tt_kde(sf::st_set_crs(example_tt, NA), h = as_units(1, "km"))
+# a plain number
+hr_tt_kde(example_tt, h = 0.5)
+```
+
+# 3. How much does a KDE in degrees distort the home range?
+
+A degree of longitude shrinks with latitude (≈ 111 km × cos(lat)), while a
+degree of latitude stays ≈ 111 km. A kernel that is circular in degrees is
+therefore an ellipse on the ground, narrower east-west than north-south
+(half as wide at 60°, a quarter at 75°).
+
+Simulate one track that is isotropic on the ground (normal, sd = 5 km,
+n = 300) at several latitudes, and estimate the 95% isopleth (default `h`)
+both in long/lat and in a local Lambert azimuthal equal-area (LAEA)
+projection. The isopleths are compared on the ground (in LAEA). The LAEA
+estimate is the reference: each latitude has its own random draw.
+
+```{r}
+set.seed(4817)
+
+sim_track <- function(lat, n = 300, sd_m = 5000) {
+  laea <- sprintf("+proj=laea +lat_0=%s +lon_0=0 +units=m", lat)
+  pts <- sf::st_as_sf(
+    data.frame(
+      x = rnorm(n, 0, sd_m),
+      y = rnorm(n, 0, sd_m),
+      time = as.POSIXct("2026-01-01", tz = "UTC") + seq_len(n) * 3600,
+      track = factor(paste0("lat", lat))
+    ),
+    coords = c("x", "y"),
+    crs = laea
+  )
+  move2::mt_as_move2(pts, time_column = "time", track_id_column = "track")
+}
+
+compare_kde <- function(lat) {
+  tr_laea <- sim_track(lat)
+  tr_ll <- sf::st_transform(tr_laea, 4326)
+  iso_ll <- hr_tt_kde(tr_ll, levels = 0.95)
+  iso_eq <- hr_tt_kde(tr_laea, levels = 0.95)
+  # east-west and north-south extent of the isopleth on the ground
+  ext <- function(iso) {
+    b <- sf::st_bbox(sf::st_transform(iso, sf::st_crs(tr_laea)))
+    c(
+      ew_km = (b[["xmax"]] - b[["xmin"]]) / 1000,
+      ns_km = (b[["ymax"]] - b[["ymin"]]) / 1000
+    )
+  }
+  tibble::tibble(
+    lat = lat,
+    crs = c("lon/lat", "LAEA"),
+    h = c(format(iso_ll$h), format(iso_eq$h)),
+    area_km2 = as.numeric(c(iso_ll$area, iso_eq$area)) / 1e6,
+    tibble::as_tibble(rbind(ext(iso_ll), ext(iso_eq)))
+  )
+}
+
+comparison <- dplyr::bind_rows(lapply(c(0, 45, 60, 75), compare_kde))
+comparison
+```
+
+Ratio of the long/lat estimate to the LAEA one, and the north-south /
+east-west elongation of each isopleth:
+
+```{r}
+comparison |>
+  dplyr::mutate(ns_over_ew = ns_km / ew_km) |>
+  dplyr::group_by(lat) |>
+  dplyr::summarise(
+    area_ratio = area_km2[crs == "lon/lat"] / area_km2[crs == "LAEA"],
+    ns_over_ew_lonlat = ns_over_ew[crs == "lon/lat"],
+    ns_over_ew_laea = ns_over_ew[crs == "LAEA"]
+  )
+```
+
+Near the equator the two agree. Away from it, the long/lat isopleth is
+stretched north-south and its area inflated (here about +7% at 60° and
++38% at 75°, from a single simulated track per latitude, so only
+indicative). The distortion grows with latitude, and with the extent of
+the data. It is silent: the result looks plausible and the area is in m^2.
+
+## Plots of the distortion
+
+For the plots, the same simulated points (in metres) are placed at every
+latitude, so the differences between latitudes come from the kernel only.
+The isopleths of both KDEs are drawn on the ground, in the local LAEA
+projection (in km, centred on the points).
+
+```{r}
+set.seed(2675)
+xy_m <- data.frame(x = rnorm(300, 0, 5000), y = rnorm(300, 0, 5000))
+
+kde_on_ground <- function(lat, xy = xy_m) {
+  laea <- sprintf("+proj=laea +lat_0=%s +lon_0=0 +units=m", lat)
+  pts <- sf::st_as_sf(
+    cbind(
+      xy,
+      time = as.POSIXct("2026-01-01", tz = "UTC") + seq_len(nrow(xy)) * 3600,
+      track = "a"
+    ),
+    coords = c("x", "y"),
+    crs = laea
+  )
+  tr_laea <- move2::mt_as_move2(
+    pts,
+    time_column = "time",
+    track_id_column = "track"
+  )
+  tr_ll <- sf::st_transform(tr_laea, 4326)
+  iso_ll <- sf::st_transform(hr_tt_kde(tr_ll, levels = 0.95), laea)
+  iso_eq <- hr_tt_kde(tr_laea, levels = 0.95)
+  # h and res are left out, as their units (° and m) cannot be bound together
+  iso <- rbind(
+    sf::st_sf(
+      kernel = "in lon/lat",
+      area = iso_ll$area,
+      geometry = sf::st_geometry(iso_ll)
+    ),
+    sf::st_sf(
+      kernel = "in LAEA",
+      area = iso_eq$area,
+      geometry = sf::st_geometry(iso_eq)
+    )
+  )
+  # drop the CRS (a different LAEA per latitude) to bind the latitudes, and
+  # convert to km
+  iso <- sf::st_set_crs(iso, NA)
+  sf::st_geometry(iso) <- sf::st_geometry(iso) / 1000
+  iso$lat <- lat
+  iso
+}
+```
+
+The 95% isopleths: from 60° the lon/lat one is visibly stretched
+north-south.
+
+```{r, fig.width = 8, fig.height = 7}
+iso_ground <- dplyr::bind_rows(lapply(c(0, 45, 60, 75), kde_on_ground))
+
+ggplot(iso_ground) +
+  geom_point(aes(x / 1000, y / 1000), data = xy_m, size = 0.4, alpha = 0.4) +
+  geom_sf(aes(colour = kernel), fill = NA, linewidth = 0.7) +
+  facet_wrap(~ paste0(lat, "°N")) +
+  labs(
+    x = "east-west (km)",
+    y = "north-south (km)",
+    colour = "95% KDE computed"
+  ) +
+  theme(legend.position = "bottom")
+```
+
+The distortion across latitudes, as the ratio of the lon/lat isopleth to the
+LAEA one: its area, and its elongation (north-south over east-west extent).
+1 means no distortion.
+
+```{r, fig.width = 8, fig.height = 4}
+distortion <- lapply(seq(0, 80, by = 5), function(lat) {
+  iso <- kde_on_ground(lat)
+  b <- lapply(sf::st_geometry(iso), sf::st_bbox)
+  elongation <- vapply(
+    b,
+    \(x) (x[["ymax"]] - x[["ymin"]]) / (x[["xmax"]] - x[["xmin"]]),
+    numeric(1)
+  )
+  is_ll <- iso$kernel == "in lon/lat"
+  tibble::tibble(
+    lat = lat,
+    area = as.numeric(iso$area[is_ll] / iso$area[!is_ll]),
+    elongation = elongation[is_ll] / elongation[!is_ll]
+  )
+}) |>
+  dplyr::bind_rows() |>
+  tidyr::pivot_longer(-lat, names_to = "measure", values_to = "ratio")
+
+ggplot(distortion, aes(lat, ratio)) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~measure) +
+  labs(x = "latitude (°N)", y = "lon/lat KDE / LAEA KDE")
+```
+
+The area is hardly affected up to about 40°, but the shape is already
+stretched there (about 1.1× at 40°). Both then grow quickly: 1.07× the
+area and 1.25× the elongation at 60°, and roughly 1.7× and 2.1× at 80°
+(for this draw).
+
+# Conclusions
+
+- **Q1:** KDE on long/lat data runs silently, with `h` and `res` in
+  degrees (returned as `[°]`), and areas in m^2.
+- **Q2:** there is no warning or error for unprojected data. A warning is
+  justified: the distortion is silent and grows with latitude. An error
+  would be stricter, but `example_tt` is in long/lat, so every example,
+  test and vignette that calls `hr_tt_kde(example_tt)` would have to
+  project first (13 test files call `hr_tt_kde()`, plus
+  `vignettes/tidytracks.Rmd`). The same question applies to the other
+  functions that work on the plane in CRS units (e.g. `hr_tt_locoh()`).
+- **Q3:** distance units on long/lat data already give an error, but its
+  message steers towards angles rather than towards an equal-area
+  projection.
