@@ -118,6 +118,9 @@ duplicated track ids in the metadata.
   the CRS (angles for longitude/latitude); plain numbers give an error
 * the `h` and `res` columns returned by `hr_tt_kde()`, `hr_tt_akde()`,
   `hr_tt_akde_pop()`, `hr_tt_dbbmm()` and `hr_tt_dbgb()` have units
+* `hr_tt_locoh()` takes `buffer`, and `n` for types `"r"` and `"a"`, as
+  distances with units; `buffer` defaults to `NULL` (no buffer), and the `n`
+  column of types `"r"` and `"a"` has units
 * Speed improvements (same results) for `hr_tt_mcp()`, `hr_tt_kde()` and
   `hr_tt_ud_iso()`.
 
