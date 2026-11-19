@@ -49,10 +49,12 @@ template, \code{error = TRUE} adds the error model to the template, unless the
 template already has one (e.g. \code{ctmm::ctmm(error = TRUE)}); with
 \code{error = FALSE}, the error model of the template (if any) is kept.}
 
-\item{uere}{A User Equivalent Range Error (in metres) used to calibrate the
-location error (see \code{\link[ctmm:uere]{ctmm::uere()}}), or an object created with
-\code{\link[ctmm:uere.fit]{ctmm::uere.fit()}} from calibration data. If set, the error model is fitted
-(i.e. \code{error} is set to \code{TRUE}), also for model templates.}
+\item{uere}{A User Equivalent Range Error used to calibrate the location
+error (see \code{\link[ctmm:uere]{ctmm::uere()}}): either a distance with units (e.g.
+\code{as_units(10, "m")}), which is converted to metres for \code{ctmm}, or an
+object created with \code{\link[ctmm:uere.fit]{ctmm::uere.fit()}} from calibration data. If set, the
+error model is fitted (i.e. \code{error} is set to \code{TRUE}), also for model
+templates.}
 
 \item{ic}{The information criterion used to select the best model when
 \code{model = "auto"} (see \code{\link[ctmm:ctmm.select]{ctmm::ctmm.select()}}). Default is \code{"AICc"}.}
@@ -149,6 +151,9 @@ buffalo_sub <- buffalo_tt \%>\%
 buffalo_fit <- ctmm_tt_fit(buffalo_sub, model = "ou")
 buffalo_fit
 }
+# to fit a model of the location error calibrated with a known UERE, give
+# it as a distance with units (this takes longer to fit):
+# ctmm_tt_fit(buffalo_sub, model = "ou", uere = as_units(10, "m"))
 \dontshow{\}) # examplesIf}
 }
 \seealso{

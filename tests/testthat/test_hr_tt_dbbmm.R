@@ -138,10 +138,11 @@ test_that("hr_tt_dbbmm chooses a grid covering the bridges", {
   ud <- hr_tt_dbbmm(x, location_error = as_units(20, "m"))
   # the grid contains all the locations, with a margin
   locations <- sf::st_bbox(x)
-  expect_lt(ud$xmin[1], locations[["xmin"]] - 5 * ud$res[1])
-  expect_lt(ud$ymin[1], locations[["ymin"]] - 5 * ud$res[1])
-  expect_gt(ud$xmax[1], locations[["xmax"]] + 5 * ud$res[1])
-  expect_gt(ud$ymax[1], locations[["ymax"]] + 5 * ud$res[1])
+  res <- as.numeric(ud$res[1])
+  expect_lt(ud$xmin[1], locations[["xmin"]] - 5 * res)
+  expect_lt(ud$ymin[1], locations[["ymin"]] - 5 * res)
+  expect_gt(ud$xmax[1], locations[["xmax"]] + 5 * res)
+  expect_gt(ud$ymax[1], locations[["ymax"]] + 5 * res)
   # with at most about 500 cells along its longest side
   expect_lte(max(dim(ud$ud[[1]])[1:2]), 512)
   # the default grid differs from the one of hr_tt_kde()
@@ -172,7 +173,7 @@ test_that("hr_tt_dbbmm uses a given grid", {
     ud
   )
   # the UDs can be compared with kernel UDs on the same grid
-  ud_kde <- hr_tt_kde(x, bbox = test_bbox, res = 250)
+  ud_kde <- hr_tt_kde(x, bbox = test_bbox, res = as_units(250, "m"))
   expect_true(terra::compareGeom(ud$ud[[1]], ud_kde$ud[[1]]))
   overlap <- hr_tt_ud_overlap(ud$ud[[1]], ud_kde$ud[[1]])
   expect_true(overlap > 0 && overlap <= 1)
@@ -185,7 +186,7 @@ test_that("hr_tt_dbbmm limits the number of cells of a given bbox", {
   # the given bbox (rather than of the bridges) to have 500 cells
   large_bbox <- c(xmin = -50000, ymin = -50000, xmax = 50000, ymax = 50000)
   ud <- hr_tt_dbbmm(x, location_error = as_units(20, "m"), bbox = large_bbox)
-  expect_gte(ud$res[1], 100000 / 500)
+  expect_gte(as.numeric(ud$res[1]), 100000 / 500)
   expect_lte(max(dim(ud$ud[[1]])[1:2]), 500)
 })
 

@@ -5,7 +5,8 @@ package at `move2utils` (91cc6f3), that were not fixed, as they need a
 decision. They were moved here from the review report (`codereview2.md`,
 which was not kept in the repository), for later checks and thinking. Two
 related problems were filed as GitHub issues (#81, #82); #95 (#92 item 3)
-changed some of the code involved (marked below).
+changed some of the code involved (marked below), and PR #103 (distances
+with units) fixed three items (marked below).
 
 ## I/O
 
@@ -35,8 +36,10 @@ changed some of the code involved (marked below).
   locations in one track. This may deserve a note in the docs, or a
   different default.
 - tt_split_trips():
-  - It gives an unclear error without a CRS.
-  - A buffer without units is taken as CRS units.
+  - It gives an unclear error without a CRS. (Fixed by PR #103: the buffers
+    are checked first, and `x` without a CRS gets a clear error.)
+  - A buffer without units is taken as CRS units. (Fixed by PR #103: the
+    buffers must have units.)
   - It overwrites existing `trip_id`/`trip_type` columns.
 
 ## move2utils
@@ -45,7 +48,8 @@ changed some of the code involved (marked below).
   thresholds on multi-track input.
 - `flag_action = "interpolate"` also interpolates events that had no location
   before cleaning, while the docs say only flagged events are replaced
-  (GitHub #81).
+  (GitHub #81). (PR #104 flags those events, so the results match the
+  flags.)
 - Numeric (non date-time) time columns are read as seconds.
 
 ## KDE
@@ -53,7 +57,8 @@ changed some of the code involved (marked below).
 - hr_tt_kde():
   - The default bbox fails when all locations share an x or a y.
   - In lon/lat it can go beyond ±90°/±180°.
-  - `h` and `res` cannot be units objects.
+  - `h` and `res` cannot be units objects. (Fixed by PR #103: they must be
+    units objects, see `units.md`.)
   - `levels` with NA gives an unclear error.
   - There is no warning when the UD is cut by the grid.
 - hr_tt_ud_sum() on a list advises hr_tt_ud_unwrap(), which only takes

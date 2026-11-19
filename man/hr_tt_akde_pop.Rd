@@ -72,7 +72,8 @@ level), and columns:
 \item \code{dof_area}: the effective number of degrees of freedom of the population
 home range area
 \item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}, \code{res}: the grid of the population UD
-(the grid of the individual UDs, possibly extended, see Details)
+(the grid of the individual UDs, possibly extended, see Details), with
+\code{res} as a \code{units} object (in metres)
 If \code{levels} is NULL:
 \item \code{ud}: the population UDs, as a list-column of \code{terra::SpatRaster} objects
 \item \code{ud_ctmm}: the population UDs, as a list-column of \code{ctmm} \code{UD} objects

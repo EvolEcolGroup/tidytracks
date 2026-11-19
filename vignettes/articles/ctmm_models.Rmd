@@ -170,13 +170,13 @@ buffalo_fit <- ctmm_tt_fit(buffalo_tt)
 #> Minimum sampling interval of 3 minutes in Pepper
 buffalo_fit
 #> # A tibble: 4 × 9
-#>   buffalo_id model        model_name         aicc dof_area n_events
-#>   <fct>      <named list> <chr>             <dbl>    <dbl>    <int>
-#> 1 Cilla      <ctmm>       OUF anisotropic 100360.    18.1      3527
-#> 2 Gabs       <ctmm>       OUF anisotropic  55552.     4.30     1996
-#> 3 Mvubu      <ctmm>       OUF anisotropic  73064.    13.8      2572
-#> 4 Pepper     <ctmm>       OUF anisotropic  53671.    15.7      1725
-#> # ℹ 3 more variables: t_start <dttm>, t_end <dttm>, fit_message <chr>
+#>   buffalo_id model       model_name   aicc dof_area n_events t_start            
+#>   <fct>      <named lis> <chr>       <dbl>    <dbl>    <int> <dttm>             
+#> 1 Cilla      <ctmm>      OUF aniso… 1.00e5    18.1      3527 2005-07-14 05:35:00
+#> 2 Gabs       <ctmm>      OUF aniso… 5.56e4     4.30     1996 2005-04-05 05:56:00
+#> 3 Mvubu      <ctmm>      OUF aniso… 7.31e4    13.8      2572 2005-07-15 05:02:00
+#> 4 Pepper     <ctmm>      OUF aniso… 5.37e4    15.7      1725 2006-04-25 05:09:00
+#> # ℹ 2 more variables: t_end <dttm>, fit_message <chr>
 ```
 
 The result is a table with one row per track, in the same order as the
@@ -333,12 +333,12 @@ buffalo_akde <- hr_tt_akde(buffalo_tt, buffalo_fit)
 #> Default grid size of 3 minutes chosen for bandwidth(...,fast=TRUE).
 buffalo_akde
 #> # A tibble: 4 × 11
-#>   buffalo_id method model_name     dof_area    xmin    ymin   xmax    ymax   res
-#>   <chr>      <chr>  <chr>             <dbl>   <dbl>   <dbl>  <dbl>   <dbl> <dbl>
-#> 1 Cilla      akde   OUF anisotrop…    18.1  -27948. -2.82e6 29196. -2.66e6  279.
-#> 2 Gabs       akde   OUF anisotrop…     4.30 -27948. -2.82e6 29196. -2.66e6  279.
-#> 3 Mvubu      akde   OUF anisotrop…    13.8  -27948. -2.82e6 29196. -2.66e6  279.
-#> 4 Pepper     akde   OUF anisotrop…    15.7  -27948. -2.82e6 29196. -2.66e6  279.
+#>   buffalo_id method model_name     dof_area    xmin    ymin   xmax    ymax  res
+#>   <fct>      <chr>  <chr>             <dbl>   <dbl>   <dbl>  <dbl>   <dbl>  [m]
+#> 1 Cilla      akde   OUF anisotrop…    18.1  -27948. -2.82e6 29196. -2.66e6 279.
+#> 2 Gabs       akde   OUF anisotrop…     4.30 -27948. -2.82e6 29196. -2.66e6 279.
+#> 3 Mvubu      akde   OUF anisotrop…    13.8  -27948. -2.82e6 29196. -2.66e6 279.
+#> 4 Pepper     akde   OUF anisotrop…    15.7  -27948. -2.82e6 29196. -2.66e6 279.
 #> # ℹ 2 more variables: ud <named list>, ud_ctmm <named list>
 ```
 
@@ -386,7 +386,7 @@ buffalo_iso %>%
   )
 #> # A tibble: 8 × 5
 #>   buffalo_id level   area area_low area_high
-#>   <chr>      <dbl> [km^2]   [km^2]    [km^2]
+#>   <fct>      <dbl> [km^2]   [km^2]    [km^2]
 #> 1 Cilla       0.5    89.3     52.9      135.
 #> 2 Cilla       0.95  375.     223.       568.
 #> 3 Gabs        0.5   129.      37.6      279.
@@ -466,7 +466,7 @@ buffalo_hr_95 %>%
   tidyr::pivot_wider(names_from = method, values_from = area)
 #> # A tibble: 4 × 3
 #>   buffalo_id   akde    kde
-#>   <chr>      [km^2] [km^2]
+#>   <fct>      [km^2] [km^2]
 #> 1 Cilla        375.   294.
 #> 2 Gabs         502.   212.
 #> 3 Mvubu        365.   243.

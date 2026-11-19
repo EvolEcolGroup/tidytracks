@@ -53,7 +53,9 @@
 #'   `ymax`) defining a grid shared by all groups, or a list of one such vector
 #'   per group. If `NULL` (the default), a shared grid that contains all the
 #'   UDs is created (see Details).
-#' @param res The resolution of the grid (in metres). Supply one value for a
+#' @param res The resolution of the grid (the side of its square cells), as a
+#'   `units` object (e.g. `as_units(50, "m")`), which is converted to metres
+#'   (the units of the coordinates of `x`). Supply one value for a
 #'   shared resolution or one value per group. If `NULL` (the default), the
 #'   resolution follows the default of `ctmm` (see Details); with a list of
 #'   `bbox` (one per group), each group has its own default resolution.
@@ -91,7 +93,7 @@
 #' - `dof_area`: the effective number of degrees of freedom of the home range
 #'   area (small values imply very uncertain estimates)
 #' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box of the grid
-#' - `res`: the resolution of the grid
+#' - `res`: the resolution of the grid, as a `units` object (in metres)
 #' If `levels` is NULL:
 #' - `ud`: the UDs, as a list-column of `terra::SpatRaster` objects
 #' - `ud_ctmm`: the UDs, as a list-column of `ctmm` `UD` objects
@@ -124,8 +126,14 @@
 #' buffalo_akde
 #' library(ggplot2)
 #' autoplot(buffalo_akde)
-#' # the 50% and 95% isopleths, with confidence intervals on their area
-#' hr_tt_akde(buffalo_sub, buffalo_fit, levels = c(0.5, 0.95))
+#' # the 50% and 95% isopleths, with confidence intervals on their area, on a
+#' # grid of cells of 500 m (res is a distance with units)
+#' hr_tt_akde(
+#'   buffalo_sub,
+#'   buffalo_fit,
+#'   res = as_units(500, "m"),
+#'   levels = c(0.5, 0.95)
+#' )
 #' }
 hr_tt_akde <- function(
   x,
@@ -164,6 +172,12 @@ hr_tt_akde <- function(
     stop("levels must be between 0 and 1")
   }
   check_probability_arg(tolerance, "tolerance")
+  # the resolution is a distance, as a plain number in the units of the
+  # coordinates (metres)
+  if (!is.null(res)) {
+    # nolint next: object_usage_linter.
+    res <- to_crs_units(res, "res", sf::st_crs(x))
+  }
   # ci_level is only used for the isopleths (by hr_tt_ud_iso(), which also
   # checks it), but we check it now rather than after estimating all the UDs
   if (!is.null(levels)) {
@@ -252,7 +266,8 @@ hr_tt_akde <- function(
       ymin = grid_bbox[["ymin"]],
       xmax = grid_bbox[["xmax"]],
       ymax = grid_bbox[["ymax"]],
-      res = grid_res
+      # with the units of the coordinates
+      res = with_crs_units(grid_res, crs) # nolint: object_usage_linter.
     )
     # the ctmm UD object is kept next to the raster, for the functions of
     # ctmm and for the confidence intervals of the areas of the isopleths
@@ -396,7 +411,8 @@ check_akde_tracks_unchanged <- function(models, tel_list, group_tracks) {
 #'
 #' @param tel_list A list of `telemetry` objects, one per group.
 #' @param fits A list of fitted `ctmm` models, one per group.
-#' @param bbox,res The `bbox` and `res` arguments of [hr_tt_akde()].
+#' @param bbox,res The `bbox` and `res` arguments of [hr_tt_akde()] (`res`
+#'   as a plain number, in the units of the coordinates).
 #' @param tolerance The target error of the computations.
 #' @param group_labels The labels of the groups (used in warnings).
 #' @returns A list with elements `bbox` (a list with one named vector per
@@ -443,10 +459,8 @@ akde_group_grids <- function(
     # when estimating several UDs on the same grid)
     per_group_bbox <- !is.null(bbox) && !is_kde_bbox(bbox)
     res <- if (per_group_bbox) group_res else rep(min(group_res), n_groups)
-  } else if (!is.numeric(res) || !(length(res) %in% c(1, n_groups))) {
-    stop(
-      "res must be a single numeric value or a vector with one value per group"
-    )
+  } else if (!(length(res) %in% c(1, n_groups))) {
+    stop("res must be a single value or a vector with one value per group")
   }
   if (length(res) == 1) {
     res <- rep(res, n_groups)

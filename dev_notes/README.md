@@ -12,6 +12,9 @@ package's data stay in `data-raw/`.
 
 ## Design
 
+- [units.md](units.md): arguments that are distances must be `units`
+  objects, and how they are converted to the units of the coordinates
+  (PR #103).
 - [metadata_and_events.md](metadata_and_events.md): the rule that only the
   track id is in both the events and the metadata, and the functions that
   keep it (#92, PRs #95–#98).

@@ -113,6 +113,18 @@
     to geometry.meta.
   * Some invalid inputs that were silently accepted now give an error, e.g.
 duplicated track ids in the metadata.
+* `hr_tt_kde()` takes `h` and `res`, and `hr_tt_akde()` takes `res`, as
+  distances with units (e.g. `as_units(50, "m")`), converted to the units of
+  the CRS (angles for longitude/latitude); plain numbers give an error
+* the `h` and `res` columns returned by `hr_tt_kde()`, `hr_tt_akde()`,
+  `hr_tt_akde_pop()`, `hr_tt_dbbmm()` and `hr_tt_dbgb()` have units
+* `hr_tt_locoh()` takes `buffer`, and `n` for types `"r"` and `"a"`, as
+  distances with units; `buffer` defaults to `NULL` (no buffer), and the `n`
+  column of types `"r"` and `"a"` has units
+* `tt_split_trips()` gives an error for buffers without units (they were
+  taken in the units of the CRS, or in metres for longitude/latitude)
+* `ctmm_tt_fit()` takes `uere` as a distance with units (or a UERE object
+  from `ctmm::uere.fit()`)
 * Speed improvements (same results) for `hr_tt_mcp()`, `hr_tt_kde()` and
   `hr_tt_ud_iso()`.
 

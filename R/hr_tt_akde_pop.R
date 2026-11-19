@@ -100,7 +100,8 @@
 #' - `dof_area`: the effective number of degrees of freedom of the population
 #'   home range area
 #' - `xmin`, `ymin`, `xmax`, `ymax`, `res`: the grid of the population UD
-#'   (the grid of the individual UDs, possibly extended, see Details)
+#'   (the grid of the individual UDs, possibly extended, see Details), with
+#'   `res` as a `units` object (in metres)
 #' If `levels` is NULL:
 #' - `ud`: the population UDs, as a list-column of `terra::SpatRaster` objects
 #' - `ud_ctmm`: the population UDs, as a list-column of `ctmm` `UD` objects
@@ -216,6 +217,8 @@ hr_tt_akde_pop <- function(
   # the grid of each group (its bounding box and resolution), on which the
   # population UD is estimated: all the UDs of a group must share it
   grid_tbl <- tibble::as_tibble(x)[, c("xmin", "ymin", "xmax", "ymax", "res")]
+  # the CRS of the UDs (from the rasters, which keep the original CRS)
+  crs <- sf::st_crs(terra::crs(x$ud[[1]]))
   group_grids <- lapply(seq_len(n_groups), function(i) {
     grid <- dplyr::distinct(grid_tbl[rows_list[[i]], ])
     if (nrow(grid) != 1) {
@@ -226,7 +229,8 @@ hr_tt_akde_pop <- function(
     }
     list(
       bbox = unlist(grid[1, c("xmin", "ymin", "xmax", "ymax")]),
-      res = grid$res
+      # the resolution as a plain number, in the units of the coordinates
+      res = to_crs_units(grid$res, "res", crs) # nolint: object_usage_linter.
     )
   })
 
@@ -312,8 +316,6 @@ hr_tt_akde_pop <- function(
   }
 
   ## assemble the table of population UDs
-  # the CRS of the UDs (from the rasters, which keep the original CRS)
-  crs <- sf::st_crs(terra::crs(x$ud[[1]]))
   method_name <- if (method == "pkde") "pkde" else "akde_mean"
   pop_results <- lapply(seq_len(n_groups), function(i) {
     pop_ud <- pop_uds[[i]]
@@ -336,7 +338,9 @@ hr_tt_akde_pop <- function(
       ymin = bbox[["ymin"]],
       xmax = bbox[["xmax"]],
       ymax = bbox[["ymax"]],
-      res = group_grids[[i]]$res
+      # with the units of the coordinates
+      # nolint next: object_usage_linter.
+      res = with_crs_units(group_grids[[i]]$res, crs)
     )
     # the grouping variables come first
     if (!is.null(keys)) {
@@ -382,6 +386,13 @@ stopifnot_akde_ud_table <- function(x) {
   }
   if (!all(vapply(x$ud_ctmm, inherits, logical(1), "UD"))) {
     stop("column ud_ctmm of x must contain ctmm UD objects")
+  }
+  # the resolution is a distance, with units (as returned by hr_tt_akde())
+  if (!inherits(x$res, "units")) {
+    stop(
+      "column res of x must be a distance with units, as returned by ",
+      "hr_tt_akde()"
+    )
   }
   invisible(NULL)
 }

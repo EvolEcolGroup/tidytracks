@@ -4,7 +4,7 @@ test_that("hr_tt_kde works with multiple tracks", {
   # group by name
   boar_tt <- boar_tt %>%
     dplyr::group_by(name)
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   # we expect 4 rows, one per group
   expect_equal(nrow(boar_kde), 4)
   # this should be  a hr_tt_kde_tbl object
@@ -37,7 +37,7 @@ test_that("hr_tt_kde works with multiple tracks", {
 
   # use a tt that is not grouped
   boar_tt2 <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde2 <- hr_tt_kde(boar_tt2, res = 50)
+  boar_kde2 <- hr_tt_kde(boar_tt2, res = as_units(50, "m"))
   # this should be the same as the previous one
   # test updated to check all 4 UDs are the same, rather than just the first
   expect_equal(
@@ -51,7 +51,7 @@ test_that("hr_tt_kde bbox columns are always numeric (not list-cols)", {
   boar_tt <- boar_tt %>% dplyr::group_by(name)
 
   # Call with default (NULL) bbox — internally uses sf::st_bbox()
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   expect_true(is.numeric(boar_kde$xmin))
   expect_true(is.numeric(boar_kde$xmax))
   expect_true(is.numeric(boar_kde$ymin))
@@ -65,7 +65,7 @@ test_that("hr_tt_kde bbox columns are always numeric (not list-cols)", {
     xmax = unname(ext["xmax"]) + 1000,
     ymax = unname(ext["ymax"]) + 1000
   )
-  boar_kde_list <- hr_tt_kde(boar_tt, res = 50, bbox = bbox_list)
+  boar_kde_list <- hr_tt_kde(boar_tt, res = as_units(50, "m"), bbox = bbox_list)
   expect_true(is.numeric(boar_kde_list$xmin))
   expect_true(is.numeric(boar_kde_list$xmax))
   expect_true(is.numeric(boar_kde_list$ymin))
@@ -86,11 +86,15 @@ test_that("hr_tt_kde accepts a separate grid for each group", {
     )
   })
 
-  boar_kde <- hr_tt_kde(boar_tt, bbox = bbox, res = c(25, 50, 100, 125))
+  boar_kde <- hr_tt_kde(
+    boar_tt,
+    bbox = bbox,
+    res = as_units(c(25, 50, 100, 125), "m")
+  )
 
   expect_equal(boar_kde$xmin, c(699200, 699400, 699600, 699800))
   expect_equal(boar_kde$xmax, c(699700, 699900, 700100, 700300))
-  expect_equal(boar_kde$res, c(25, 50, 100, 125))
+  expect_equal(boar_kde$res, as_units(c(25, 50, 100, 125), "m"))
   expect_equal(
     unname(vapply(boar_kde$ud, terra::ncell, numeric(1))),
     c(800, 200, 50, 32)
@@ -103,13 +107,80 @@ test_that("hr_tt_kde validates a collection of group-specific grids", {
   bbox <- list(c(xmin = 0, ymin = 0, xmax = 100, ymax = 100))
 
   expect_error(
-    hr_tt_kde(boar_tt, bbox = bbox, res = 10),
+    hr_tt_kde(boar_tt, bbox = bbox, res = as_units(10, "m")),
     "one named vector per group"
   )
   expect_error(
-    hr_tt_kde(boar_tt, bbox = rep(bbox, 4), res = c(10, 10)),
+    hr_tt_kde(boar_tt, bbox = rep(bbox, 4), res = as_units(c(10, 10), "m")),
     "one value per group"
   )
+})
+
+test_that("hr_tt_kde takes h and res as distances with units", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  # the same distances in different units give the same UDs, with h and res
+  # returned in the units of the coordinates (metres)
+  kde_m <- hr_tt_kde(boar_tt, h = as_units(200, "m"), res = as_units(50, "m"))
+  kde_km <- hr_tt_kde(
+    boar_tt,
+    h = as_units(0.2, "km"),
+    res = as_units(0.05, "km")
+  )
+  expect_equal(kde_km$h, as_units(rep(200, 4), "m"))
+  expect_equal(kde_km$res, as_units(rep(50, 4), "m"))
+  expect_equal(
+    lapply(kde_km$ud, terra::values),
+    lapply(kde_m$ud, terra::values)
+  )
+  # the reference bandwidth and the default resolution also have units
+  kde_default <- hr_tt_kde(boar_tt)
+  expect_s3_class(kde_default$h, "units")
+  expect_s3_class(kde_default$res, "units")
+  expect_equal(units::deparse_unit(kde_default$res), "m")
+
+  # plain numbers are no longer taken in the units of the coordinates
+  expect_error(
+    hr_tt_kde(boar_tt, res = 50),
+    "res must be a distance with units"
+  )
+  expect_error(
+    hr_tt_kde(boar_tt, h = 200),
+    "h must be \"h_ref_mean\", \"h_ref_indiv\" or a distance with units"
+  )
+  # and the units must be those of a distance
+  expect_error(
+    hr_tt_kde(boar_tt, res = as_units(50, "s")),
+    "res must be in units that can be converted to those of the coordinates"
+  )
+
+  # in longitude/latitude, the coordinates are in degrees, so h and res must
+  # be angles
+  expect_error(
+    hr_tt_kde(example_tt, res = as_units(5, "km")),
+    "x is in longitude/latitude, so res must be an angle"
+  )
+  kde_lonlat <- hr_tt_kde(example_tt, res = as_units(6, "arcmin"))
+  expect_equal(kde_lonlat$res, as_units(rep(0.1, 3), "degree"))
+  expect_equal(units::deparse_unit(kde_lonlat$h), "\u00b0")
+
+  # without a coordinate reference system, the units are unknown
+  no_crs <- sf::st_set_crs(boar_tt, NA)
+  expect_error(
+    hr_tt_kde(no_crs, res = as_units(50, "m")),
+    "x has no coordinate reference system"
+  )
+})
+
+test_that("the deprecated hr_kde takes h and res in the units of the CRS", {
+  boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
+  expect_warning(
+    old <- hr_kde(boar_tt, h = 200, res = 50),
+    "hr_kde is deprecated"
+  )
+  new <- hr_tt_kde(boar_tt, h = as_units(200, "m"), res = as_units(50, "m"))
+  expect_equal(old$h, new$h)
+  expect_equal(old$res, new$res)
+  expect_equal(lapply(old$ud, terra::values), lapply(new$ud, terra::values))
 })
 
 test_that("hr_tt_kde returns the groups in the order of the group keys", {
@@ -119,17 +190,17 @@ test_that("hr_tt_kde returns the groups in the order of the group keys", {
   animals <- c("Jean", "Chou", "Calou", "Brock")
   boar_tt$animal <- factor(as.character(boar_tt$name), levels = animals)
   boar_grouped <- dplyr::group_by(boar_tt, animal)
-  kde <- hr_tt_kde(boar_grouped, res = 50)
+  kde <- hr_tt_kde(boar_grouped, res = as_units(50, "m"))
   expect_equal(kde$animal, factor(animals, levels = animals))
   expect_equal(names(kde$ud), animals)
   # each with its own UD
-  kde_by_name <- hr_tt_kde(boar_tt, res = 50)
+  kde_by_name <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   expect_equal(
     lapply(kde$ud, terra::values),
     lapply(kde_by_name$ud, terra::values)[animals]
   )
   # and so are the isopleths
-  iso <- hr_tt_kde(boar_grouped, res = 50, levels = 0.5)
+  iso <- hr_tt_kde(boar_grouped, res = as_units(50, "m"), levels = 0.5)
   expect_equal(iso$animal, factor(animals, levels = animals))
 })
 
@@ -143,7 +214,7 @@ test_that("hr_tt_kde rejects grids beyond the reach of a group's kernels", {
   bbox[[2]] <- c(xmin = 0, ymin = 0, xmax = 1000, ymax = 1000)
   for (method in c("binned", "exact")) {
     expect_error(
-      hr_tt_kde(boar_tt, bbox = bbox, res = 50, method = method),
+      hr_tt_kde(boar_tt, bbox = bbox, res = as_units(50, "m"), method = method),
       "the UD of group Calou is 0 on the whole grid"
     )
   }
@@ -176,8 +247,8 @@ test_that("hr_tt_kde matches individual bandwidths to the right group", {
     kde <- hr_tt_kde(tracks, h = "h_ref_indiv"),
     "the bandwidth \\(h\\) of 1 group\\(s\\) is too small"
   )
-  expect_equal(kde$h[kde$id == "a"], expected_h_ref("a"))
-  expect_equal(kde$h[kde$id == "b"], expected_h_ref("b"))
+  expect_equal(kde$h[kde$id == "a"], as_units(expected_h_ref("a"), "m"))
+  expect_equal(kde$h[kde$id == "b"], as_units(expected_h_ref("b"), "m"))
 
   # the internal helper returns bandwidths in group index order
   xy <- sf::st_coordinates(tracks)
@@ -190,11 +261,11 @@ test_that("hr_tt_kde matches individual bandwidths to the right group", {
   # a vector of bandwidths is matched to the tracks in the order of the
   # metadata (b, then a), in which they are returned
   expect_warning(
-    kde_h <- hr_tt_kde(tracks, h = c(10, 20)),
+    kde_h <- hr_tt_kde(tracks, h = as_units(c(10, 20), "m")),
     "the bandwidth \\(h\\) of 2 group\\(s\\) is too small"
   )
-  expect_equal(kde_h$h[kde_h$id == "b"], 10)
-  expect_equal(kde_h$h[kde_h$id == "a"], 20)
+  expect_equal(kde_h$h[kde_h$id == "b"], as_units(10, "m"))
+  expect_equal(kde_h$h[kde_h$id == "a"], as_units(20, "m"))
 })
 
 test_that("hr_tt_kde returns the tracks of ungrouped data in metadata order", {
@@ -203,16 +274,16 @@ test_that("hr_tt_kde returns the tracks of ungrouped data in metadata order", {
   x <- tt_order_time(
     readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
   )
-  kde <- hr_tt_kde(x, h = c(1, 2, 3))
+  kde <- hr_tt_kde(x, h = as_units(c(1, 2, 3), "degree"))
   expect_s3_class(kde$track_id, "factor")
   expect_equal(as.character(kde$track_id), c("b", "a", "c"))
   expect_equal(names(kde$ud), c("b", "a", "c"))
   # per-track values are matched in the same order
-  expect_equal(kde$h, c(1, 2, 3))
+  expect_equal(kde$h, as_units(c(1, 2, 3), "degree"))
   # each track with its own UD
   kde_by_key <- hr_tt_kde(
     dplyr::group_by(x, track_id),
-    h = c(2, 1, 3)
+    h = as_units(c(2, 1, 3), "degree")
   )
   expect_equal(as.character(kde_by_key$track_id), c("a", "b", "c"))
   expect_equal(
@@ -220,7 +291,7 @@ test_that("hr_tt_kde returns the tracks of ungrouped data in metadata order", {
     lapply(kde_by_key$ud, terra::values)[c("b", "a", "c")]
   )
   # and so are the isopleths
-  iso <- hr_tt_kde(x, h = c(1, 2, 3), levels = 0.5)
+  iso <- hr_tt_kde(x, h = as_units(c(1, 2, 3), "degree"), levels = 0.5)
   expect_equal(as.character(iso$track_id), c("b", "a", "c"))
 })
 
@@ -229,8 +300,8 @@ test_that("hr_tt_kde ignores events without a location", {
   boar_tt_empty <- boar_tt
   sf::st_geometry(boar_tt_empty)[5] <- sf::st_point()
 
-  kde_empty <- hr_tt_kde(boar_tt_empty, res = 50)
-  kde_removed <- hr_tt_kde(boar_tt[-5, ], res = 50)
+  kde_empty <- hr_tt_kde(boar_tt_empty, res = as_units(50, "m"))
+  kde_removed <- hr_tt_kde(boar_tt[-5, ], res = as_units(50, "m"))
   expect_equal(kde_empty$h, kde_removed$h)
   expect_equal(
     lapply(kde_empty$ud, terra::values),
@@ -242,7 +313,7 @@ test_that("hr_tt_kde ignores events without a location", {
   first_track <- event_track_id(boar_tt) == event_track_id(boar_tt)[1]
   sf::st_geometry(boar_tt_empty)[first_track] <- sf::st_point()
   expect_error(
-    hr_tt_kde(boar_tt_empty, res = 50),
+    hr_tt_kde(boar_tt_empty, res = as_units(50, "m")),
     "each group must contain at least one event with a location"
   )
 })
@@ -266,14 +337,14 @@ test_that("hr_tt_kde handles groups with a single location", {
   # defined, and used for all groups
   kde <- hr_tt_kde(tracks)
   h_ref_a <- h_ref_indiv(sf::st_coordinates(tracks)[1:20, ], rep(1, 20))
-  expect_equal(kde$h, rep(h_ref_a, 2))
+  expect_equal(kde$h, as_units(rep(h_ref_a, 2), "m"))
   expect_equal(
     unname(unlist(terra::global(kde$ud[[2]], "sum"))),
     1
   )
   # a numeric bandwidth can be used for a single location (this one is
   # smaller than the cells of the default grid)
-  expect_warning(hr_tt_kde(tracks, h = 10), "is too small")
+  expect_warning(hr_tt_kde(tracks, h = as_units(10, "m")), "is too small")
   # but the reference bandwidth of a single location is undefined
   expect_error(
     hr_tt_kde(tracks, h = "h_ref_indiv"),
@@ -283,16 +354,23 @@ test_that("hr_tt_kde handles groups with a single location", {
 
 test_that("hr_tt_kde returns isopleths of class hr_tt_poly_tbl", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_iso <- hr_tt_kde(boar_tt, levels = c(0.5, 0.95), res = 50)
+  boar_iso <- hr_tt_kde(boar_tt, levels = c(0.5, 0.95), res = as_units(50, "m"))
   expect_s3_class(boar_iso, "hr_tt_poly_tbl")
   expect_identical(
     class(boar_iso),
-    class(hr_tt_ud_iso(hr_tt_kde(boar_tt, res = 50), levels = c(0.5, 0.95)))
+    class(hr_tt_ud_iso(
+      hr_tt_kde(boar_tt, res = as_units(50, "m")),
+      levels = c(0.5, 0.95)
+    ))
   )
 
   # including for a single group
   first_track <- event_track_id(boar_tt) == event_track_id(boar_tt)[1]
-  one_iso <- hr_tt_kde(boar_tt[first_track, ], levels = 0.5, res = 50)
+  one_iso <- hr_tt_kde(
+    boar_tt[first_track, ],
+    levels = 0.5,
+    res = as_units(50, "m")
+  )
   expect_identical(class(one_iso), class(boar_iso))
 })
 
@@ -305,7 +383,7 @@ test_that("hr_tt_kde rejects groups without events", {
   )
   boar_grouped <- dplyr::group_by(boar_tt, group, .drop = FALSE)
   expect_error(
-    hr_tt_kde(boar_grouped, res = 50),
+    hr_tt_kde(boar_grouped, res = as_units(50, "m")),
     "groups without events \\(unused\\).*group_by\\(x, group, .drop = TRUE\\)"
   )
   # the suggested regrouping removes them
@@ -313,9 +391,13 @@ test_that("hr_tt_kde rejects groups without events", {
     hr_tt_kde(
       dplyr::group_by(boar_grouped, group, .drop = TRUE),
       levels = 0.5,
-      res = 50
+      res = as_units(50, "m")
     ),
-    hr_tt_kde(dplyr::group_by(boar_tt, group), levels = 0.5, res = 50)
+    hr_tt_kde(
+      dplyr::group_by(boar_tt, group),
+      levels = 0.5,
+      res = as_units(50, "m")
+    )
   )
 
   # groups emptied by filter(.preserve = TRUE)
@@ -323,7 +405,7 @@ test_that("hr_tt_kde rejects groups without events", {
     dplyr::group_by(name) |>
     dplyr::filter(name != "Brock", .preserve = TRUE)
   expect_error(
-    hr_tt_kde(boar_filtered, res = 50),
+    hr_tt_kde(boar_filtered, res = as_units(50, "m")),
     "groups without events \\(Brock\\).*group_by\\(x, name, .drop = TRUE\\)"
   )
 
@@ -339,8 +421,8 @@ test_that("hr_tt_kde rejects groups without events", {
 test_that("hr_tt_kde gives nearly the same UD with both methods", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   # the bandwidths (about 210 m) span about 4 cells
-  binned <- hr_tt_kde(boar_tt, res = 50)
-  exact <- hr_tt_kde(boar_tt, res = 50, method = "exact")
+  binned <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
+  exact <- hr_tt_kde(boar_tt, res = as_units(50, "m"), method = "exact")
   # the same groups, bandwidths and grids
   expect_equal(binned$h, exact$h)
   expect_equal(
@@ -364,7 +446,7 @@ test_that("hr_tt_kde gives nearly the same UD with both methods", {
   )
   # the isopleths can also be computed directly
   expect_equal(
-    hr_tt_kde(boar_tt, res = 50, levels = c(0.5, 0.95))$area,
+    hr_tt_kde(boar_tt, res = as_units(50, "m"), levels = c(0.5, 0.95))$area,
     binned_iso$area
   )
   # an unknown method is rejected
@@ -388,8 +470,10 @@ test_that("the binned UD is centred on the cells of the grid", {
     track_id_column = "id"
   )
   bbox <- c(xmin = 0, ymin = 0, xmax = 2000, ymax = 4000)
-  binned <- hr_tt_kde(one, h = 100, res = 50, bbox = bbox)$ud[[1]]
-  exact <- hr_tt_kde(one, h = 100, res = 50, bbox = bbox, method = "exact")
+  h <- as_units(100, "m")
+  res <- as_units(50, "m")
+  binned <- hr_tt_kde(one, h = h, res = res, bbox = bbox)$ud[[1]]
+  exact <- hr_tt_kde(one, h = h, res = res, bbox = bbox, method = "exact")
   exact <- exact$ud[[1]]
   # the UD peaks at the cell of the location
   expect_equal(
@@ -424,8 +508,13 @@ test_that("the binned UD includes the locations outside the grid", {
     xmax = ext[["xmax"]] - 500,
     ymax = ext[["ymax"]] - 500
   )
-  binned <- hr_tt_kde(boar_tt, res = 50, bbox = bbox)
-  exact <- hr_tt_kde(boar_tt, res = 50, bbox = bbox, method = "exact")
+  binned <- hr_tt_kde(boar_tt, res = as_units(50, "m"), bbox = bbox)
+  exact <- hr_tt_kde(
+    boar_tt,
+    res = as_units(50, "m"),
+    bbox = bbox,
+    method = "exact"
+  )
   ud_difference <- mapply(
     function(b, e) sum(abs(terra::values(b) - terra::values(e))),
     binned$ud,
@@ -447,11 +536,16 @@ test_that("the binned UD warns of bandwidths too small for the grid", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   # once for all the groups
   expect_warning(
-    hr_tt_kde(boar_tt, h = 10, res = 50),
+    hr_tt_kde(boar_tt, h = as_units(10, "m"), res = as_units(50, "m")),
     "the bandwidth \\(h\\) of 4 group\\(s\\) is too small"
   )
   # the exact method evaluates the kernel at the centre of each cell
-  expect_no_warning(hr_tt_kde(boar_tt, h = 10, res = 50, method = "exact"))
+  expect_no_warning(hr_tt_kde(
+    boar_tt,
+    h = as_units(10, "m"),
+    res = as_units(50, "m"),
+    method = "exact"
+  ))
 })
 
 test_that("kde_linbin_cpp splits each location between its grid points", {

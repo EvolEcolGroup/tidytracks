@@ -20,23 +20,27 @@ track id is used as grouping variable. Every group must have events, so
 groupings with empty groups (e.g. from grouping by a factor with unused
 levels with \code{.drop = FALSE}) give an error.}
 
-\item{h}{The bandwidth for the kernel density estimation. Either a number,
-a vector with one value per group, or "h_ref_indiv" for using the
-reference bandwidth for each individual, or "h_ref_mean" for using the mean
-bandwidth for all individuals (the default). The reference bandwidth cannot
-be computed for groups with fewer than two distinct locations: such groups
-are left out of the mean for "h_ref_mean", and cause an error with
-"h_ref_indiv".}
+\item{h}{The bandwidth for the kernel density estimation (the standard
+deviation of the Gaussian kernel, a distance). Either a \code{units} object
+(e.g. \code{as_units(500, "m")}), with a single value or one value per group,
+or "h_ref_indiv" for using the reference bandwidth for each individual,
+or "h_ref_mean" for using the mean bandwidth for all individuals (the
+default). The reference bandwidth cannot be computed for groups with
+fewer than two distinct locations: such groups are left out of the mean
+for "h_ref_mean", and cause an error with "h_ref_indiv". A bandwidth with
+units is converted to the units of the coordinates of \code{x} (see Details).}
 
 \item{bbox}{A named vector of four elements (\code{xmin}, \code{ymin}, \code{xmax}, \code{ymax})
 defining a grid shared by all groups, or a list of one such vector per
 group. If \code{NULL}, a shared grid is created from the extent of all points in
 \code{x}, expanded by 100\% of the range on each side.}
 
-\item{res}{The resolution of the grid (in the units of the projection of x).
-Supply one value for a shared resolution or one value per group when
-\code{bbox} contains one grid per group. If \code{NULL}, each grid is assigned a
-resolution that produces approximately 1000 cells.
+\item{res}{The resolution of the grid (the side of its square cells), as a
+\code{units} object (e.g. \code{as_units(50, "m")}), which is converted to the
+units of the coordinates of \code{x} (see Details). Supply one value for a
+shared resolution or one value per group when \code{bbox} contains one grid
+per group. If \code{NULL}, each grid is assigned a resolution that produces
+approximately 1000 cells.
 
 Per-group values of \code{h}, \code{bbox} and \code{res} are matched to the groups in the
 order in which they are returned: the order of the tracks in the metadata
@@ -68,9 +72,11 @@ e.g. a factor, or an \code{sfc} column of locations from \code{\link[=group_by_m
 in the order of the tracks in the metadata if \code{x} is not grouped, or else
 in the order of \code{\link[dplyr:group_keys]{dplyr::group_keys()}}
 \item \code{method}: the method used to estimate the home range (\code{"kde"})
-\item \code{h}: the bandwidth used for the KDE
+\item \code{h}: the bandwidth used for the KDE, as a \code{units} object in the units of
+the coordinates of \code{x}
 \item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}: the bounding box used for the KDE
-\item \code{res}: the resolution used for the KDE
+\item \code{res}: the resolution used for the KDE, as a \code{units} object in the units
+of the coordinates of \code{x}
 If \code{levels} is NULL:
 \item \code{ud}: the full utilisation distribution is returned as a list-column of
 \code{terra::SpatRaster} objects
@@ -127,6 +133,22 @@ units of the projection of \code{x} (e.g. m^2 for a UTM projection), or in m^2 i
 data the kernel is computed in degrees, so the bandwidth and the shape of the
 UD are distorted (increasingly so away from the equator); it is recommended
 to project \code{x} to an appropriate projection before using this function.
+
+\strong{Units of \code{h} and \code{res}.} The bandwidth \code{h} is the standard deviation of
+the Gaussian kernel: a location at a distance \eqn{d} from the centre of a
+cell adds \eqn{\exp(-d^2 / (2 h^2)) / (2 \pi h^2)} to its density, so \code{h},
+like \eqn{d}, is a distance in the units of the coordinates of \code{x}. So are
+the resolution \code{res} (the side of the cells) and the reference bandwidth
+(the standard deviation of the coordinates times \eqn{n^{-1/6}}, with
+\eqn{n} the number of locations). A plain number would be read in the
+units of the coordinates (e.g. metres for a UTM projection, degrees for
+longitude/latitude), so that a bandwidth of 5 meant in kilometres would
+give a kernel 1000 times too narrow. \code{h} and \code{res} must therefore be given
+as \code{units} objects (e.g. \code{as_units(500, "m")} or
+\code{as_units(0.5, "km")}), which are converted to the units of the coordinate
+reference system of \code{x}; they are returned in those units (columns \code{h} and
+\code{res}). For unprojected data, they must be angles (e.g.
+\code{as_units(0.01, "degree")}).
 }
 \examples{
 example_kde <- hr_tt_kde(example_tt)
@@ -142,6 +164,14 @@ example_iso_exact <- hr_tt_kde(
   example_tt,
   levels = c(0.5, 0.95),
   method = "exact"
+)
+# h and res are distances with units: in a projection in metres, they can
+# be given in any units of length
+example_proj <- sf::st_transform(example_tt, "+proj=eqearth")
+hr_tt_kde(
+  example_proj,
+  h = as_units(50, "km"),
+  res = as_units(10, "km")
 )
 
 }

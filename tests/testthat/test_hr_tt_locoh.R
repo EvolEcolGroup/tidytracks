@@ -77,9 +77,16 @@ test_that("hr_tt_locoh works with all types", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   boar_tt <- boar_tt[boar_tt$name == "Brock", ]
   for (type in c("k", "r", "a")) {
-    n <- switch(type, k = 10, r = 400, a = 3000)
+    # for types "r" and "a", n is a distance, with units
+    n <- switch(
+      type,
+      k = 10,
+      r = as_units(400, "m"),
+      a = as_units(3000, "m")
+    )
     locoh <- hr_tt_locoh(boar_tt, n = n, type = type, levels = c(0.5, 0.9))
     expect_equal(locoh$type, rep(type, 2))
+    expect_equal(locoh$n, rep(n, 2))
     expect_equal(locoh$level, c(0.9, 0.5))
     expect_true(all(as.numeric(locoh$area) > 0))
     expect_gt(as.numeric(locoh$area[1]), as.numeric(locoh$area[2]))
@@ -190,8 +197,37 @@ test_that("hr_tt_locoh validates its arguments", {
     hr_tt_locoh(boar_tt, n = 19),
     "groups with too few locations: Calou"
   )
-  expect_error(hr_tt_locoh(boar_tt, buffer = -1), "non-negative number")
-  expect_error(hr_tt_locoh(boar_tt, buffer = c(1, 2)), "non-negative number")
+  expect_error(
+    hr_tt_locoh(boar_tt, buffer = as_units(-1, "m")),
+    "single non-negative distance"
+  )
+  expect_error(
+    hr_tt_locoh(boar_tt, buffer = as_units(c(1, 2), "m")),
+    "single non-negative distance"
+  )
+  # distances must have units (n for types "r" and "a", and buffer), and n for
+  # type "k" must not
+  expect_error(
+    hr_tt_locoh(boar_tt, buffer = 1),
+    "buffer must be a distance with units"
+  )
+  expect_error(
+    hr_tt_locoh(boar_tt, n = 400, type = "r"),
+    "for type \"r\", n is a distance, which must be given with units"
+  )
+  expect_error(
+    hr_tt_locoh(boar_tt, n = as_units(3000, "s"), type = "a"),
+    "n must be in units that can be converted"
+  )
+  expect_error(
+    hr_tt_locoh(boar_tt, n = as_units(10, "m")),
+    "for type \"k\", n is a number of neighbours"
+  )
+  # the same distances in other units give the same home ranges
+  expect_equal(
+    hr_tt_locoh(boar_tt, n = as_units(0.4, "km"), type = "r")$area,
+    hr_tt_locoh(boar_tt, n = as_units(400, "m"), type = "r")$area
+  )
 })
 
 test_that("hr_tt_locoh requires at least 3 locations per group", {
@@ -222,6 +258,20 @@ test_that("hr_tt_locoh works with unprojected data", {
   expect_equal(nrow(toy_locoh), 2)
   expect_true(sf::st_is_longlat(toy_locoh))
   expect_true(all(as.numeric(toy_locoh$area) > 0))
+  # distances are in degrees, so a buffer must be an angle
+  expect_error(
+    hr_tt_locoh(toy_tt, n = 4, levels = 0.9, buffer = as_units(10, "m")),
+    "x is in longitude/latitude, so buffer must be an angle"
+  )
+  expect_s3_class(
+    hr_tt_locoh(
+      toy_tt,
+      n = 4,
+      levels = 0.9,
+      buffer = as_units(0.001, "degree")
+    ),
+    "hr_tt_poly_tbl"
+  )
 })
 
 test_that("hulls with no area are only kept with a buffer", {
@@ -237,7 +287,12 @@ test_that("hulls with no area are only kept with a buffer", {
 
   # with a buffer, (part of) the line becomes a thin polygon, whose area is
   # at most that of the whole line buffered by 0.1
-  with_buffer <- hr_tt_locoh(line_tt, n = 3, levels = 0.9, buffer = 0.1)
+  with_buffer <- hr_tt_locoh(
+    line_tt,
+    n = 3,
+    levels = 0.9,
+    buffer = as_units(0.1, "m")
+  )
   expect_true(sf::st_geometry_type(with_buffer) == "MULTIPOLYGON")
   expect_gt(as.numeric(with_buffer$area), 0)
   expect_lt(
@@ -254,7 +309,12 @@ test_that("hulls with no area are only kept with a buffer", {
   )
   cluster_tt <- make_locoh_tt(xy)
   no_buffer <- hr_tt_locoh(cluster_tt, n = 4, levels = 0.5)
-  with_buffer <- hr_tt_locoh(cluster_tt, n = 4, levels = 0.5, buffer = 0.01)
+  with_buffer <- hr_tt_locoh(
+    cluster_tt,
+    n = 4,
+    levels = 0.5,
+    buffer = as_units(0.01, "m")
+  )
   cluster <- sf::st_sfc(sf::st_point(c(100, 100)), crs = 32630)
   expect_false(sf::st_intersects(cluster, no_buffer, sparse = FALSE)[1, 1])
   expect_true(sf::st_intersects(cluster, with_buffer, sparse = FALSE)[1, 1])
@@ -391,13 +451,14 @@ test_that("hr_tt_locoh gives the same home ranges as amt", {
       amt_hr <- suppressWarnings(
         amt::hr_locoh(track_amt, n = n, type = type, levels = levels)
       )
-      # amt buffers each hull by 1e-5, so do the same here
+      # amt buffers each hull by 1e-5 (in the units of the coordinates,
+      # metres), so do the same here; for types "r" and "a", n is a distance
       tt_hr <- hr_tt_locoh(
         track_tt,
-        n = n,
+        n = if (type == "k") n else as_units(n, "m"),
         type = type,
         levels = levels,
-        buffer = 1e-5
+        buffer = as_units(1e-5, "m")
       )
       # hr_tt_locoh() sorts the levels from the largest to the smallest
       expect_equal(
@@ -597,7 +658,7 @@ test_that("hr_tt_locoh gives valid isopleths for nearly degenerate hulls", {
   }
   iso <- hr_tt_locoh(
     circles(c(3, 3, 2, 1, 1, 3), c(10, 9, 10, 10, 8, 10)),
-    n = 3.91679,
+    n = as_units(3.91679, "m"),
     type = "a",
     levels = 1
   )

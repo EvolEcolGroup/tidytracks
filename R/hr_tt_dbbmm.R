@@ -92,7 +92,7 @@
 #'   `"dbgb"`)
 #' - `window_size` and `margin`: the values used for the sliding window
 #' - `xmin`, `ymin`, `xmax`, `ymax` and `res`: the extent and resolution of
-#'   the grid (in metres)
+#'   the grid (in metres), with `res` as a `units` object
 #' - `ud` (if `levels` is `NULL`): the UDs, as a list of `terra::SpatRaster`
 #'   objects with a layer named `ud` whose values sum to 1
 #' - `level`, `area` and `geometry` (if `levels` is set): the isopleths, see
@@ -119,7 +119,8 @@
 #'   margin = 1
 #' )
 #' ud_dbbmm
-#' # estimate kernel UDs on the same grid, to compare them
+#' # estimate kernel UDs on the same grid, to compare them (the res column is
+#' # a distance with units, as the res argument of hr_tt_kde() must be)
 #' ud_kde <- hr_tt_kde(
 #'   x,
 #'   bbox = unlist(ud_dbbmm[1, c("xmin", "ymin", "xmax", "ymax")]),
@@ -429,7 +430,8 @@ hr_tt_bridge <- function(
     ymin = bbox[["ymin"]],
     xmax = bbox[["xmax"]],
     ymax = bbox[["ymax"]],
-    res = res,
+    # with the units of the coordinates (metres), as given
+    res = units::set_units(res, "m", mode = "standard"),
     ud = ud_list
   )
   # the first column is named after the track id column, so that functions

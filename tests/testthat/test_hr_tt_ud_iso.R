@@ -1,6 +1,6 @@
 test_that("hr_tt_ud_iso converts a table of utilisation distributions", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   boar_iso <- hr_tt_ud_iso(boar_kde, levels = c(0.95, 0.5))
 
   expect_s3_class(boar_iso, "hr_tt_poly_tbl")
@@ -33,13 +33,13 @@ test_that("hr_tt_ud_iso converts a table of utilisation distributions", {
   # returned by hr_tt_kde() with levels
   expect_equal(
     boar_iso,
-    hr_tt_kde(boar_tt, levels = c(0.5, 0.95), res = 50)
+    hr_tt_kde(boar_tt, levels = c(0.5, 0.95), res = as_units(50, "m"))
   )
 })
 
 test_that("hr_tt_ud_iso converts grouped tables of utilisation distributions", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   boar_kde$sex <- c("male", "female", "female", "male")
   # hr_tt_ud_sum() returns a grouped table, with one UD per group
   sex_kde <- hr_tt_ud_sum(dplyr::group_by(boar_kde, sex))
@@ -60,7 +60,7 @@ test_that("hr_tt_ud_iso converts grouped tables of utilisation distributions", {
 
 test_that("hr_tt_ud_iso converts a single utilisation distribution", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   boar_iso <- hr_tt_ud_iso(boar_kde$ud[[1]], levels = c(0.95, 0.5))
 
   expect_s3_class(boar_iso, "sf")
@@ -73,7 +73,7 @@ test_that("hr_tt_ud_iso converts a single utilisation distribution", {
 
 test_that("hr_tt_ud_iso validates input tables, raster layers, and levels", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   raster_without_ud <- boar_kde$ud[[1]]
   names(raster_without_ud) <- "not_ud"
 
@@ -176,7 +176,9 @@ test_that("hr_tt_ud_iso keeps the levels that cannot be drawn on the grid", {
     time_column = "time",
     track_id_column = "id"
   )
-  kde <- hr_tt_kde(x, h = c(50, 2000), res = 1000, method = "exact")
+  h <- as_units(c(50, 2000), "m")
+  res <- as_units(1000, "m")
+  kde <- hr_tt_kde(x, h = h, res = res, method = "exact")
   warnings <- testthat::capture_warnings(
     iso <- hr_tt_ud_iso(kde, levels = c(0.5, 0.95))
   )
@@ -191,7 +193,7 @@ test_that("hr_tt_ud_iso keeps the levels that cannot be drawn on the grid", {
   expect_warning(
     direct <- hr_tt_kde(
       x,
-      h = c(50, 2000), res = 1000, method = "exact", levels = c(0.5, 0.95)
+      h = h, res = res, method = "exact", levels = c(0.5, 0.95)
     ),
     "* 'a', 50%: the cells with", fixed = TRUE
   )
@@ -231,7 +233,7 @@ test_that("hr_tt_ud_iso says why an isopleth cannot be drawn", {
 
 test_that("hr_tt_ud_iso keeps the levels as they are given", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   # levels that are not written exactly as decimals
   iso <- hr_tt_ud_iso(boar_kde, levels = c(1 / 3, 2 / 3))
   expect_identical(unique(iso$level), c(1 / 3, 2 / 3))
@@ -321,15 +323,15 @@ test_that("hr_tt_ud_iso closes isopleths along the edges of the grid", {
 
 test_that("hr_tt_ud_iso ignores duplicated levels", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   expect_equal(
     hr_tt_ud_iso(boar_kde, levels = c(0.5, 0.95, 0.5)),
     hr_tt_ud_iso(boar_kde, levels = c(0.5, 0.95))
   )
   # including when computed directly by hr_tt_kde()
   expect_equal(
-    hr_tt_kde(boar_tt, res = 50, levels = c(0.5, 0.95, 0.5)),
-    hr_tt_kde(boar_tt, res = 50, levels = c(0.5, 0.95))
+    hr_tt_kde(boar_tt, res = as_units(50, "m"), levels = c(0.5, 0.95, 0.5)),
+    hr_tt_kde(boar_tt, res = as_units(50, "m"), levels = c(0.5, 0.95))
   )
 })
 
