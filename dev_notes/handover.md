@@ -87,8 +87,11 @@ The next steps of `summary.md`, in the same order and with the same labels.
   `d1d4cd9` (`hr_benchmark.R`), `0a5e131` (word list).
 - **Checks already done:** the full suite with move2utils (only the emdist
   test skipped); R CMD check on `0a5e131`: 0 errors, 0 warnings (the NOTEs
-  and the WKT/multipolygon spelling words predate the branch). No conflicts
-  with PR #102 (`git merge-tree`).
+  and the WKT/multipolygon spelling words predate the branch). The code does
+  not conflict with PR #102 (`git merge-tree`), but `summary.md`,
+  `handover.md` and `progress.md` do: this branch's versions contain those of
+  `attribution` at `c98d308`, so resolve by taking them, plus any later
+  changes to the notes on `attribution`.
 - **To know:** breaking changes, in NEWS: plain numbers give an error; the
   `hr_tt_locoh()` `buffer` default is `NULL`; code that compares the `h`,
   `res` or `n` columns with plain numbers needs `as.numeric()`. The

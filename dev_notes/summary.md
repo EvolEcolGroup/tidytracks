@@ -44,8 +44,9 @@ CRS (metres, feet or degrees, depending on the data); they must now be
 `buffer` of `hr_tt_locoh()`, the buffers of `tt_split_trips()` and `uere` of
 `ctmm_tt_fit()`; plain numbers give an error, and the `h`, `res` and `n`
 columns have units. The full suite passes (with move2utils) and R CMD check
-gives 0 errors and 0 warnings; PR #103 does not conflict with PR #102. The
-decisions are in `dev_notes/units.md`.
+gives 0 errors and 0 warnings; its code does not conflict with PR #102 (the
+living notes do: see the handover). The decisions are in
+`dev_notes/units.md`.
 
 **Next steps**
 - [ ] **P2** [review] Review and merge PR #103 (one commit per function; breaking changes listed in NEWS); check that CI passes.

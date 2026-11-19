@@ -11,7 +11,8 @@ correction as a new entry.
   the `h`, `res` and `n` columns have units. Re-knitted the ctmm article.
 - **Where:** branch `kde_units` (from `dev`), `d26498f`..`0a5e131`; PR #103.
 - **Result:** full suite passes with move2utils (now installed on manica01,
-  0.4.6); R CMD check 0 errors, 0 warnings. No conflicts with PR #102.
+  0.4.6); R CMD check 0 errors, 0 warnings. The code does not conflict
+  with PR #102; the living notes do (they include its notes at `c98d308`).
 - **Decisions** (Andrea): `h` has units (the maths); enforce units in every
   function, with no backward compatibility for `hr_tt_akde_pop()` tables.
 - **Notes changed:** `units.md` (new), `codereview_2026-10.md` (3 items
