@@ -126,7 +126,8 @@ make_grid <- function(df) {
       xmax = terra::xmax(raster),
       ymax = terra::ymax(raster)
     ),
-    res = terra::res(raster)[1],
+    # a distance with units, as hr_tt_kde() requires (EPSG:32630 is in metres)
+    res = units::as_units(terra::res(raster)[1], "m"),
     raster = raster,
     pixels = sp::SpatialPixels(
       sp::SpatialPoints(centres, proj4string = sp::CRS("EPSG:32630"))
