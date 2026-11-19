@@ -10,6 +10,18 @@
 
 - **Andrea Manica**. Author, maintainer.
 
+- **Thomas Lin Pedersen**. Contributor.  
+  code adapted from gganimate in shadow_wake_build()
+
+- **Bart Kranstauber**. Contributor.  
+  code adapted from move2 in filter_by_meta() and printing
+
+- **Kamran Safi**. Contributor.  
+  code adapted from move2 in filter_by_meta() and printing
+
+- **Anne K. Scharf**. Contributor.  
+  code adapted from move2 in filter_by_meta() and printing
+
 ## Citation
 
 Source:

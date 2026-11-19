@@ -111,7 +111,11 @@
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-development-version">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h3>
-<ul><li>fix isopleths that could not be drawn (e.g. a 50% isopleth when one cell holds most of the UD) being dropped silently; the <code>hr_tt_*()</code> functions now return them with an empty geometry and an <code>NA</code> area, with a warning that says why and what to do, and skipped <code><a href="../reference/hr_tt_dbbmm.html">hr_tt_dbbmm()</a></code> tracks get such rows with <code>levels</code> (<a href="https://github.com/EvolEcolGroup/tidytracks/issues/82" class="external-link">#82</a>)</li>
+<ul><li>
+<code><a href="../reference/hr_tt_mcp.html">hr_tt_mcp()</a></code>: fix an error from s2 (“duplicate vertex”) with longitudes and latitudes when locations are duplicated, e.g. with rounded coordinates</li>
+<li>
+<code><a href="../reference/hr_tt_mcp.html">hr_tt_mcp()</a></code>: give a clear error for infinite coordinates</li>
+<li>fix isopleths that could not be drawn (e.g. a 50% isopleth when one cell holds most of the UD) being dropped silently; the <code>hr_tt_*()</code> functions now return them with an empty geometry and an <code>NA</code> area, with a warning that says why and what to do, and skipped <code><a href="../reference/hr_tt_dbbmm.html">hr_tt_dbbmm()</a></code> tracks get such rows with <code>levels</code> (<a href="https://github.com/EvolEcolGroup/tidytracks/issues/82" class="external-link">#82</a>)</li>
 <li>
 <code><a href="../reference/hr_tt_ud_iso.html">hr_tt_ud_iso()</a></code>: fix levels such as <code>1/3</code> being returned rounded</li>
 <li>
@@ -124,6 +128,18 @@
 <ul><li>New article, “Benchmark of common track operations”, which compares the time taken by tidytracks, move2, amt, trip and track2KBA to compute step distances, run the McConnell speed filter and split tracks into trips, on up to 30 million simulated locations, and checks that they give the same results.</li>
 <li>New article, “Benchmark of home range estimators”, which compares the time taken by the MCP, KDE and LoCoH estimators of tidytracks, amt and adehabitatHR on tracks simulated with amt (and copies of them), and checks that they give the same home ranges.</li>
 <li>The new article “Reading and cleaning data”, on the package website, shows how to read tracking data (including date-times in different formats), and how to clean them step by step: removing locations at null island, duplicated records and outliers, interpolating missing locations, and resampling tracks to a regular interval.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="attribution-and-licences-development-version">Attribution and licences<a class="anchor" aria-label="anchor" href="#attribution-and-licences-development-version"></a></h3>
+<ul><li>the internal distance helper is rewritten: its argument checks were taken from <code><a href="https://rdrr.io/pkg/trip/man/trackDistance.html" class="external-link">trip::trackDistance()</a></code> (GPL-3 only), which conflicted with the package licence, GPL (&gt;= 3)</li>
+<li>the MCPs of <code><a href="../reference/hr_tt_mcp.html">hr_tt_mcp()</a></code> are computed by new code (the previous code was taken from <code><a href="https://rdrr.io/pkg/amt/man/hrest.html" class="external-link">amt::hr_mcp()</a></code>, GPL-3 only), 15% faster on many tracks and with the same results; its documentation now describes the rule for the levels, with a reference</li>
+<li>the code adapted from <code><a href="https://gganimate.com/reference/shadow_wake.html" class="external-link">gganimate::shadow_wake()</a></code> (MIT licence) for the animations now keeps the copyright and permission notice of gganimate (in the new file <code>inst/COPYRIGHTS</code>), and its author is credited in <code>DESCRIPTION</code>
+</li>
+<li>the point-in-polygon test used by <code><a href="../reference/hr_tt_locoh.html">hr_tt_locoh()</a></code> (W. R. Franklin’s PNPOLY) now keeps its copyright notice and licence</li>
+<li>the intersection of two segments in <code><a href="../reference/hr_tt_locoh.html">hr_tt_locoh()</a></code>, adapted from GEOS (and JTS), now gives their copyright notices and licences</li>
+<li>the authors of <code>move2</code>, from which <code><a href="../reference/filter_by_meta.html">filter_by_meta()</a></code> and the tidytracks printing of <code>move2</code> objects are adapted, are credited in <code>DESCRIPTION</code>
+</li>
+<li>the convex hulls of <code><a href="../reference/hr_tt_locoh.html">hr_tt_locoh()</a></code> are computed by new code (the previous code was adapted from Wikibooks, under CC BY-SA), which also uses much less memory, e.g. 0.8 GB instead of 7.1 GB for a radius LoCoH of 100,000 locations, with the same results</li>
 </ul></div>
 </div>
     <div class="section level2">

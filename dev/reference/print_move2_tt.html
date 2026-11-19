@@ -77,6 +77,11 @@ option, or 10 when that option is unset.</p></dd>
     <p>This function is registered dynamically as the S3 <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> method for
 class <code>move2</code>. It must not have an <code>@export</code> or <code>@method</code> tag because doing
 so would add an unconditional <code>S3method(print,move2)</code> entry to NAMESPACE.</p>
+<p>The header (the names of the track id and time columns, the number
+of tracks and their average duration) is adapted from the print method of
+<code>move2</code> (<code>print.move2()</code>, by Bart Kranstauber, Kamran Safi and Anne K.
+Scharf, GPL (&gt;= 3)); the table of track data that it prints is replaced
+here by a pointer to <code><a href="show_meta.html">show_meta()</a></code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

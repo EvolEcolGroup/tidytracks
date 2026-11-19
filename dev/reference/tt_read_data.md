@@ -117,43 +117,37 @@ formats.
 ## Examples
 
 ``` r
-shags_csv <- system.file("/extdata/shags_example.csv",
+small_example_csv <- system.file("extdata", "small_example.csv",
   package = "tidytracks"
 )
-shags_tt <- tt_read_data(shags_csv,
-  col_track_id = "bird_id",
+small_example_read <- tt_read_data(small_example_csv,
+  col_track_id = "track_id",
   col_coords = c("lon", "lat"),
   col_date_time = "date_time"
 )
-shags_tt
-#> A <move2> with `track_id_column` "bird_id" and `time_column` "date_time"
-#> Containing 9 tracks lasting on average 1.26 days in a
-#> Simple feature collection with 3762 features and 3 fields
+small_example_read
+#> A <move2> with `track_id_column` "track_id" and `time_column` "date_time"
+#> Containing 3 tracks lasting on average 1.33 hours in a
+#> Simple feature collection with 15 features and 2 fields
 #> Geometry type: POINT
 #> Dimension:     XY
-#> Bounding box:  xmin: -68.26967 ymin: -67.58061 xmax: -67.39642 ymax: -67.0557
+#> Bounding box:  xmin: -5.5053 ymin: -1.9431 xmax: 5.5357 ymax: 3.5288
 #> Geodetic CRS:  WGS 84
 #> First 10 features:
-#>    bird_id           date_time      speed                    geometry
-#> 1    kb_17 2022-01-04 00:09:13 0.06112442 POINT (-68.06908 -67.57072)
-#> 2    kb_17 2022-01-04 00:19:07 0.09105526 POINT (-68.06889 -67.57077)
-#> 3    kb_17 2022-01-04 00:29:06 0.06175330 POINT (-68.06904 -67.57065)
-#> 4    kb_17 2022-01-04 00:39:05 0.04324262 POINT (-68.06894 -67.57073)
-#> 5    kb_17 2022-01-04 00:49:04 0.03435565 POINT (-68.06892 -67.57067)
-#> 6    kb_17 2022-01-04 00:59:03 0.04847599 POINT (-68.06903 -67.57064)
-#> 7    kb_17 2022-01-04 01:09:02 0.04014556 POINT (-68.06888 -67.57059)
-#> 8    kb_17 2022-01-04 01:19:01 0.02357237 POINT (-68.06892 -67.57065)
-#> 9    kb_17 2022-01-04 01:29:01 0.04011861 POINT (-68.06884 -67.57064)
-#> 10   kb_17 2022-01-04 01:39:00 0.02165668 POINT (-68.06892 -67.57069)
+#>    track_id           date_time                geometry
+#> 1         a 2024-01-01 12:00:00   POINT (1.371 -0.0627)
+#> 2         a 2024-01-01 12:20:00   POINT (1.1694 3.5288)
+#> 3         a 2024-01-01 12:40:00   POINT (2.2065 1.8612)
+#> 4         a 2024-01-01 13:00:00   POINT (3.6119 2.3638)
+#> 5         a 2024-01-01 13:20:00  POINT (5.5357 -0.5769)
+#> 6         b 2024-01-01 12:00:00 POINT (-2.4405 -1.7632)
+#> 7         b 2024-01-01 12:20:00  POINT (-1.427 -1.9431)
+#> 8         b 2024-01-01 12:40:00 POINT (-3.3802 -0.7828)
+#> 9         b 2024-01-01 13:00:00 POINT (-0.2703 -0.3566)
+#> 10        b 2024-01-01 13:20:00 POINT (-0.9581 -1.5686)
 #> Track features:
-#>   bird_id colony_lon colony_lat    sex
-#> 1   kb_17  -68.06893  -67.57072   male
-#> 2   kb_19  -68.06893  -67.57072   male
-#> 3   kb_27  -68.06893  -67.57072 female
-#> 4   kb_29  -68.06893  -67.57072   male
-#> 5   kb_38  -68.06893  -67.57072   male
-#> 6   kb_40  -68.06893  -67.57072   male
-#> 7   kb_42  -68.06893  -67.57072 female
-#> 8   kb_43  -68.06893  -67.57072 female
-#> 9   kb_45  -68.06893  -67.57072 female
+#>   track_id    sex nest_lon nest_lat
+#> 1        a   male     1.37     0.06
+#> 2        b   male    -2.44    -1.76
+#> 3        c female    -0.78     0.43
 ```

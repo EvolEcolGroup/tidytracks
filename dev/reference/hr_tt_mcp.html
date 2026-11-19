@@ -91,6 +91,24 @@ is empty, and its area is <code>NA</code> (with a warning), if the locations wit
 the level are fewer than three, or are on a line (e.g. for small levels
 or groups with few locations)</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The MCP of a group at a level is the convex hull of the proportion
+<code>level</code> of its locations that are closest to their centroid (the mean of
+their coordinates): the locations whose squared distance from the
+centroid is at most the <code>level</code> quantile of these squared distances (as
+computed by <code><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">stats::quantile()</a></code>) are kept. A level of 1 gives the convex
+hull of all the locations (Mohr 1947). This is the rule of
+<code><a href="https://rdrr.io/pkg/amt/man/hrest.html" class="external-link">amt::hr_mcp()</a></code>; <code><a href="https://rdrr.io/pkg/adehabitatHR/man/mcp.html" class="external-link">adehabitatHR::mcp()</a></code> uses the quantile of the distances
+rather than of their squares, which can keep a different set of
+locations when the quantile falls between two of them.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Mohr, C. O. (1947). Table of equivalent populations of North
+American small mammals. <em>American Midland Naturalist</em>, 37, 223-249.
+<a href="https://doi.org/10.2307/2421652" class="external-link">doi:10.2307/2421652</a></p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

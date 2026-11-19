@@ -51,6 +51,28 @@ i.e. sorted by the grouping variables), and columns:
   within the level are fewer than three, or are on a line (e.g. for
   small levels or groups with few locations)
 
+## Details
+
+The MCP of a group at a level is the convex hull of the proportion
+`level` of its locations that are closest to their centroid (the mean of
+their coordinates): the locations whose squared distance from the
+centroid is at most the `level` quantile of these squared distances (as
+computed by
+[`stats::quantile()`](https://rdrr.io/r/stats/quantile.html)) are kept.
+A level of 1 gives the convex hull of all the locations (Mohr 1947).
+This is the rule of
+[`amt::hr_mcp()`](https://rdrr.io/pkg/amt/man/hrest.html);
+[`adehabitatHR::mcp()`](https://rdrr.io/pkg/adehabitatHR/man/mcp.html)
+uses the quantile of the distances rather than of their squares, which
+can keep a different set of locations when the quantile falls between
+two of them.
+
+## References
+
+Mohr, C. O. (1947). Table of equivalent populations of North American
+small mammals. *American Midland Naturalist*, 37, 223-249.
+[doi:10.2307/2421652](https://doi.org/10.2307/2421652)
+
 ## Examples
 
 ``` r
