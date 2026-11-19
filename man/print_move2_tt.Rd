@@ -24,5 +24,11 @@ Internal implementation used when custom tidytracks printing is enabled.
 This function is registered dynamically as the S3 \code{print()} method for
 class \code{move2}. It must not have an \verb{@export} or \verb{@method} tag because doing
 so would add an unconditional \code{S3method(print,move2)} entry to NAMESPACE.
+
+The header (the names of the track id and time columns, the number
+of tracks and their average duration) is adapted from the print method of
+\code{move2} (\code{print.move2()}, by Bart Kranstauber, Kamran Safi and Anne K.
+Scharf, GPL (>= 3)); the table of track data that it prints is replaced
+here by a pointer to \code{\link[=show_meta]{show_meta()}}.
 }
 \keyword{internal}

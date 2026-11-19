@@ -26,6 +26,18 @@
 #'   is empty, and its area is `NA` (with a warning), if the locations within
 #'   the level are fewer than three, or are on a line (e.g. for small levels
 #'   or groups with few locations)
+#' @details The MCP of a group at a level is the convex hull of the proportion
+#'   `level` of its locations that are closest to their centroid (the mean of
+#'   their coordinates): the locations whose squared distance from the
+#'   centroid is at most the `level` quantile of these squared distances (as
+#'   computed by [stats::quantile()]) are kept. A level of 1 gives the convex
+#'   hull of all the locations (Mohr 1947). This is the rule of
+#'   `amt::hr_mcp()`; `adehabitatHR::mcp()` uses the quantile of the distances
+#'   rather than of their squares, which can keep a different set of
+#'   locations when the quantile falls between two of them.
+#' @references Mohr, C. O. (1947). Table of equivalent populations of North
+#'   American small mammals. *American Midland Naturalist*, 37, 223-249.
+#'   \doi{10.2307/2421652}
 #' @export
 #' @examples
 #' example_mcp <- hr_tt_mcp(example_tt)
@@ -68,6 +80,10 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   located <- stats::complete.cases(xy)
   xy <- xy[located, , drop = FALSE]
   group_index <- group_index[located]
+  # an infinite coordinate makes the distances from the centroid undefined
+  if (!all(is.finite(xy))) {
+    stop("the coordinates of the locations must be finite")
+  }
   # a polygon needs at least 3 locations
   n_locations <- tabulate(group_index, nbins = length(group_labels))
   if (any(n_locations < 3)) {
@@ -119,7 +135,7 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
     crs = sf::st_crs(x)
   )
   mcp_results$area <- sf::st_area(mcp_results)
-  # an MCP with no area (see chull_mcp()) is returned with an empty geometry
+  # an MCP with no area (see mcp_polygon()) is returned with an empty geometry
   # and an NA area, with a warning that says why
   empty <- sf::st_is_empty(mcp_results)
   if (any(empty)) {
@@ -144,38 +160,87 @@ hr_tt_mcp <- function(x, levels = c(0.5, 0.95)) {
   return(mcp_results)
 }
 
-#' Create mcp at multiple levels for a given group
+#' The MCPs of one group, at several levels
 #'
-#' This is the internal function that is called by `hr_tt_mcp` to create the MCP
-#' at multiple levels for a given group. It is not intended to be called
-#' directly by the user.
+#' Internal function called by `hr_tt_mcp()` for each group: the MCP at a
+#' level is the convex hull of the locations whose squared distance from the
+#' centroid of the group (the mean of its coordinates) is at most the `level`
+#' quantile of these squared distances.
 #'
-#' @param xy a matrix of coordinates
-#' @param levels A vector of levels for the contour lines
-#' @returns An unnamed list of polygons (`sfg` objects) representing the MCP
-#'   at each level
+#' @details The quantile is computed as by [stats::quantile()] (type 7, the
+#'   default): with `n` locations, it interpolates linearly between the order
+#'   statistics at the positions `floor(pos)` and `ceiling(pos)`, where
+#'   `pos = 1 + (n - 1) * level`. The order statistics are found with a partial
+#'   sort, as `quantile()` does, and the interpolation is the same expression,
+#'   so the thresholds are identical to the last bit, without the overhead of
+#'   calling `quantile()` for each group.
+#'
+#' @param xy A matrix of the coordinates of the locations of the group (at
+#'   least 3).
+#' @param levels A vector of levels, between 0 and 1.
+#' @returns An unnamed list of polygons (`sfg` objects), one per level, in the
+#'   order of `levels`.
 #' @keywords internal
 #' @noRd
 mcp_one_group <- function(xy, levels) {
-  mxy <- colMeans(xy)
-  sqd <- (xy[, 1] - mxy[1])^2 + (xy[, 2] - mxy[2])^2
-  qts <- stats::quantile(sqd, levels, names = FALSE)
-  lapply(qts, function(i) chull_mcp(xy[sqd <= i, , drop = FALSE]))
+  # squared distance of each location from the centroid of the group
+  centroid <- colMeans(xy)
+  dist2 <- (xy[, 1] - centroid[1])^2 + (xy[, 2] - centroid[2])^2
+
+  # the largest squared distance kept at each level (its type 7 quantile):
+  # the two order statistics around position pos, found by a partial sort
+  pos <- 1 + (length(dist2) - 1) * levels
+  pos_low <- floor(pos)
+  pos_high <- ceiling(pos)
+  sorted <- sort.int(dist2, partial = unique(c(pos_low, pos_high)))
+  max_dist2 <- sorted[pos_low]
+  # interpolate between them where pos is not a whole number and they differ
+  # (the condition and the expression of quantile())
+  frac <- pos - pos_low
+  interp <- which(frac > 0 & sorted[pos_high] != max_dist2)
+  max_dist2[interp] <- (1 - frac[interp]) * max_dist2[interp] +
+    frac[interp] * sorted[pos_high[interp]]
+
+  # the MCP of each level: the convex hull of the locations within its
+  # distance (kept in their original order, as the vertices that
+  # grDevices::chull() returns among duplicated or collinear locations can
+  # depend on it)
+  lapply(max_dist2, function(d2) {
+    mcp_polygon(xy[dist2 <= d2, , drop = FALSE])
+  })
 }
 
-# chull function from amt package (or shall we use sf::st_convex_hull?)
-chull_mcp <- function(x) {
-  x <- as.matrix(x)
-  ch <- grDevices::chull(x)
+#' The convex hull of a set of locations, as a polygon
+#'
+#' @param xy A matrix of the coordinates of the locations.
+#' @returns A polygon (an `sfg` object): the convex hull of the locations
+#'   (from [grDevices::chull()]), or an empty polygon if the hull has fewer
+#'   than 3 vertices.
+#' @keywords internal
+#' @noRd
+mcp_polygon <- function(xy) {
+  # the indices of the vertices of the hull, in clockwise order
+  vertices <- grDevices::chull(xy)
+  # grDevices::chull() can return two vertices at the same place (a location
+  # and its duplicate, e.g. with rounded coordinates); keep only the first,
+  # as a repeated vertex makes an edge of length zero, which s2 rejects (for
+  # longitudes and latitudes). The places are compared exactly, as complex
+  # numbers, which duplicated() hashes quickly.
+  places <- complex(real = xy[vertices, 1], imaginary = xy[vertices, 2])
+  vertices <- vertices[!duplicated(places)]
   # if the locations are all at the same place or on a line, the hull has
   # fewer than 3 vertices: it has no area, and a polygon made from it would
   # be invalid (and rejected by s2 for unprojected data), so return an empty
   # polygon instead
-  if (length(ch) < 3) {
+  if (length(vertices) < 3) {
     return(sf::st_polygon())
   }
-  ch <- c(ch, ch[1])
-  sf::st_polygon(list(x[ch, 1:2]))
+  # the ring of the polygon, closed by repeating its first vertex; the
+  # polygon is built directly, as the identical object sf::st_polygon()
+  # would return, as its checks take longer than the hull itself (this is
+  # called for each group and level)
+  ring <- xy[c(vertices, vertices[1]), 1:2, drop = FALSE]
+  structure(list(ring), class = c("XY", "POLYGON", "sfg"))
 }
 
 

@@ -1,0 +1,99 @@
+tidytracks is distributed under the GNU General Public License, version 3
+or later. It includes code adapted from other software, under licences
+compatible with the GPL; their copyright notices and licences are
+reproduced below, as these licences require.
+
+========================================================================
+R/shadow_wake_build.R
+========================================================================
+
+shadow_wake_build() and ShadowWakeBuild are adapted from shadow_wake() and
+ShadowWake (R/shadow-wake.R) of the R package gganimate, version 1.0.11
+(https://gganimate.com), by Thomas Lin Pedersen and David Robinson,
+distributed under the MIT licence:
+
+MIT License
+
+Copyright (c) 2023 gganimate authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+========================================================================
+src/convex_union.cpp: point_in_ring()
+========================================================================
+
+point_in_ring() is PNPOLY, by W. Randolph Franklin
+(https://wrfranklin.org/Research/Short_Notes/pnpoly.html), adapted to
+vectors of coordinates, and distributed under its licence:
+
+Copyright (c) 1970-2003, Wm. Randolph Franklin
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+Redistributions of source code must retain the above copyright notice, this
+list of conditions and the following disclaimers.
+
+Redistributions in binary form must reproduce the above copyright notice in
+the documentation and/or other materials provided with the distribution.
+
+The name of W. Randolph Franklin may not be used to endorse or promote
+products derived from this Software without specific prior written
+permission.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+========================================================================
+src/convex_union.cpp: intersection()
+========================================================================
+
+The computation of the intersection of two lines in intersection() is
+adapted from GEOS 3.12 (https://libgeos.org), src/algorithm/Intersection.cpp:
+
+  Copyright (C) 2019 Paul Ramsey <pramsey@cleverlephant.ca>
+
+  This is free software; you can redistribute and/or modify it under the
+  terms of the GNU Lesser General Public Licence as published by the Free
+  Software Foundation. See the COPYING file for more information.
+
+GEOS is distributed under the GNU Lesser General Public License, version
+2.1; as section 3 of that licence allows, this code is distributed in
+tidytracks under the GNU General Public License, version 3 or later.
+
+The GEOS function is a port of Intersection.java of JTS, the JTS Topology
+Suite (https://github.com/locationtech/jts):
+
+  Copyright (c) 2019 martin Davis
+
+  All rights reserved. This program and the accompanying materials are made
+  available under the terms of the Eclipse Public License 2.0 and Eclipse
+  Distribution License v. 1.0 which accompanies this distribution. The
+  Eclipse Public License is available at
+  http://www.eclipse.org/legal/epl-v20.html and the Eclipse Distribution
+  License is available at http://www.eclipse.org/org/documents/edl-v10.php.

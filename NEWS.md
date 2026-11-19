@@ -118,6 +118,9 @@ duplicated track ids in the metadata.
 
 ## Bug fixes
 
+* `hr_tt_mcp()`: fix an error from s2 ("duplicate vertex") with longitudes
+  and latitudes when locations are duplicated, e.g. with rounded coordinates
+* `hr_tt_mcp()`: give a clear error for infinite coordinates
 * fix isopleths that could not be drawn (e.g. a 50% isopleth when one cell
   holds most of the UD) being dropped silently; the `hr_tt_*()` functions now
   return them with an empty geometry and an `NA` area, with a warning that
@@ -162,6 +165,30 @@ duplicated track ids in the metadata.
   how to clean them step by step: removing locations at null island,
   duplicated records and outliers, interpolating missing locations, and
   resampling tracks to a regular interval.
+
+## Attribution and licences
+
+* the internal distance helper is rewritten: its argument checks were taken
+  from `trip::trackDistance()` (GPL-3 only), which conflicted with the
+  package licence, GPL (>= 3)
+* the MCPs of `hr_tt_mcp()` are computed by new code (the previous code was
+  taken from `amt::hr_mcp()`, GPL-3 only), 15% faster on many tracks and
+  with the same results; its documentation now describes the rule for the
+  levels, with a reference
+* the code adapted from `gganimate::shadow_wake()` (MIT licence) for the
+  animations now keeps the copyright and permission notice of gganimate (in
+  the new file `inst/COPYRIGHTS`), and its author is credited in
+  `DESCRIPTION`
+* the point-in-polygon test used by `hr_tt_locoh()` (W. R. Franklin's PNPOLY)
+  now keeps its copyright notice and licence
+* the intersection of two segments in `hr_tt_locoh()`, adapted from GEOS (and
+  JTS), now gives their copyright notices and licences
+* the authors of `move2`, from which `filter_by_meta()` and the tidytracks
+  printing of `move2` objects are adapted, are credited in `DESCRIPTION`
+* the convex hulls of `hr_tt_locoh()` are computed by new code (the previous
+  code was adapted from Wikibooks, under CC BY-SA), which also uses much less
+  memory, e.g. 0.8 GB instead of 7.1 GB for a radius LoCoH of 100,000
+  locations, with the same results
 
 # tidytracks 0.2.1
 

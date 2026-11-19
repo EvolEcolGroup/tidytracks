@@ -300,6 +300,8 @@ sum(vud@vol)
 vud_std <- getvolumeUD(brock_ade, standardize = TRUE)
 sum(vud_std@vol)
 
+# the next lines are taken from adehabitatHR::getvolumeUD() (adehabitatHR,
+# Clement Calenge, GPL (>= 2))
 x <- brock_ade
         sg <- as(x, "SpatialPixelsDataFrame")
         sg <- as(sg, "SpatialGridDataFrame")

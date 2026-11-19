@@ -40,10 +40,26 @@ This function estimates the home range of an animal using the minimum convex
 polygon (MCP) method. Events with an empty geometry (i.e. no location) are
 ignored.
 }
+\details{
+The MCP of a group at a level is the convex hull of the proportion
+\code{level} of its locations that are closest to their centroid (the mean of
+their coordinates): the locations whose squared distance from the
+centroid is at most the \code{level} quantile of these squared distances (as
+computed by \code{\link[stats:quantile]{stats::quantile()}}) are kept. A level of 1 gives the convex
+hull of all the locations (Mohr 1947). This is the rule of
+\code{amt::hr_mcp()}; \code{adehabitatHR::mcp()} uses the quantile of the distances
+rather than of their squares, which can keep a different set of
+locations when the quantile falls between two of them.
+}
 \examples{
 example_mcp <- hr_tt_mcp(example_tt)
 example_mcp
 library(ggplot2)
 ggplot(example_mcp) +
   geom_sf(aes(fill = track_id), alpha = 0.7)
+}
+\references{
+Mohr, C. O. (1947). Table of equivalent populations of North
+American small mammals. \emph{American Midland Naturalist}, 37, 223-249.
+\doi{10.2307/2421652}
 }

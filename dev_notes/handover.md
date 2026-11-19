@@ -1,6 +1,6 @@
 # tidytracks: handover
 
-Updated 2026-11-16 (laptopX1). For the next session: read this and
+Updated 2026-11-19 (manica01). For the next session: read this and
 `summary.md` first. History is in `progress.md`; designs are in the topic
 documents listed in `README.md`.
 
@@ -8,49 +8,81 @@ documents listed in `README.md`.
 
 | branch | purpose | base | pushed | merged |
 |---|---|---|---|---|
-| `group_by_meta` | #92 item 3: `group_by_meta()`, typed `hr_tt_*()` keys | `dev` | yes | no (PR #95) |
-| `colname_functions` | #92 item 1: `colname_*()`, used across the package | `group_by_meta` | yes | no (PR #96) |
-| `no_duplicated_columns` | #92 item 2: one column per table, setter check, `.keep` deprecated | `colname_functions` (merged in) | yes | no (PR #97) |
-| `geom_meta_columns` | #92 item 4: metadata columns in the geoms, `meta_columns` | `no_duplicated_columns` (merged in) | yes | no (PR #98) |
-| `iso_empty_levels` | #82: isopleths that cannot be drawn kept as empty rows, with a warning | `geom_meta_columns` | yes | no (PR #100) |
-| `dev_notes` | this `dev_notes/`, with the notes moved out of `data-raw/` | `dev` | yes | no (PR #99) |
+| `attribution` | audit of borrowed code and licences: rewrites, notices, credits, an MCP fix; report in `dev_notes/code_review_attribution_2026-11.md` | `dev` (`6b3d855`) | yes | no (PR #102) |
 | `move2utilsbug` | two draft move2utils bug reports, now copied to `dev_notes/` | `main` | yes | no (no PR) |
 | `fpt` | Lizzie: first passage time; reviewed in `codereview_fpt` | `dev` | yes | no |
 | `codereview_fpt` | review of `fpt`: fixes, speed-up, new defaults, article; report in `dev_notes/code_review_fpt_2026-11.md` | `fpt` | yes | no (PR #101) |
 | `get_data_ready_vignette` | Paul: vignette text (January 2026) | — | yes | no |
 | `tt_and_move2_diffs` | Holly: wording (September 2026) | — | yes | no |
 
-`benchmark-sizes` and `inbound` were squash-merged (#89, #91), and can be
-deleted.
+- **Merged into `dev`:** PRs #95–#100. Their branches are deleted on origin.
+- **Squash-merged:**
+  - `inbound` (#91) is still on origin;
+  - `kde_locoh_fast` (#94; its content is all in `dev`), `kde_fast`,
+    `locoh`, `locoh_fast` and `benchmark-sizes` are local. Check each
+    against `dev` before deleting it.
 
 ## Next tasks
 
 The next steps of `summary.md`, in the same order and with the same labels.
 
-### 1. **P1** [review] Merge #95, #96, #97 and #98, in this order
+### 1. **P1** [review] Review and merge PR #102
 
-- Each branch has the previous ones merged in, so each PR shows their commits
-  until they are merged. The PR descriptions list each PR's own commits.
-- All CI jobs pass on the last pushes of 16 Nov. The full `R CMD check` was
-  last run locally on #95 (0 errors, 0 warnings, 0 notes); the later changes
-  were checked with their test files, and by CI.
-- **Done when:** all four are merged into `dev`, and #92 is closed (Andrea
-  decided on 16 Nov that there will be no `select_by_meta()`).
+- **Read:** `dev_notes/code_review_attribution_2026-11.md`, "Fixes by area":
+  one entry per commit, `8b2960b`..`ae5ffa6`.
+- **Checks already done:**
+  - identical results to `dev` for MCP and LoCoH (except the hulls with a
+    repeated vertex, fixed by `ae5ffa6`);
+  - R CMD check on `1d2cd34`: 0 errors, 0 warnings (NOTEs: move2utils is
+    not installed on manica01, and "WKT" and "multipolygon" in the spelling
+    test come from `dev`);
+  - the full suite on `4828646`;
+  - the test files that use `hr_tt_mcp()` on `ae5ffa6`;
+  - an independent agent verified every commit (sanitizer build of the hull
+    code included).
 
-### 2. **P3** [cleanup] Branches
+  CI runs the full check on the PR.
+- **To know:** `a78fb56` left `man/tidytracks-package.Rd` stale; `99e0d68`
+  regenerates it.
+- **Done when:** PR #102 is merged into `dev`; then delete `attribution`.
 
-- After the merges, delete `group_by_meta`, `colname_functions`,
-  `no_duplicated_columns`, `geom_meta_columns`, `iso_empty_levels`,
-  `benchmark-sizes` and `inbound` on origin, and `move2utilsbug` once its reports are filed.
+### 2. **P1** [andrea] Send Lizzie the note on the data
 
-### 3. **P1** [review] Merge #100 after #98
+- **The note:** `dev_notes/note_for_Lizzie.md` (on `attribution` until #102
+  is merged). It asks:
+  - the owners, permissions, licences and citations of the shag data
+    (`inst/extdata/shags_example.csv`, `data-raw/raw_csv/shag_*.csv`,
+    `vignettes/articles/data/shags_*.csv`) and of the wandering albatross
+    data (`vignettes/articles/data/wanderer_example_tracks.csv`);
+  - whether to delete the two unused files in `inst/extdata/csv_files/`
+    (done: removed, Nov 2026; the raw shag files too, archived outside the
+    repo);
+  - whether the raw albatross files in the git history must go (that would
+    need a history rewrite).
+- **Then (a Claude session):** record the answers (e.g. in
+  `R/dataset_docs.R` or a note in `inst/extdata`, and in the vignettes), or
+  replace or remove the data.
+- **Done when:** each data set has a recorded source and licence, or is
+  replaced.
 
-- All CI jobs pass, and all the home range test files pass locally.
-- The rule and Andrea's decisions are in `isopleths.md`. A new case of an
-  isopleth that cannot be drawn should add a reason to
-  `isopleth_not_drawn_reason()`, in `R/hr_tt_ud_iso.R`.
+### 3. **P3** [claude] Method citations and small credits
 
-### 4. **P1** [andrea] Send Lizzie the note on the FPT review
+- The report, "Missing method citations" and "Small attribution items":
+  - `hr_tt_kde()`, `hr_tt_ud_overlap()`, McConnell, the outlier functions,
+    `tt_split_trips()`, the ctmm functions, the main vignette;
+  - the Esri credit under the map and the animation of
+    `vignettes/articles/animations.Rmd` ("Esri, Garmin, GEBCO, NOAA NGDC,
+    and other contributors"; "Powered by Esri");
+  - a note for the wild boar test data (`adehabitatMA::puechabonsp`,
+    D. Maillard).
+
+### 4. **P3** [cleanup] Close #82 and delete merged branches
+
+- Close #82 (fixed by #100).
+- Delete `inbound` on origin.
+- Check, then delete, the local squash-merged branches (see "Branches").
+
+### 5. **P1** [andrea] Send Lizzie the note on the FPT review
 
 - The note is the Claude doc "FPT review: note to Lizzie" (private: share it
   first). It points her to the article
@@ -59,48 +91,40 @@ The next steps of `summary.md`, in the same order and with the same labels.
 - **Done when:** Lizzie has reviewed the branch and ticked the report's boxes,
   or listed what to change.
 
-### 5. **P2** [review] Merge #101 (`codereview_fpt`) into `fpt`, then `fpt` into `dev`
+### 6. **P2** [review] Merge #101 (`codereview_fpt`) into `fpt`, then `fpt` into `dev`
 
-- `codereview_fpt` is `fpt` plus the review: 28 commits (fixes, each with
-  its test where one is possible, the merged speed-up and the report),
-  verified by separate agents (the report lists them, and how each was
-  checked). R CMD check was OK at `a27a29b` (1,694 tests, 0 lints).
-- Conflicts to expect with #99: `.Rbuildignore` (both add `^dev_notes$`), and
-  the report must be added to `dev_notes/README.md`.
-- The article renders in about 6 s, so it is not precompiled.
-- **Done when:** `fpt` is merged into `dev`.
+- `codereview_fpt` is `fpt` plus the review: 28 commits, verified by separate
+  agents. R CMD check was OK at `a27a29b` (1,694 tests, 0 lints).
+- **Conflicts to expect:**
+  - `.Rbuildignore` (`^dev_notes$` is in `dev` now);
+  - the report must be added to `dev_notes/README.md`.
+- The attribution audit found no copied code in `src/fpt.cpp` (an
+  independent design on the definition of `adehabitatLT::fpt()`).
+- **Done when:** `fpt` is merged into `dev`; then delete `codereview_fpt`
+  and `fpt`.
 
-### 6. **P3** [cleanup] Branches of the FPT review
-
-- Delete `codereview_fpt` and `fpt` once merged (the speed-up branch is
-  already deleted).
-
-### 7. **P2** [review] Merge #99 (`dev_notes`)
-
-- It does not depend on #95–#98. After it is merged, update this handover on
-  the branch being worked on.
-
-### 8. **P2** [andrea] File the upstream reports
+### 7. **P2** [andrea] File the upstream reports
 
 - Rerun the example in `move2_track_data_issue.md` with the latest move2, and
   update its output.
 - File the move2 report (GitLab `bartk/move2`). Then file the two move2utils
   reports (MPCDF GitLab, mirrored at `move2universe/move2utils`), unless they
   are filed already.
+- Then delete `move2utilsbug`.
 
-### 9. **P2** [decide] Code review 2: open issues
+### 8. **P2** [decide] Code review 2: open issues
 
 - Read `codereview_2026-10.md`, and pick the items to fix. A fix is one
   branch from `dev` per item, with a test, and a NEWS bullet.
 
-### 10. **P3** [claude] Check the review items that #95 may have fixed
+### 9. **P3** [claude] Check the review items that #95 may have fixed
 
-- **Branch:** `dev`, after #95 is merged.
+- **Branch:** `dev` (#95 is merged).
 - **Do:** try `event_ud_level()` with a one-row table of UDs and events of
   several tracks, and `hr_tt_ud_overlap()` on a table grouped by a factor.
   Mark the items as fixed in `codereview_2026-10.md`, or file issues.
 
-### 11. **P3** [decide] Later ctmm analyses
+### 10. **P3** [decide] Later ctmm analyses
 
 - See `ctmm_integration.md`, "Later: further analyses built on the model
   table".
@@ -111,17 +135,27 @@ None.
 
 ## Backlog
 
-- The FPT review leaves 5 minor findings (report, "Findings not fixed"):
-  repeated FPTs for groups that split tracks often, memory for tracks of
-  millions of locations, the `trip_na` events after
-  `tt_split_trips(complete = FALSE)`, numeric and `units` time columns, and
-  two small test and type points.
-
-- `hr_tt_ud_iso()` and the KDE isopleths: a grouping variable named `level`,
-  `area` or `geometry` clashes with the result columns (predates #92).
-- Check the deprecation version of `.keep = TRUE` ("0.3.0") at the next
-  release.
-- Documentation review (#90), which #92 was meant to precede, and the data
-  cleaning vignette (#65).
-- Open issue #81 (McConnell interpolation); #82 (isopleth levels) is fixed by
-  #100.
+- **Not installed on manica01:** move2utils (70 tests skipped) and emdist.
+  Ask Andrea before installing them, for complete checks.
+- **MCP in C++:** parked by Andrea on 19 Nov. The design and the numbers
+  are in `mcp_cpp.md` (about 10x faster on many tracks, but different
+  vertices from `chull()` in nearly collinear sets).
+- **Bugs found by the attribution verifier, also on `dev`:**
+  - an s2 error of `hr_tt_locoh()` on rounded lon/lat;
+  - `shadow_wake_build(wrap = )` has no effect;
+  - `locoh_cpp()` reads out of bounds on empty input (not reachable from
+    `hr_tt_locoh()`).
+- **LoCoH speed-ups** (attribution report, "Speed-ups not done"):
+  - do not store the neighbour sets of `"r"`, which are most of its memory
+    now (32.6 GB for 1 M locations);
+  - make the k-nearest-neighbour heap of `"a"` faster (about half of its
+    time).
+- **FPT review:** 5 minor findings (report, "Findings not fixed").
+- **`hr_tt_ud_iso()` and the KDE isopleths:** a grouping variable named
+  `level`, `area` or `geometry` clashes with the result columns (predates
+  #92).
+- **Next release:** check the deprecation version of `.keep = TRUE`
+  ("0.3.0").
+- **Documentation:** the documentation review (#90), and the data cleaning
+  vignette (#65).
+- **Open issue:** #81 (McConnell interpolation).
