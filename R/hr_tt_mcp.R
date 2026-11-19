@@ -221,6 +221,13 @@ mcp_one_group <- function(xy, levels) {
 mcp_polygon <- function(xy) {
   # the indices of the vertices of the hull, in clockwise order
   vertices <- grDevices::chull(xy)
+  # grDevices::chull() can return two vertices at the same place (a location
+  # and its duplicate, e.g. with rounded coordinates); keep only the first,
+  # as a repeated vertex makes an edge of length zero, which s2 rejects (for
+  # longitudes and latitudes). The places are compared exactly, as complex
+  # numbers, which duplicated() hashes quickly.
+  places <- complex(real = xy[vertices, 1], imaginary = xy[vertices, 2])
+  vertices <- vertices[!duplicated(places)]
   # if the locations are all at the same place or on a line, the hull has
   # fewer than 3 vertices: it has no area, and a polygon made from it would
   # be invalid (and rejected by s2 for unprojected data), so return an empty

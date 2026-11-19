@@ -125,6 +125,41 @@ test_that("hr_tt_mcp rejects infinite coordinates", {
   )
 })
 
+test_that("hr_tt_mcp drops repeated vertices of the hull", {
+  # grDevices::chull() returns both copies of the duplicated location (a) as
+  # vertices of these hulls, which s2 rejected as a degenerate edge
+  a <- c(10.038, 45.011)
+  b <- c(10.039, 45.004)
+  c <- c(10.030, 45.008)
+  make_track <- function(locations) {
+    events <- data.frame(
+      id = "t1",
+      time = as.POSIXct("2024-01-01", tz = "UTC") + seq_len(nrow(locations)),
+      lon = locations[, 1],
+      lat = locations[, 2]
+    )
+    mt_as_move2(
+      sf::st_as_sf(events, coords = c("lon", "lat"), crs = 4326),
+      time_column = "time",
+      track_id_column = "id"
+    )
+  }
+  # a triangle, with a repeated corner
+  triangle <- hr_tt_mcp(make_track(rbind(a, a, b, c)), levels = 1)
+  ring <- sf::st_coordinates(triangle)[, c("X", "Y")]
+  expect_equal(nrow(ring), 4) # 3 vertices, and the first again
+  expect_equal(nrow(unique(ring)), 3)
+  expect_gt(as.numeric(triangle$area), 0)
+  # two places only: no area, so an empty polygon (with a warning)
+  expect_warning(
+    segment <- hr_tt_mcp(make_track(rbind(a, a, b)), levels = 1),
+    "* 't1', 100%: the locations within it",
+    fixed = TRUE
+  )
+  expect_true(sf::st_is_empty(segment))
+  expect_true(is.na(segment$area))
+})
+
 test_that("hr_tt_mcp requires at least 3 locations per group", {
   set.seed(3)
   coords <- data.frame(

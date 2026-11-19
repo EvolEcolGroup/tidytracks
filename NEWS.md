@@ -118,6 +118,8 @@ duplicated track ids in the metadata.
 
 ## Bug fixes
 
+* `hr_tt_mcp()`: fix an error from s2 ("duplicate vertex") with longitudes
+  and latitudes when locations are duplicated, e.g. with rounded coordinates
 * `hr_tt_mcp()`: give a clear error for infinite coordinates
 * fix isopleths that could not be drawn (e.g. a 50% isopleth when one cell
   holds most of the UD) being dropped silently; the `hr_tt_*()` functions now
