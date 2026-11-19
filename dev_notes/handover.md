@@ -8,8 +8,7 @@ documents listed in `README.md`.
 
 | branch | purpose | base | pushed | merged |
 |---|---|---|---|---|
-| `attribution` | audit of borrowed code and licences: rewrites, notices, credits, an MCP fix; report in `dev_notes/code_review_attribution_2026-11.md` | `dev` (`6b3d855`) | yes | no (PR #102) |
-| `kde_units` | distances with units: `h`/`res` of the UD functions, LoCoH `n`/`buffer`, split-trip buffers, `uere`; decisions in `dev_notes/units.md` | `dev` (`6b3d855`) | yes | no (PR #103) |
+| `kde_units` | distances with units: `h`/`res` of the UD functions, LoCoH `n`/`buffer`, split-trip buffers, `uere`; decisions in `dev_notes/units.md` | `dev` (`6b3d855`; `dev` at `a433574` merged in) | yes | no (PR #103) |
 | `move2utilsbug` | two draft move2utils bug reports, now copied to `dev_notes/` | `main` | yes | no (no PR) |
 | `fpt` | Lizzie: first passage time; reviewed in `codereview_fpt` | `dev` | yes | no |
 | `codereview_fpt` | review of `fpt`: fixes, speed-up, new defaults, article; report in `dev_notes/code_review_fpt_2026-11.md` | `fpt` | yes | no (PR #101) |
@@ -18,6 +17,8 @@ documents listed in `README.md`.
 
 - **Merged into `dev`:** PRs #95–#100. Their branches are deleted on origin.
 - **Squash-merged:**
+  - `attribution` (#102, 19 Nov, `a433574`) is deleted on origin, and still
+    local;
   - `inbound` (#91) is still on origin;
   - `kde_locoh_fast` (#94; its content is all in `dev`), `kde_fast`,
     `locoh`, `locoh_fast` and `benchmark-sizes` are local. Check each
@@ -27,25 +28,10 @@ documents listed in `README.md`.
 
 The next steps of `summary.md`, in the same order and with the same labels.
 
-### 1. **P1** [review] Review and merge PR #102
+### 1. **P1** [review] Review and merge PR #102 (done)
 
-- **Read:** `dev_notes/code_review_attribution_2026-11.md`, "Fixes by area":
-  one entry per commit, `8b2960b`..`ae5ffa6`.
-- **Checks already done:**
-  - identical results to `dev` for MCP and LoCoH (except the hulls with a
-    repeated vertex, fixed by `ae5ffa6`);
-  - R CMD check on `1d2cd34`: 0 errors, 0 warnings (NOTEs: move2utils is
-    not installed on manica01, and "WKT" and "multipolygon" in the spelling
-    test come from `dev`);
-  - the full suite on `4828646`;
-  - the test files that use `hr_tt_mcp()` on `ae5ffa6`;
-  - an independent agent verified every commit (sanitizer build of the hull
-    code included).
-
-  CI runs the full check on the PR.
-- **To know:** `a78fb56` left `man/tidytracks-package.Rd` stale; `99e0d68`
-  regenerates it.
-- **Done when:** PR #102 is merged into `dev`; then delete `attribution`.
+- Squash-merged into `dev` on 19 Nov (`a433574`). The local branch
+  `attribution` is left to delete (task 5).
 
 ### 2. **P1** [andrea] Send Lizzie the note on the data
 
@@ -87,11 +73,12 @@ The next steps of `summary.md`, in the same order and with the same labels.
   `d1d4cd9` (`hr_benchmark.R`), `0a5e131` (word list).
 - **Checks already done:** the full suite with move2utils (only the emdist
   test skipped); R CMD check on `0a5e131`: 0 errors, 0 warnings (the NOTEs
-  and the WKT/multipolygon spelling words predate the branch). The code does
-  not conflict with PR #102 (`git merge-tree`), but `summary.md`,
-  `handover.md` and `progress.md` do: this branch's versions contain those of
-  `attribution` at `c98d308`, so resolve by taking them, plus any later
-  changes to the notes on `attribution`.
+  and the WKT/multipolygon spelling words predate the branch). After #102
+  was merged, `dev` (`a433574`) was merged into the branch: the code had no
+  conflicts, and the three living notes were taken from this branch (they
+  already contained `dev`'s). On the merged tree, only the LoCoH and MCP
+  test files were run (tidypopgen was timing on manica01); CI runs the full
+  check.
 - **To know:** breaking changes, in NEWS: plain numbers give an error; the
   `hr_tt_locoh()` `buffer` default is `NULL`; code that compares the `h`,
   `res` or `n` columns with plain numbers needs `as.numeric()`. The
@@ -101,6 +88,7 @@ The next steps of `summary.md`, in the same order and with the same labels.
 ### 5. **P3** [cleanup] Close #82 and delete merged branches
 
 - Close #82 (fixed by #100).
+- Delete the local branch `attribution` (squash-merged by #102).
 - Delete `inbound` on origin.
 - Check, then delete, the local squash-merged branches (see "Branches").
 

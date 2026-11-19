@@ -28,5 +28,13 @@ Authors:
   \item Holly Pickett
 }
 
+Other contributors:
+\itemize{
+  \item Thomas Lin Pedersen (code adapted from gganimate in shadow_wake_build()) [contributor]
+  \item Bart Kranstauber (code adapted from move2 in filter_by_meta() and printing) [contributor]
+  \item Kamran Safi (code adapted from move2 in filter_by_meta() and printing) [contributor]
+  \item Anne K. Scharf (code adapted from move2 in filter_by_meta() and printing) [contributor]
+}
+
 }
 \keyword{internal}

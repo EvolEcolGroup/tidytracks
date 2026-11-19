@@ -58,6 +58,7 @@
 #include <functional>
 #include <queue>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -393,59 +394,100 @@ NeighbourSets find_neighbours(const double* x, const double* y, int n_pts,
 // 3. Convex hulls
 // ---------------------------------------------------------------------------
 
+// The hulls are computed with the monotone chain algorithm of Andrew (1979):
+// the points are sorted by x (then by y), and the hull is built in two
+// sweeps through them, left to right for its lower boundary and right to
+// left for its upper boundary. Each point is appended to the boundary after
+// removing the last vertices that would not make a left (counter-clockwise)
+// turn with it, so that the boundary stays convex. This takes O(m log m)
+// time for m points, for the sort; the sweeps take O(m).
+//
+// Andrew, A. M. (1979). Another efficient algorithm for convex hulls in two
+// dimensions. Information Processing Letters, 9, 216-219.
+// doi:10.1016/0020-0190(79)90072-3
+
+// A location, with its coordinates and its index (one of them, for
+// duplicated locations).
 struct Point {
   double x, y;
-  int idx;  // index of the location (one of them, for duplicated locations)
-  // lexicographic order (by x, then y), needed by the monotone chain
-  bool operator<(const Point& o) const {
-    return x < o.x || (x == o.x && y < o.y);
+  int idx;
+  // the order of the sweeps: by x, then by y
+  bool operator<(const Point& other) const {
+    return std::tie(x, y) < std::tie(other.x, other.y);
   }
-  bool operator==(const Point& o) const { return x == o.x && y == o.y; }
+  // the same place (whatever the index)
+  bool operator==(const Point& other) const {
+    return x == other.x && y == other.y;
+  }
 };
 
-// Twice the signed area of the triangle (o, a, b): positive if o -> a -> b
-// turns counter-clockwise, negative if clockwise, zero if collinear.
-inline double cross(const Point& o, const Point& a, const Point& b) {
-  return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+// Whether going from a to b to c turns left (positive), right (negative) or
+// goes straight on (zero), computed in floating point as the cross product
+// (b - a) x (c - a), i.e. twice the signed area of the triangle a, b, c.
+// (Function objects, rather than functions, so that the sweeps inline them.)
+struct TurnFloat {
+  double operator()(const Point& a, const Point& b, const Point& c) const {
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+  }
+};
+
+// The same, with an exact sign (see exact_predicates.h).
+struct TurnExact {
+  int operator()(const Point& a, const Point& b, const Point& c) const {
+    return exact_predicates::orientation(a.x, a.y, b.x, b.y, c.x, c.y);
+  }
+};
+
+// One sweep of the monotone chain: append the points from `first` to `last`
+// (in the order of the sweep) to the boundary in `hull`, each after removing
+// the last vertex of the boundary while the last two vertices and the new
+// point do not make a strict left turn (according to `turn`). The vertices
+// before position `keep` (the other boundary) are never removed.
+template <typename Iter, typename Turn>
+void sweep_boundary(Iter first, Iter last, std::size_t keep, Turn turn,
+                    std::vector<Point>& hull) {
+  for (Iter p = first; p != last; ++p) {
+    while (hull.size() >= keep + 2 &&
+           turn(hull[hull.size() - 2], hull.back(), *p) <= 0) {
+      hull.pop_back();
+    }
+    hull.push_back(*p);
+  }
 }
 
-// Convex hull of a set of points with Andrew's monotone chain algorithm,
-// O(m log m) for m points. The hull is returned in counter-clockwise order
-// (the orientation of exterior rings in simple features), without repeating
-// the first vertex and without collinear vertices (as GEOS does). Degenerate
-// sets give fewer than 3 vertices: 1 if all points coincide, 2 (the two
-// extremes) if they are all on a line.
-std::vector<Point> convex_hull(std::vector<Point> pts) {
-  // sort the points and drop duplicates, which would otherwise create
-  // zero-length edges
+// The convex hull of the points in `pts`, written into `hull` (which is
+// cleared first), using `turn` to decide the turns. The hull is in
+// counter-clockwise order (the orientation of exterior rings in simple
+// features), from the first point in the order of the sweeps (the leftmost,
+// then lowest, point), without repeating it, and without vertices on a
+// straight line with their neighbours. Degenerate sets give fewer than 3
+// vertices: 1 if all points coincide, 2 (the two extremes) if they are all on
+// a line. `pts` is sorted in place, and its duplicated places are dropped
+// (they would create edges of zero length).
+template <typename Turn>
+void monotone_chain(std::vector<Point>& pts, Turn turn,
+                    std::vector<Point>& hull) {
   std::sort(pts.begin(), pts.end());
   pts.erase(std::unique(pts.begin(), pts.end()), pts.end());
-  const std::size_t m = pts.size();
-  if (m < 3) {
-    return pts;
+  hull.clear();
+  if (pts.size() < 3) {
+    hull.assign(pts.begin(), pts.end());
+    return;
   }
-  std::vector<Point> hull(2 * m);
-  std::size_t h = 0;
-  // lower hull: sweep from left to right, popping the last vertex while it
-  // does not make a strict counter-clockwise (left) turn
-  for (std::size_t i = 0; i < m; ++i) {
-    while (h >= 2 && cross(hull[h - 2], hull[h - 1], pts[i]) <= 0) {
-      --h;
-    }
-    hull[h++] = pts[i];
-  }
-  // upper hull: sweep back from right to left, in the same way; `lower`
-  // stops the popping from eating into the lower hull
-  const std::size_t lower = h + 1;
-  for (std::size_t i = m - 1; i > 0; --i) {
-    while (h >= lower && cross(hull[h - 2], hull[h - 1], pts[i - 1]) <= 0) {
-      --h;
-    }
-    hull[h++] = pts[i - 1];
-  }
-  // the last vertex is the first one again (the leftmost point); drop it
-  hull.resize(h - 1);
-  return hull;
+  // lower boundary: from the leftmost point to the rightmost one
+  sweep_boundary(pts.begin(), pts.end(), 0, turn, hull);
+  // upper boundary: from the rightmost point (already the last vertex, which
+  // must stay) back to the leftmost one
+  const std::size_t keep = hull.size() - 1;
+  sweep_boundary(pts.rbegin() + 1, pts.rend(), keep, turn, hull);
+  // the upper boundary ends on the leftmost point, which is the first vertex
+  hull.pop_back();
+}
+
+// The convex hull of a set of points, in floating point (see
+// monotone_chain()); `pts` is sorted in place.
+void convex_hull(std::vector<Point>& pts, std::vector<Point>& hull) {
+  monotone_chain(pts, TurnFloat(), hull);
 }
 
 // The vertices of a convex hull (from convex_hull()) that are strictly convex
@@ -456,30 +498,11 @@ std::vector<Point> convex_hull(std::vector<Point> pts) {
 // exact turns (in counter-clockwise order, as convex_hull()), which drops
 // such vertices; the hull then changes by no more than rounding errors. A
 // result with fewer than 3 vertices means that the vertices are collinear.
-std::vector<Point> strictly_convex_hull(const std::vector<Point>& hull) {
-  std::vector<Point> pts(hull);
-  std::sort(pts.begin(), pts.end());
-  const std::size_t m = pts.size();
-  std::vector<Point> out(2 * m);
-  auto turn = [](const Point& o, const Point& a, const Point& b) {
-    return exact_predicates::orientation(o.x, o.y, a.x, a.y, b.x, b.y);
-  };
-  std::size_t h = 0;
-  for (std::size_t i = 0; i < m; ++i) {
-    while (h >= 2 && turn(out[h - 2], out[h - 1], pts[i]) <= 0) {
-      --h;
-    }
-    out[h++] = pts[i];
-  }
-  const std::size_t lower = h + 1;
-  for (std::size_t i = m - 1; i > 0; --i) {
-    while (h >= lower && turn(out[h - 2], out[h - 1], pts[i - 1]) <= 0) {
-      --h;
-    }
-    out[h++] = pts[i - 1];
-  }
-  out.resize(h - 1);
-  return out;
+// `pts` is used as scratch space.
+void strictly_convex_hull(const std::vector<Point>& hull,
+                          std::vector<Point>& pts, std::vector<Point>& out) {
+  pts.assign(hull.begin(), hull.end());
+  monotone_chain(pts, TurnExact(), out);
 }
 
 // Area (by the shoelace formula) and perimeter of a convex polygon given by
@@ -696,10 +719,16 @@ Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
   const NeighbourSets sets = find_neighbours(px, py, n_pts, type, n);
 
   // --- one convex hull per root --------------------------------------------
-  std::vector<std::vector<Point>> hulls(n_pts);
+  // The hulls are stored one after the other in `hull_points` (the hull of
+  // root i runs from hull_start[i] to hull_start[i + 1]), so that each takes
+  // only the space of its vertices, without an allocation per root (a hull
+  // has few vertices, even when its neighbour set is large).
+  std::vector<Point> hull_points;
+  std::vector<std::size_t> hull_start(n_pts + 1, 0);
   // the key used to sort the hulls (see below)
   std::vector<double> key(n_pts);
-  std::vector<Point> pts;  // scratch vector, reused for every root
+  std::vector<Point> pts;   // scratch vector, reused for every root
+  std::vector<Point> hull;  // scratch vector for the hull of each root
   for (int i = 0; i < n_pts; ++i) {
     if (i % 1000 == 0) {
       Rcpp::checkUserInterrupt();
@@ -710,10 +739,12 @@ Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
       const int k = sets.members[j];
       pts.push_back(Point{px[k], py[k], k});
     }
-    hulls[i] = convex_hull(pts);
+    convex_hull(pts, hull);
+    hull_points.insert(hull_points.end(), hull.begin(), hull.end());
+    hull_start[i + 1] = hull_points.size();
     double area = 0.0;
     double perimeter = 0.0;
-    area_perimeter(hulls[i], buffer > 0, area, perimeter);
+    area_perimeter(hull, buffer > 0, area, perimeter);
     // amt buffers every hull before measuring its area. For a convex
     // polygon, the area after buffering by b is exactly (Steiner formula)
     //   area + perimeter * b + pi * b^2,
@@ -723,6 +754,13 @@ Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
     // and short segments before long ones.
     key[i] = area + perimeter * buffer;
   }
+
+  // copy the stored hull of root i into `out`
+  auto stored_hull = [&hull_points, &hull_start](int i,
+                                                 std::vector<Point>& out) {
+    out.assign(hull_points.begin() + hull_start[i],
+               hull_points.begin() + hull_start[i + 1]);
+  };
 
   // --- sort the hulls by area ----------------------------------------------
   // `order` holds the roots, from the smallest hull to the largest one; a
@@ -822,13 +860,14 @@ Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
     std::vector<std::size_t> offsets(1, 0);
     std::vector<int> vertices;
     std::vector<int> n_polygons(max_hulls + 1, 0);
+    std::vector<Point> strict;  // scratch vector for the strict hulls
     for (int j = 0; j < max_hulls; ++j) {
       n_polygons[j + 1] = n_polygons[j];
-      const std::vector<Point>& hull = hulls[order[j]];
+      stored_hull(order[j], hull);
       if (hull.size() < 3) {
         continue;
       }
-      const std::vector<Point> strict = strictly_convex_hull(hull);
+      strictly_convex_hull(hull, pts, strict);
       if (strict.size() < 3) {
         continue;
       }
@@ -863,7 +902,7 @@ Rcpp::List locoh_cpp(Rcpp::NumericVector x, Rcpp::NumericVector y,
   Rcpp::LogicalVector degenerate(n_returned);
   Rcpp::IntegerVector root(n_returned);
   for (int j = 0; j < n_returned; ++j) {
-    const std::vector<Point>& hull = hulls[order[j]];
+    stored_hull(order[j], hull);
     hull_sfg[j] = hull_to_sfg(hull, shift_x, shift_y);
     degenerate[j] = hull.size() < 3;
     root[j] = order[j] + 1;  // 1-based index for R
@@ -902,7 +941,8 @@ Rcpp::NumericMatrix convex_hull_cpp(Rcpp::NumericVector x,
   for (R_xlen_t i = 0; i < x.size(); ++i) {
     pts.push_back(Point{x[i], y[i], static_cast<int>(i)});
   }
-  const std::vector<Point> hull = convex_hull(pts);
+  std::vector<Point> hull;
+  convex_hull(pts, hull);
   Rcpp::NumericMatrix out(static_cast<int>(hull.size()), 2);
   for (std::size_t i = 0; i < hull.size(); ++i) {
     out(static_cast<int>(i), 0) = hull[i].x;

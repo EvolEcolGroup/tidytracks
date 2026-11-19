@@ -8,8 +8,8 @@ sections below are by line of work, not by job.
 
 An audit of code borrowed from other packages, and of licences (18-19 Nov).
 
-**Status.** PR #102 (`attribution` into `dev`) has 15 fix commits, plus the
-notes:
+**Status.** PR #102 (`attribution` into `dev`) was squash-merged on 19 Nov
+(`a433574`): 15 fix commits, plus the notes:
 
 - **Rewrites:** the code copied from GPL-3-only packages (`dist_fast()` from
   trip; the MCP helpers from amt), which conflicted with `GPL (>= 3)`, and
@@ -29,7 +29,7 @@ lists the findings not fixed. The questions on the data are in
 `dev_notes/mcp_cpp.md` (Andrea, 19 Nov).
 
 **Next steps**
-- [ ] **P1** [review] Review and merge PR #102 (the report's list of commits); check that CI passes.
+- [x] **P1** [review] Review and merge PR #102 (the report's list of commits); check that CI passes. *Done: squash-merged 19 Nov, `a433574`.*
 - [ ] **P1** [andrea] Send Lizzie `dev_notes/note_for_Lizzie.md` (owners, permissions and licences of the shag and albatross data; the unused files in `inst/extdata/csv_files/`); then a session records the answers, or replaces or removes the data.
 - [ ] **P3** [claude] Add the missing method citations, the Esri credit and the wild boar note (report, "Findings not fixed").
 
@@ -44,9 +44,8 @@ CRS (metres, feet or degrees, depending on the data); they must now be
 `buffer` of `hr_tt_locoh()`, the buffers of `tt_split_trips()` and `uere` of
 `ctmm_tt_fit()`; plain numbers give an error, and the `h`, `res` and `n`
 columns have units. The full suite passes (with move2utils) and R CMD check
-gives 0 errors and 0 warnings; its code does not conflict with PR #102 (the
-living notes do: see the handover). The decisions are in
-`dev_notes/units.md`.
+gives 0 errors and 0 warnings. `dev`, with PR #102, is merged into it (the
+code had no conflicts). The decisions are in `dev_notes/units.md`.
 
 **Next steps**
 - [ ] **P2** [review] Review and merge PR #103 (one commit per function; breaking changes listed in NEWS); check that CI passes.
@@ -60,7 +59,7 @@ rows with a warning) are merged into `dev`, and so is #99 (`dev_notes/`).
 `isopleths.md`.
 
 **Next steps**
-- [ ] **P3** [cleanup] Close #82 (fixed by #100); delete `inbound` on origin; check, then delete, the local branches that were squash-merged (`kde_locoh_fast` by #94, whose content is all in `dev`; `kde_fast`, `locoh`, `locoh_fast`, `benchmark-sizes`).
+- [ ] **P3** [cleanup] Close #82 (fixed by #100); delete `inbound` on origin; check, then delete, the local branches that were squash-merged (`attribution` by #102, deleted on origin; `kde_locoh_fast` by #94, whose content is all in `dev`; `kde_fast`, `locoh`, `locoh_fast`, `benchmark-sizes`).
 
 ## First passage time: review of `fpt` (branch `codereview_fpt`)
 
