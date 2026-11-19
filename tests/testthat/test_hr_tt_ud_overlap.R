@@ -1,7 +1,7 @@
 test_that("hr_tt_ud_overlap works", {
   # load a simple dataset originally from adehabitat
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   # create the overlap
   boar_overlap <- hr_tt_ud_overlap(boar_kde)
   # expect a 4x4 matrix
@@ -49,7 +49,7 @@ test_that("hr_tt_ud_overlap works", {
 
   # create a new SpatRaster with different resolution and test that it throws an
   # error
-  boar_kde_diff_res <- hr_tt_kde(boar_tt, res = 100)
+  boar_kde_diff_res <- hr_tt_kde(boar_tt, res = as_units(100, "m"))
   expect_error(
     hr_tt_ud_overlap(boar_kde$ud[[1]], boar_kde_diff_res$ud[[2]]),
     "x and y must have the same geometry"
@@ -152,9 +152,9 @@ test_that("hr_tt_ud_overlap rejects unused arguments for two UDs", {
 
 test_that("hr_tt_ud_overlap computes the UDOI independently of resolution", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde_100 <- hr_tt_kde(boar_tt, res = 100)
+  boar_kde_100 <- hr_tt_kde(boar_tt, res = as_units(100, "m"))
   bbox <- unlist(boar_kde_100[1, c("xmin", "ymin", "xmax", "ymax")])
-  boar_kde_50 <- hr_tt_kde(boar_tt, res = 50, bbox = bbox)
+  boar_kde_50 <- hr_tt_kde(boar_tt, res = as_units(50, "m"), bbox = bbox)
 
   udoi_100 <- hr_tt_ud_overlap(boar_kde_100, method = "udoi")
   udoi_50 <- hr_tt_ud_overlap(boar_kde_50, method = "udoi")

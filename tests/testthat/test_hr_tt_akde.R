@@ -30,7 +30,7 @@ test_that("hr_tt_akde returns a table of UDs on a shared grid", {
   expect_equal(length(unique(akde$res)), 1)
   expect_true(terra::compareGeom(akde$ud[[1]], akde$ud[[2]]))
   # the grid has square cells
-  expect_equal(terra::res(akde$ud[[1]]), rep(akde$res[1], 2))
+  expect_equal(terra::res(akde$ud[[1]]), rep(as.numeric(akde$res[1]), 2))
   # the raster is in the CRS of x
   expect_true(sf::st_crs(akde$ud[[1]]) == sf::st_crs(x))
 })
@@ -40,13 +40,13 @@ test_that("hr_tt_akde returns the tracks of ungrouped data in metadata order", {
   # first (as do its id in the group keys)
   x_meta <- x
   show_meta(x_meta) <- show_meta(x)[2:1, , drop = FALSE]
-  akde <- hr_tt_akde(x_meta, fits, res = c(500, 1000))
+  akde <- hr_tt_akde(x_meta, fits, res = as_units(c(500, 1000), "m"))
   expect_equal(as.character(akde$track), c("Gabs", "Cilla"))
   expect_equal(names(akde$ud), c("Gabs", "Cilla"))
   # per-track values are matched in the same order
-  expect_equal(akde$res, c(500, 1000))
+  expect_equal(akde$res, as_units(c(500, 1000), "m"))
   # each track with its own UD
-  akde_by_key <- hr_tt_akde(x, fits, res = c(1000, 500))
+  akde_by_key <- hr_tt_akde(x, fits, res = as_units(c(1000, 500), "m"))
   expect_equal(
     lapply(akde$ud, terra::values),
     lapply(akde_by_key$ud, terra::values)[c("Gabs", "Cilla")]
@@ -71,7 +71,7 @@ test_that("hr_tt_akde UDs are those estimated by ctmm", {
   # estimate of the home range area
   tel <- suppressMessages(mt_as_telemetry(x))
   ud_default <- ctmm::akde(tel$Cilla, fits$model$Cilla)
-  expect_equal(akde$res[1], min(ud_default$dr), tolerance = 0.1)
+  expect_equal(as.numeric(akde$res[1]), min(ud_default$dr), tolerance = 0.1)
   expect_equal(
     summary(akde$ud_ctmm[[1]], units = FALSE)$CI[1, "est"],
     summary(ud_default, units = FALSE)$CI[1, "est"],
@@ -81,8 +81,8 @@ test_that("hr_tt_akde UDs are those estimated by ctmm", {
 
 test_that("hr_tt_akde uses the grid it is given", {
   bbox <- c(xmin = 20000, ymin = -15000, xmax = 60000, ymax = 15000)
-  akde <- hr_tt_akde(x, fits, bbox = bbox, res = 500)
-  expect_equal(unique(akde$res), 500)
+  akde <- hr_tt_akde(x, fits, bbox = bbox, res = as_units(500, "m"))
+  expect_equal(unique(akde$res), as_units(500, "m"))
   expect_equal(
     as.vector(terra::ext(akde$ud[[1]])),
     c(xmin = 20000, xmax = 60000, ymin = -15000, ymax = 15000)
@@ -93,7 +93,7 @@ test_that("hr_tt_akde uses the grid it is given", {
     c(xmin = 25000, ymin = -10000, xmax = 50000, ymax = 10000),
     c(xmin = 30000, ymin = -10000, xmax = 55000, ymax = 10000)
   )
-  akde <- hr_tt_akde(x, fits, bbox = bbox_list, res = 250)
+  akde <- hr_tt_akde(x, fits, bbox = bbox_list, res = as_units(250, "m"))
   expect_equal(akde$xmin, c(25000, 30000))
   # a grid that is too small gives a warning
   small_bbox <- c(xmin = 35000, ymin = -2000, xmax = 40000, ymax = 2000)
@@ -102,15 +102,30 @@ test_that("hr_tt_akde uses the grid it is given", {
       filter_by_meta(x, track == "Cilla"),
       fits,
       bbox = small_bbox,
-      res = 100
+      res = as_units(100, "m")
     ),
     "the grid of group Cilla only contains"
   )
   # the default grid misses up to about `tolerance` of the UD, which does not
   # give a warning, even with a large tolerance
   expect_no_warning(hr_tt_akde(x, fits, tolerance = 0.05))
-  expect_error(hr_tt_akde(x, fits, res = c(1, 2, 3)), "res must be")
-  expect_error(hr_tt_akde(x, fits, res = -1), "finite, positive")
+  expect_error(
+    hr_tt_akde(x, fits, res = as_units(c(1, 2, 3), "m")),
+    "res must be"
+  )
+  expect_error(
+    hr_tt_akde(x, fits, res = as_units(-1, "m")),
+    "finite, positive"
+  )
+  # res is a distance with units
+  expect_error(
+    hr_tt_akde(x, fits, res = 500),
+    "res must be a distance with units"
+  )
+  expect_error(
+    hr_tt_akde(x, fits, res = as_units(500, "s")),
+    "res must be in units that can be converted"
+  )
 })
 
 test_that("hr_tt_akde returns isopleths with confidence intervals", {

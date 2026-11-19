@@ -1,7 +1,7 @@
 test_that("hr_tt_ud_sum works", {
   # load a simple dataset originally from adehabitat
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   expect_false(inherits(boar_kde$ud, "PackedSpatRaster_list"))
   rast_sum <- hr_tt_ud_sum(boar_kde$ud)
   # check that this is a raster
@@ -29,7 +29,7 @@ test_that("hr_tt_ud_sum works", {
 
 test_that("hr_tt_ud_sum sums UDs estimated with different bandwidths", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50, h = "h_ref_indiv")
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"), h = "h_ref_indiv")
   tibble_sum <- hr_tt_ud_sum(boar_kde)
   expect_equal(nrow(tibble_sum), 1)
   expect_equal(
@@ -37,10 +37,11 @@ test_that("hr_tt_ud_sum sums UDs estimated with different bandwidths", {
     as.matrix(hr_tt_ud_sum(boar_kde$ud))
   )
   # whose sum has no single bandwidth
-  expect_identical(tibble_sum$h, NA_real_)
+  # (NA, with the units of the bandwidths)
+  expect_equal(tibble_sum$h, as_units(NA_real_, "m"))
   # but UDs on different grids cannot be summed
   expect_error(
-    hr_tt_ud_sum(hr_tt_kde(boar_tt, res = c(50, 25, 50, 50))),
+    hr_tt_ud_sum(hr_tt_kde(boar_tt, res = as_units(c(50, 25, 50, 50), "m"))),
     "all UDs should have the same extent and resolution"
   )
 })

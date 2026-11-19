@@ -113,6 +113,11 @@
     to geometry.meta.
   * Some invalid inputs that were silently accepted now give an error, e.g.
 duplicated track ids in the metadata.
+* `hr_tt_kde()` takes `h` and `res`, and `hr_tt_akde()` takes `res`, as
+  distances with units (e.g. `as_units(50, "m")`), converted to the units of
+  the CRS (angles for longitude/latitude); plain numbers give an error
+* the `h` and `res` columns returned by `hr_tt_kde()`, `hr_tt_akde()`,
+  `hr_tt_akde_pop()`, `hr_tt_dbbmm()` and `hr_tt_dbgb()` have units
 * Speed improvements (same results) for `hr_tt_mcp()`, `hr_tt_kde()` and
   `hr_tt_ud_iso()`.
 

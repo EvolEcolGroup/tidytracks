@@ -1,6 +1,6 @@
 test_that("hr_tt_cud works with a SpatRaster input", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   ud_raster <- boar_kde$ud[[1]]
 
   # default: returns SpatRaster
@@ -53,7 +53,7 @@ test_that("hr_tt_cud works with a matrix input", {
 
 test_that("hr_tt_cud errors correctly", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   ud_raster <- boar_kde$ud[[1]]
 
   # SpatRaster without "ud" layer raises an error
@@ -71,7 +71,7 @@ test_that("hr_tt_cud errors correctly", {
 
 test_that("hr_tt_cud SpatRaster and matrix paths are numerically equivalent", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   ud_raster <- boar_kde$ud[[1]]
 
   # extract the UD values as a matrix and compute CUD both ways
@@ -142,8 +142,8 @@ test_that("the isopleths of a symmetric UD are symmetric", {
   for (method in c("binned", "exact")) {
     iso <- hr_tt_kde(
       one,
-      h = 100,
-      res = 50,
+      h = as_units(100, "m"),
+      res = as_units(50, "m"),
       bbox = bbox,
       levels = c(0.2, 0.5, 0.95),
       method = method

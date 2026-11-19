@@ -91,7 +91,9 @@ test_that("hr_tt_akde_pop estimates a population UD for each group", {
   # we use a coarse grid to make the test fast: with these short tracks, the
   # population UD of the north herd is wide, and the fine default grid would
   # be extended to tens of millions of cells to contain it
-  akde_coarse <- suppressMessages(hr_tt_akde(x, fits, res = 1000))
+  akde_coarse <- suppressMessages(
+    hr_tt_akde(x, fits, res = as_units(1000, "m"))
+  )
   akde_groups <- akde_coarse %>%
     dplyr::left_join(show_meta(x), by = "track") %>%
     dplyr::group_by(herd)
@@ -113,7 +115,9 @@ test_that("hr_tt_akde_pop extends the grid to contain the population UD", {
   # (see the Details of the documentation), which extends beyond the grid of
   # the individual UDs (we use a coarse grid to make the test fast)
   set.seed(1)
-  akde_coarse <- suppressMessages(hr_tt_akde(x, fits, res = 1000))
+  akde_coarse <- suppressMessages(
+    hr_tt_akde(x, fits, res = as_units(1000, "m"))
+  )
   pop <- hr_tt_akde_pop(akde_coarse, tracks = x, models = fits)
   # the grid is extended by whole cells, so it stays aligned
   expect_lt(pop$xmin, akde_coarse$xmin[1])
@@ -123,7 +127,7 @@ test_that("hr_tt_akde_pop extends the grid to contain the population UD", {
     (pop$ymin - akde_coarse$ymin[1]) / 1000
   )
   expect_equal(shift_cells, round(shift_cells))
-  expect_equal(pop$res, 1000)
+  expect_equal(pop$res, as_units(1000, "m"))
   # and it contains the population UD
   pop_tags <- terra::metags(pop$ud[[1]])
   # recent versions of terra return the tags as a data.frame

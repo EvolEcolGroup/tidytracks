@@ -30,7 +30,9 @@ variable.}
 per group. If \code{NULL} (the default), a shared grid that contains all the
 UDs is created (see Details).}
 
-\item{res}{The resolution of the grid (in metres). Supply one value for a
+\item{res}{The resolution of the grid (the side of its square cells), as a
+\code{units} object (e.g. \code{as_units(50, "m")}), which is converted to metres
+(the units of the coordinates of \code{x}). Supply one value for a
 shared resolution or one value per group. If \code{NULL} (the default), the
 resolution follows the default of \code{ctmm} (see Details); with a list of
 \code{bbox} (one per group), each group has its own default resolution.
@@ -76,7 +78,7 @@ in the order of \code{\link[dplyr:group_keys]{dplyr::group_keys()}}
 \item \code{dof_area}: the effective number of degrees of freedom of the home range
 area (small values imply very uncertain estimates)
 \item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax}: the bounding box of the grid
-\item \code{res}: the resolution of the grid
+\item \code{res}: the resolution of the grid, as a \code{units} object (in metres)
 If \code{levels} is NULL:
 \item \code{ud}: the UDs, as a list-column of \code{terra::SpatRaster} objects
 \item \code{ud_ctmm}: the UDs, as a list-column of \code{ctmm} \code{UD} objects

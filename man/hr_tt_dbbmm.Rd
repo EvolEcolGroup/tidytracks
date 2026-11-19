@@ -80,7 +80,7 @@ sorted by track id)
 \code{"dbgb"})
 \item \code{window_size} and \code{margin}: the values used for the sliding window
 \item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax} and \code{res}: the extent and resolution of
-the grid (in metres)
+the grid (in metres), with \code{res} as a \code{units} object
 \item \code{ud} (if \code{levels} is \code{NULL}): the UDs, as a list of \code{terra::SpatRaster}
 objects with a layer named \code{ud} whose values sum to 1
 \item \code{level}, \code{area} and \code{geometry} (if \code{levels} is set): the isopleths, see
