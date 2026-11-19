@@ -77,9 +77,8 @@ The next steps of `summary.md`, in the same order and with the same labels.
   and the WKT/multipolygon spelling words predate the branch). After #102
   was merged, `dev` (`a433574`) was merged into the branch: the code had no
   conflicts, and the three living notes were taken from this branch (they
-  already contained `dev`'s). On the merged tree, only the LoCoH and MCP
-  test files were run (tidypopgen was timing on manica01); CI runs the full
-  check.
+  already contained `dev`'s). The full suite passes on the merged tree
+  (`1dbd9b2`, with move2utils; only the emdist test skipped).
 - **To know:** breaking changes, in NEWS: plain numbers give an error; the
   `hr_tt_locoh()` `buffer` default is `NULL`; code that compares the `h`,
   `res` or `n` columns with plain numbers needs `as.numeric()`. The
