@@ -3,6 +3,58 @@
 Log of major activity, newest first. Never rewrite old entries: add a
 correction as a new entry.
 
+## 2026-11-19 (manica01): distances with units (PR #103)
+
+- **Done:** `h` and `res` of `hr_tt_kde()`, `res` of `hr_tt_akde()`, `n`
+  (types `"r"`, `"a"`) and `buffer` of `hr_tt_locoh()`, the buffers of
+  `tt_split_trips()` and `uere` of `ctmm_tt_fit()` must be `units` objects;
+  the `h`, `res` and `n` columns have units. Re-knitted the ctmm article.
+- **Where:** branch `kde_units` (from `dev`), `d26498f`..`0a5e131`; PR #103.
+- **Result:** full suite passes with move2utils (now installed on manica01,
+  0.4.6); R CMD check 0 errors, 0 warnings. No conflicts with PR #102.
+- **Decisions** (Andrea): `h` has units (the maths); enforce units in every
+  function, with no backward compatibility for `hr_tt_akde_pop()` tables.
+- **Notes changed:** `units.md` (new), `codereview_2026-10.md` (3 items
+  fixed), `README.md`, `summary.md`, `handover.md`.
+
+## 2026-11-19 (manica01): PR #102, an MCP fix, and the data note
+
+- **Done:**
+  - fixed the s2 error of `hr_tt_mcp()` with duplicated lon/lat locations:
+    `grDevices::chull()` can return a location and its duplicate as two
+    vertices, and 15 of 400 rounded tracks failed;
+  - wrote up the parked C++ MCP (`mcp_cpp.md`) and the questions on the
+    data for Lizzie (`note_for_Lizzie.md`);
+  - opened PR #102.
+- **Where:** branch `attribution`, `ae5ffa6` (fix), `7ae85bb` (notes); PR
+  #102 into `dev`.
+- **Result:** of 21,147 polygons, the 62 that changed are the hulls with a
+  repeated vertex; +0.8% instructions on 10,000 tracks.
+- **Decisions** (Andrea): open the PR; do the fix; park the C++ MCP; no `cph`
+  roles; the data questions go to Lizzie.
+- **Notes changed:** `mcp_cpp.md` and `note_for_Lizzie.md` (new), the report,
+  `README.md`, `summary.md`, `handover.md`.
+
+## 2026-11-18 (manica01): code attribution and licence audit
+
+- **Done:** audited the package and the repository for borrowed code and
+  licence problems (scan against 18 upstream packages, three comparing
+  agents, history), then fixed what Andrea approved. Rewrote `dist_fast()`
+  (from trip, GPL-3 only), the MCP helpers (from amt, GPL-3 only) and the
+  LoCoH convex hulls (from Wikibooks, CC BY-SA). Added notices and credits:
+  gganimate (MIT), PNPOLY, GEOS/JTS, and the move2 authors. Removed
+  `dev_notes/explorations/temp/`. An independent agent verified every commit.
+- **Where:** branch `attribution` (local), `8b2960b`..`23780f7`; report
+  `dev_notes/code_review_attribution_2026-11.md`.
+- **Result:** identical results. MCP is 15% faster on many tracks; LoCoH
+  needs up to 8x less memory (`"r"` on 1 M locations now runs, in 32.6 GB;
+  `dev` was killed above 94 GB). R CMD check: 0 errors and 0 warnings.
+- **Decisions** (Andrea): rewrite the GPL-3 and CC BY-SA code with credit to
+  the methods; add `inst/COPYRIGHTS` and `ctb` credits; remove `temp/`; the
+  data later.
+- **Notes changed:** `code_review_attribution_2026-11.md` (new),
+  `README.md`, `summary.md`, `handover.md`.
+
 ## 2026-11-16 (laptopX1): PR #101 for the FPT review
 
 - **Done:** opened PR #101, `codereview_fpt` into `fpt`; deleted the local
