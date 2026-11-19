@@ -3,6 +3,18 @@
 Log of major activity, newest first. Never rewrite old entries: add a
 correction as a new entry.
 
+## 2026-11-19 (manica01, session tidytracks-7a): #82 closed, PR #104 for #81
+
+- **Done:** checked that #82 is fixed on `dev` (reprex and the isopleth
+  tests) and closed it, pointing to PR #100; opened PR #104 for #81:
+  `event_flag_mcconnell()` and `event_flag_outliers()` flag events without a
+  location, so `tt_clean_*()` treat them as flagged events.
+- **Where:** branch `interpolate_empty` (from `dev`), PR #104.
+- **Decisions** (Andrea, in #81): the fix goes in the flagging functions, not
+  the cleaning functions.
+- **Notes changed:** recorded by the session of PR #103 (`summary.md`,
+  `handover.md`, `codereview_2026-10.md`), to avoid conflicts.
+
 ## 2026-11-19 (manica01): distances with units (PR #103)
 
 - **Done:** `h` and `res` of `hr_tt_kde()`, `res` of `hr_tt_akde()`, `n`

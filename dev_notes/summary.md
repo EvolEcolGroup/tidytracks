@@ -50,6 +50,22 @@ code had no conflicts). The decisions are in `dev_notes/units.md`.
 **Next steps**
 - [ ] **P2** [review] Review and merge PR #103 (one commit per function; breaking changes listed in NEWS); check that CI passes.
 
+## Events without a location in the cleaning functions (PR #104, #81)
+
+`flag_action = "interpolate"` filled in events that had no location before
+cleaning, although they were not flagged (#81).
+
+**Status.** PR #104 (`interpolate_empty` into `dev`, 1 commit, by another
+session on 19 Nov), as decided in #81: `event_flag_mcconnell()` and
+`event_flag_outliers()` flag events without a location (`FALSE`), as the
+thinning functions already did, so `tt_clean_*()` interpolate, null or
+remove them with the other flagged events. One change in results:
+`flag_action = "remove"` (the default) now removes them. The changed test
+files pass; it does not conflict with PR #103.
+
+**Next steps**
+- [ ] **P2** [review] Review and merge PR #104 (one commit; the change of results of `flag_action = "remove"` is in NEWS); check that CI passes.
+
 ## Merged on 16-18 Nov: #92 and #82 (PRs #95–#100), developer notes (#99)
 
 PRs #95–#98 (#92: the only column in both the events and the metadata is
@@ -105,8 +121,8 @@ Issues from the review of October 2026 (#86) that need a decision before a
 fix.
 
 **Status.** About 40 open items, by area, in `dev_notes/codereview_2026-10.md`.
-Two related problems were filed as GitHub issues: #81 (open) and #82 (fixed
-by #100). #95 may have fixed two of the items, which are marked in the
+Two related problems were filed as GitHub issues: #81 (PR #104) and #82
+(fixed by #100, closed). #95 may have fixed two of the items, which are marked in the
 document.
 
 **Next steps**

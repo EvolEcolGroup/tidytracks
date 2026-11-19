@@ -48,7 +48,8 @@ with units) fixed three items (marked below).
   thresholds on multi-track input.
 - `flag_action = "interpolate"` also interpolates events that had no location
   before cleaning, while the docs say only flagged events are replaced
-  (GitHub #81).
+  (GitHub #81). (PR #104 flags those events, so the results match the
+  flags.)
 - Numeric (non date-time) time columns are read as seconds.
 
 ## KDE

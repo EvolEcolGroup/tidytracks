@@ -9,6 +9,7 @@ documents listed in `README.md`.
 | branch | purpose | base | pushed | merged |
 |---|---|---|---|---|
 | `kde_units` | distances with units: `h`/`res` of the UD functions, LoCoH `n`/`buffer`, split-trip buffers, `uere`; decisions in `dev_notes/units.md` | `dev` (`6b3d855`; `dev` at `a433574` merged in) | yes | no (PR #103) |
+| `interpolate_empty` | events without a location are flagged by `event_flag_mcconnell()` and `event_flag_outliers()` (#81) | `dev` | yes | no (PR #104) |
 | `move2utilsbug` | two draft move2utils bug reports, now copied to `dev_notes/` | `main` | yes | no (no PR) |
 | `fpt` | Lizzie: first passage time; reviewed in `codereview_fpt` | `dev` | yes | no |
 | `codereview_fpt` | review of `fpt`: fixes, speed-up, new defaults, article; report in `dev_notes/code_review_fpt_2026-11.md` | `fpt` | yes | no (PR #101) |
@@ -31,7 +32,7 @@ The next steps of `summary.md`, in the same order and with the same labels.
 ### 1. **P1** [review] Review and merge PR #102 (done)
 
 - Squash-merged into `dev` on 19 Nov (`a433574`). The local branch
-  `attribution` is left to delete (task 5).
+  `attribution` is left to delete (task 6).
 
 ### 2. **P1** [andrea] Send Lizzie the note on the data
 
@@ -85,13 +86,26 @@ The next steps of `summary.md`, in the same order and with the same labels.
   deprecated `hr_kde()` still takes plain numbers.
 - **Done when:** PR #103 is merged into `dev`; then delete `kde_units`.
 
-### 5. **P3** [cleanup] Delete merged branches
+### 5. **P2** [review] Review and merge PR #104 (events without a location, #81)
+
+- **Read:** the PR description and its one commit (another session, 19 Nov).
+- **Checks already done:** the issue's reprex; the changed test files
+  (McConnell, outliers, move2utils bridge, geometry column name), with
+  move2utils installed; the examples of the four functions; lintr. The new
+  expectations fail on the old code. Not the full suite: CI runs it.
+- **To know:** `flag_action = "remove"` (the default) now removes the
+  events without a location (they were kept). No conflicts with PR #103
+  (`git merge-tree`).
+- **Done when:** PR #104 is merged into `dev` and closes #81; then delete
+  `interpolate_empty`.
+
+### 6. **P3** [cleanup] Delete merged branches
 
 - Delete the local branch `attribution` (squash-merged by #102).
 - Delete `inbound` on origin.
 - Check, then delete, the local squash-merged branches (see "Branches").
 
-### 6. **P1** [andrea] Send Lizzie the note on the FPT review
+### 7. **P1** [andrea] Send Lizzie the note on the FPT review
 
 - The note is the Claude doc "FPT review: note to Lizzie" (private: share it
   first). It points her to the article
@@ -100,7 +114,7 @@ The next steps of `summary.md`, in the same order and with the same labels.
 - **Done when:** Lizzie has reviewed the branch and ticked the report's boxes,
   or listed what to change.
 
-### 7. **P2** [review] Merge #101 (`codereview_fpt`) into `fpt`, then `fpt` into `dev`
+### 8. **P2** [review] Merge #101 (`codereview_fpt`) into `fpt`, then `fpt` into `dev`
 
 - `codereview_fpt` is `fpt` plus the review: 28 commits, verified by separate
   agents. R CMD check was OK at `a27a29b` (1,694 tests, 0 lints).
@@ -112,7 +126,7 @@ The next steps of `summary.md`, in the same order and with the same labels.
 - **Done when:** `fpt` is merged into `dev`; then delete `codereview_fpt`
   and `fpt`.
 
-### 8. **P2** [andrea] File the upstream reports
+### 9. **P2** [andrea] File the upstream reports
 
 - Rerun the example in `move2_track_data_issue.md` with the latest move2, and
   update its output.
@@ -121,19 +135,19 @@ The next steps of `summary.md`, in the same order and with the same labels.
   are filed already.
 - Then delete `move2utilsbug`.
 
-### 9. **P2** [decide] Code review 2: open issues
+### 10. **P2** [decide] Code review 2: open issues
 
 - Read `codereview_2026-10.md`, and pick the items to fix. A fix is one
   branch from `dev` per item, with a test, and a NEWS bullet.
 
-### 10. **P3** [claude] Check the review items that #95 may have fixed
+### 11. **P3** [claude] Check the review items that #95 may have fixed
 
 - **Branch:** `dev` (#95 is merged).
 - **Do:** try `event_ud_level()` with a one-row table of UDs and events of
   several tracks, and `hr_tt_ud_overlap()` on a table grouped by a factor.
   Mark the items as fixed in `codereview_2026-10.md`, or file issues.
 
-### 11. **P3** [decide] Later ctmm analyses
+### 12. **P3** [decide] Later ctmm analyses
 
 - See `ctmm_integration.md`, "Later: further analyses built on the model
   table".
@@ -168,4 +182,4 @@ None.
   ("0.3.0").
 - **Documentation:** the documentation review (#90), and the data cleaning
   vignette (#65).
-- **Open issue:** #81 (McConnell interpolation).
+- **#81** (McConnell interpolation): PR #104 (task 5).
