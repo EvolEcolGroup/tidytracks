@@ -146,8 +146,14 @@ buffalo_akde <- hr_tt_akde(buffalo_sub, buffalo_fit)
 buffalo_akde
 library(ggplot2)
 autoplot(buffalo_akde)
-# the 50\% and 95\% isopleths, with confidence intervals on their area
-hr_tt_akde(buffalo_sub, buffalo_fit, levels = c(0.5, 0.95))
+# the 50\% and 95\% isopleths, with confidence intervals on their area, on a
+# grid of cells of 500 m (res is a distance with units)
+hr_tt_akde(
+  buffalo_sub,
+  buffalo_fit,
+  res = as_units(500, "m"),
+  levels = c(0.5, 0.95)
+)
 }
 \dontshow{\}) # examplesIf}
 }

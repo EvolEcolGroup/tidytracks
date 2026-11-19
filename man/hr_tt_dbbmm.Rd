@@ -156,7 +156,8 @@ ud_dbbmm <- hr_tt_dbbmm(
   margin = 1
 )
 ud_dbbmm
-# estimate kernel UDs on the same grid, to compare them
+# estimate kernel UDs on the same grid, to compare them (the res column is
+# a distance with units, as the res argument of hr_tt_kde() must be)
 ud_kde <- hr_tt_kde(
   x,
   bbox = unlist(ud_dbbmm[1, c("xmin", "ymin", "xmax", "ymax")]),
