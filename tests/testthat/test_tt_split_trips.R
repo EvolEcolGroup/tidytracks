@@ -407,6 +407,64 @@ test_that("tt_split_trips uses buffer_complete at the end of a track", {
 })
 
 
+test_that("tt_split_trips requires the buffers to be distances with units", {
+  coords_df <- create_toy_df()
+  test_mt <- tt_read_data(
+    events = coords_df,
+    col_track_id = "bird_id",
+    col_coords = c("longitude", "latitude"),
+    col_date_time = "date_time"
+  )
+  show_meta(test_mt)$centre_sf <- sf_point_col(
+    x = c(0, 0),
+    y = c(0, 0),
+    crs = 4326
+  )
+  # plain numbers are not taken in the units of the coordinates
+  expect_error(
+    tt_split_trips(test_mt, centre_col = "centre_sf", buffer_trip = 100000),
+    "buffer_trip must be a single distance with units"
+  )
+  expect_error(
+    tt_split_trips(test_mt, centre_col = "centre_sf", buffer_complete = 1e5),
+    "buffer_complete must be a single distance with units"
+  )
+  expect_error(
+    tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_trip = as_units(1, "h")
+    ),
+    "buffer_trip must have units of length"
+  )
+  expect_error(
+    tt_split_trips(
+      test_mt,
+      centre_col = "centre_sf",
+      buffer_trip = as_units(-1, "km")
+    ),
+    "positive distance"
+  )
+  # in a projection in km, the buffers are converted to km
+  test_km <- sf::st_transform(test_mt, "+proj=eqearth +units=km")
+  split_km <- tt_split_trips(
+    test_km,
+    centre_col = "centre_sf",
+    buffer_trip = as_units(100, "km"),
+    buffer_complete = as_units(100, "km"),
+    complete = FALSE
+  )
+  split_m <- tt_split_trips(
+    test_km,
+    centre_col = "centre_sf",
+    buffer_trip = as_units(1e5, "m"),
+    buffer_complete = as_units(1e5, "m"),
+    complete = FALSE
+  )
+  expect_identical(split_m$trip_id, split_km$trip_id)
+  expect_equal(length(unique(split_km$trip_id)), 6)
+})
+
 test_that("tt_split_trips pairs each track with its own centre", {
   # each bird makes one trip from its own nest; the nests are 50 degrees apart
   coords_df <- data.frame(

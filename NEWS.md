@@ -121,6 +121,8 @@ duplicated track ids in the metadata.
 * `hr_tt_locoh()` takes `buffer`, and `n` for types `"r"` and `"a"`, as
   distances with units; `buffer` defaults to `NULL` (no buffer), and the `n`
   column of types `"r"` and `"a"` has units
+* `tt_split_trips()` gives an error for buffers without units (they were
+  taken in the units of the CRS, or in metres for longitude/latitude)
 * Speed improvements (same results) for `hr_tt_mcp()`, `hr_tt_kde()` and
   `hr_tt_ud_iso()`.
 

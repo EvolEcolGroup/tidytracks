@@ -35,14 +35,15 @@
 #'   to create this column.
 #' @param buffer_trip the distance from the centre that delimits trips: a
 #'   trip starts when the animal moves further than this distance from the
-#'   centre, and ends when it comes back within it. Specified as a unit object,
-#'   e.g `as_units(10000, "m")` or `as_units(10, "km")`.
+#'   centre, and ends when it comes back within it. A distance with units,
+#'   e.g. `as_units(10000, "m")` or `as_units(10, "km")` (plain numbers give
+#'   an error).
 #' @param buffer_complete a distance from the centre, usually the same as or
 #'   larger than `buffer_trip`, within which a track can start or end during
 #'   a trip and that trip still be classified as complete (see Description). It
 #'   has no effect if it is the same as, or smaller than, `buffer_trip`.
-#'   Specified as a unit object, e.g `as_units(10000, "m")` or `as_units(10,
-#'   "km")`.
+#'   A distance with units, e.g. `as_units(10000, "m")` or
+#'   `as_units(10, "km")` (plain numbers give an error).
 #' @param complete boolean, if TRUE, only complete trips are kept. If FALSE,
 #'   all trips are kept, and events at the colony (i.e. in-between trips) are
 #'   collected into a dummy trip labelled "trip_na".
@@ -160,6 +161,16 @@ tt_split_trips <- function(
     buffer_complete <- buffer_inbound
   }
 
+  # the buffers are distances, which must have units: as plain numbers in the
+  # units of the distances to the centre (checked first, as they also give a
+  # clear error if x has no CRS)
+  buffer_trip_uless <- split_trips_buffer(buffer_trip, "buffer_trip", x)
+  buffer_complete_uless <- split_trips_buffer(
+    buffer_complete,
+    "buffer_complete",
+    x
+  )
+
   boundary_choices <- c("none", "return", "departure", "both")
   if (identical(boundary_events, boundary_choices)) {
     boundary_events <- "none"
@@ -206,22 +217,9 @@ tt_split_trips <- function(
     stop("centre_col must be the name of a column in the metadata")
   }
 
-  # Sort out units
-  # set the units for the distance
-  if (sf::st_is_longlat(x)) {
-    is_longlat <- TRUE
-    dist_units <- as_units("m")
-  } else {
-    is_longlat <- FALSE
-    dist_units <- sf::st_crs(x)$ud_unit
-  }
-  # convert buffers and drop units
-  buffer_trip_uless <- units::drop_units(
-    units::set_units(buffer_trip, dist_units, mode = "standard")
-  )
-  buffer_complete_uless <- units::drop_units(
-    units::set_units(buffer_complete, dist_units, mode = "standard")
-  )
+  # the distances to the centre are computed on the ellipsoid, in metres, for
+  # longitude/latitude, or else in the units of the CRS
+  is_longlat <- isTRUE(sf::st_is_longlat(x))
 
   # Get coordinates, track ids and times of the events
   coords <- sf::st_coordinates(x)
@@ -291,6 +289,40 @@ tt_split_trips <- function(
   }
 
   return(x)
+}
+
+#' Convert a buffer of `tt_split_trips()` to a plain number
+#'
+#' Internal function that checks that a buffer is a single non-negative
+#' distance with units, and converts it to the units in which the distances to
+#' the centre are computed: metres for longitude/latitude (on the ellipsoid),
+#' or else the units of the CRS.
+#'
+#' @param buffer The buffer, a `units` object.
+#' @param arg The name of the argument, used in error messages.
+#' @param x The `move2` object.
+#' @returns The buffer, as a plain number.
+#' @keywords internal
+#' @noRd
+split_trips_buffer <- function(buffer, arg, x) {
+  # plain numbers are rejected rather than assumed to be in the units of the
+  # coordinates, as physical quantities must carry their units
+  if (!inherits(buffer, "units") || length(buffer) != 1) {
+    stop(
+      arg, " must be a single distance with units, e.g. as_units(10, 'km')",
+      call. = FALSE
+    )
+  }
+  crs <- sf::st_crs(x)
+  value <- if (isTRUE(sf::st_is_longlat(crs))) {
+    to_metres(buffer, arg, allow_zero = TRUE) # nolint: object_usage_linter.
+  } else {
+    to_crs_units(buffer, arg, crs) # nolint: object_usage_linter.
+  }
+  if (!is.finite(value) || value < 0) {
+    stop(arg, " must be a non-negative distance", call. = FALSE)
+  }
+  value
 }
 
 #' @title Split a track into trips
