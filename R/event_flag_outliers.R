@@ -41,11 +41,13 @@
 #'
 #' `x` must be ordered by time within each track (see [tt_order_time()]).
 #' Some methods also require events with duplicated times to be removed first
-#' (e.g. with [move2::mt_filter_unique()]). Events without a location are
-#' ignored, and returned as valid. Tracks with too few events with a location
-#' for the method (10 for "clean_track", 5 for "probability", and 2 for the
-#' other methods) are not checked, with a warning, and their events are
-#' returned as valid.
+#' (e.g. with [move2::mt_filter_unique()]). Events without a location (e.g.
+#' failed fixes) are not checked, and are flagged as not valid (`FALSE`):
+#' [tt_clean_outliers()] then removes them, or interpolates their location,
+#' together with the outliers. Tracks with too few events with a location for
+#' the method (10 for "clean_track", 5 for "probability", and 2 for the other
+#' methods) are not checked, with a warning, and their events with a location
+#' are returned as valid.
 #'
 #' @param x A `move2` object.
 #' @param method The method used to detect outliers, one of "clean_track"
@@ -54,8 +56,8 @@
 #' @param ... Further arguments passed to the `move2utils` function of the
 #'   chosen method.
 #' @returns A logical vector of the same length as the number of events in `x`,
-#'   indicating which events are valid (`TRUE`) and which are outliers
-#'   (`FALSE`).
+#'   indicating which events are valid (`TRUE`) and which are outliers or
+#'   have no location (`FALSE`).
 #' @seealso [tt_clean_outliers()] to remove the outliers, or replace their
 #'   location.
 #' @export
@@ -137,7 +139,8 @@ event_flag_outliers <- function(
   # mt_clean_track() needs 10 locations (it returns shorter tracks without
   # flags), the probability method three steps with a turning angle (5
   # locations), and the other methods a step. shorter tracks are therefore
-  # not passed to move2utils, and their events are returned as valid
+  # not passed to move2utils, and their events with a location are returned
+  # as valid
   min_located <- switch(method, clean_track = 10, probability = 5, 2)
   located <- !sf::st_is_empty(x)
   ids <- as.character(event_track_id(x))
@@ -149,12 +152,16 @@ event_flag_outliers <- function(
   if (n_short > 0) {
     warning(
       n_short, " track(s) with fewer than ", min_located, " events with a ",
-      "location were not checked for outliers; their events are returned ",
-      "as valid"
+      "location were not checked for outliers; their events with a location ",
+      "are returned as valid"
     )
   }
 
-  valid <- rep(TRUE, nrow(x))
+  # events without a location are not valid (there is no location to judge),
+  # so that tt_clean_outliers() removes them, or interpolates their location,
+  # like the outliers; the events with a location of the tracks that are not
+  # checked are valid
+  valid <- located
   if (any(checked)) {
     # subsetting a move2 object is slow, so it is skipped when all tracks
     # are checked
@@ -191,12 +198,11 @@ event_flag_outliers <- function(
         )
       )
       # events without a location are not passed to move2utils and come back
-      # as NA: they are returned as valid (as in event_flag_mcconnell()), as
-      # there is no location to judge; %in% also treats any NA from
+      # as NA (they are set as not valid below); %in% also treats any NA from
       # move2utils itself as not flagged
       flagged[rows] <- res$is_outlier %in% TRUE
     }
-    valid[checked] <- !flagged
+    valid[checked] <- located[checked] & !flagged
   }
   valid
 }

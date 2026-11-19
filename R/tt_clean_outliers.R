@@ -5,7 +5,10 @@
 #' removes them, sets their location to empty, or replaces their location by
 #' interpolation. It requires the suggested package `move2utils` (install it
 #' with `remotes::install_github("move2universe/move2utils")`). To flag the
-#' outliers without acting on them, use [event_flag_outliers()].
+#' outliers without acting on them, use [event_flag_outliers()]. Events
+#' without a location (e.g. failed fixes) are flagged too (see
+#' [event_flag_outliers()]), so they are removed, or their location is
+#' interpolated, together with the outliers.
 #'
 #' @inheritParams event_flag_outliers
 #' @param flag_action One of "remove", "null", or "interpolate", to either
@@ -27,7 +30,7 @@ tt_clean_outliers <- function(
   # matched before detecting outliers so that a typo fails straight away
   flag_action <- match.arg(flag_action)
   # all other checks are done by event_flag_outliers(); valid has no NA
-  # (events without a location are TRUE), as apply_flag_action() requires
+  # (events without a location are FALSE), as apply_flag_action() requires
   valid <- event_flag_outliers( # nolint: object_usage_linter.
     x,
     method = method,
