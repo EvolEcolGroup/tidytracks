@@ -47,11 +47,11 @@ columns have units. Since 23 Nov, `hr_tt_kde()` and `hr_tt_locoh()` also
 give an error for longitude/latitude data (as the bridges already did),
 which asks for an equal-area projection and gives one centred on the data;
 the examples project `example_tt` with `"+proj=laea +lon_0=-1 +lat_0=0"`.
-R CMD check gives 0 errors and 0 warnings (2,047 tests pass). The decisions
-are in `dev_notes/units.md`.
+R CMD check gives 0 errors and 0 warnings (2,047 tests pass), and CI
+passes. The decisions are in `dev_notes/units.md`.
 
 **Next steps**
-- [ ] **P2** [review] Review and merge PR #103 (one commit per function; breaking changes listed in NEWS, including the lon/lat error); check that CI passes.
+- [ ] **P2** [review] Review and merge PR #103 (one commit per function; breaking changes listed in NEWS, including the lon/lat error); CI passes.
 
 ## Events without a location in the cleaning functions (PR #104, #81)
 

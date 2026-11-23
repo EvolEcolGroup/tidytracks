@@ -84,7 +84,8 @@ The next steps of `summary.md`, in the same order and with the same labels.
   already contained `dev`'s). The full suite passes on the merged tree
   (`1dbd9b2`, with move2utils; only the emdist test skipped). R CMD check
   on `caa43a6` (23 Nov): 0 errors, 0 warnings, the same 3 NOTEs; 2,047
-  tests pass, 1 skipped (emdist); the main vignette renders.
+  tests pass, 1 skipped (emdist); the main vignette renders. CI passes
+  on `f31f2d9` (R CMD check on all platforms, lint, coverage, pkgdown).
 - **To know:** breaking changes, in NEWS: `hr_tt_kde()` and
   `hr_tt_locoh()` give an error for longitude/latitude data; plain numbers give an error; the
   `hr_tt_locoh()` `buffer` default is `NULL`; code that compares the `h`,

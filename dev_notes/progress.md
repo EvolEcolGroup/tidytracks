@@ -14,7 +14,7 @@ correction as a new entry.
   `aeqd` while saying "equal area").
 - **Where:** `kde_units`, `14ea301`..`caa43a6` (4 commits), PR #103.
 - **Result:** R CMD check 0 errors, 0 warnings (the 3 old NOTEs); 2,047
-  tests pass, 1 skipped (emdist).
+  tests pass, 1 skipped (emdist); CI passes on `f31f2d9`, lint included.
 - **Decisions:** error, not warning, for lon/lat UDs, with an equal-area
   projection in the message and short CRSs in examples (Andrea); LoCoH
   counted among the "similar" methods (Claude); `ctmm_tt_fit()` unchanged.
