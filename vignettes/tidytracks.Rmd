@@ -544,15 +544,16 @@ shags_tt_split %>%
 
 # Home Range estimates
 
-For this analysis, we will use the shags_females data set we just created. To 
-estimate home ranges, we need to project the data to an equal area projection. 
-We can use the `sf::st_transform()` function to do this:
+For this analysis, we will use the shags_females data set we just created. To
+estimate home ranges, we need to project the data to an equal area projection:
+utilisation distributions computed in degrees of longitude and latitude would
+be distorted, so the home range functions give an error for unprojected data.
+Here we use a Lambert azimuthal equal-area projection centred on the colony,
+with the `sf::st_transform()` function (`crstools::suggest_crs()` can suggest
+a projection for other data):
 ```{r female_crs}
 shags_females_proj <- shags_females %>%
-  st_transform(crs = paste0(
-    "+proj=aeqd +lon_0=-68 +lat_0=-67 ",
-    "+units=m +datum=WGS84 +no_defs"
-  ))
+  st_transform(crs = "+proj=laea +lon_0=-68 +lat_0=-67")
 ```
 
 ## Kernel UDs
