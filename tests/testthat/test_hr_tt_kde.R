@@ -153,22 +153,41 @@ test_that("hr_tt_kde takes h and res as distances with units", {
     "res must be in units that can be converted to those of the coordinates"
   )
 
-  # in longitude/latitude, the coordinates are in degrees, so h and res must
-  # be angles
-  expect_error(
-    hr_tt_kde(example_tt, res = as_units(5, "km")),
-    "x is in longitude/latitude, so res must be an angle"
-  )
-  kde_lonlat <- hr_tt_kde(example_tt, res = as_units(6, "arcmin"))
-  expect_equal(kde_lonlat$res, as_units(rep(0.1, 3), "degree"))
-  expect_equal(units::deparse_unit(kde_lonlat$h), "\u00b0")
-
   # without a coordinate reference system, the units are unknown
   no_crs <- sf::st_set_crs(boar_tt, NA)
   expect_error(
     hr_tt_kde(no_crs, res = as_units(50, "m")),
     "x has no coordinate reference system"
   )
+})
+
+test_that("hr_tt_kde gives an error for longitude/latitude data", {
+  # in degrees, the kernel would be distorted, so the error asks for an
+  # equal-area projection, whatever h and res
+  expect_error(
+    hr_tt_kde(example_tt),
+    paste0(
+      "x is in longitude/latitude, but hr_tt_kde\\(\\) needs it in an ",
+      "equal-area projection"
+    )
+  )
+  expect_error(
+    hr_tt_kde(example_tt, res = as_units(6, "arcmin")),
+    "x is in longitude/latitude"
+  )
+  # it suggests a Lambert azimuthal equal-area projection centred on the
+  # data, which works
+  expect_error(
+    hr_tt_kde(example_tt, h = as_units(50, "km")),
+    "sf::st_transform(x, \"+proj=laea +lon_0=-1 +lat_0=0\")",
+    fixed = TRUE
+  )
+  expect_s3_class(
+    hr_tt_kde(sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")),
+    "hr_tt_ud_tbl"
+  )
+  # the centre is found on the sphere, so it works across the antimeridian
+  expect_equal(lonlat_centre(cbind(c(179, -179), c(-50, -52))), c(180, -51))
 })
 
 test_that("the deprecated hr_kde takes h and res in the units of the CRS", {
@@ -274,16 +293,17 @@ test_that("hr_tt_kde returns the tracks of ungrouped data in metadata order", {
   x <- tt_order_time(
     readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
   )
-  kde <- hr_tt_kde(x, h = as_units(c(1, 2, 3), "degree"))
+  x <- sf::st_transform(x, "+proj=laea +lon_0=0 +lat_0=0")
+  kde <- hr_tt_kde(x, h = as_units(c(100, 200, 300), "km"))
   expect_s3_class(kde$track_id, "factor")
   expect_equal(as.character(kde$track_id), c("b", "a", "c"))
   expect_equal(names(kde$ud), c("b", "a", "c"))
   # per-track values are matched in the same order
-  expect_equal(kde$h, as_units(c(1, 2, 3), "degree"))
+  expect_equal(kde$h, as_units(c(1e5, 2e5, 3e5), "m"))
   # each track with its own UD
   kde_by_key <- hr_tt_kde(
     dplyr::group_by(x, track_id),
-    h = as_units(c(2, 1, 3), "degree")
+    h = as_units(c(200, 100, 300), "km")
   )
   expect_equal(as.character(kde_by_key$track_id), c("a", "b", "c"))
   expect_equal(
@@ -291,7 +311,7 @@ test_that("hr_tt_kde returns the tracks of ungrouped data in metadata order", {
     lapply(kde_by_key$ud, terra::values)[c("b", "a", "c")]
   )
   # and so are the isopleths
-  iso <- hr_tt_kde(x, h = as_units(c(1, 2, 3), "degree"), levels = 0.5)
+  iso <- hr_tt_kde(x, h = as_units(c(100, 200, 300), "km"), levels = 0.5)
   expect_equal(as.character(iso$track_id), c("b", "a", "c"))
 })
 

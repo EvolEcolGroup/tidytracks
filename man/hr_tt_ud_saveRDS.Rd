@@ -30,7 +30,9 @@ restore it explicitly for repeated analyses.
 }
 \examples{
 \dontrun{
-example_kde <- hr_tt_kde(example_tt)
+# project example_tt (in longitude/latitude) to an equal-area projection
+example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+example_kde <- hr_tt_kde(example_proj)
 hr_tt_ud_saveRDS(example_kde, "example-kde.rds")
 loaded_kde <- readRDS("example-kde.rds")
 }

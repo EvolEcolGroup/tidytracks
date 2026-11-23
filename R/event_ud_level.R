@@ -28,11 +28,13 @@
 #' @returns A numeric vector with one value per event of `x`, between 0 and 1.
 #' @export
 #' @examplesIf requireNamespace("move2utils", quietly = TRUE)
-#' ud <- hr_tt_kde(example_tt)
+#' # project example_tt (in longitude/latitude) to an equal-area projection
+#' example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+#' ud <- hr_tt_kde(example_proj)
 #' # the level of each event in the UD of its own track
-#' event_ud_level(example_tt, ud)
+#' event_ud_level(example_proj, ud)
 #' # the level of each event in the UD of track "a"
-#' event_ud_level(example_tt, ud$ud[["a"]])
+#' event_ud_level(example_proj, ud$ud[["a"]])
 event_ud_level <- function(x, ud) {
   check_move2utils("event_ud_level") # nolint: object_usage_linter.
   if (!inherits(x, "move2")) {

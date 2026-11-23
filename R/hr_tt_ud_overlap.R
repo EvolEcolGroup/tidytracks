@@ -61,7 +61,9 @@
 #'   locations written as WKT).
 #' @export
 #' @examples
-#' example_kde <- hr_tt_kde(example_tt)
+#' # project example_tt (in longitude/latitude) to an equal-area projection
+#' example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+#' example_kde <- hr_tt_kde(example_proj)
 #' hr_tt_ud_overlap(example_kde)
 hr_tt_ud_overlap <- function(
   x,

@@ -14,7 +14,9 @@ hr_tt_kde(
 )
 }
 \arguments{
-\item{x}{A move2 object; if explicitly grouped, the home range is estimated
+\item{x}{A move2 object, in a projected coordinate reference system,
+ideally an equal-area one (not longitude/latitude; see Details); if
+explicitly grouped, the home range is estimated
 for each group, combining all tracks within each group. Otherwise, the
 track id is used as grouping variable. Every group must have events, so
 groupings with empty groups (e.g. from grouping by a factor with unused
@@ -84,8 +86,7 @@ Else, if \code{levels} is not NULL, there is one row per group and level, and
 the following columns are added:
 \item \code{level}: the level of the isopleth
 \item \code{area}: the area of the home range at this level (in the units
-of the projection of \code{x}, e.g. m^2 for a UTM projection, or in m^2 for
-unprojected data)
+of the projection of \code{x}, e.g. m^2 for a projection in metres)
 \item \code{geometry}:  an \code{sfc} column containing the multipolygons representing
 the isopleth for the appropriate level
 }
@@ -100,6 +101,16 @@ separately.
 }
 \details{
 Events with an empty geometry (i.e. no location) are ignored.
+
+The kernel is computed on the plane of the coordinates, so \code{x} must be
+projected, ideally with an equal-area projection (e.g. a Lambert
+azimuthal equal-area projection centred on the data,
+\code{"+proj=laea +lon_0=<longitude> +lat_0=<latitude>"}, or the projection
+suggested by \code{crstools::suggest_crs()}), so that the density of the UD
+is a density per unit of area everywhere on the grid. Longitude/latitude
+data give an error: in degrees, the kernel and the UD would be distorted,
+increasingly so away from the equator (a degree of longitude is half as
+long at 60 degrees of latitude as at the equator).
 
 The UD is estimated on a grid of cells, with one of two methods:
 \itemize{
@@ -128,11 +139,7 @@ area. This option is useful to reduce memory use, but has the drawback that
 the full UD is not returned, which can be useful for some applications (e.g.
 to compute overlap between home ranges). If \code{levels} is set, the area of the
 isopleths is computed using \code{sf::st_area()}, which returns the area in the
-units of the projection of \code{x} (e.g. m^2 for a UTM projection), or in m^2 if
-\code{x} is unprojected (longitude/latitude). Note, however, that for unprojected
-data the kernel is computed in degrees, so the bandwidth and the shape of the
-UD are distorted (increasingly so away from the equator); it is recommended
-to project \code{x} to an appropriate projection before using this function.
+units of the projection of \code{x} (e.g. m^2 for a projection in metres).
 
 \strong{Units of \code{h} and \code{res}.} The bandwidth \code{h} is the standard deviation of
 the Gaussian kernel: a location at a distance \eqn{d} from the centre of a
@@ -141,33 +148,34 @@ like \eqn{d}, is a distance in the units of the coordinates of \code{x}. So are
 the resolution \code{res} (the side of the cells) and the reference bandwidth
 (the standard deviation of the coordinates times \eqn{n^{-1/6}}, with
 \eqn{n} the number of locations). A plain number would be read in the
-units of the coordinates (e.g. metres for a UTM projection, degrees for
-longitude/latitude), so that a bandwidth of 5 meant in kilometres would
-give a kernel 1000 times too narrow. \code{h} and \code{res} must therefore be given
-as \code{units} objects (e.g. \code{as_units(500, "m")} or
+units of the coordinates (e.g. metres or feet, depending on the
+projection), so that a bandwidth of 5 meant in kilometres would give a
+kernel 1000 times too narrow on data in metres. \code{h} and \code{res} must
+therefore be given as \code{units} objects (e.g. \code{as_units(500, "m")} or
 \code{as_units(0.5, "km")}), which are converted to the units of the coordinate
 reference system of \code{x}; they are returned in those units (columns \code{h} and
-\code{res}). For unprojected data, they must be angles (e.g.
-\code{as_units(0.01, "degree")}).
+\code{res}).
 }
 \examples{
-example_kde <- hr_tt_kde(example_tt)
+# example_tt is in longitude/latitude: project it first, to an equal-area
+# projection centred on the data (Lambert azimuthal equal-area)
+example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+example_kde <- hr_tt_kde(example_proj)
 example_kde
 library(ggplot2)
 autoplot(example_kde)
 # compute the isopleths for the 50\% and 95\% home range
-example_iso <- hr_tt_kde(example_tt, levels = c(0.5, 0.95))
+example_iso <- hr_tt_kde(example_proj, levels = c(0.5, 0.95))
 ggplot(example_iso) +
   geom_sf(aes(fill = track_id), alpha = 0.7)
 # the same isopleths, evaluating the kernel of every location at every cell
 example_iso_exact <- hr_tt_kde(
-  example_tt,
+  example_proj,
   levels = c(0.5, 0.95),
   method = "exact"
 )
 # h and res are distances with units: in a projection in metres, they can
 # be given in any units of length
-example_proj <- sf::st_transform(example_tt, "+proj=eqearth")
 hr_tt_kde(
   example_proj,
   h = as_units(50, "km"),

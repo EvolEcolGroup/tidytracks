@@ -124,12 +124,13 @@ test_that("hr_tt_ud_overlap works", {
 
 test_that("hr_tt_ud_overlap identifies the UDs by all grouping variables", {
   # one UD per track, grouped by sex and track id
-  kde <- hr_tt_kde(group_by_meta(example_tt, sex, track_id))
+  example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+  kde <- hr_tt_kde(group_by_meta(example_proj, sex, track_id))
   overlap <- hr_tt_ud_overlap(kde)
   ids <- c("female_c", "male_a", "male_b")
   expect_equal(dimnames(overlap), list(ids, ids))
   # the same overlaps as for the UDs of the tracks
-  by_track <- hr_tt_ud_overlap(hr_tt_kde(example_tt))
+  by_track <- hr_tt_ud_overlap(hr_tt_kde(example_proj))
   expect_equal(
     unname(overlap),
     unname(by_track[c("c", "a", "b"), c("c", "a", "b")])
@@ -142,7 +143,7 @@ test_that("hr_tt_ud_overlap identifies the UDs by all grouping variables", {
 })
 
 test_that("hr_tt_ud_overlap rejects unused arguments for two UDs", {
-  ud <- hr_tt_kde(example_tt)
+  ud <- hr_tt_kde(sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0"))
   # method comes after ..., so a method given by position would be ignored
   expect_error(
     hr_tt_ud_overlap(ud$ud[[1]], ud$ud[[2]], "vi"),
@@ -273,7 +274,7 @@ test_that("earth_mover_sinkhorn works with cond_level", {
 
 test_that("earth_mover_sinkhorn requires move2utils", {
   local_mocked_bindings(is_move2utils_installed = function() FALSE)
-  ud <- hr_tt_kde(example_tt)
+  ud <- hr_tt_kde(sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0"))
   expect_error(
     hr_tt_ud_overlap(ud, method = "earth_mover_sinkhorn"),
     "requires the suggested package 'move2utils'"

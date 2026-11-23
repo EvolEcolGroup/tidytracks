@@ -34,7 +34,9 @@ input UD sums to 1). This is equivalent to dividing by the sum of values in
 the combined UDs.
 }
 \examples{
-example_kde <- hr_tt_kde(example_tt)
+# project example_tt (in longitude/latitude) to an equal-area projection
+example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+example_kde <- hr_tt_kde(example_proj)
 # sum the UDs for all tracks in the tibble
 hr_tt_ud_sum(example_kde)
 # add sex info from metadata and use it to group the UDs

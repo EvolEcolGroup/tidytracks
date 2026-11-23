@@ -255,7 +255,8 @@ test_that("hr_tt_akde_pop checks its inputs", {
   # the UDs must be estimated with hr_tt_akde() (a KDE of example_tt, as the
   # default grid of a KDE of x is too coarse for the binned method, which
   # warns about it)
-  kde <- hr_tt_kde(example_tt)
+  example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+  kde <- hr_tt_kde(example_proj)
   expect_error(
     hr_tt_akde_pop(kde, method = "mean"),
     "estimated with hr_tt_akde"

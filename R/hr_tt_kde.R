@@ -9,6 +9,16 @@
 #'
 #' @details Events with an empty geometry (i.e. no location) are ignored.
 #'
+#' The kernel is computed on the plane of the coordinates, so `x` must be
+#' projected, ideally with an equal-area projection (e.g. a Lambert
+#' azimuthal equal-area projection centred on the data,
+#' `"+proj=laea +lon_0=<longitude> +lat_0=<latitude>"`, or the projection
+#' suggested by `crstools::suggest_crs()`), so that the density of the UD
+#' is a density per unit of area everywhere on the grid. Longitude/latitude
+#' data give an error: in degrees, the kernel and the UD would be distorted,
+#' increasingly so away from the equator (a degree of longitude is half as
+#' long at 60 degrees of latitude as at the equator).
+#'
 #' The UD is estimated on a grid of cells, with one of two methods:
 #' - `"exact"` evaluates the kernel of every location at the centre of every
 #'   cell (with [MASS::kde2d()]), so the time it takes grows with the number
@@ -34,11 +44,7 @@
 #' the full UD is not returned, which can be useful for some applications (e.g.
 #' to compute overlap between home ranges). If `levels` is set, the area of the
 #' isopleths is computed using `sf::st_area()`, which returns the area in the
-#' units of the projection of `x` (e.g. m^2 for a UTM projection), or in m^2 if
-#' `x` is unprojected (longitude/latitude). Note, however, that for unprojected
-#' data the kernel is computed in degrees, so the bandwidth and the shape of the
-#' UD are distorted (increasingly so away from the equator); it is recommended
-#' to project `x` to an appropriate projection before using this function.
+#' units of the projection of `x` (e.g. m^2 for a projection in metres).
 #'
 #' **Units of `h` and `res`.** The bandwidth `h` is the standard deviation of
 #' the Gaussian kernel: a location at a distance \eqn{d} from the centre of a
@@ -47,16 +53,17 @@
 #' the resolution `res` (the side of the cells) and the reference bandwidth
 #' (the standard deviation of the coordinates times \eqn{n^{-1/6}}, with
 #' \eqn{n} the number of locations). A plain number would be read in the
-#' units of the coordinates (e.g. metres for a UTM projection, degrees for
-#' longitude/latitude), so that a bandwidth of 5 meant in kilometres would
-#' give a kernel 1000 times too narrow. `h` and `res` must therefore be given
-#' as `units` objects (e.g. `as_units(500, "m")` or
+#' units of the coordinates (e.g. metres or feet, depending on the
+#' projection), so that a bandwidth of 5 meant in kilometres would give a
+#' kernel 1000 times too narrow on data in metres. `h` and `res` must
+#' therefore be given as `units` objects (e.g. `as_units(500, "m")` or
 #' `as_units(0.5, "km")`), which are converted to the units of the coordinate
 #' reference system of `x`; they are returned in those units (columns `h` and
-#' `res`). For unprojected data, they must be angles (e.g.
-#' `as_units(0.01, "degree")`).
+#' `res`).
 #'
-#' @param x A move2 object; if explicitly grouped, the home range is estimated
+#' @param x A move2 object, in a projected coordinate reference system,
+#'   ideally an equal-area one (not longitude/latitude; see Details); if
+#'   explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
 #'   track id is used as grouping variable. Every group must have events, so
 #'   groupings with empty groups (e.g. from grouping by a factor with unused
@@ -118,30 +125,31 @@
 #' the following columns are added:
 #' - `level`: the level of the isopleth
 #' - `area`: the area of the home range at this level (in the units
-#'   of the projection of `x`, e.g. m^2 for a UTM projection, or in m^2 for
-#'   unprojected data)
+#'   of the projection of `x`, e.g. m^2 for a projection in metres)
 #' - `geometry`:  an `sfc` column containing the multipolygons representing
 #'   the isopleth for the appropriate level
 #'
 #' @export
 #' @examples
-#' example_kde <- hr_tt_kde(example_tt)
+#' # example_tt is in longitude/latitude: project it first, to an equal-area
+#' # projection centred on the data (Lambert azimuthal equal-area)
+#' example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+#' example_kde <- hr_tt_kde(example_proj)
 #' example_kde
 #' library(ggplot2)
 #' autoplot(example_kde)
 #' # compute the isopleths for the 50% and 95% home range
-#' example_iso <- hr_tt_kde(example_tt, levels = c(0.5, 0.95))
+#' example_iso <- hr_tt_kde(example_proj, levels = c(0.5, 0.95))
 #' ggplot(example_iso) +
 #'   geom_sf(aes(fill = track_id), alpha = 0.7)
 #' # the same isopleths, evaluating the kernel of every location at every cell
 #' example_iso_exact <- hr_tt_kde(
-#'   example_tt,
+#'   example_proj,
 #'   levels = c(0.5, 0.95),
 #'   method = "exact"
 #' )
 #' # h and res are distances with units: in a projection in metres, they can
 #' # be given in any units of length
-#' example_proj <- sf::st_transform(example_tt, "+proj=eqearth")
 #' hr_tt_kde(
 #'   example_proj,
 #'   h = as_units(50, "km"),
@@ -157,6 +165,11 @@ hr_tt_kde <- function(
   method = c("binned", "exact")
 ) {
   method <- match.arg(method)
+  # the kernel is computed on the plane of the coordinates, so x must be
+  # projected (and h and res are distances, in the units of its CRS, in which
+  # the reference bandwidth is also computed)
+  crs_x <- sf::st_crs(x)
+  check_projected(x, crs_x, "hr_tt_kde()")
   # if x is not grouped, use the track ID column as grouping variable
   by_track <- !inherits(x, "grouped_df")
   if (by_track) {
@@ -193,9 +206,6 @@ hr_tt_kde <- function(
   if (!all(group_unique %in% group_index)) {
     stop("each group must contain at least one event with a location")
   }
-  # h and res are distances, in the units of the coordinates of x (those of
-  # its CRS), in which the reference bandwidth is also computed
-  crs_x <- sf::st_crs(x)
   # check h
   if (is.character(h)) {
     h <- match.arg(
@@ -351,7 +361,8 @@ hr_tt_kde <- function(
         y = grid$y,
         res = grid$res,
         levels = iso_levels,
-        ops_crs = if (grid$longlat) grid$iso_crs else sf::NA_crs_,
+        # x is projected, so the isopleths are built on the plane
+        ops_crs = sf::NA_crs_,
         cud_raster = function() {
           terra::setValues(
             grid$template,
@@ -527,6 +538,75 @@ with_crs_units <- function(value, crs) {
   )
 }
 
+#' Stop if the coordinates are longitudes and latitudes
+#'
+#' Internal function used by the `hr_tt_*()` functions that estimate home
+#' ranges on the plane of the coordinates (KDE, LoCoH, the bridges). In
+#' longitude/latitude, that plane is in degrees, and a degree of longitude
+#' shrinks with latitude (to half a degree of latitude at 60 degrees), so
+#' kernels, neighbourhoods and areas would be distorted. The error asks for
+#' an equal-area projection, and gives one centred on the data, ready to
+#' paste.
+#'
+#' @param x A `move2` object.
+#' @param crs The coordinate reference system of `x` (an `sf` `crs` object),
+#'   looked up once by the caller.
+#' @param fun The name of the calling function, for the error message.
+#' @returns `NULL`, invisibly, if `x` is not in longitude/latitude (including
+#'   when it has no CRS); otherwise an error.
+#' @keywords internal
+#' @noRd
+check_projected <- function(x, crs, fun) {
+  if (!isTRUE(sf::st_is_longlat(crs))) {
+    return(invisible(NULL))
+  }
+  # a Lambert azimuthal equal-area projection centred on the data, which has
+  # little distortion over the extent of a home range
+  centre <- lonlat_centre(sf::st_coordinates(x))
+  stop(
+    "x is in longitude/latitude, but ", fun, " needs it in an equal-area ",
+    "projection: in degrees, distances and areas are distorted (a degree ",
+    "of longitude is half as long at 60 degrees of latitude as at the ",
+    "equator), and so is the home range. Project x first, e.g. to a ",
+    "Lambert azimuthal equal-area projection centred on the data, with ",
+    "sf::st_transform(x, \"+proj=laea +lon_0=", centre[1], " +lat_0=",
+    centre[2], "\"), or to the projection suggested by ",
+    "crstools::suggest_crs(x)",
+    call. = FALSE
+  )
+}
+
+#' Find the centre of locations in longitude/latitude
+#'
+#' Internal function used by `check_projected()` to suggest a projection
+#' centred on the data. The centre is the mean of the locations as points on
+#' a sphere (in 3D), which, unlike the mean of the longitudes, also works for
+#' tracks that cross the antimeridian.
+#'
+#' @param xy A matrix of longitudes and latitudes (in degrees), as from
+#'   [sf::st_coordinates()]; rows with missing values (empty locations) are
+#'   ignored.
+#' @returns The longitude and latitude of the centre, rounded to whole
+#'   degrees (enough for a projection over a home range, and short to type),
+#'   or 0 and 0 if there are no locations.
+#' @keywords internal
+#' @noRd
+lonlat_centre <- function(xy) {
+  xy <- xy[stats::complete.cases(xy[, 1:2]), 1:2, drop = FALSE] * pi / 180
+  if (nrow(xy) == 0) {
+    return(c(0, 0))
+  }
+  # the mean of the locations as unit vectors, back to longitude/latitude
+  v <- colMeans(cbind(
+    cos(xy[, 2]) * cos(xy[, 1]),
+    cos(xy[, 2]) * sin(xy[, 1]),
+    sin(xy[, 2])
+  ))
+  centre <- c(atan2(v[2], v[1]), atan2(v[3], sqrt(v[1]^2 + v[2]^2)))
+  # + 0 turns -0 into 0
+  round(centre * 180 / pi) + 0
+}
+
 
 #' Set up a grid for the KDE
 #'
@@ -544,10 +624,9 @@ with_crs_units <- function(value, crs) {
 #' @returns A list with `template` (an empty `terra::SpatRaster`, with a
 #'   layer named `"ud"`) and, if
 #'   `isopleths` is `TRUE`, `iso_crs` (the CRS of the isopleths, as obtained
-#'   from the raster), `longlat` (whether that CRS is in longitude/latitude),
-#'   `x` and `y` (the coordinates of the centres of the columns, and of the
-#'   rows from south to north), and `res` (the size of the cells along x and
-#'   along y).
+#'   from the raster), `x` and `y` (the coordinates of the centres of the
+#'   columns, and of the rows from south to north), and `res` (the size of the
+#'   cells along x and along y).
 #' @keywords internal
 #' @noRd
 kde_grid <- function(bbox, res, crs, isopleths) {
@@ -573,7 +652,6 @@ kde_grid <- function(bbox, res, crs, isopleths) {
   list(
     template = template,
     iso_crs = iso_crs,
-    longlat = isTRUE(sf::st_is_longlat(iso_crs)),
     x = terra::xFromCol(template, seq_len(n[1])),
     y = terra::yFromRow(template, rev(seq_len(n[2]))),
     res = terra::res(template)
