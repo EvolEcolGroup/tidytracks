@@ -30,8 +30,21 @@ test_that("hr_tt_dbbmm gives the correct errors", {
     hr_tt_dbbmm(x_no_crs),
     "x must have a coordinate reference system"
   )
+  # longitude/latitude data are asked to be projected to an equal-area
+  # projection, and other units to be metres
   expect_error(
     hr_tt_dbbmm(example_tt),
+    paste0(
+      "x is in longitude/latitude, but hr_tt_dbbmm\\(\\) needs it in an ",
+      "equal-area projection"
+    )
+  )
+  expect_error(
+    hr_tt_dbgb(example_tt),
+    "x is in longitude/latitude, but hr_tt_dbgb\\(\\) needs it"
+  )
+  expect_error(
+    hr_tt_dbbmm(sf::st_transform(x, "+proj=laea +units=km")),
     "x must have a projected coordinate reference system in metres"
   )
   x$sex <- "f"
