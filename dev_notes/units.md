@@ -22,13 +22,29 @@ functions already followed this rule; PR #103 (branch `kde_units`, 19 Nov
   a distance \(d\) is \(\exp(-d^2 / (2h^2)) / (2\pi h^2)\), so \(d/h\) has no
   units and `h` is in the units of the coordinates; so is the reference
   bandwidth, sd(coordinates) × \(n^{-1/6}\).
+- **Home ranges need projected data, ideally equal-area** (Andrea, 23 Nov
+  2026, after Lizzie's exploration
+  `explorations/kde_longlat_units.Rmd`: a KDE in degrees is stretched
+  north-south, e.g. +7% area and 1.25x elongation at 60 degrees, silently).
+  `hr_tt_kde()`, `hr_tt_locoh()`, `hr_tt_dbbmm()` and `hr_tt_dbgb()` give
+  an error for longitude/latitude data (`check_projected()`), which says
+  why and suggests a Lambert azimuthal equal-area projection centred on the
+  data, ready to paste, or `crstools::suggest_crs(x)`. Before, KDE and
+  LoCoH ran in degrees, with `h`, `res`, `n` and `buffer` as angles (a
+  decision of 19 Nov, now replaced). LoCoH is included as a kernel method
+  for UDs (Getz et al. 2007; Claude's reading of "KDE and similar"). Other
+  projections (e.g. UTM) are accepted: over a home range their distortion
+  is negligible, and equal-area cannot be told reliably from a CRS. Data
+  without a CRS still run. `ctmm_tt_fit()` already refused
+  longitude/latitude with its own message (which suggests
+  `crstools::suggest_crs()`, equal-area by default), and is unchanged.
+  `hr_tt_mcp()` still takes longitude/latitude: its hulls and areas are
+  computed on the sphere (s2).
 - **Distances are converted to the units in which the computation is done**:
-  - on the plane, in the units of the CRS (`to_crs_units()`): `h` and `res`
-    of `hr_tt_kde()`, `res` of `hr_tt_akde()`, `n` (types `"r"` and `"a"`)
-    and `buffer` of `hr_tt_locoh()`. On longitude/latitude data these are
-    computed in degrees, so the arguments must be angles (e.g.
-    `as_units(6, "arcmin")`); a length gives an error that suggests
-    projecting `x`. Without a CRS, an error asks for one.
+  - on the plane, in the units of the (projected) CRS (`to_crs_units()`):
+    `h` and `res` of `hr_tt_kde()`, `res` of `hr_tt_akde()`, `n` (types
+    `"r"` and `"a"`) and `buffer` of `hr_tt_locoh()`. Without a CRS, an
+    error asks for one.
   - on the ellipsoid, in metres: the buffers of `tt_split_trips()` on
     longitude/latitude data (`to_metres()`), so a buffer in km works on
     both projected and unprojected data.
@@ -45,7 +61,8 @@ functions already followed this rule; PR #103 (branch `kde_units`, 19 Nov
 - **`hr_tt_akde_pop()` requires `res` with units**, with no support for
   tables from earlier versions (Andrea, 19 Nov).
 - **`hr_tt_locoh(buffer)` defaults to `NULL`** (no buffer) rather than 0, as
-  a default with units could not be converted to degrees.
+  a default with units could not be converted to degrees (when LoCoH still
+  ran on longitude/latitude data).
 - **Counts, probabilities, ratios and statistical thresholds stay plain
   numbers**: e.g. `n` of LoCoH type `"k"` (a units object is an error),
   `levels`, `tolerance` of `hr_tt_akde()`, `window_size`, the detour and
@@ -56,10 +73,16 @@ functions already followed this rule; PR #103 (branch `kde_units`, 19 Nov
 
 ## How it works
 
-- `to_crs_units(value, arg, crs)` (in `R/hr_tt_kde.R`): checks that `value`
-  is a `units` object, converts it to `crs$ud_unit`, and returns plain
-  numbers; its errors name the argument, and say when `x` is in
-  longitude/latitude.
+- `check_projected(x, crs, fun)` (in `R/hr_tt_kde.R`): the error for
+  longitude/latitude data, called first by `hr_tt_kde()`, `hr_tt_locoh()`
+  and `hr_tt_bridge()`. `lonlat_centre()` finds the centre of the
+  suggested projection: the mean of the locations as unit vectors (so it
+  works across the antimeridian), rounded to whole degrees (example_tt:
+  `"+proj=laea +lon_0=-1 +lat_0=0"`, the CRS of the examples).
+- `to_crs_units(value, arg, crs)` (same file): checks that `value` is a
+  `units` object, converts it to `crs$ud_unit`, and returns plain numbers;
+  its errors name the argument. Its callers only pass projected CRSs (or
+  none).
 - `with_crs_units(value, crs)` (same file): the inverse, for the output
   columns.
 - `to_metres(x, arg, allow_zero)` (in `R/event_flag_thin_distance.R`): a

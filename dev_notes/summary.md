@@ -1,6 +1,6 @@
 # tidytracks: summary
 
-Updated 2026-11-19 (manica01). tidytracks has no jobs in
+Updated 2026-11-23 (manica01). tidytracks has no jobs in
 dramanica/claude_jobs: its work is tracked in its own GitHub issues, so the
 sections below are by line of work, not by job.
 
@@ -37,18 +37,21 @@ lists the findings not fixed. The questions on the data are in
 
 Arguments that are distances were read as plain numbers in the units of the
 CRS (metres, feet or degrees, depending on the data); they must now be
-`units` objects (19 Nov).
+`units` objects (19 Nov). Home ranges also need projected data (23 Nov).
 
-**Status.** PR #103 (`kde_units` into `dev`, 9 commits): `h` and `res` of
+**Status.** PR #103 (`kde_units` into `dev`, 13 commits): `h` and `res` of
 `hr_tt_kde()`, `res` of `hr_tt_akde()`, `n` (types `"r"`, `"a"`) and
 `buffer` of `hr_tt_locoh()`, the buffers of `tt_split_trips()` and `uere` of
 `ctmm_tt_fit()`; plain numbers give an error, and the `h`, `res` and `n`
-columns have units. The full suite passes (with move2utils) and R CMD check
-gives 0 errors and 0 warnings. `dev`, with PR #102, is merged into it (the
-code had no conflicts). The decisions are in `dev_notes/units.md`.
+columns have units. Since 23 Nov, `hr_tt_kde()` and `hr_tt_locoh()` also
+give an error for longitude/latitude data (as the bridges already did),
+which asks for an equal-area projection and gives one centred on the data;
+the examples project `example_tt` with `"+proj=laea +lon_0=-1 +lat_0=0"`.
+R CMD check gives 0 errors and 0 warnings (2,047 tests pass). The decisions
+are in `dev_notes/units.md`.
 
 **Next steps**
-- [ ] **P2** [review] Review and merge PR #103 (one commit per function; breaking changes listed in NEWS); check that CI passes.
+- [ ] **P2** [review] Review and merge PR #103 (one commit per function; breaking changes listed in NEWS, including the lon/lat error); check that CI passes.
 
 ## Events without a location in the cleaning functions (PR #104, #81)
 

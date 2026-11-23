@@ -1,6 +1,6 @@
 # tidytracks: handover
 
-Updated 2026-11-19 (manica01). For the next session: read this and
+Updated 2026-11-23 (manica01). For the next session: read this and
 `summary.md` first. History is in `progress.md`; designs are in the topic
 documents listed in `README.md`.
 
@@ -8,7 +8,7 @@ documents listed in `README.md`.
 
 | branch | purpose | base | pushed | merged |
 |---|---|---|---|---|
-| `kde_units` | distances with units: `h`/`res` of the UD functions, LoCoH `n`/`buffer`, split-trip buffers, `uere`; decisions in `dev_notes/units.md` | `dev` (`6b3d855`; `dev` at `a433574` merged in) | yes | no (PR #103) |
+| `kde_units` | distances with units: `h`/`res` of the UD functions, LoCoH `n`/`buffer`, split-trip buffers, `uere`; error for lon/lat data in KDE, LoCoH and the bridges; decisions in `dev_notes/units.md` | `dev` (`6b3d855`; `dev` at `a433574` merged in) | yes | no (PR #103) |
 | `interpolate_empty` | events without a location are flagged by `event_flag_mcconnell()` and `event_flag_outliers()` (#81) | `dev` | yes | no (PR #104) |
 | `move2utilsbug` | two draft move2utils bug reports, now copied to `dev_notes/` | `main` | yes | no (no PR) |
 | `fpt` | Lizzie: first passage time; reviewed in `codereview_fpt` | `dev` | yes | no |
@@ -71,15 +71,22 @@ The next steps of `summary.md`, in the same order and with the same labels.
   `hr_tt_akde()`, the output columns), `9bcc317` (ctmm article re-knitted),
   `67d2216` (`hr_tt_akde_pop()`), `a9d7970` (`hr_tt_locoh()`), `ee94b00`
   (`tt_split_trips()`), `5d1523e` (`ctmm_tt_fit()`), `cf8f6b2` (examples),
-  `d1d4cd9` (`hr_benchmark.R`), `0a5e131` (word list).
+  `d1d4cd9` (`hr_benchmark.R`), `0a5e131` (word list); then, on 23 Nov,
+  the error for longitude/latitude data: `14ea301` (`hr_tt_kde()`, the
+  shared `check_projected()`, the examples of the UD functions), `57935fb`
+  (`hr_tt_locoh()`, its lon/lat code removed), `90fe551` (the bridges'
+  message), `caa43a6` (main vignette in LAEA).
 - **Checks already done:** the full suite with move2utils (only the emdist
   test skipped); R CMD check on `0a5e131`: 0 errors, 0 warnings (the NOTEs
   and the WKT/multipolygon spelling words predate the branch). After #102
   was merged, `dev` (`a433574`) was merged into the branch: the code had no
   conflicts, and the three living notes were taken from this branch (they
   already contained `dev`'s). The full suite passes on the merged tree
-  (`1dbd9b2`, with move2utils; only the emdist test skipped).
-- **To know:** breaking changes, in NEWS: plain numbers give an error; the
+  (`1dbd9b2`, with move2utils; only the emdist test skipped). R CMD check
+  on `caa43a6` (23 Nov): 0 errors, 0 warnings, the same 3 NOTEs; 2,047
+  tests pass, 1 skipped (emdist); the main vignette renders.
+- **To know:** breaking changes, in NEWS: `hr_tt_kde()` and
+  `hr_tt_locoh()` give an error for longitude/latitude data; plain numbers give an error; the
   `hr_tt_locoh()` `buffer` default is `NULL`; code that compares the `h`,
   `res` or `n` columns with plain numbers needs `as.numeric()`. The
   deprecated `hr_kde()` still takes plain numbers.

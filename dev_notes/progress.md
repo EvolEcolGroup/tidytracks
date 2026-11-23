@@ -3,6 +3,23 @@
 Log of major activity, newest first. Never rewrite old entries: add a
 correction as a new entry.
 
+## 2026-11-23 (manica01): home ranges need projected data (PR #103)
+
+- **Done:** `hr_tt_kde()` and `hr_tt_locoh()` give an error for
+  longitude/latitude data, asking for an equal-area projection and giving
+  one centred on the data (new `check_projected()`); `hr_tt_dbbmm()` and
+  `hr_tt_dbgb()` give the same message. The lon/lat code of LoCoH and KDE
+  is gone. Examples project `example_tt` with
+  `"+proj=laea +lon_0=-1 +lat_0=0"`; the main vignette uses LAEA (it used
+  `aeqd` while saying "equal area").
+- **Where:** `kde_units`, `14ea301`..`caa43a6` (4 commits), PR #103.
+- **Result:** R CMD check 0 errors, 0 warnings (the 3 old NOTEs); 2,047
+  tests pass, 1 skipped (emdist).
+- **Decisions:** error, not warning, for lon/lat UDs, with an equal-area
+  projection in the message and short CRSs in examples (Andrea); LoCoH
+  counted among the "similar" methods (Claude); `ctmm_tt_fit()` unchanged.
+- **Notes changed:** `units.md`, `README.md`, `summary.md`, `handover.md`.
+
 ## 2026-11-19 (manica01, session tidytracks-7a): #82 closed, PR #104 for #81
 
 - **Done:** checked that #82 is fixed on `dev` (reprex and the isopleth
