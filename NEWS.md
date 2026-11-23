@@ -116,8 +116,9 @@ duplicated track ids in the metadata.
 * `hr_tt_kde()` takes `h` and `res`, and `hr_tt_akde()` takes `res`, as
   distances with units (e.g. `as_units(50, "m")`), converted to the units of
   the CRS; plain numbers give an error
-* `hr_tt_kde()` gives an error for longitude/latitude data, which it asks to
-  project to an equal-area projection (the kernel was computed in degrees)
+* `hr_tt_kde()` and `hr_tt_locoh()` give an error for longitude/latitude
+  data, which they ask to project to an equal-area projection (the kernels
+  and hulls were computed in degrees)
 * the `h` and `res` columns returned by `hr_tt_kde()`, `hr_tt_akde()`,
   `hr_tt_akde_pop()`, `hr_tt_dbbmm()` and `hr_tt_dbgb()` have units
 * `hr_tt_locoh()` takes `buffer`, and `n` for types `"r"` and `"a"`, as

@@ -13,7 +13,9 @@ hr_tt_locoh(
 )
 }
 \arguments{
-\item{x}{A move2 object; if explicitly grouped, the home range is estimated
+\item{x}{A move2 object, in a projected coordinate reference system,
+ideally an equal-area one (not longitude/latitude; see Details); if
+explicitly grouped, the home range is estimated
 for each group, combining all tracks within each group. Otherwise, the
 track id is used as grouping variable. Every group must have events, so
 groupings with empty groups (e.g. from grouping by a factor with unused
@@ -121,26 +123,29 @@ here (e.g. \code{as_units(1e-5, "m")} for a projection in metres) gives the same
 isopleths.
 
 Distances are computed in the units of the projection of \code{x}, and hulls are
-built and merged on a plane. For unprojected data (longitude/latitude),
-distances (and so \code{n} for types \code{"r"} and \code{"a"}, and \code{buffer}) are thus in
-degrees (they must be given as angles, e.g. \code{as_units(0.01, "degree")}),
-and the hulls are distorted (increasingly so away from the
-equator); it is recommended to project \code{x} to an appropriate projection
-before using this function. Areas are computed with \code{\link[sf:st_area]{sf::st_area()}}, in the
-units of the projection of \code{x} (e.g. m^2 for a UTM projection), or in m^2
-for unprojected data.
+built and merged on a plane, so \code{x} must be projected, ideally with an
+equal-area projection (e.g. a Lambert azimuthal equal-area projection
+centred on the data, \code{"+proj=laea +lon_0=<longitude> +lat_0=<latitude>"},
+or the projection suggested by \code{crstools::suggest_crs()}).
+Longitude/latitude data give an error: in degrees, the neighbourhoods and
+the hulls would be distorted, increasingly so away from the equator (a
+degree of longitude is half as long at 60 degrees of latitude as at the
+equator). Areas are computed with \code{\link[sf:st_area]{sf::st_area()}}, in the units of the
+projection of \code{x} (e.g. m^2 for a projection in metres).
 }
 \examples{
+# example_tt is in longitude/latitude: project it first, to an equal-area
+# projection centred on the data (Lambert azimuthal equal-area)
+example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
 # the tracks in example_tt are short (5 locations each), so each hull is
 # built from a location and its 3 nearest neighbours
-example_locoh <- hr_tt_locoh(example_tt, n = 3)
+example_locoh <- hr_tt_locoh(example_proj, n = 3)
 example_locoh
 library(ggplot2)
 ggplot(example_locoh) +
   geom_sf(aes(fill = track_id), alpha = 0.7)
 # with types "r" and "a", n is a distance with units, as is buffer (here
-# in a projection in metres, so that the hulls are not distorted)
-example_proj <- sf::st_transform(example_tt, "+proj=eqearth")
+# in metres, the units of the projection, but any units of length work)
 hr_tt_locoh(
   example_proj,
   n = as_units(1500, "km"),

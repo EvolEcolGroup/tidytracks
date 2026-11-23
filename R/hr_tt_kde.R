@@ -458,8 +458,9 @@ align_kde_bbox <- function(bbox, res) {
 #' that are distances (the resolution of the grid, the bandwidth of the
 #' kernel), which must be given as `units` objects, and which they need as
 #' plain numbers in the units of the coordinates: those of the coordinate
-#' reference system (e.g. metres for a UTM projection, degrees for
-#' longitude/latitude).
+#' reference system (e.g. metres or feet, depending on the projection). The
+#' callers only pass projected CRSs (or none): longitude/latitude data are
+#' rejected earlier (see `check_projected()`).
 #'
 #' @param value A `units` object.
 #' @param arg The name of the argument, used in error messages.
@@ -500,14 +501,6 @@ to_crs_units <- function(value, arg, crs) {
         arg, " must be in units that can be converted to those of the ",
         "coordinates of x ('", crs_unit, "'); got '",
         units::deparse_unit(value), "'",
-        # in longitude/latitude, the coordinates are angles
-        if (isTRUE(sf::st_is_longlat(crs))) {
-          paste0(
-            ". x is in longitude/latitude, so ", arg, " must be an angle ",
-            "(e.g. as_units(0.01, 'degree')), or x can be projected with ",
-            "sf::st_transform()"
-          )
-        },
         call. = FALSE
       )
     }
