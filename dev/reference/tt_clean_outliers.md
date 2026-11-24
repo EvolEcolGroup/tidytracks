@@ -9,6 +9,10 @@ package `move2utils` (install it with
 `remotes::install_github("move2universe/move2utils")`). To flag the
 outliers without acting on them, use
 [`event_flag_outliers()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_outliers.md).
+Events without a location (e.g. failed fixes) are flagged too (see
+[`event_flag_outliers()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_outliers.md)),
+so they are removed, or their location is interpolated, together with
+the outliers.
 
 ## Usage
 

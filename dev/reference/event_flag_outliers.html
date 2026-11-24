@@ -89,8 +89,8 @@ chosen method.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A logical vector of the same length as the number of events in <code>x</code>,
-indicating which events are valid (<code>TRUE</code>) and which are outliers
-(<code>FALSE</code>).</p>
+indicating which events are valid (<code>TRUE</code>) and which are outliers or
+have no location (<code>FALSE</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -126,11 +126,13 @@ run without plots and messages; to inspect their diagnostics, call them
 directly on <code>x</code>.</p>
 <p><code>x</code> must be ordered by time within each track (see <code><a href="tt_order_time.html">tt_order_time()</a></code>).
 Some methods also require events with duplicated times to be removed first
-(e.g. with <code><a href="https://bartk.gitlab.io/move2/reference/mt_filter_unique.html" class="external-link">move2::mt_filter_unique()</a></code>). Events without a location are
-ignored, and returned as valid. Tracks with too few events with a location
-for the method (10 for "clean_track", 5 for "probability", and 2 for the
-other methods) are not checked, with a warning, and their events are
-returned as valid.</p>
+(e.g. with <code><a href="https://bartk.gitlab.io/move2/reference/mt_filter_unique.html" class="external-link">move2::mt_filter_unique()</a></code>). Events without a location (e.g.
+failed fixes) are not checked, and are flagged as not valid (<code>FALSE</code>):
+<code><a href="tt_clean_outliers.html">tt_clean_outliers()</a></code> then removes them, or interpolates their location,
+together with the outliers. Tracks with too few events with a location for
+the method (10 for "clean_track", 5 for "probability", and 2 for the other
+methods) are not checked, with a warning, and their events with a location
+are returned as valid.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

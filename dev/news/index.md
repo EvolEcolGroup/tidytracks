@@ -245,6 +245,15 @@
   isopleth in the order of the cells of the grid, which made the
   isopleths of a symmetric UD asymmetric. The UDs of real tracks, whose
   cells hardly ever have the same value, are not affected.
+- [`event_flag_mcconnell()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_mcconnell.md)
+  and
+  [`event_flag_outliers()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_outliers.md)
+  now flag events without a location, so
+  [`tt_clean_mcconnell()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_clean_mcconnell.md)
+  and
+  [`tt_clean_outliers()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_clean_outliers.md)
+  remove them or interpolate their location
+  ([\#81](https://github.com/EvolEcolGroup/tidytracks/issues/81))
 
 ### Documentation
 

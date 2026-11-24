@@ -50,6 +50,13 @@ tt_clean_mcconnell(
 The `move2` object `x`, with the flagged events removed, or with their
 location set to empty or interpolated (see `flag_action`).
 
+## Details
+
+Events without a location (e.g. failed fixes) are flagged too (see
+[`event_flag_mcconnell()`](https://evolecolgroup.github.io/tidytracks/dev/reference/event_flag_mcconnell.md)),
+so they are removed, or their location is interpolated, together with
+the events flagged by the algorithm.
+
 ## Examples
 
 ``` r

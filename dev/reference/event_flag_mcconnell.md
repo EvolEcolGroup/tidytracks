@@ -31,7 +31,8 @@ event_flag_mcconnell(x, max_speed = NULL, check_first_last = FALSE)
 ## Value
 
 A logical vector of the same length as the number of events in `x`,
-indicating which points are valid.
+indicating which points are valid (`TRUE`), and which are flagged by the
+filter or have no location (`FALSE`).
 
 ## Details
 
@@ -48,10 +49,13 @@ track, and the endpoint check is repeated until the result is stable.
 
 Speeds are computed between consecutive events of each track in time
 order, whatever the order in which the events are stored in `x`. Events
-with an empty geometry (i.e. no location) are ignored by the filter and
-returned as valid. Consecutive events at the same location are treated
-as having zero speed, even when they share the same timestamp (e.g.
-duplicated records).
+with an empty geometry (i.e. no location, e.g. failed fixes) are left
+out of the filter, and flagged as not valid (`FALSE`):
+[`tt_clean_mcconnell()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_clean_mcconnell.md)
+then removes them, or interpolates their location, together with the
+events flagged by the filter. Consecutive events at the same location
+are treated as having zero speed, even when they share the same
+timestamp (e.g. duplicated records).
 
 ## Examples
 

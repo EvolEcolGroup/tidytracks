@@ -37,8 +37,8 @@ event_flag_outliers(
 ## Value
 
 A logical vector of the same length as the number of events in `x`,
-indicating which events are valid (`TRUE`) and which are outliers
-(`FALSE`).
+indicating which events are valid (`TRUE`) and which are outliers or
+have no location (`FALSE`).
 
 ## Details
 
@@ -93,10 +93,14 @@ their diagnostics, call them directly on `x`.
 Some methods also require events with duplicated times to be removed
 first (e.g. with
 [`move2::mt_filter_unique()`](https://bartk.gitlab.io/move2/reference/mt_filter_unique.html)).
-Events without a location are ignored, and returned as valid. Tracks
-with too few events with a location for the method (10 for
-"clean_track", 5 for "probability", and 2 for the other methods) are not
-checked, with a warning, and their events are returned as valid.
+Events without a location (e.g. failed fixes) are not checked, and are
+flagged as not valid (`FALSE`):
+[`tt_clean_outliers()`](https://evolecolgroup.github.io/tidytracks/dev/reference/tt_clean_outliers.md)
+then removes them, or interpolates their location, together with the
+outliers. Tracks with too few events with a location for the method (10
+for "clean_track", 5 for "probability", and 2 for the other methods) are
+not checked, with a warning, and their events with a location are
+returned as valid.
 
 ## See also
 

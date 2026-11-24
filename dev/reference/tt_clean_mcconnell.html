@@ -103,6 +103,12 @@ filter is rerun on the reduced track until the result is stable.</p></dd>
     <p>The <code>move2</code> object <code>x</code>, with the flagged events removed, or with
 their location set to empty or interpolated (see <code>flag_action</code>).</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Events without a location (e.g. failed fixes) are flagged too (see
+<code><a href="event_flag_mcconnell.html">event_flag_mcconnell()</a></code>), so they are removed, or their location is
+interpolated, together with the events flagged by the algorithm.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
