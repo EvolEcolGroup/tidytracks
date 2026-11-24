@@ -77,9 +77,16 @@ test_that("hr_tt_locoh works with all types", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
   boar_tt <- boar_tt[boar_tt$name == "Brock", ]
   for (type in c("k", "r", "a")) {
-    n <- switch(type, k = 10, r = 400, a = 3000)
+    # for types "r" and "a", n is a distance, with units
+    n <- switch(
+      type,
+      k = 10,
+      r = as_units(400, "m"),
+      a = as_units(3000, "m")
+    )
     locoh <- hr_tt_locoh(boar_tt, n = n, type = type, levels = c(0.5, 0.9))
     expect_equal(locoh$type, rep(type, 2))
+    expect_equal(locoh$n, rep(n, 2))
     expect_equal(locoh$level, c(0.9, 0.5))
     expect_true(all(as.numeric(locoh$area) > 0))
     expect_gt(as.numeric(locoh$area[1]), as.numeric(locoh$area[2]))
@@ -153,6 +160,7 @@ test_that("hr_tt_locoh returns ungrouped tracks in metadata order", {
   x <- tt_order_time(
     readRDS(file.path(test_path("testdata"), "example_tt_2.rds"))
   )
+  x <- sf::st_transform(x, "+proj=laea +lon_0=0 +lat_0=0")
   n <- c(3, 4, 2)
   track_locoh <- hr_tt_locoh(x, n = n, levels = 0.9)
 
@@ -190,8 +198,37 @@ test_that("hr_tt_locoh validates its arguments", {
     hr_tt_locoh(boar_tt, n = 19),
     "groups with too few locations: Calou"
   )
-  expect_error(hr_tt_locoh(boar_tt, buffer = -1), "non-negative number")
-  expect_error(hr_tt_locoh(boar_tt, buffer = c(1, 2)), "non-negative number")
+  expect_error(
+    hr_tt_locoh(boar_tt, buffer = as_units(-1, "m")),
+    "single non-negative distance"
+  )
+  expect_error(
+    hr_tt_locoh(boar_tt, buffer = as_units(c(1, 2), "m")),
+    "single non-negative distance"
+  )
+  # distances must have units (n for types "r" and "a", and buffer), and n for
+  # type "k" must not
+  expect_error(
+    hr_tt_locoh(boar_tt, buffer = 1),
+    "buffer must be a distance with units"
+  )
+  expect_error(
+    hr_tt_locoh(boar_tt, n = 400, type = "r"),
+    "for type \"r\", n is a distance, which must be given with units"
+  )
+  expect_error(
+    hr_tt_locoh(boar_tt, n = as_units(3000, "s"), type = "a"),
+    "n must be in units that can be converted"
+  )
+  expect_error(
+    hr_tt_locoh(boar_tt, n = as_units(10, "m")),
+    "for type \"k\", n is a number of neighbours"
+  )
+  # the same distances in other units give the same home ranges
+  expect_equal(
+    hr_tt_locoh(boar_tt, n = as_units(0.4, "km"), type = "r")$area,
+    hr_tt_locoh(boar_tt, n = as_units(400, "m"), type = "r")$area
+  )
 })
 
 test_that("hr_tt_locoh requires at least 3 locations per group", {
@@ -216,12 +253,22 @@ test_that("hr_tt_locoh ignores events without a location", {
   )
 })
 
-test_that("hr_tt_locoh works with unprojected data", {
+test_that("hr_tt_locoh gives an error for longitude/latitude data", {
+  # in degrees, the neighbourhoods and hulls would be distorted, so the error
+  # asks for an equal-area projection, and suggests one centred on the data
   toy_tt <- create_toy_tt()
-  toy_locoh <- hr_tt_locoh(toy_tt, n = 4, levels = 0.9)
-  expect_equal(nrow(toy_locoh), 2)
-  expect_true(sf::st_is_longlat(toy_locoh))
-  expect_true(all(as.numeric(toy_locoh$area) > 0))
+  expect_error(
+    hr_tt_locoh(toy_tt, n = 4, levels = 0.9),
+    paste0(
+      "x is in longitude/latitude, but hr_tt_locoh\\(\\) needs it in an ",
+      "equal-area projection"
+    )
+  )
+  expect_error(
+    hr_tt_locoh(example_tt, n = 3, buffer = as_units(0.001, "degree")),
+    "sf::st_transform(x, \"+proj=laea +lon_0=-1 +lat_0=0\")",
+    fixed = TRUE
+  )
 })
 
 test_that("hulls with no area are only kept with a buffer", {
@@ -237,7 +284,12 @@ test_that("hulls with no area are only kept with a buffer", {
 
   # with a buffer, (part of) the line becomes a thin polygon, whose area is
   # at most that of the whole line buffered by 0.1
-  with_buffer <- hr_tt_locoh(line_tt, n = 3, levels = 0.9, buffer = 0.1)
+  with_buffer <- hr_tt_locoh(
+    line_tt,
+    n = 3,
+    levels = 0.9,
+    buffer = as_units(0.1, "m")
+  )
   expect_true(sf::st_geometry_type(with_buffer) == "MULTIPOLYGON")
   expect_gt(as.numeric(with_buffer$area), 0)
   expect_lt(
@@ -254,7 +306,12 @@ test_that("hulls with no area are only kept with a buffer", {
   )
   cluster_tt <- make_locoh_tt(xy)
   no_buffer <- hr_tt_locoh(cluster_tt, n = 4, levels = 0.5)
-  with_buffer <- hr_tt_locoh(cluster_tt, n = 4, levels = 0.5, buffer = 0.01)
+  with_buffer <- hr_tt_locoh(
+    cluster_tt,
+    n = 4,
+    levels = 0.5,
+    buffer = as_units(0.01, "m")
+  )
   cluster <- sf::st_sfc(sf::st_point(c(100, 100)), crs = 32630)
   expect_false(sf::st_intersects(cluster, no_buffer, sparse = FALSE)[1, 1])
   expect_true(sf::st_intersects(cluster, with_buffer, sparse = FALSE)[1, 1])
@@ -391,13 +448,14 @@ test_that("hr_tt_locoh gives the same home ranges as amt", {
       amt_hr <- suppressWarnings(
         amt::hr_locoh(track_amt, n = n, type = type, levels = levels)
       )
-      # amt buffers each hull by 1e-5, so do the same here
+      # amt buffers each hull by 1e-5 (in the units of the coordinates,
+      # metres), so do the same here; for types "r" and "a", n is a distance
       tt_hr <- hr_tt_locoh(
         track_tt,
-        n = n,
+        n = if (type == "k") n else as_units(n, "m"),
         type = type,
         levels = levels,
-        buffer = 1e-5
+        buffer = as_units(1e-5, "m")
       )
       # hr_tt_locoh() sorts the levels from the largest to the smallest
       expect_equal(
@@ -413,35 +471,6 @@ test_that("hr_tt_locoh gives the same home ranges as amt", {
       ))
       expect_lt(sum(as.numeric(sym_diff)), 1e-6 * as.numeric(tt_hr$area[1]))
     }
-  }
-})
-
-test_that("hr_tt_locoh gives valid isopleths for unprojected data", {
-  # Tracks in longitude/latitude for which s2 used to reject the isopleths,
-  # as merging the hulls created vertices that s2 sees as duplicates. The
-  # tracks are random walks pulled back towards one of two centres.
-  simulate_lonlat <- function(seed, n_locations = 50) {
-    set.seed(seed)
-    xy <- matrix(0, n_locations, 2)
-    centres <- rbind(c(0, 0), c(3000, 1500))
-    centre <- 1
-    for (i in 2:n_locations) {
-      if (stats::runif(1) < 0.01) {
-        centre <- 3 - centre
-      }
-      pull <- 0.05 * (centres[centre, ] - xy[i - 1, ])
-      xy[i, ] <- xy[i - 1, ] + pull + stats::rnorm(2, sd = 100)
-    }
-    # about 100 m steps, in degrees
-    make_locoh_tt(xy / 1e5, crs = 4326, id = as.character(seed))
-  }
-  for (seed in c(89, 93, 104, 119, 155)) {
-    track <- simulate_lonlat(seed)
-    locoh <- hr_tt_locoh(track, n = 10)
-    expect_true(all(as.numeric(locoh$area) > 0))
-    # the isopleths can be used in further operations with s2
-    expect_true(all(sf::st_is_valid(locoh)))
-    expect_no_error(sf::st_intersects(locoh, track))
   }
 })
 
@@ -547,10 +576,8 @@ test_that("the isopleths merged by GEOS are those merged in C++", {
   levels <- c(0.95, 0.75, 0.5, 0.25)
   for (type in c("k", "a")) {
     n <- if (type == "k") 10 else 2000
-    cpp <- locoh_one_group(xy, n, type, levels, 0, longlat = FALSE)
-    geos <- locoh_one_group(xy, n, type, levels, 0,
-      longlat = FALSE, cpp_union = FALSE
-    )
+    cpp <- locoh_one_group(xy, n, type, levels, 0)
+    geos <- locoh_one_group(xy, n, type, levels, 0, cpp_union = FALSE)
     expect_equal(
       as.numeric(sf::st_area(cpp)),
       as.numeric(sf::st_area(geos)),
@@ -564,9 +591,7 @@ test_that("the isopleths merged by GEOS are those merged in C++", {
     )
     # with a tiny budget, GEOS is used
     expect_identical(
-      locoh_one_group(xy, n, type, levels, 0,
-        longlat = FALSE, union_budget = 1e-3
-      ),
+      locoh_one_group(xy, n, type, levels, 0, union_budget = 1e-3),
       geos
     )
   }
@@ -597,7 +622,7 @@ test_that("hr_tt_locoh gives valid isopleths for nearly degenerate hulls", {
   }
   iso <- hr_tt_locoh(
     circles(c(3, 3, 2, 1, 1, 3), c(10, 9, 10, 10, 8, 10)),
-    n = 3.91679,
+    n = as_units(3.91679, "m"),
     type = "a",
     levels = 1
   )
@@ -613,8 +638,9 @@ test_that("hr_tt_locoh gives valid isopleths for nearly degenerate hulls", {
 test_that("hr_tt_locoh works with groups named like its own variables", {
   # tibble() would use a column of groups named "levels" or "group_labels"
   # instead of the variables of the same names
+  example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
   for (name in c("levels", "group_labels")) {
-    x <- example_tt
+    x <- example_proj
     x[[name]] <- ifelse(
       x$track_id == unique(x$track_id)[1],
       "p",
@@ -627,7 +653,7 @@ test_that("hr_tt_locoh works with groups named like its own variables", {
   }
   # a column of groups named like a column of the result gives an error,
   # rather than a result with two columns of the same name
-  x <- example_tt
+  x <- example_proj
   x$level <- "p"
   expect_error(
     hr_tt_locoh(dplyr::group_by(x, level), n = 3),

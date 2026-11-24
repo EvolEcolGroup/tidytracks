@@ -12,6 +12,9 @@ package's data stay in `data-raw/`.
 
 ## Design
 
+- [units.md](units.md): arguments that are distances must be `units`
+  objects, and how they are converted to the units of the coordinates; the
+  home range functions need projected (ideally equal-area) data (PR #103).
 - [metadata_and_events.md](metadata_and_events.md): the rule that only the
   track id is in both the events and the metadata, and the functions that
   keep it (#92, PRs #95–#98).
@@ -57,6 +60,10 @@ package's data stay in `data-raw/`.
 Notebooks and scripts written while developing the package. Some may no
 longer run against the current code.
 
+- [explorations/kde_longlat_units.Rmd](explorations/kde_longlat_units.Rmd)
+  (Lizzie, 19 Nov 2026): how much a KDE computed in degrees distorts the
+  home range, by latitude; it led to the error for longitude/latitude data
+  (`units.md`). It no longer runs as it is, since that error.
 - [explorations/kde_example_data_bba.R](explorations/kde_example_data_bba.R)
   (with its `.rds` data): where `hr_tt_kde()` breaks with a small bounding
   box or a coarse resolution.

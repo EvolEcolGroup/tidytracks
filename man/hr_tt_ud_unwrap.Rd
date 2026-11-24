@@ -22,6 +22,8 @@ automatically, but explicitly unwrapping avoids repeating that work across
 multiple operations.
 }
 \examples{
-example_kde <- hr_tt_kde(example_tt)
+# project example_tt (in longitude/latitude) to an equal-area projection
+example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+example_kde <- hr_tt_kde(example_proj)
 unwrapped_kde <- hr_tt_ud_unwrap(hr_tt_ud_wrap(example_kde))
 }

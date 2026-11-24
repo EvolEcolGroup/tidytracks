@@ -9,11 +9,13 @@ hr_tt_locoh(
   n = 10,
   type = c("k", "r", "a"),
   levels = c(0.5, 0.95),
-  buffer = 0
+  buffer = NULL
 )
 }
 \arguments{
-\item{x}{A move2 object; if explicitly grouped, the home range is estimated
+\item{x}{A move2 object, in a projected coordinate reference system,
+ideally an equal-area one (not longitude/latitude; see Details); if
+explicitly grouped, the home range is estimated
 for each group, combining all tracks within each group. Otherwise, the
 track id is used as grouping variable. Every group must have events, so
 groupings with empty groups (e.g. from grouping by a factor with unused
@@ -21,8 +23,9 @@ levels with \code{.drop = FALSE}) give an error.}
 
 \item{n}{The parameter of the LoCoH, whose meaning depends on \code{type}: the
 number of nearest neighbours for \code{"k"} (a whole number of at least 2), the
-radius for \code{"r"}, or the maximum sum of the distances for \code{"a"} (both in
-the units of the projection of \code{x}). Either a single value, or a vector
+radius for \code{"r"}, or the maximum sum of the distances for \code{"a"} (both
+distances with units, e.g. \code{as_units(500, "m")}, see Details). The
+default, 10, is for type \code{"k"}. Either a single value, or a vector
 with one value per group, matched to the groups in the order in which
 they are returned: the order of the tracks in the metadata (see
 \code{\link[=show_meta]{show_meta()}}) if \code{x} is not grouped, or else the order of
@@ -35,10 +38,11 @@ Details).}
 ranges, as numbers between 0 and 1. The default is \code{c(0.5, 0.95)}, which
 corresponds to the 50\% and 95\% home ranges.}
 
-\item{buffer}{A non-negative number: the distance (in the units of the
-projection of \code{x}) by which the home ranges are buffered. The default, 0,
-leaves them as they are; a small positive value (e.g. 1e-5, as in
-\code{amt::hr_locoh()}) also includes the hulls with no area (see Details).}
+\item{buffer}{The distance by which the home ranges are buffered, as a
+non-negative \code{units} object (e.g. \code{as_units(10, "m")}, see Details). The
+default, \code{NULL}, leaves them as they are; a small positive distance (e.g.
+\code{as_units(1e-5, "m")}, as in \code{amt::hr_locoh()}) also includes the hulls
+with no area (see Details).}
 }
 \value{
 An \code{sf} tibble of subclass \code{hr_tt_poly_tbl} of results, with one
@@ -51,7 +55,8 @@ column per variable, with the keys of the groups (with their own types,
 e.g. a factor, or an \code{sfc} column of locations from \code{\link[=group_by_meta]{group_by_meta()}})
 \item \code{method}: the method used to estimate the home range (\code{"locoh"})
 \item \code{type}: the type of LoCoH (\code{"k"}, \code{"r"} or \code{"a"})
-\item \code{n}: the parameter of the LoCoH
+\item \code{n}: the parameter of the LoCoH (for types \code{"r"} and \code{"a"}, a \code{units}
+object in the units of the coordinates of \code{x})
 \item \code{level}: the level of the home range
 \item \code{area}: the area of the home range (as computed by \code{sf::st_area()})
 \item \code{geometry}: the geometry of the home range as sf multipolygons; the
@@ -87,6 +92,12 @@ et al. (2007) suggest using the largest distance between any two locations
 as a starting value for \code{n}.
 }
 
+For types \code{"r"} and \code{"a"}, \code{n} is a distance, and so is \code{buffer}: they must
+be given as \code{units} objects (e.g. \code{as_units(500, "m")} or
+\code{as_units(0.5, "km")}), which are converted to the units of the
+coordinates of \code{x} (see below). For type \code{"k"}, \code{n} is a number of
+neighbours, a plain number.
+
 The neighbour search, the hulls, their areas and the number of hulls needed
 for each level are computed in C++ (with a k-d tree for the neighbour
 search). Without a buffer, the union of the hulls is also computed in C++,
@@ -106,26 +117,41 @@ little above or below the requested level. A hull with no area (when all its
 locations lie on a line, or are at the same place, as it may be the case
 for locations at the den or nest) counts towards the
 coverage, but only becomes part of the isopleth if \code{buffer} is positive.
-\code{amt::hr_locoh()} buffers every hull by 1e-5 (its \code{rand_buffer}); setting
-\code{buffer = 1e-5} here gives the same isopleths.
+\code{amt::hr_locoh()} buffers every hull by 1e-5 in the units of the
+coordinates (its \code{rand_buffer}); setting \code{buffer} to the same distance
+here (e.g. \code{as_units(1e-5, "m")} for a projection in metres) gives the same
+isopleths.
 
 Distances are computed in the units of the projection of \code{x}, and hulls are
-built and merged on a plane. For unprojected data (longitude/latitude),
-distances (and so \code{n} for types \code{"r"} and \code{"a"}, and \code{buffer}) are thus in
-degrees, and the hulls are distorted (increasingly so away from the
-equator); it is recommended to project \code{x} to an appropriate projection
-before using this function. Areas are computed with \code{\link[sf:st_area]{sf::st_area()}}, in the
-units of the projection of \code{x} (e.g. m^2 for a UTM projection), or in m^2
-for unprojected data.
+built and merged on a plane, so \code{x} must be projected, ideally with an
+equal-area projection (e.g. a Lambert azimuthal equal-area projection
+centred on the data, \code{"+proj=laea +lon_0=<longitude> +lat_0=<latitude>"},
+or the projection suggested by \code{crstools::suggest_crs()}).
+Longitude/latitude data give an error: in degrees, the neighbourhoods and
+the hulls would be distorted, increasingly so away from the equator (a
+degree of longitude is half as long at 60 degrees of latitude as at the
+equator). Areas are computed with \code{\link[sf:st_area]{sf::st_area()}}, in the units of the
+projection of \code{x} (e.g. m^2 for a projection in metres).
 }
 \examples{
+# example_tt is in longitude/latitude: project it first, to an equal-area
+# projection centred on the data (Lambert azimuthal equal-area)
+example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
 # the tracks in example_tt are short (5 locations each), so each hull is
 # built from a location and its 3 nearest neighbours
-example_locoh <- hr_tt_locoh(example_tt, n = 3)
+example_locoh <- hr_tt_locoh(example_proj, n = 3)
 example_locoh
 library(ggplot2)
 ggplot(example_locoh) +
   geom_sf(aes(fill = track_id), alpha = 0.7)
+# with types "r" and "a", n is a distance with units, as is buffer (here
+# in metres, the units of the projection, but any units of length work)
+hr_tt_locoh(
+  example_proj,
+  n = as_units(1500, "km"),
+  type = "a",
+  buffer = as_units(10, "km")
+)
 }
 \references{
 Getz, W. M., & Wilmers, C. C. (2004). A local nearest-neighbor

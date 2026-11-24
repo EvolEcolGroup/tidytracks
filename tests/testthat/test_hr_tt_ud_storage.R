@@ -1,6 +1,6 @@
 test_that("hr_tt_ud_wrap/unwrap preserve utilisation distributions", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50) %>%
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m")) %>%
     dplyr::group_by(name)
 
   wrapped_kde <- hr_tt_ud_wrap(boar_kde)
@@ -30,7 +30,7 @@ test_that("UD storage helpers validate table and raster columns", {
 
 test_that("hr_tt_ud_saveRDS writes a usable wrapped copy", {
   boar_tt <- readRDS(file.path(test_path("testdata"), "wildboar_tt.rds"))
-  boar_kde <- hr_tt_kde(boar_tt, res = 50)
+  boar_kde <- hr_tt_kde(boar_tt, res = as_units(50, "m"))
   output_file <- tempfile(fileext = ".rds")
   on.exit(unlink(output_file), add = TRUE)
 

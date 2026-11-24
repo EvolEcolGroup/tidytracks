@@ -26,14 +26,16 @@ to create this column.}
 
 \item{buffer_trip}{the distance from the centre that delimits trips: a
 trip starts when the animal moves further than this distance from the
-centre, and ends when it comes back within it. Specified as a unit object,
-e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
+centre, and ends when it comes back within it. A distance with units,
+e.g. \code{as_units(10000, "m")} or \code{as_units(10, "km")} (plain numbers give
+an error).}
 
 \item{buffer_complete}{a distance from the centre, usually the same as or
 larger than \code{buffer_trip}, within which a track can start or end during
 a trip and that trip still be classified as complete (see Description). It
 has no effect if it is the same as, or smaller than, \code{buffer_trip}.
-Specified as a unit object, e.g \code{as_units(10000, "m")} or \code{as_units(10, "km")}.}
+A distance with units, e.g. \code{as_units(10000, "m")} or
+\code{as_units(10, "km")} (plain numbers give an error).}
 
 \item{complete}{boolean, if TRUE, only complete trips are kept. If FALSE,
 all trips are kept, and events at the colony (i.e. in-between trips) are

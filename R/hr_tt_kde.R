@@ -9,6 +9,16 @@
 #'
 #' @details Events with an empty geometry (i.e. no location) are ignored.
 #'
+#' The kernel is computed on the plane of the coordinates, so `x` must be
+#' projected, ideally with an equal-area projection (e.g. a Lambert
+#' azimuthal equal-area projection centred on the data,
+#' `"+proj=laea +lon_0=<longitude> +lat_0=<latitude>"`, or the projection
+#' suggested by `crstools::suggest_crs()`), so that the density of the UD
+#' is a density per unit of area everywhere on the grid. Longitude/latitude
+#' data give an error: in degrees, the kernel and the UD would be distorted,
+#' increasingly so away from the equator (a degree of longitude is half as
+#' long at 60 degrees of latitude as at the equator).
+#'
 #' The UD is estimated on a grid of cells, with one of two methods:
 #' - `"exact"` evaluates the kernel of every location at the centre of every
 #'   cell (with [MASS::kde2d()]), so the time it takes grows with the number
@@ -34,32 +44,49 @@
 #' the full UD is not returned, which can be useful for some applications (e.g.
 #' to compute overlap between home ranges). If `levels` is set, the area of the
 #' isopleths is computed using `sf::st_area()`, which returns the area in the
-#' units of the projection of `x` (e.g. m^2 for a UTM projection), or in m^2 if
-#' `x` is unprojected (longitude/latitude). Note, however, that for unprojected
-#' data the kernel is computed in degrees, so the bandwidth and the shape of the
-#' UD are distorted (increasingly so away from the equator); it is recommended
-#' to project `x` to an appropriate projection before using this function.
+#' units of the projection of `x` (e.g. m^2 for a projection in metres).
 #'
-#' @param x A move2 object; if explicitly grouped, the home range is estimated
+#' **Units of `h` and `res`.** The bandwidth `h` is the standard deviation of
+#' the Gaussian kernel: a location at a distance \eqn{d} from the centre of a
+#' cell adds \eqn{\exp(-d^2 / (2 h^2)) / (2 \pi h^2)} to its density, so `h`,
+#' like \eqn{d}, is a distance in the units of the coordinates of `x`. So are
+#' the resolution `res` (the side of the cells) and the reference bandwidth
+#' (the standard deviation of the coordinates times \eqn{n^{-1/6}}, with
+#' \eqn{n} the number of locations). A plain number would be read in the
+#' units of the coordinates (e.g. metres or feet, depending on the
+#' projection), so that a bandwidth of 5 meant in kilometres would give a
+#' kernel 1000 times too narrow on data in metres. `h` and `res` must
+#' therefore be given as `units` objects (e.g. `as_units(500, "m")` or
+#' `as_units(0.5, "km")`), which are converted to the units of the coordinate
+#' reference system of `x`; they are returned in those units (columns `h` and
+#' `res`).
+#'
+#' @param x A move2 object, in a projected coordinate reference system,
+#'   ideally an equal-area one (not longitude/latitude; see Details); if
+#'   explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
 #'   track id is used as grouping variable. Every group must have events, so
 #'   groupings with empty groups (e.g. from grouping by a factor with unused
 #'   levels with `.drop = FALSE`) give an error.
-#' @param h The bandwidth for the kernel density estimation. Either a number,
-#'   a vector with one value per group, or "h_ref_indiv" for using the
-#'   reference bandwidth for each individual, or "h_ref_mean" for using the mean
-#'   bandwidth for all individuals (the default). The reference bandwidth cannot
-#'   be computed for groups with fewer than two distinct locations: such groups
-#'   are left out of the mean for "h_ref_mean", and cause an error with
-#'   "h_ref_indiv".
+#' @param h The bandwidth for the kernel density estimation (the standard
+#'   deviation of the Gaussian kernel, a distance). Either a `units` object
+#'   (e.g. `as_units(500, "m")`), with a single value or one value per group,
+#'   or "h_ref_indiv" for using the reference bandwidth for each individual,
+#'   or "h_ref_mean" for using the mean bandwidth for all individuals (the
+#'   default). The reference bandwidth cannot be computed for groups with
+#'   fewer than two distinct locations: such groups are left out of the mean
+#'   for "h_ref_mean", and cause an error with "h_ref_indiv". A bandwidth with
+#'   units is converted to the units of the coordinates of `x` (see Details).
 #' @param bbox A named vector of four elements (`xmin`, `ymin`, `xmax`, `ymax`)
 #'   defining a grid shared by all groups, or a list of one such vector per
 #'   group. If `NULL`, a shared grid is created from the extent of all points in
 #'   `x`, expanded by 100% of the range on each side.
-#' @param res The resolution of the grid (in the units of the projection of x).
-#'   Supply one value for a shared resolution or one value per group when
-#'   `bbox` contains one grid per group. If `NULL`, each grid is assigned a
-#'   resolution that produces approximately 1000 cells.
+#' @param res The resolution of the grid (the side of its square cells), as a
+#'   `units` object (e.g. `as_units(50, "m")`), which is converted to the
+#'   units of the coordinates of `x` (see Details). Supply one value for a
+#'   shared resolution or one value per group when `bbox` contains one grid
+#'   per group. If `NULL`, each grid is assigned a resolution that produces
+#'   approximately 1000 cells.
 #'
 #'   Per-group values of `h`, `bbox` and `res` are matched to the groups in the
 #'   order in which they are returned: the order of the tracks in the metadata
@@ -86,9 +113,11 @@
 #'   in the order of the tracks in the metadata if `x` is not grouped, or else
 #'   in the order of [dplyr::group_keys()]
 #' - `method`: the method used to estimate the home range (`"kde"`)
-#' - `h`: the bandwidth used for the KDE
+#' - `h`: the bandwidth used for the KDE, as a `units` object in the units of
+#'   the coordinates of `x`
 #' - `xmin`, `ymin`, `xmax`, `ymax`: the bounding box used for the KDE
-#' - `res`: the resolution used for the KDE
+#' - `res`: the resolution used for the KDE, as a `units` object in the units
+#'   of the coordinates of `x`
 #' If `levels` is NULL:
 #' - `ud`: the full utilisation distribution is returned as a list-column of
 #'   `terra::SpatRaster` objects
@@ -96,26 +125,35 @@
 #' the following columns are added:
 #' - `level`: the level of the isopleth
 #' - `area`: the area of the home range at this level (in the units
-#'   of the projection of `x`, e.g. m^2 for a UTM projection, or in m^2 for
-#'   unprojected data)
+#'   of the projection of `x`, e.g. m^2 for a projection in metres)
 #' - `geometry`:  an `sfc` column containing the multipolygons representing
 #'   the isopleth for the appropriate level
 #'
 #' @export
 #' @examples
-#' example_kde <- hr_tt_kde(example_tt)
+#' # example_tt is in longitude/latitude: project it first, to an equal-area
+#' # projection centred on the data (Lambert azimuthal equal-area)
+#' example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+#' example_kde <- hr_tt_kde(example_proj)
 #' example_kde
 #' library(ggplot2)
 #' autoplot(example_kde)
 #' # compute the isopleths for the 50% and 95% home range
-#' example_iso <- hr_tt_kde(example_tt, levels = c(0.5, 0.95))
+#' example_iso <- hr_tt_kde(example_proj, levels = c(0.5, 0.95))
 #' ggplot(example_iso) +
 #'   geom_sf(aes(fill = track_id), alpha = 0.7)
 #' # the same isopleths, evaluating the kernel of every location at every cell
 #' example_iso_exact <- hr_tt_kde(
-#'   example_tt,
+#'   example_proj,
 #'   levels = c(0.5, 0.95),
 #'   method = "exact"
+#' )
+#' # h and res are distances with units: in a projection in metres, they can
+#' # be given in any units of length
+#' hr_tt_kde(
+#'   example_proj,
+#'   h = as_units(50, "km"),
+#'   res = as_units(10, "km")
 #' )
 #'
 hr_tt_kde <- function(
@@ -127,6 +165,11 @@ hr_tt_kde <- function(
   method = c("binned", "exact")
 ) {
   method <- match.arg(method)
+  # the kernel is computed on the plane of the coordinates, so x must be
+  # projected (and h and res are distances, in the units of its CRS, in which
+  # the reference bandwidth is also computed)
+  crs_x <- sf::st_crs(x)
+  check_projected(x, crs_x, "hr_tt_kde()")
   # if x is not grouped, use the track ID column as grouping variable
   by_track <- !inherits(x, "grouped_df")
   if (by_track) {
@@ -164,7 +207,7 @@ hr_tt_kde <- function(
     stop("each group must contain at least one event with a location")
   }
   # check h
-  if (!is.numeric(h)) {
+  if (is.character(h)) {
     h <- match.arg(
       h,
       c(
@@ -174,6 +217,16 @@ hr_tt_kde <- function(
     )
     h_fun <- get(h) # assign the function to h_fun
     h <- h_fun(xy, group_index) # compute h
+  } else if (inherits(h, "units")) {
+    # a bandwidth with units, as a plain number in the units of the
+    # coordinates
+    h <- to_crs_units(h, "h", crs_x)
+  } else {
+    stop(
+      "h must be \"h_ref_mean\", \"h_ref_indiv\" or a distance with units, ",
+      "e.g. as_units(500, 'm'): plain numbers are no longer taken in the ",
+      "units of the coordinates of x"
+    )
   }
   if (length(h) == 1) {
     h <- rep(h, length(group_unique))
@@ -213,13 +266,12 @@ hr_tt_kde <- function(
 
   if (is.null(res)) {
     res <- vapply(bbox, kde_resolution, numeric(1))
-  } else if (
-    !is.numeric(res) ||
-      !(length(res) %in% c(1, length(group_unique)))
-  ) {
-    stop(
-      "res must be a single numeric value or a vector with one value per group"
-    )
+  } else {
+    # the resolution, as a plain number in the units of the coordinates
+    res <- to_crs_units(res, "res", crs_x)
+    if (!(length(res) %in% c(1, length(group_unique)))) {
+      stop("res must be a single value or a vector with one value per group")
+    }
   }
   if (length(res) == 1) {
     res <- rep(res, length(group_unique))
@@ -258,7 +310,6 @@ hr_tt_kde <- function(
   # raster, the CRS of its isopleths, the coordinates of its cells) takes
   # longer than the KDE of a small group, so each distinct grid is set up only
   # once
-  crs_x <- sf::st_crs(x)
   grid_key <- vapply(
     seq_along(bbox),
     function(i) paste(c(bbox[[i]], res[i]), collapse = " "),
@@ -310,7 +361,8 @@ hr_tt_kde <- function(
         y = grid$y,
         res = grid$res,
         levels = iso_levels,
-        ops_crs = if (grid$longlat) grid$iso_crs else sf::NA_crs_,
+        # x is projected, so the isopleths are built on the plane
+        ops_crs = sf::NA_crs_,
         cud_raster = function() {
           terra::setValues(
             grid$template,
@@ -322,15 +374,16 @@ hr_tt_kde <- function(
     }
   }
 
-  # one row per group
+  # one row per group; the bandwidth and the resolution are returned with the
+  # units of the coordinates
   kde_results <- tibble::tibble(
     method = "kde",
-    h = h[group_unique],
+    h = with_crs_units(h[group_unique], crs_x),
     xmin = vapply(bbox[group_unique], function(b) b[["xmin"]], numeric(1)),
     ymin = vapply(bbox[group_unique], function(b) b[["ymin"]], numeric(1)),
     xmax = vapply(bbox[group_unique], function(b) b[["xmax"]], numeric(1)),
     ymax = vapply(bbox[group_unique], function(b) b[["ymax"]], numeric(1)),
-    res = res[group_unique]
+    res = with_crs_units(res[group_unique], crs_x)
   )
   # the keys of the groups come first, one column per grouping variable
   kde_results <- hr_with_keys(keys, kde_results) # nolint: object_usage_linter.
@@ -399,6 +452,154 @@ align_kde_bbox <- function(bbox, res) {
   bbox
 }
 
+#' Convert distances with units to the units of the coordinates
+#'
+#' Internal function used by the `hr_tt_*()` functions for their arguments
+#' that are distances (the resolution of the grid, the bandwidth of the
+#' kernel), which must be given as `units` objects, and which they need as
+#' plain numbers in the units of the coordinates: those of the coordinate
+#' reference system (e.g. metres or feet, depending on the projection). The
+#' callers only pass projected CRSs (or none): longitude/latitude data are
+#' rejected earlier (see `check_projected()`).
+#'
+#' @param value A `units` object.
+#' @param arg The name of the argument, used in error messages.
+#' @param crs The coordinate reference system of the coordinates (an `sf`
+#'   `crs` object).
+#' @returns `value` in the units of `crs`, as a plain numeric vector.
+#' @keywords internal
+#' @noRd
+to_crs_units <- function(value, arg, crs) {
+  # plain numbers are rejected rather than assumed to be in the units of the
+  # coordinates, as in the rest of tidytracks physical quantities must carry
+  # their units
+  if (!inherits(value, "units")) {
+    stop(
+      arg, " must be a distance with units, e.g. as_units(50, 'm'): plain ",
+      "numbers are no longer taken in the units of the coordinates of x",
+      call. = FALSE
+    )
+  }
+  # without a CRS, the units of the coordinates are unknown
+  crs_unit <- crs$ud_unit
+  if (is.null(crs_unit)) {
+    stop(
+      "x has no coordinate reference system, so the units of its ",
+      "coordinates (and of ", arg, ") are unknown; set one with ",
+      "sf::st_set_crs()",
+      call. = FALSE
+    )
+  }
+  # mode = "standard" takes the units from a string; set_units() gives an
+  # error for units that cannot be converted, which is replaced by a plainer
+  # message
+  crs_unit <- units::deparse_unit(crs_unit)
+  tryCatch(
+    as.numeric(units::set_units(value, crs_unit, mode = "standard")),
+    error = function(e) {
+      stop(
+        arg, " must be in units that can be converted to those of the ",
+        "coordinates of x ('", crs_unit, "'); got '",
+        units::deparse_unit(value), "'",
+        call. = FALSE
+      )
+    }
+  )
+}
+
+#' Give distances the units of the coordinates
+#'
+#' Internal function used by the `hr_tt_*()` functions to return distances
+#' (e.g. the resolution of the grid) with the units of the coordinates, the
+#' inverse of `to_crs_units()`.
+#'
+#' @param value A numeric vector, in the units of the coordinates.
+#' @param crs The coordinate reference system of the coordinates (an `sf`
+#'   `crs` object).
+#' @returns `value` as a `units` object with the units of `crs`, or `value`
+#'   unchanged if `crs` has no units (e.g. no CRS), as `sf::st_area()` does.
+#' @keywords internal
+#' @noRd
+with_crs_units <- function(value, crs) {
+  if (is.null(crs$ud_unit)) {
+    return(value)
+  }
+  units::set_units(
+    value,
+    units::deparse_unit(crs$ud_unit),
+    mode = "standard"
+  )
+}
+
+#' Stop if the coordinates are longitudes and latitudes
+#'
+#' Internal function used by the `hr_tt_*()` functions that estimate home
+#' ranges on the plane of the coordinates (KDE, LoCoH, the bridges). In
+#' longitude/latitude, that plane is in degrees, and a degree of longitude
+#' shrinks with latitude (to half a degree of latitude at 60 degrees), so
+#' kernels, neighbourhoods and areas would be distorted. The error asks for
+#' an equal-area projection, and gives one centred on the data, ready to
+#' paste.
+#'
+#' @param x A `move2` object.
+#' @param crs The coordinate reference system of `x` (an `sf` `crs` object),
+#'   looked up once by the caller.
+#' @param fun The name of the calling function, for the error message.
+#' @returns `NULL`, invisibly, if `x` is not in longitude/latitude (including
+#'   when it has no CRS); otherwise an error.
+#' @keywords internal
+#' @noRd
+check_projected <- function(x, crs, fun) {
+  if (!isTRUE(sf::st_is_longlat(crs))) {
+    return(invisible(NULL))
+  }
+  # a Lambert azimuthal equal-area projection centred on the data, which has
+  # little distortion over the extent of a home range
+  centre <- lonlat_centre(sf::st_coordinates(x))
+  stop(
+    "x is in longitude/latitude, but ", fun, " needs it in an equal-area ",
+    "projection: in degrees, distances and areas are distorted (a degree ",
+    "of longitude is half as long at 60 degrees of latitude as at the ",
+    "equator), and so is the home range. Project x first, e.g. to a ",
+    "Lambert azimuthal equal-area projection centred on the data, with ",
+    "sf::st_transform(x, \"+proj=laea +lon_0=", centre[1], " +lat_0=",
+    centre[2], "\"), or to the projection suggested by ",
+    "crstools::suggest_crs(x)",
+    call. = FALSE
+  )
+}
+
+#' Find the centre of locations in longitude/latitude
+#'
+#' Internal function used by `check_projected()` to suggest a projection
+#' centred on the data. The centre is the mean of the locations as points on
+#' a sphere (in 3D), which, unlike the mean of the longitudes, also works for
+#' tracks that cross the antimeridian.
+#'
+#' @param xy A matrix of longitudes and latitudes (in degrees), as from
+#'   [sf::st_coordinates()]; rows with missing values (empty locations) are
+#'   ignored.
+#' @returns The longitude and latitude of the centre, rounded to whole
+#'   degrees (enough for a projection over a home range, and short to type),
+#'   or 0 and 0 if there are no locations.
+#' @keywords internal
+#' @noRd
+lonlat_centre <- function(xy) {
+  xy <- xy[stats::complete.cases(xy[, 1:2]), 1:2, drop = FALSE] * pi / 180
+  if (nrow(xy) == 0) {
+    return(c(0, 0))
+  }
+  # the mean of the locations as unit vectors, back to longitude/latitude
+  v <- colMeans(cbind(
+    cos(xy[, 2]) * cos(xy[, 1]),
+    cos(xy[, 2]) * sin(xy[, 1]),
+    sin(xy[, 2])
+  ))
+  centre <- c(atan2(v[2], v[1]), atan2(v[3], sqrt(v[1]^2 + v[2]^2)))
+  # + 0 turns -0 into 0
+  round(centre * 180 / pi) + 0
+}
+
 
 #' Set up a grid for the KDE
 #'
@@ -416,10 +617,9 @@ align_kde_bbox <- function(bbox, res) {
 #' @returns A list with `template` (an empty `terra::SpatRaster`, with a
 #'   layer named `"ud"`) and, if
 #'   `isopleths` is `TRUE`, `iso_crs` (the CRS of the isopleths, as obtained
-#'   from the raster), `longlat` (whether that CRS is in longitude/latitude),
-#'   `x` and `y` (the coordinates of the centres of the columns, and of the
-#'   rows from south to north), and `res` (the size of the cells along x and
-#'   along y).
+#'   from the raster), `x` and `y` (the coordinates of the centres of the
+#'   columns, and of the rows from south to north), and `res` (the size of the
+#'   cells along x and along y).
 #' @keywords internal
 #' @noRd
 kde_grid <- function(bbox, res, crs, isopleths) {
@@ -445,7 +645,6 @@ kde_grid <- function(bbox, res, crs, isopleths) {
   list(
     template = template,
     iso_crs = iso_crs,
-    longlat = isTRUE(sf::st_is_longlat(iso_crs)),
     x = terra::xFromCol(template, seq_len(n[1])),
     y = terra::yFromRow(template, rev(seq_len(n[2]))),
     res = terra::res(template)
@@ -692,6 +891,15 @@ hr_kde <- function(
   method = c("binned", "exact")
 ) {
   warning("hr_kde is deprecated. Please use hr_tt_kde instead.", call. = FALSE)
+  # hr_kde() took h and res as plain numbers, in the units of the coordinates
+  # of x, which hr_tt_kde() now requires to be explicit
+  crs_x <- sf::st_crs(x)
+  if (is.numeric(h) && !inherits(h, "units")) {
+    h <- with_crs_units(h, crs_x)
+  }
+  if (is.numeric(res) && !inherits(res, "units")) {
+    res <- with_crs_units(res, crs_x)
+  }
   hr_tt_kde(
     x = x,
     h = h,

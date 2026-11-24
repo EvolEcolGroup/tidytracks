@@ -1,6 +1,6 @@
 # tidytracks: summary
 
-Updated 2026-11-19 (manica01). tidytracks has no jobs in
+Updated 2026-11-23 (manica01). tidytracks has no jobs in
 dramanica/claude_jobs: its work is tracked in its own GitHub issues, so the
 sections below are by line of work, not by job.
 
@@ -8,8 +8,8 @@ sections below are by line of work, not by job.
 
 An audit of code borrowed from other packages, and of licences (18-19 Nov).
 
-**Status.** PR #102 (`attribution` into `dev`) has 15 fix commits, plus the
-notes:
+**Status.** PR #102 (`attribution` into `dev`) was squash-merged on 19 Nov
+(`a433574`): 15 fix commits, plus the notes:
 
 - **Rewrites:** the code copied from GPL-3-only packages (`dist_fast()` from
   trip; the MCP helpers from amt), which conflicted with `GPL (>= 3)`, and
@@ -29,20 +29,56 @@ lists the findings not fixed. The questions on the data are in
 `dev_notes/mcp_cpp.md` (Andrea, 19 Nov).
 
 **Next steps**
-- [ ] **P1** [review] Review and merge PR #102 (the report's list of commits); check that CI passes.
+- [x] **P1** [review] Review and merge PR #102 (the report's list of commits); check that CI passes. *Done: squash-merged 19 Nov, `a433574`.*
 - [ ] **P1** [andrea] Send Lizzie `dev_notes/note_for_Lizzie.md` (owners, permissions and licences of the shag and albatross data; the unused files in `inst/extdata/csv_files/`); then a session records the answers, or replaces or removes the data.
 - [ ] **P3** [claude] Add the missing method citations, the Esri credit and the wild boar note (report, "Findings not fixed").
+
+## Distances with units (PR #103)
+
+Arguments that are distances were read as plain numbers in the units of the
+CRS (metres, feet or degrees, depending on the data); they must now be
+`units` objects (19 Nov). Home ranges also need projected data (23 Nov).
+
+**Status.** PR #103 (`kde_units` into `dev`, 13 commits): `h` and `res` of
+`hr_tt_kde()`, `res` of `hr_tt_akde()`, `n` (types `"r"`, `"a"`) and
+`buffer` of `hr_tt_locoh()`, the buffers of `tt_split_trips()` and `uere` of
+`ctmm_tt_fit()`; plain numbers give an error, and the `h`, `res` and `n`
+columns have units. Since 23 Nov, `hr_tt_kde()` and `hr_tt_locoh()` also
+give an error for longitude/latitude data (as the bridges already did),
+which asks for an equal-area projection and gives one centred on the data;
+the examples project `example_tt` with `"+proj=laea +lon_0=-1 +lat_0=0"`.
+R CMD check gives 0 errors and 0 warnings (2,047 tests pass), and CI
+passes. The decisions are in `dev_notes/units.md`.
+
+**Next steps**
+- [ ] **P2** [review] Review and merge PR #103 (one commit per function; breaking changes listed in NEWS, including the lon/lat error); CI passes.
+
+## Events without a location in the cleaning functions (PR #104, #81)
+
+`flag_action = "interpolate"` filled in events that had no location before
+cleaning, although they were not flagged (#81).
+
+**Status.** PR #104 (`interpolate_empty` into `dev`, 1 commit, by another
+session on 19 Nov), as decided in #81: `event_flag_mcconnell()` and
+`event_flag_outliers()` flag events without a location (`FALSE`), as the
+thinning functions already did, so `tt_clean_*()` interpolate, null or
+remove them with the other flagged events. One change in results:
+`flag_action = "remove"` (the default) now removes them. The changed test
+files pass; it does not conflict with PR #103.
+
+**Next steps**
+- [ ] **P2** [review] Review and merge PR #104 (one commit; the change of results of `flag_action = "remove"` is in NEWS); check that CI passes.
 
 ## Merged on 16-18 Nov: #92 and #82 (PRs #95–#100), developer notes (#99)
 
 PRs #95–#98 (#92: the only column in both the events and the metadata is
 the track id) and #100 (#82: isopleths that cannot be drawn are kept as empty
 rows with a warning) are merged into `dev`, and so is #99 (`dev_notes/`).
-#92 is closed. The designs are in `metadata_and_events.md` and
+#92 is closed, and so is #82 (19 Nov). The designs are in `metadata_and_events.md` and
 `isopleths.md`.
 
 **Next steps**
-- [ ] **P3** [cleanup] Close #82 (fixed by #100); delete `inbound` on origin; check, then delete, the local branches that were squash-merged (`kde_locoh_fast` by #94, whose content is all in `dev`; `kde_fast`, `locoh`, `locoh_fast`, `benchmark-sizes`).
+- [ ] **P3** [cleanup] Delete `inbound` on origin; check, then delete, the local branches that were squash-merged (`attribution` by #102, deleted on origin; `kde_locoh_fast` by #94, whose content is all in `dev`; `kde_fast`, `locoh`, `locoh_fast`, `benchmark-sizes`).
 
 ## First passage time: review of `fpt` (branch `codereview_fpt`)
 
@@ -88,8 +124,8 @@ Issues from the review of October 2026 (#86) that need a decision before a
 fix.
 
 **Status.** About 40 open items, by area, in `dev_notes/codereview_2026-10.md`.
-Two related problems were filed as GitHub issues: #81 (open) and #82 (fixed
-by #100). #95 may have fixed two of the items, which are marked in the
+Two related problems were filed as GitHub issues: #81 (PR #104) and #82
+(fixed by #100, closed). #95 may have fixed two of the items, which are marked in the
 document.
 
 **Next steps**

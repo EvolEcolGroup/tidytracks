@@ -18,6 +18,8 @@ Converts the \code{ud} column of an \code{hr_tt_ud_tbl} from a plain list of
 \code{\link[=hr_tt_ud_unwrap]{hr_tt_ud_unwrap()}} to restore the standard in-memory representation.
 }
 \examples{
-example_kde <- hr_tt_kde(example_tt)
+# project example_tt (in longitude/latitude) to an equal-area projection
+example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+example_kde <- hr_tt_kde(example_proj)
 wrapped_kde <- hr_tt_ud_wrap(example_kde)
 }

@@ -91,7 +91,9 @@ test_that("hr_tt_akde_pop estimates a population UD for each group", {
   # we use a coarse grid to make the test fast: with these short tracks, the
   # population UD of the north herd is wide, and the fine default grid would
   # be extended to tens of millions of cells to contain it
-  akde_coarse <- suppressMessages(hr_tt_akde(x, fits, res = 1000))
+  akde_coarse <- suppressMessages(
+    hr_tt_akde(x, fits, res = as_units(1000, "m"))
+  )
   akde_groups <- akde_coarse %>%
     dplyr::left_join(show_meta(x), by = "track") %>%
     dplyr::group_by(herd)
@@ -113,7 +115,9 @@ test_that("hr_tt_akde_pop extends the grid to contain the population UD", {
   # (see the Details of the documentation), which extends beyond the grid of
   # the individual UDs (we use a coarse grid to make the test fast)
   set.seed(1)
-  akde_coarse <- suppressMessages(hr_tt_akde(x, fits, res = 1000))
+  akde_coarse <- suppressMessages(
+    hr_tt_akde(x, fits, res = as_units(1000, "m"))
+  )
   pop <- hr_tt_akde_pop(akde_coarse, tracks = x, models = fits)
   # the grid is extended by whole cells, so it stays aligned
   expect_lt(pop$xmin, akde_coarse$xmin[1])
@@ -123,7 +127,7 @@ test_that("hr_tt_akde_pop extends the grid to contain the population UD", {
     (pop$ymin - akde_coarse$ymin[1]) / 1000
   )
   expect_equal(shift_cells, round(shift_cells))
-  expect_equal(pop$res, 1000)
+  expect_equal(pop$res, as_units(1000, "m"))
   # and it contains the population UD
   pop_tags <- terra::metags(pop$ud[[1]])
   # recent versions of terra return the tags as a data.frame
@@ -204,6 +208,13 @@ test_that("hr_tt_akde_pop only uses weights from a column with 'mean'", {
 test_that("hr_tt_akde_pop checks its inputs", {
   # pkde needs the tracks and the models
   expect_error(hr_tt_akde_pop(akde_south), "provide the tracks")
+  # the resolution is a distance with units, as returned by hr_tt_akde()
+  akde_plain <- akde_south
+  akde_plain$res <- as.numeric(akde_plain$res)
+  expect_error(
+    hr_tt_akde_pop(akde_plain, method = "mean"),
+    "column res of x must be a distance with units"
+  )
   expect_error(
     hr_tt_akde_pop(akde_south, tracks = x[-1, ], models = fits),
     "Cilla have changed since the models were fitted"
@@ -244,7 +255,8 @@ test_that("hr_tt_akde_pop checks its inputs", {
   # the UDs must be estimated with hr_tt_akde() (a KDE of example_tt, as the
   # default grid of a KDE of x is too coarse for the binned method, which
   # warns about it)
-  kde <- hr_tt_kde(example_tt)
+  example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+  kde <- hr_tt_kde(example_proj)
   expect_error(
     hr_tt_akde_pop(kde, method = "mean"),
     "estimated with hr_tt_akde"

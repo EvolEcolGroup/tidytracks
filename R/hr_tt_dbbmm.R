@@ -18,7 +18,10 @@
 #' estimated for each track: `x` must be either ungrouped, or grouped by its
 #' track id column only. `x` must be ordered by time within each track (see
 #' [tt_order_time()]), and have a projected coordinate reference system in
-#' metres (see [sf::st_transform()]), as the bridges are computed in metres.
+#' metres (see [sf::st_transform()]), as the bridges are computed in metres,
+#' ideally an equal-area one (e.g. a Lambert azimuthal equal-area projection
+#' centred on the data, `"+proj=laea +lon_0=<longitude> +lat_0=<latitude>"`),
+#' so that the density of the UD is a density per unit of area.
 #' Events with an empty geometry (i.e. no location) are ignored. Tracks with
 #' fewer events than `window_size` are skipped by `move2utils` (with a
 #' warning), and are not included in the output.
@@ -92,7 +95,7 @@
 #'   `"dbgb"`)
 #' - `window_size` and `margin`: the values used for the sliding window
 #' - `xmin`, `ymin`, `xmax`, `ymax` and `res`: the extent and resolution of
-#'   the grid (in metres)
+#'   the grid (in metres), with `res` as a `units` object
 #' - `ud` (if `levels` is `NULL`): the UDs, as a list of `terra::SpatRaster`
 #'   objects with a layer named `ud` whose values sum to 1
 #' - `level`, `area` and `geometry` (if `levels` is set): the isopleths, see
@@ -110,8 +113,8 @@
 #'   models. *Movement Ecology*, 2, 5. \doi{10.1186/2051-3933-2-5}
 #' @export
 #' @examplesIf requireNamespace("move2utils", quietly = TRUE)
-#' # project the data to a projection in metres
-#' x <- sf::st_transform(example_tt, "+proj=eqearth")
+#' # project the data to an equal-area projection in metres, centred on them
+#' x <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
 #' ud_dbbmm <- hr_tt_dbbmm(
 #'   x,
 #'   location_error = as_units(1000, "m"),
@@ -119,7 +122,8 @@
 #'   margin = 1
 #' )
 #' ud_dbbmm
-#' # estimate kernel UDs on the same grid, to compare them
+#' # estimate kernel UDs on the same grid, to compare them (the res column is
+#' # a distance with units, as the res argument of hr_tt_kde() must be)
 #' ud_kde <- hr_tt_kde(
 #'   x,
 #'   bbox = unlist(ud_dbbmm[1, c("xmin", "ymin", "xmax", "ymax")]),
@@ -215,11 +219,12 @@ hr_tt_bridge <- function(
   # the bridges are computed in metres; with any other crs, move2utils would
   # silently compute on a reprojected copy of our grid, so that the checks
   # below (which protect against out of bounds writes in its C code) would
-  # no longer apply to the grid actually used
-  if (
-    sf::st_is_longlat(x) ||
-      !identical(sf::st_crs(x)$units_gdal, "metre")
-  ) {
+  # no longer apply to the grid actually used. Longitude/latitude data get
+  # the error of the other UD functions, which suggests an equal-area
+  # projection in metres
+  # nolint next: object_usage_linter.
+  check_projected(x, sf::st_crs(x), paste0("hr_tt_", method, "()"))
+  if (!identical(sf::st_crs(x)$units_gdal, "metre")) {
     stop(
       "x must have a projected coordinate reference system in metres ",
       "(see sf::st_transform())"
@@ -429,7 +434,8 @@ hr_tt_bridge <- function(
     ymin = bbox[["ymin"]],
     xmax = bbox[["xmax"]],
     ymax = bbox[["ymax"]],
-    res = res,
+    # with the units of the coordinates (metres), as given
+    res = units::set_units(res, "m", mode = "standard"),
     ud = ud_list
   )
   # the first column is named after the track id column, so that functions

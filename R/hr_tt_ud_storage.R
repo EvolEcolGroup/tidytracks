@@ -8,7 +8,9 @@
 #' @returns A copy of `x` with a wrapped `ud` column.
 #' @export
 #' @examples
-#' example_kde <- hr_tt_kde(example_tt)
+#' # project example_tt (in longitude/latitude) to an equal-area projection
+#' example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+#' example_kde <- hr_tt_kde(example_proj)
 #' wrapped_kde <- hr_tt_ud_wrap(example_kde)
 hr_tt_ud_wrap <- function(x) {
   stopifnot_hr_tt_ud_tbl(x)
@@ -42,7 +44,9 @@ hr_tt_ud_wrap <- function(x) {
 #' @returns A copy of `x` with an unwrapped `ud` column.
 #' @export
 #' @examples
-#' example_kde <- hr_tt_kde(example_tt)
+#' # project example_tt (in longitude/latitude) to an equal-area projection
+#' example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+#' example_kde <- hr_tt_kde(example_proj)
 #' unwrapped_kde <- hr_tt_ud_unwrap(hr_tt_ud_wrap(example_kde))
 hr_tt_ud_unwrap <- function(x) {
   stopifnot_hr_tt_ud_tbl(x)
@@ -100,7 +104,9 @@ unwrap_ud_column <- function(x) {
 #' @export
 #' @examples
 #' \dontrun{
-#' example_kde <- hr_tt_kde(example_tt)
+#' # project example_tt (in longitude/latitude) to an equal-area projection
+#' example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+#' example_kde <- hr_tt_kde(example_proj)
 #' hr_tt_ud_saveRDS(example_kde, "example-kde.rds")
 #' loaded_kde <- readRDS("example-kde.rds")
 #' }

@@ -15,7 +15,9 @@
 #'   kept if they are the same for all the summed UDs, and are `NA` otherwise.
 #' @export
 #' @examples
-#' example_kde <- hr_tt_kde(example_tt)
+#' # project example_tt (in longitude/latitude) to an equal-area projection
+#' example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+#' example_kde <- hr_tt_kde(example_proj)
 #' # sum the UDs for all tracks in the tibble
 #' hr_tt_ud_sum(example_kde)
 #' # add sex info from metadata and use it to group the UDs

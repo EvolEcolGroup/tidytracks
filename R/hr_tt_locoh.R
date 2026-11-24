@@ -23,6 +23,12 @@
 #'   et al. (2007) suggest using the largest distance between any two locations
 #'   as a starting value for `n`.
 #'
+#' For types `"r"` and `"a"`, `n` is a distance, and so is `buffer`: they must
+#' be given as `units` objects (e.g. `as_units(500, "m")` or
+#' `as_units(0.5, "km")`), which are converted to the units of the
+#' coordinates of `x` (see below). For type `"k"`, `n` is a number of
+#' neighbours, a plain number.
+#'
 #' The neighbour search, the hulls, their areas and the number of hulls needed
 #' for each level are computed in C++ (with a k-d tree for the neighbour
 #' search). Without a buffer, the union of the hulls is also computed in C++,
@@ -42,27 +48,34 @@
 #' locations lie on a line, or are at the same place, as it may be the case
 #' for locations at the den or nest) counts towards the
 #' coverage, but only becomes part of the isopleth if `buffer` is positive.
-#' `amt::hr_locoh()` buffers every hull by 1e-5 (its `rand_buffer`); setting
-#' `buffer = 1e-5` here gives the same isopleths.
+#' `amt::hr_locoh()` buffers every hull by 1e-5 in the units of the
+#' coordinates (its `rand_buffer`); setting `buffer` to the same distance
+#' here (e.g. `as_units(1e-5, "m")` for a projection in metres) gives the same
+#' isopleths.
 #'
 #' Distances are computed in the units of the projection of `x`, and hulls are
-#' built and merged on a plane. For unprojected data (longitude/latitude),
-#' distances (and so `n` for types `"r"` and `"a"`, and `buffer`) are thus in
-#' degrees, and the hulls are distorted (increasingly so away from the
-#' equator); it is recommended to project `x` to an appropriate projection
-#' before using this function. Areas are computed with [sf::st_area()], in the
-#' units of the projection of `x` (e.g. m^2 for a UTM projection), or in m^2
-#' for unprojected data.
+#' built and merged on a plane, so `x` must be projected, ideally with an
+#' equal-area projection (e.g. a Lambert azimuthal equal-area projection
+#' centred on the data, `"+proj=laea +lon_0=<longitude> +lat_0=<latitude>"`,
+#' or the projection suggested by `crstools::suggest_crs()`).
+#' Longitude/latitude data give an error: in degrees, the neighbourhoods and
+#' the hulls would be distorted, increasingly so away from the equator (a
+#' degree of longitude is half as long at 60 degrees of latitude as at the
+#' equator). Areas are computed with [sf::st_area()], in the units of the
+#' projection of `x` (e.g. m^2 for a projection in metres).
 #'
-#' @param x A move2 object; if explicitly grouped, the home range is estimated
+#' @param x A move2 object, in a projected coordinate reference system,
+#'   ideally an equal-area one (not longitude/latitude; see Details); if
+#'   explicitly grouped, the home range is estimated
 #'   for each group, combining all tracks within each group. Otherwise, the
 #'   track id is used as grouping variable. Every group must have events, so
 #'   groupings with empty groups (e.g. from grouping by a factor with unused
 #'   levels with `.drop = FALSE`) give an error.
 #' @param n The parameter of the LoCoH, whose meaning depends on `type`: the
 #'   number of nearest neighbours for `"k"` (a whole number of at least 2), the
-#'   radius for `"r"`, or the maximum sum of the distances for `"a"` (both in
-#'   the units of the projection of `x`). Either a single value, or a vector
+#'   radius for `"r"`, or the maximum sum of the distances for `"a"` (both
+#'   distances with units, e.g. `as_units(500, "m")`, see Details). The
+#'   default, 10, is for type `"k"`. Either a single value, or a vector
 #'   with one value per group, matched to the groups in the order in which
 #'   they are returned: the order of the tracks in the metadata (see
 #'   [show_meta()]) if `x` is not grouped, or else the order of
@@ -72,10 +85,11 @@
 #' @param levels A vector of levels (proportions of locations) for the home
 #'   ranges, as numbers between 0 and 1. The default is `c(0.5, 0.95)`, which
 #'   corresponds to the 50% and 95% home ranges.
-#' @param buffer A non-negative number: the distance (in the units of the
-#'   projection of `x`) by which the home ranges are buffered. The default, 0,
-#'   leaves them as they are; a small positive value (e.g. 1e-5, as in
-#'   `amt::hr_locoh()`) also includes the hulls with no area (see Details).
+#' @param buffer The distance by which the home ranges are buffered, as a
+#'   non-negative `units` object (e.g. `as_units(10, "m")`, see Details). The
+#'   default, `NULL`, leaves them as they are; a small positive distance (e.g.
+#'   `as_units(1e-5, "m")`, as in `amt::hr_locoh()`) also includes the hulls
+#'   with no area (see Details).
 #' @returns An `sf` tibble of subclass `hr_tt_poly_tbl` of results, with one
 #' row per group and level (with the tracks in the order of the metadata if
 #' `x` is not grouped, or else with the groups in the order of
@@ -85,7 +99,8 @@
 #'   e.g. a factor, or an `sfc` column of locations from [group_by_meta()])
 #' - `method`: the method used to estimate the home range (`"locoh"`)
 #' - `type`: the type of LoCoH (`"k"`, `"r"` or `"a"`)
-#' - `n`: the parameter of the LoCoH
+#' - `n`: the parameter of the LoCoH (for types `"r"` and `"a"`, a `units`
+#'   object in the units of the coordinates of `x`)
 #' - `level`: the level of the home range
 #' - `area`: the area of the home range (as computed by `sf::st_area()`)
 #' - `geometry`: the geometry of the home range as sf multipolygons; the
@@ -102,21 +117,38 @@
 #'   e207.
 #' @export
 #' @examples
+#' # example_tt is in longitude/latitude: project it first, to an equal-area
+#' # projection centred on the data (Lambert azimuthal equal-area)
+#' example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
 #' # the tracks in example_tt are short (5 locations each), so each hull is
 #' # built from a location and its 3 nearest neighbours
-#' example_locoh <- hr_tt_locoh(example_tt, n = 3)
+#' example_locoh <- hr_tt_locoh(example_proj, n = 3)
 #' example_locoh
 #' library(ggplot2)
 #' ggplot(example_locoh) +
 #'   geom_sf(aes(fill = track_id), alpha = 0.7)
+#' # with types "r" and "a", n is a distance with units, as is buffer (here
+#' # in metres, the units of the projection, but any units of length work)
+#' hr_tt_locoh(
+#'   example_proj,
+#'   n = as_units(1500, "km"),
+#'   type = "a",
+#'   buffer = as_units(10, "km")
+#' )
 hr_tt_locoh <- function(
   x,
   n = 10,
   type = c("k", "r", "a"),
   levels = c(0.5, 0.95),
-  buffer = 0
+  buffer = NULL
 ) {
   type <- match.arg(type)
+  # look up the CRS once: sf asks PROJ for its parameters every time, which
+  # takes a few milliseconds, i.e. more than the whole LoCoH of a short track
+  crs <- sf::st_crs(x)
+  # the hulls are built on the plane of the coordinates, so x must be
+  # projected
+  check_projected(x, crs, "hr_tt_locoh()") # nolint: object_usage_linter.
   # if x is not grouped, use the track ID column as grouping variable
   by_track <- !inherits(x, "grouped_df")
   if (by_track) {
@@ -138,14 +170,19 @@ hr_tt_locoh <- function(
   }
   # reorder levels from big to small
   levels <- sort(levels, decreasing = TRUE)
-  # check buffer
-  if (
-    !is.numeric(buffer) ||
-      length(buffer) != 1 ||
-      !is.finite(buffer) ||
-      buffer < 0
-  ) {
-    stop("buffer must be a single non-negative number")
+
+  # check buffer, a distance, as a plain number in the units of the
+  # coordinates (0, without a buffer)
+  if (is.null(buffer)) {
+    buffer <- 0
+  } else {
+    if (length(buffer) != 1) {
+      stop("buffer must be a single non-negative distance")
+    }
+    buffer <- to_crs_units(buffer, "buffer", crs) # nolint: object_usage_linter.
+    if (!is.finite(buffer) || buffer < 0) {
+      stop("buffer must be a single non-negative distance")
+    }
   }
 
   # get the group indices, numbered in the order in which the groups are
@@ -172,14 +209,9 @@ hr_tt_locoh <- function(
     )
   }
 
-  # check n, and recycle it to one value per group
-  n <- check_locoh_n(n, type, n_locations, group_labels)
-
-  # look up the CRS (and whether it is longitude/latitude) once: sf asks PROJ
-  # for its parameters every time, which takes a few milliseconds, i.e. more
-  # than the whole LoCoH of a short track
-  crs <- sf::st_crs(x)
-  longlat <- isTRUE(sf::st_is_longlat(crs))
+  # check n (as a plain number, in the units of the coordinates for types "r"
+  # and "a"), and recycle it to one value per group
+  n <- check_locoh_n(n, type, n_locations, group_labels, crs)
 
   # the rows of xy of each group (splitting them once is much faster, with
   # many groups, than finding the rows of each group among all the rows)
@@ -200,14 +232,13 @@ hr_tt_locoh <- function(
       n = n[group_id],
       type = type,
       levels = levels,
-      buffer = buffer,
-      longlat = longlat
+      buffer = buffer
     )
   }
 
   # the isopleths of all groups, and their areas, computed in one call
   geometry <- sf::st_sfc(unlist(geometry, recursive = FALSE))
-  area <- locoh_area(geometry, crs = crs, longlat = longlat)
+  area <- locoh_area(geometry, crs = crs)
   # an isopleth whose hulls have no area (without a buffer) is returned with
   # an empty geometry and an NA area, with a warning that says why
   empty <- sf::st_is_empty(geometry)
@@ -235,6 +266,11 @@ hr_tt_locoh <- function(
   # tibble is created, as tibble() evaluates each column with the columns
   # before it in scope.
   n_values <- rep(n, each = length(levels))
+  # for types "r" and "a", n is a distance, returned with the units of the
+  # coordinates
+  if (type != "k") {
+    n_values <- with_crs_units(n_values, crs) # nolint: object_usage_linter.
+  }
   level_values <- rep(levels, times = length(group_labels))
   locoh_results <- tibble::tibble(
     method = "locoh",
@@ -272,10 +308,30 @@ hr_tt_locoh <- function(
 #' @param type The type of LoCoH.
 #' @param n_locations The number of locations in each group.
 #' @param group_labels The labels of the groups (for error messages).
-#' @returns A numeric vector with one value of `n` per group.
+#' @param crs The CRS of the locations (to convert the distances of types
+#'   `"r"` and `"a"` to the units of the coordinates).
+#' @returns A numeric vector with one value of `n` per group (for types `"r"`
+#'   and `"a"`, a plain number in the units of the coordinates).
 #' @keywords internal
 #' @noRd
-check_locoh_n <- function(n, type, n_locations, group_labels) {
+check_locoh_n <- function(n, type, n_locations, group_labels, crs) {
+  # for types "r" and "a", n is a distance, which must have units; for type
+  # "k", it is a number of neighbours
+  if (type == "k" && inherits(n, "units")) {
+    stop(
+      "for type \"k\", n is a number of neighbours, a plain number without ",
+      "units"
+    )
+  }
+  if (type != "k") {
+    if (!inherits(n, "units")) {
+      stop(
+        "for type \"", type, "\", n is a distance, which must be given with ",
+        "units, e.g. as_units(500, 'm')"
+      )
+    }
+    n <- to_crs_units(n, "n", crs) # nolint: object_usage_linter.
+  }
   if (!is.numeric(n) || !(length(n) %in% c(1, length(n_locations)))) {
     stop(
       "n must be a single number or a vector with one value per group"
@@ -310,24 +366,22 @@ check_locoh_n <- function(n, type, n_locations, group_labels) {
 #' Internal function that computes the areas of the isopleths as
 #' [sf::st_area()] does, but asks PROJ for the parameters of the CRS only
 #' once (to get its units) rather than twice, which matters for short tracks:
-#' for projected data, the areas are computed without the CRS, and given the
-#' squared units of the CRS, as [sf::st_area()] does.
+#' the areas are computed without the CRS (the data are projected), and given
+#' the squared units of the CRS, as [sf::st_area()] does.
 #'
 #' @param geometry An `sfc` of the isopleths, without a CRS.
-#' @param crs The CRS of the isopleths.
-#' @param longlat Whether the CRS is longitude/latitude.
+#' @param crs The CRS of the isopleths (projected, or no CRS).
 #' @returns The areas, as a `units` vector (or a numeric vector if the CRS
 #'   has no units), as given by [sf::st_area()].
 #' @keywords internal
 #' @noRd
-locoh_area <- function(geometry, crs, longlat) {
-  unit <- if (longlat) NULL else crs$ud_unit
-  if (is.null(unit)) {
-    # longitude/latitude (areas on the sphere), or a CRS without units
-    return(sf::st_area(sf::st_set_crs(geometry, crs)))
-  }
+locoh_area <- function(geometry, crs) {
   area <- sf::st_area(geometry)
-  units(area) <- unit^2
+  # without a CRS, the areas are plain numbers, as from sf::st_area()
+  unit <- crs$ud_unit
+  if (!is.null(unit)) {
+    units(area) <- unit^2
+  }
   area
 }
 
@@ -355,7 +409,6 @@ locoh_union_budget <- 250
 #' @param type the type of LoCoH (`"k"`, `"r"` or `"a"`)
 #' @param levels A vector of levels for the home ranges
 #' @param buffer the distance by which to buffer the home ranges
-#' @param longlat whether the coordinates are longitudes and latitudes
 #' @param cpp_union whether to merge the hulls in C++ when there is no buffer
 #'   (`TRUE`, the default), or always with GEOS (`FALSE`, used by the tests to
 #'   compare the two)
@@ -365,12 +418,11 @@ locoh_union_budget <- 250
 #'   `levels`), as an `sfc`
 #' @keywords internal
 #' @noRd
-locoh_one_group <- function(xy, n, type, levels, buffer, longlat,
+locoh_one_group <- function(xy, n, type, levels, buffer,
                             cpp_union = TRUE,
                             union_budget = locoh_union_budget) {
-  # The hulls are built on a plane (in degrees for unprojected data), so they
-  # are also merged on a plane, by GEOS, without a CRS (with a CRS in
-  # longitude/latitude, sf would use s2, on the sphere, instead).
+  # The hulls are built on the plane of the (projected) coordinates, and are
+  # merged on it, by GEOS, without a CRS.
   #
   # GEOS works in floating point and loses precision when the coordinates
   # are large compared with the details of the geometries (e.g. projected
@@ -406,17 +458,9 @@ locoh_one_group <- function(xy, n, type, levels, buffer, longlat,
   union_hulls <- cpp_union && buffer == 0
   hulls <- locoh(union_hulls)
   if (is.null(hulls$isopleths)) {
-    return(locoh_union_geos(hulls, levels, buffer, longlat, shift))
+    return(locoh_union_geos(hulls, levels, buffer, shift))
   }
   geometry <- sf::st_sfc(hulls$isopleths)
-  if (longlat) {
-    # see locoh_union_geos() for why isopleths in longitude/latitude are
-    # simplified
-    geometry <- sf::st_cast(
-      sf::st_simplify(geometry, dTolerance = 1e-9),
-      "MULTIPOLYGON"
-    )
-  }
   # The C++ code decides the topology of the isopleths exactly, but rounding
   # the coordinates of the points where the edges of the hulls cross can, in
   # rare cases, make an isopleth invalid (e.g. where two such points round to
@@ -426,7 +470,7 @@ locoh_one_group <- function(xy, n, type, levels, buffer, longlat,
   # from C++ have the right area); checking their validity is fast.
   valid <- sf::st_is_valid(geometry) %in% TRUE
   if (!all(valid)) {
-    geos <- locoh_union_geos(locoh(FALSE), levels, buffer, longlat, shift)
+    geos <- locoh_union_geos(locoh(FALSE), levels, buffer, shift)
     use_geos <- !valid & sf::st_is_valid(geos) %in% TRUE
     geometry[use_geos] <- geos[use_geos]
   }
@@ -443,13 +487,12 @@ locoh_one_group <- function(xy, n, type, levels, buffer, longlat,
 #'   FALSE`, or if the union could not be computed in C++).
 #' @param levels A vector of levels for the home ranges
 #' @param buffer the distance by which to buffer the home ranges
-#' @param longlat whether the coordinates are longitudes and latitudes
 #' @param shift the shift of the coordinates of the hulls, to be added back
 #' @returns The multipolygons (without a CRS), one per level (in the order of
 #'   `levels`), as an `sfc`
 #' @keywords internal
 #' @noRd
-locoh_union_geos <- function(hulls, levels, buffer, longlat, shift) {
+locoh_union_geos <- function(hulls, levels, buffer, shift) {
   # Union the hulls for each level. The isopleths are nested (the isopleth
   # for a level is the union of the j smallest hulls, with j increasing with
   # the level), so rather than computing each union from scratch, we start
@@ -495,14 +538,6 @@ locoh_union_geos <- function(hulls, levels, buffer, longlat, shift) {
   # much faster, as there is only one geometry to buffer
   if (buffer > 0) {
     geometry <- sf::st_buffer(geometry, buffer)
-  }
-  # GEOS can create vertices (where the edges of hulls cross) so close to
-  # other vertices that s2, which sf uses for unprojected data (e.g. to
-  # compute areas), sees them as the same vertex and rejects the polygon.
-  # Simplifying with a tiny tolerance (1e-9 degrees, about 0.1 mm) removes
-  # such vertices without changing the isopleths otherwise.
-  if (longlat) {
-    geometry <- sf::st_simplify(geometry, dTolerance = 1e-9)
   }
   # return multipolygons, as isopleths can have several parts, shifted back
   # to the original coordinates

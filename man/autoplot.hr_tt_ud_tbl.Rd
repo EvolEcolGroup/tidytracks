@@ -35,7 +35,9 @@ else by the first column of the tibble. The layout of the plots can be
 specified with the \code{layout} argument, and it is assembled with \code{patchwork}.
 }
 \examples{
-example_kde <- hr_tt_kde(example_tt)
+# project example_tt (in longitude/latitude) to an equal-area projection
+example_proj <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
+example_kde <- hr_tt_kde(example_proj)
 library(ggplot2)
 autoplot(example_kde)
 }

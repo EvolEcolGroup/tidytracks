@@ -544,15 +544,16 @@ shags_tt_split %>%
 
 # Home Range estimates
 
-For this analysis, we will use the shags_females data set we just created. To 
-estimate home ranges, we need to project the data to an equal area projection. 
-We can use the `sf::st_transform()` function to do this:
+For this analysis, we will use the shags_females data set we just created. To
+estimate home ranges, we need to project the data to an equal area projection:
+utilisation distributions computed in degrees of longitude and latitude would
+be distorted, so the home range functions give an error for unprojected data.
+Here we use a Lambert azimuthal equal-area projection centred on the colony,
+with the `sf::st_transform()` function (`crstools::suggest_crs()` can suggest
+a projection for other data):
 ```{r female_crs}
 shags_females_proj <- shags_females %>%
-  st_transform(crs = paste0(
-    "+proj=aeqd +lon_0=-68 +lat_0=-67 ",
-    "+units=m +datum=WGS84 +no_defs"
-  ))
+  st_transform(crs = "+proj=laea +lon_0=-68 +lat_0=-67")
 ```
 
 ## Kernel UDs
@@ -560,9 +561,11 @@ shags_females_proj <- shags_females %>%
 We can now estimate the home range using **Kernel Density Estimation (KDE)**. The
 default smoothing parameter (*h*) in the `hr_tt_kde()` function is set to
 `'h_ref_mean'`. The bandwidth for the kernel density estimation can be either a
-number, or `'h_ref_indiv'` for using the reference bandwidth for each
-individual, or `'h_ref_mean'` for using the mean bandwidth for all individuals
-(the default).
+distance with units (e.g. `as_units(500, "m")`; the bandwidth is the standard
+deviation of the kernel, so it has the units of the coordinates), or
+`'h_ref_indiv'` for using the reference bandwidth for each individual, or
+`'h_ref_mean'` for using the mean bandwidth for all individuals (the default).
+The resolution of the grid, `res`, is also a distance with units.
 
 Note the `levels` parameter: if `NULL`, a tibble with the full utilisation 
 distribution (UD) for each track is returned. Alternatively you can specify 

@@ -44,12 +44,12 @@ test_that("hr_tt_kde is equivalent to adehabitatHR", {
     wildboars_tt,
     levels = NULL,
     h = "h_ref_indiv",
-    res = 50,
+    res = as_units(50, "m"),
     bbox = tt_bbox,
     method = "exact"
   )
   # check that we have the same h value as adehabitat for Brock
-  expect_true(brock_ade@h$h == wildboars_kde$h[1])
+  expect_true(brock_ade@h$h == as.numeric(wildboars_kde$h[1]))
   # check that we have the correct grid
   expect_equal(range(terra::xFromCol(wildboars_kde$ud[[1]])), range(mask_xy$x))
   expect_equal(range(terra::yFromRow(wildboars_kde$ud[[1]])), range(mask_xy$y))
@@ -69,7 +69,7 @@ test_that("hr_tt_kde is equivalent to adehabitatHR", {
     wildboars_tt,
     levels = NULL,
     h = "h_ref_indiv",
-    res = 50,
+    res = as_units(50, "m"),
     bbox = tt_bbox
   )
   expect_true(
@@ -118,7 +118,12 @@ test_that("hr_tt_ud_overlap UDOI is equivalent to adehabitatHR", {
     time_column = "time",
     track_id_column = "name"
   )
-  tt_kde <- hr_tt_kde(relocs_tt, h = 200, res = res, bbox = bbox)
+  tt_kde <- hr_tt_kde(
+    relocs_tt,
+    h = as_units(200, "m"),
+    res = as_units(res, "m"),
+    bbox = bbox
+  )
   tt_udoi <- hr_tt_ud_overlap(tt_kde, method = "udoi")
 
   expect_equal(tt_udoi, unclass(ade_udoi), tolerance = 1e-2)

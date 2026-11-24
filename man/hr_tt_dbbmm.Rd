@@ -80,7 +80,7 @@ sorted by track id)
 \code{"dbgb"})
 \item \code{window_size} and \code{margin}: the values used for the sliding window
 \item \code{xmin}, \code{ymin}, \code{xmax}, \code{ymax} and \code{res}: the extent and resolution of
-the grid (in metres)
+the grid (in metres), with \code{res} as a \code{units} object
 \item \code{ud} (if \code{levels} is \code{NULL}): the UDs, as a list of \code{terra::SpatRaster}
 objects with a layer named \code{ud} whose values sum to 1
 \item \code{level}, \code{area} and \code{geometry} (if \code{levels} is set): the isopleths, see
@@ -110,7 +110,10 @@ Bridges link consecutive events within a track, so the UD is
 estimated for each track: \code{x} must be either ungrouped, or grouped by its
 track id column only. \code{x} must be ordered by time within each track (see
 \code{\link[=tt_order_time]{tt_order_time()}}), and have a projected coordinate reference system in
-metres (see \code{\link[sf:st_transform]{sf::st_transform()}}), as the bridges are computed in metres.
+metres (see \code{\link[sf:st_transform]{sf::st_transform()}}), as the bridges are computed in metres,
+ideally an equal-area one (e.g. a Lambert azimuthal equal-area projection
+centred on the data, \code{"+proj=laea +lon_0=<longitude> +lat_0=<latitude>"}),
+so that the density of the UD is a density per unit of area.
 Events with an empty geometry (i.e. no location) are ignored. Tracks with
 fewer events than \code{window_size} are skipped by \code{move2utils} (with a
 warning), and are not included in the output.
@@ -147,8 +150,8 @@ instead of the full UDs, as in \code{\link[=hr_tt_kde]{hr_tt_kde()}}.
 }
 \examples{
 \dontshow{if (requireNamespace("move2utils", quietly = TRUE)) withAutoprint(\{ # examplesIf}
-# project the data to a projection in metres
-x <- sf::st_transform(example_tt, "+proj=eqearth")
+# project the data to an equal-area projection in metres, centred on them
+x <- sf::st_transform(example_tt, "+proj=laea +lon_0=-1 +lat_0=0")
 ud_dbbmm <- hr_tt_dbbmm(
   x,
   location_error = as_units(1000, "m"),
@@ -156,7 +159,8 @@ ud_dbbmm <- hr_tt_dbbmm(
   margin = 1
 )
 ud_dbbmm
-# estimate kernel UDs on the same grid, to compare them
+# estimate kernel UDs on the same grid, to compare them (the res column is
+# a distance with units, as the res argument of hr_tt_kde() must be)
 ud_kde <- hr_tt_kde(
   x,
   bbox = unlist(ud_dbbmm[1, c("xmin", "ymin", "xmax", "ymax")]),
