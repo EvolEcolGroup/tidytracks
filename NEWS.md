@@ -148,6 +148,9 @@ duplicated track ids in the metadata.
   grid, which made the isopleths of a symmetric UD asymmetric. The UDs of
   real tracks, whose cells hardly ever have the same value, are not
   affected.
+* `event_flag_mcconnell()` and `event_flag_outliers()` now flag events without
+  a location, so `tt_clean_mcconnell()` and `tt_clean_outliers()` remove them
+  or interpolate their location (#81)
 
 ## Documentation
 

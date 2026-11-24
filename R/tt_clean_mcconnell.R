@@ -7,6 +7,10 @@
 #' returns a clean `move2` object; to generate a column that flags events to
 #' remove but does not remove them, use `event_flag_mcconnell()`.
 #'
+#' Events without a location (e.g. failed fixes) are flagged too (see
+#' [event_flag_mcconnell()]), so they are removed, or their location is
+#' interpolated, together with the events flagged by the algorithm.
+#'
 #' @param x A move2 object
 #' @param max_speed speed, provided as a `units` object (e.g.
 #' as_units(50, 'm/s').
@@ -69,8 +73,9 @@ apply_flag_action <- function(x, valid, flag_action) {
   # "null" and "interpolate" keep every event (and so its time stamp and
   # attributes), and empty the location of the flagged events
   sf::st_geometry(x)[!valid] <- sf::st_point()
-  # mt_interpolate() fills in every event with an empty location, so events
-  # that had no location before cleaning are interpolated too
+  # mt_interpolate() fills in every event with an empty location, i.e. the
+  # flagged events, which include the events that had no location before
+  # cleaning (event_flag_mcconnell() and event_flag_outliers() flag them)
   if (flag_action == "interpolate") {
     x <- move2::mt_interpolate(x)
   }

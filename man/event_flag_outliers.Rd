@@ -22,8 +22,8 @@ chosen method.}
 }
 \value{
 A logical vector of the same length as the number of events in \code{x},
-indicating which events are valid (\code{TRUE}) and which are outliers
-(\code{FALSE}).
+indicating which events are valid (\code{TRUE}) and which are outliers or
+have no location (\code{FALSE}).
 }
 \description{
 This function detects outlying locations with one of the methods of the
@@ -70,11 +70,13 @@ directly on \code{x}.
 
 \code{x} must be ordered by time within each track (see \code{\link[=tt_order_time]{tt_order_time()}}).
 Some methods also require events with duplicated times to be removed first
-(e.g. with \code{\link[move2:mt_filter_unique]{move2::mt_filter_unique()}}). Events without a location are
-ignored, and returned as valid. Tracks with too few events with a location
-for the method (10 for "clean_track", 5 for "probability", and 2 for the
-other methods) are not checked, with a warning, and their events are
-returned as valid.
+(e.g. with \code{\link[move2:mt_filter_unique]{move2::mt_filter_unique()}}). Events without a location (e.g.
+failed fixes) are not checked, and are flagged as not valid (\code{FALSE}):
+\code{\link[=tt_clean_outliers]{tt_clean_outliers()}} then removes them, or interpolates their location,
+together with the outliers. Tracks with too few events with a location for
+the method (10 for "clean_track", 5 for "probability", and 2 for the other
+methods) are not checked, with a warning, and their events with a location
+are returned as valid.
 }
 \examples{
 \dontshow{if (requireNamespace("move2utils", quietly = TRUE)) withAutoprint(\{ # examplesIf}

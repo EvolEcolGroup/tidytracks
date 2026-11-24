@@ -35,7 +35,10 @@ package \code{move2utils} (see \code{\link[=event_flag_outliers]{event_flag_outl
 removes them, sets their location to empty, or replaces their location by
 interpolation. It requires the suggested package \code{move2utils} (install it
 with \code{remotes::install_github("move2universe/move2utils")}). To flag the
-outliers without acting on them, use \code{\link[=event_flag_outliers]{event_flag_outliers()}}.
+outliers without acting on them, use \code{\link[=event_flag_outliers]{event_flag_outliers()}}. Events
+without a location (e.g. failed fixes) are flagged too (see
+\code{\link[=event_flag_outliers]{event_flag_outliers()}}), so they are removed, or their location is
+interpolated, together with the outliers.
 }
 \examples{
 \dontshow{if (requireNamespace("move2utils", quietly = TRUE)) withAutoprint(\{ # examplesIf}

@@ -20,7 +20,8 @@ original behaviour of the McConnell algorithm.}
 }
 \value{
 A logical vector of the same length as the number of events in \code{x},
-indicating which points are valid.
+indicating which points are valid (\code{TRUE}), and which are flagged by the
+filter or have no location (\code{FALSE}).
 }
 \description{
 This function uses the algorithm by McConnell et al. (1992) to clean data
@@ -41,8 +42,10 @@ track, and the endpoint check is repeated until the result is stable.
 
 Speeds are computed between consecutive events of each track in time order,
 whatever the order in which the events are stored in \code{x}. Events with an
-empty geometry (i.e. no location) are ignored by the filter
-and returned as valid. Consecutive events at the same location are treated
+empty geometry (i.e. no location, e.g. failed fixes) are left out of the
+filter, and flagged as not valid (\code{FALSE}): \code{\link[=tt_clean_mcconnell]{tt_clean_mcconnell()}} then
+removes them, or interpolates their location, together with the events
+flagged by the filter. Consecutive events at the same location are treated
 as having zero speed, even when they share the same timestamp (e.g.
 duplicated records).
 }
